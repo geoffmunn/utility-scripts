@@ -46,6 +46,7 @@ USER_ACTION_ALL        = 'a'
 # https://assets.terra.money/cw20/pairs.dex.json
 UUSD_TO_ULUNA_SWAP_ADDRESS      = 'terra1l7vy20x940je7lskm6x9s839vjsmekz9k9mv7g'
 ASTROPORT_UUSD_TO_ULUNA_ADDRESS = 'terra1m6ywlgn6wrjuagcmmezzz2a029gtldhey5k552'
+ASTROPORT_UUSD_TO_MINA_ADDRESS = 'terra134m8n2epp0n40qr08qsvvrzycn2zq4zcpmue48'
 
 def get_user_choice(question:str, yes_choices:list, no_choices:list):
 
