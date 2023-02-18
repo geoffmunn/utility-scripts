@@ -718,44 +718,44 @@ def main():
 
         for validator in delegations.details:
 
-            # if user_action == USER_ACTION_WITHDRAW or user_action == USER_ACTION_ALL:
-            #     uluna_reward:int = delegations.details[validator]['rewards']['uluna']
+            if user_action == USER_ACTION_WITHDRAW or user_action == USER_ACTION_ALL:
+                uluna_reward:int = delegations.details[validator]['rewards']['uluna']
 
-            #     # Only withdraw the staking rewards if the rewards exceed the threshold (if any)
-            #     if wallet.formatUluna(uluna_reward, False) > wallet.delegations['threshold']:
-            #         # Set up the withdrawal object
-            #         withdrawal_tx = WithdrawalTransaction(wallet_seed, delegations.details[validator]['delegator'], delegations.details[validator]['validator'])
-            #         # Simulate it
-            #         withdrawal_tx.simulate()
+                # Only withdraw the staking rewards if the rewards exceed the threshold (if any)
+                if wallet.formatUluna(uluna_reward, False) > wallet.delegations['threshold']:
+                    # Set up the withdrawal object
+                    withdrawal_tx = WithdrawalTransaction(wallet_seed, delegations.details[validator]['delegator'], delegations.details[validator]['validator'])
+                    # Simulate it
+                    withdrawal_tx.simulate()
                     
-            #         if withdrawal_tx.fee.to_data()['amount'][0]['denom'] == 'uluna':
-            #             print (f"Fee is {wallet.formatUluna(int(withdrawal_tx.fee.to_data()['amount'][0]['amount']), True)}")
-            #         else:
-            #             print (f"Fee is {withdrawal_tx.fee.to_data()['amount'][0]['amount']} {withdrawal_tx.fee.to_data()['amount'][0]['denom']}")
+                    if withdrawal_tx.fee.to_data()['amount'][0]['denom'] == 'uluna':
+                        print (f"Fee is {wallet.formatUluna(int(withdrawal_tx.fee.to_data()['amount'][0]['amount']), True)}")
+                    else:
+                        print (f"Fee is {withdrawal_tx.fee.to_data()['amount'][0]['amount']} {withdrawal_tx.fee.to_data()['amount'][0]['denom']}")
                         
-            #         # Now we know what the fee is, we can do it again and finalise it
-            #         withdrawal_tx.withdraw()
-            #         withdrawal_tx.broadcast()
+                    # Now we know what the fee is, we can do it again and finalise it
+                    withdrawal_tx.withdraw()
+                    withdrawal_tx.broadcast()
                 
-            #         if withdrawal_tx.broadcast_result.is_tx_error():
-            #             print ('Withdrawal failed, an error occurred')
-            #             print (withdrawal_tx.broadcast_result.raw_log)
+                    if withdrawal_tx.broadcast_result.is_tx_error():
+                        print ('Withdrawal failed, an error occurred')
+                        print (withdrawal_tx.broadcast_result.raw_log)
                 
-            #         else:
-            #             print (f'Withdrawn amount: {wallet.formatUluna(uluna_reward, True)}')
-            #             print (f'Tx Hash: {withdrawal_tx.broadcast_result.txhash}')
+                    else:
+                        print (f'Withdrawn amount: {wallet.formatUluna(uluna_reward, True)}')
+                        print (f'Tx Hash: {withdrawal_tx.broadcast_result.txhash}')
 
-            # # Swap any udst coins for uluna
-            # if user_action == USER_ACTION_SWAP or user_action == USER_ACTION_ALL:
-            #     print ('Updating balances...')
-            #     balances = wallet.getBalances()
+            # Swap any udst coins for uluna
+            if user_action == USER_ACTION_SWAP or user_action == USER_ACTION_ALL:
+                print ('Updating balances...')
+                balances = wallet.getBalances()
                 
-            #     swaps_tx = SwapTransaction(wallet_seed)
-            #     swaps_tx.simulate(balances['uusd'])
-            #     swaps_tx.swap(balances['uusd'])
-            #     swaps_tx.broadcast()
+                swaps_tx = SwapTransaction(wallet_seed)
+                swaps_tx.simulate(balances['uusd'])
+                swaps_tx.swap(balances['uusd'])
+                swaps_tx.broadcast()
 
-            #     print (swaps_tx.broadcast_result)
+                print (swaps_tx.broadcast_result)
                     
             # Redelegate anything we might have
             if user_action == USER_ACTION_REDELEGATE or user_action == USER_ACTION_ALL:
