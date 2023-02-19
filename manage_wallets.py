@@ -434,7 +434,7 @@ class DelegationTransaction():
 
         # Store the fee so we can actually make the transaction via self.delegate()
         requested_fee = tx.auth_info.fee
-        print ('requested fee:', requested_fee)
+        #print ('requested fee:', requested_fee)
 
         simulation_result:BlockTxBroadcastResult = self.broadcast()
         #print ('sim result:', simulation_result.raw_log)
@@ -481,7 +481,6 @@ class DelegationTransaction():
 
     def delegate(self, redelegated_uluna:int) -> Tx:
         
-        print ('Delegating with a fee of:', self.fee)
         msg = MsgDelegate(
             delegator_address   = self.delegator_address,
             validator_address   = self.validator_address,
@@ -674,7 +673,7 @@ class SwapTransaction():
                     break
                     
                 else:
-                    print ('no such tx yet')
+                    print ('No such tx yet')
 
         return result
     
@@ -780,7 +779,7 @@ def main():
                 swaps_tx.swap(balances['uusd'])
                 swaps_tx.broadcast()
 
-                print (swaps_tx.broadcast_result)
+                print (f'Tx Hash: {swaps_tx.broadcast_result.txhash}')
                     
             # Redelegate anything we might have
             #if user_action == USER_ACTION_DELEGATE or user_action == USER_ACTION_SWAP_DELEGATE or user_action == USER_ACTION_ALL:
@@ -802,11 +801,9 @@ def main():
                     delegation_tx.delegate(delegated_uluna)
                     delegation_tx.broadcast(True)
                     
-                    #print (delegation_tx.broadcast_result)
                     print (f'Tx Hash: {delegation_tx.broadcast_result.txhash}')
                     
                     # Lack of funds:
-                    # BlockTxBroadcastResult(height=0, txhash='A25CC552AE2DB8CACDA6F960E141D6A6DBEC78AD5A43B84D3E7DD0942DF1DF4B', raw_log='33254144uluna is smaller than 44985001uluna: insufficient funds: insufficient funds', gas_wanted=1588173, gas_used=18893, logs=None, code=5, codespace='sdk', info=None, data=None, timestamp=None)
                     if delegation_tx.broadcast_result.is_tx_error():
                         print ('Delegation failed, an error occurred')
                         print (delegation_tx.broadcast_result.raw_log)
