@@ -741,7 +741,8 @@ def main():
         delegations = Delegations(wallet.address)
 
         for validator in delegations.details:
-            if user_action == USER_ACTION_WITHDRAW or user_action == USER_ACTION_ALL:
+            #if user_action == USER_ACTION_WITHDRAW or user_action == USER_ACTION_ALL:
+            if user_action in [USER_ACTION_WITHDRAW, USER_ACTION_ALL]:
                 uluna_reward:int = delegations.details[validator]['rewards']['uluna']
 
                 # Only withdraw the staking rewards if the rewards exceed the threshold (if any)
@@ -769,7 +770,8 @@ def main():
                         print (f'Tx Hash: {withdrawal_tx.broadcast_result.txhash}')
 
             # Swap any udst coins for uluna
-            if user_action == USER_ACTION_SWAP or user_action == USER_ACTION_SWAP_DELEGATE or user_action == USER_ACTION_ALL:
+            #if user_action == USER_ACTION_SWAP or user_action == USER_ACTION_SWAP_DELEGATE or user_action == USER_ACTION_ALL:
+            if user_action in [USER_ACTION_SWAP, USER_ACTION_SWAP_DELEGATE, USER_ACTION_ALL]:
                 print ('Updating balances...')
                 balances = wallet.getBalances()
                 
@@ -781,8 +783,8 @@ def main():
                 print (swaps_tx.broadcast_result)
                     
             # Redelegate anything we might have
-            if user_action == USER_ACTION_DELEGATE or user_action == USER_ACTION_SWAP_DELEGATE or user_action == USER_ACTION_ALL:
-
+            #if user_action == USER_ACTION_DELEGATE or user_action == USER_ACTION_SWAP_DELEGATE or user_action == USER_ACTION_ALL:
+            if user_action in [USER_ACTION_DELEGATE, USER_ACTION_SWAP_DELEGATE, USER_ACTION_ALL]:
                 # Update the balances after having done withdrawals and swaps
                 print ('Updating balances...')
                 balances = wallet.getBalances()
