@@ -712,8 +712,20 @@ def main():
         if wallet.validated == True:
             validated_wallets[wallet_name] = wallet
 
+    if user_action == USER_ACTION_WITHDRAW:
+        action_string = 'withdrawing rewards'
+    if user_action == USER_ACTION_SWAP:
+        action_string = 'swapping USTC etc for LUNC'
+    if user_action == USER_ACTION_DELEGATE:
+        action_string = 'delegating all available funds'
+    if user_action == USER_ACTION_SWAP_DELEGATE:
+        action_string = 'swapping USTC etc for LUNC and delegating everything'
+    if user_action == USER_ACTION_ALL:
+        action_string = 'withdrawing rewards, swapping USTC etc for LUNC, and then delegating everything'
+
     if len(validated_wallets) > 0:
-        print ('You will be doing withdrawals on the following wallets:')
+        print (f'You will be {action_string} on the following wallets:')
+        
         for wallet_name in validated_wallets:
             print (f'  * {wallet_name}')
         
