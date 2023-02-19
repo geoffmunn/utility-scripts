@@ -37,10 +37,11 @@ CONFIG_FILE_NAME    = 'user_config.yml'
 GAS_ADJUSTMENT      = 3
 
 # Do not change these
-USER_ACTION_WITHDRAW   = 'w'
-USER_ACTION_SWAP       = 's'
-USER_ACTION_REDELEGATE = 'd'
-USER_ACTION_ALL        = 'a'
+USER_ACTION_WITHDRAW      = 'w'
+USER_ACTION_SWAP          = 's'
+USER_ACTION_DELEGATE      = 'd'
+USER_ACTION_SWAP_DELEGATE = 'sd'
+USER_ACTION_ALL           = 'a'
 
 # Swap contracts can be found here
 # https://assets.terra.money/cw20/pairs.dex.json
@@ -48,19 +49,36 @@ UUSD_TO_ULUNA_SWAP_ADDRESS      = 'terra1l7vy20x940je7lskm6x9s839vjsmekz9k9mv7g'
 ASTROPORT_UUSD_TO_ULUNA_ADDRESS = 'terra1m6ywlgn6wrjuagcmmezzz2a029gtldhey5k552'
 ASTROPORT_UUSD_TO_MINA_ADDRESS = 'terra134m8n2epp0n40qr08qsvvrzycn2zq4zcpmue48'
 
+def strtobool (val):
+    """Convert a string representation of truth to true (1) or false (0).
+    True values are 'y', 'yes', 't', 'true', 'on', and '1'; false values
+    are 'n', 'no', 'f', 'false', 'off', and '0'.  Raises ValueError if
+    'val' is anything else.
+    """
+    val = val.lower()
+    if val in ('y', 'yes', 't', 'true', 'on', '1'):
+        return True
+    elif val in ('n', 'no', 'f', 'false', 'off', '0'):
+        return False
+    else:
+        #raise ValueError("invalid truth value %r" % (val,))
+        return -1
+    
 def get_user_choice(question:str, yes_choices:list, no_choices:list):
-
+    """Get the user selection for a prompt and convert it to a standard value
+    """
     while True:    
         answer = input(question).lower()
         if answer in yes_choices or answer in no_choices:
             break
     
-    if answer in yes_choices:
-        result = True
-    elif answer in no_choices:
-        result = False
+    booly = strtobool(answer)
+    if  booly== -1:
+        result = answer
+    else:
+        result = booly
 
-    return result, answer
+    return result
 
 def coin_list(input: Coins, existingList: dict) -> dict:
     """ 
@@ -68,6 +86,7 @@ def coin_list(input: Coins, existingList: dict) -> dict:
     There might be a built-in function for this, but I couldn't get it working.
     """
 
+    coin:Coin
     for coin in input:
         existingList[coin.denom] = coin.amount
 
@@ -79,7 +98,8 @@ class TerraInstance:
         self.gas_adjustment = gas_adjustment
         self.gas_price_url  = gas_price_url
         self.terra          = None
-        self.url            = 'https://lcd.terrarebels.net'
+        #self.url            = 'https://lcd.terrarebels.net'
+        self.url            = 'https://lcd.terra.dev'
         
     def create(self) -> LCDClient:
 
@@ -665,15 +685,20 @@ def main():
 
     # Get the desired actions
     print ('What action do you want to take?')
-    print ('  (W)ithdraw rewards')
-    print ('  (S)wap coins')
-    print ('  (D)elegate')
-    print ('  (A)ll of the above')
+    print ('  (W)  Withdraw rewards')
+    print ('  (S)  Swap coins')
+    print ('  (D)  Delegate')
+    print ('  (SD) Swap & Delegate')
+    print ('  (A)  All of the above')
 
-    void, user_action = get_user_choice('', ['w', 's', 'd', 'a'], [])
+    user_action = get_user_choice('', ['w', 's', 'd', 'sd', 'a'], [])
 
-    with open(CONFIG_FILE_NAME, 'r') as file:
-        user_config = yaml.safe_load(file)
+    try:
+        with open(CONFIG_FILE_NAME, 'r') as file:
+            user_config = yaml.safe_load(file)
+    except :
+        print ('The user_config.yml file could not be opened - please run configure_user_wallets.py before running this script')
+        exit()
 
     wallet_obj = Wallets(user_config)
     wallet_obj.validateAddresses(decrypt_password)
@@ -704,7 +729,6 @@ def main():
         print ('This password couldn\'t decrypt any wallets. Make sure it is correct, or rebuild the wallet list by running the configure_user_wallet.py script again.')
         exit()
 
-
     # Now start doing stuff
     for wallet_name in validated_wallets:
         wallet:Wallet = validated_wallets[wallet_name]
@@ -717,7 +741,6 @@ def main():
         delegations = Delegations(wallet.address)
 
         for validator in delegations.details:
-
             if user_action == USER_ACTION_WITHDRAW or user_action == USER_ACTION_ALL:
                 uluna_reward:int = delegations.details[validator]['rewards']['uluna']
 
@@ -746,7 +769,7 @@ def main():
                         print (f'Tx Hash: {withdrawal_tx.broadcast_result.txhash}')
 
             # Swap any udst coins for uluna
-            if user_action == USER_ACTION_SWAP or user_action == USER_ACTION_ALL:
+            if user_action == USER_ACTION_SWAP or user_action == USER_ACTION_SWAP_DELEGATE or user_action == USER_ACTION_ALL:
                 print ('Updating balances...')
                 balances = wallet.getBalances()
                 
@@ -758,14 +781,13 @@ def main():
                 print (swaps_tx.broadcast_result)
                     
             # Redelegate anything we might have
-            if user_action == USER_ACTION_REDELEGATE or user_action == USER_ACTION_ALL:
+            if user_action == USER_ACTION_DELEGATE or user_action == USER_ACTION_SWAP_DELEGATE or user_action == USER_ACTION_ALL:
 
                 # Update the balances after having done withdrawals and swaps
                 print ('Updating balances...')
                 balances = wallet.getBalances()
                 uluna_reward:int = balances['uluna']            
                 
-                uluna_reward = 1000000000
                 delegated_uluna = int(uluna_reward - (WITHDRAWAL_REMAINDER * 1000000))
                 if delegated_uluna > 0:
                     print (f'Delegating {wallet.formatUluna(delegated_uluna, True)}')
@@ -789,7 +811,6 @@ def main():
                     else:
                         print ('Completed!')
 
-                    exit()
                 else:
                     print ('Delegation error: amount is not greater than zero')
             
