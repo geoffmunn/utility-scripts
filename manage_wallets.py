@@ -134,20 +134,28 @@ class Wallet:
     def __init__(self):
         self.address:str      = ''
         self.balances:dict    = {}
-        self.delegations:dict = {}
+        self.details:dict = {}
         self.name:str         = ''
         self.seed:str         = ''
         self.terra:LCDClient  = None
         self.validated: bool  = False
 
-    def create(self, name, address, seed) -> Wallet:
+    def create(self, name, address, seed, password) -> Wallet:
         self.name    = name
         self.address = address
-        self.seed    = seed
+        self.seed    = cryptocode.decrypt(seed, password)
 
         self.terra   = TerraInstance(GAS_PRICE_URI, GAS_ADJUSTMENT).create()
 
+        self.withdrawalTx = WithdrawalTransaction()
+        self.withdrawalTx.seed = self.seed
+
         return self
+    
+    def updateDelegation(self, amount:str, threshold:int) -> bool:
+       self.delegations = {'delegate': amount, 'threshold': threshold}
+
+       return True
     
     def getBalances(self) -> dict:
         
@@ -172,7 +180,7 @@ class Wallet:
 
         return balances
 
-    def validateAddress(self, user_password) -> bool:
+    def validateAddress(self) -> bool:
 
         # Check that the password does actually resolve against any wallets
         
@@ -181,24 +189,26 @@ class Wallet:
         # if it's not the same, then the password is wrong or the file has been edited
 
         try:
-            generated_wallet_seed:str = cryptocode.decrypt(self.seed, user_password)
-            generated_wallet_key     = MnemonicKey(generated_wallet_seed)
+            print (self.seed)
+            #generated_wallet_seed:str = cryptocode.decrypt(self.seed, user_password)
+            generated_wallet_key     = MnemonicKey(self.seed)
             generated_wallet         = self.terra.wallet(generated_wallet_key)
             generated_wallet_address = generated_wallet.key.acc_address
         
             if generated_wallet_address == self.address:
-                self.validated = True
+                return True
             else:
-                self.validated = False
+                return False
         except:
-            self.validated = False
+            return False
 
-        return self.validated
-    
-    def updateDelegation(self, amount:str, threshold:int) -> bool:
-        self.delegations = {'delegate': amount, 'threshold': threshold}
 
-        return True
+    def getDelegations(self):
+        self.details = Delegations().create(self.address)
+
+        print ('delegations:', self.details)
+
+        return self.details
     
     def formatUluna(self, uluna:float, add_suffix:bool = False) -> float|str:
 
@@ -209,12 +219,16 @@ class Wallet:
 
         return lunc
     
+    def withdrawal(self):
+        print ('wallet seed 2:', self.seed)
+        return self.withdrawalTx
+    
 class Wallets:
     def __init__(self):
         self.file         = None
         self.wallets:dict = {}
 
-    def create(self, yml_file:dict):
+    def create(self, yml_file:dict, user_password:str):
         # Create a list of wallets
         for wallet in yml_file['wallets']:
 
@@ -227,18 +241,13 @@ class Wallets:
                     if 'threshold' in wallet['delegations']:
                         threshold = wallet['delegations']['threshold']
 
-            wallet_item:Wallet = Wallet().create(wallet['wallet'], wallet['address'], wallet['seed'])
+            wallet_item:Wallet = Wallet().create(wallet['wallet'], wallet['address'], wallet['seed'], user_password)
             wallet_item.updateDelegation(delegation_amount, threshold)
+            wallet_item.validated = wallet_item.validateAddress()
+
             self.wallets[wallet['wallet']] = wallet_item
 
         return self
-
-    def validateAddresses(self, user_password:str) -> bool:
-
-        for wallet in self.wallets:
-            self.wallets[wallet].validateAddress(user_password)
-
-        return True
         
     def getWallets(self, validate):
        
@@ -254,7 +263,7 @@ class Wallets:
        
         return validated_wallets
     
-class Delegations:
+class Delegations(Wallet):
 
     def __init__(self):        
         self.delegations:dict = {}
@@ -299,7 +308,7 @@ class Delegations:
 
         return self.delegations
     
-class TransactionCore:
+class TransactionCore(Wallet):
 
     def __init__(self):
         self.balances:dict = {}
@@ -385,15 +394,14 @@ class WithdrawalTransaction(TransactionCore):
         self.delegator_address:str                      = ''
         self.fee:Fee                                    = None
         self.gas_list:json                              = None
+        self.seed:str                                   = ''
         self.terra:LCDClient                            = None
         self.transaction:Tx                             = None
         self.validator_address:str                      = ''
-        self.wallet_seed:str                            = ''
-        
-    def create(self, wallet_seed:str, delegator_address:str, validator_address:str):
+
+    def create(self, delegator_address:str, validator_address:str):
         self.delegator_address:str                      = delegator_address
         self.validator_address:str                      = validator_address
-        self.wallet_seed:str                            = wallet_seed
         
         terra = TerraInstance(GAS_PRICE_URI, GAS_ADJUSTMENT)
 
@@ -401,7 +409,7 @@ class WithdrawalTransaction(TransactionCore):
         self.gas_list = terra.gasList()
 
         # Create the wallet based on the calculated key
-        current_wallet_key  = MnemonicKey(wallet_seed)
+        current_wallet_key  = MnemonicKey(self.seed)
         self.current_wallet = self.terra.wallet(current_wallet_key)
 
         # Get the current balances of this wallet
@@ -488,35 +496,6 @@ class DelegationTransaction(TransactionCore):
             
             fee_coins:Coins      = Coins.from_str(fee_bit[0].strip(' "'))
             self.fee = self.calculateFee(requested_fee, fee_coins)
-            # other_coin_list:list = []
-            # has_uluna:int        = 0
-            # has_uusd:int         = 0
-            
-            # coin:Coin
-            # for coin in fee_coins:
-            #     if coin.denom in balances and balances[coin.denom] >= coin.amount:
-                    
-            #         if coin.denom == 'uluna':
-            #             has_uluna = coin.amount
-            #         elif coin.denom == 'uusd':
-            #             has_uusd = coin.amount
-            #         else:
-            #             other_coin_list.append(coin)
-
-            # if has_uluna > 0 or has_uusd > 0 or len(other_coin_list) > 0:
-                
-            #     # @TODO: check that this works for random alts
-            #     if len(other_coin_list) > 0:
-            #         requested_fee.amount = Coin(other_coin_list[0].denom, other_coin_list[0].amount)
-            #     elif has_uusd > 0:
-            #         requested_fee.amount = Coin('uusd', has_uusd)
-            #     else:
-            #         requested_fee.amount = Coin('uluna', has_uluna)
-
-            #     #print ('new requested fee:', requested_fee)
-            #     self.fee = requested_fee
-            # else:
-            #     print ('Not enough funds to pay for delegation!')
 
         else:
             print ('Error parsing logs - no fee suggestions found')
@@ -556,26 +535,6 @@ class DelegationTransaction(TransactionCore):
         self.transaction = tx
 
         return tx
-
-    # def broadcast(self, confirm_tx = False) -> BlockTxBroadcastResult:
-
-    #     result:BlockTxBroadcastResult = self.terra.tx.broadcast(self.transaction)
-    #     self.broadcast_result         = result
-
-    #     # Wait for this transaction to appear in the blockchain
-    #     if confirm_tx == True:
-    #         if not self.broadcast_result.is_tx_error():
-    #             while True:
-    #                 result:dict = self.terra.tx.search([("tx.hash", self.broadcast_result.txhash)])
-                    
-    #                 if len(result['txs']) > 0:
-    #                     print ('Transaction received')
-    #                     break
-                        
-    #                 else:
-    #                     print ('No such tx yet...')
-
-    #     return result
 
 class SwapTransaction():
 
@@ -744,9 +703,9 @@ def main():
         exit()
 
     # Create the wallet object based on the user config file
-    wallet_obj = Wallets().create(user_config)
+    wallet_obj = Wallets().create(user_config, decrypt_password)
     # Validate them - this is how we know if the password is correct
-    wallet_obj.validateAddresses(decrypt_password)
+    #wallet_obj.validateAddresses(decrypt_password)
 
     # Get all the wallets
     user_wallets = wallet_obj.getWallets(True)
@@ -783,29 +742,30 @@ def main():
     for wallet_name in user_wallets:
         wallet:Wallet = user_wallets[wallet_name]
 
-        wallet_seed:str = cryptocode.decrypt(wallet.seed, decrypt_password)
+        #wallet_seed:str = cryptocode.decrypt(wallet.seed, decrypt_password)
 
         print ('####################################')
         print (f'Working on {wallet.name}...')
-
-        delegations = Delegations().create(wallet.address)
-
-        for validator in delegations.details:
+        #delegations = Delegations().create(wallet.address)
+        delegations = wallet.getDelegations()
+ 
+        for validator in delegations:
             #if user_action == USER_ACTION_WITHDRAW or user_action == USER_ACTION_ALL:
             if user_action in [USER_ACTION_WITHDRAW, USER_ACTION_ALL]:
-                uluna_reward:int = delegations.details[validator]['rewards']['uluna']
+                uluna_reward:int = delegations[validator]['rewards']['uluna']
 
                 # Only withdraw the staking rewards if the rewards exceed the threshold (if any)
                 if wallet.formatUluna(uluna_reward, False) > wallet.delegations['threshold']:
                     # Set up the withdrawal object
-                    withdrawal_tx = WithdrawalTransaction().create(wallet_seed, delegations.details[validator]['delegator'], delegations.details[validator]['validator'])
+                    withdrawal_tx = wallet.withdrawal().create(delegations[validator]['delegator'], delegations[validator]['validator'])
+
                     # Simulate it
                     withdrawal_tx.simulate()
                     
-                    if withdrawal_tx.fee.to_data()['amount'][0]['denom'] == 'uluna':
-                        print (f"Fee is {wallet.formatUluna(int(withdrawal_tx.fee.to_data()['amount'][0]['amount']), True)}")
+                    if withdrawal_tx.fee.to_data()['amount']['denom'] == 'uluna':
+                        print (f"Fee is {wallet.formatUluna(int(withdrawal_tx.fee.to_data()['amount']['amount']), True)}")
                     else:
-                        print (f"Fee is {withdrawal_tx.fee.to_data()['amount'][0]['amount']} {withdrawal_tx.fee.to_data()['amount'][0]['denom']}")
+                        print (f"Fee is {withdrawal_tx.fee.to_data()['amount']['amount']} {withdrawal_tx.fee.to_data()['amount']['denom']}")
                         
                     # Now we know what the fee is, we can do it again and finalise it
                     withdrawal_tx.withdraw()
