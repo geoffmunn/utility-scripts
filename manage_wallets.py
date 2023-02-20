@@ -134,21 +134,22 @@ class Wallet:
     def __init__(self):
         self.address:str      = ''
         self.balances:dict    = {}
-        self.details:dict = {}
+        self.details:dict     = {}
         self.name:str         = ''
         self.seed:str         = ''
+        self.swapTx           = SwapTransaction()
         self.terra:LCDClient  = None
         self.validated: bool  = False
-
+        self.withdrawalTx     = WithdrawalTransaction()
+        self.geoffTest = 'geofftest'
+        
     def create(self, name, address, seed, password) -> Wallet:
         self.name    = name
         self.address = address
         self.seed    = cryptocode.decrypt(seed, password)
 
+        print ('creating a terra instance')
         self.terra   = TerraInstance(GAS_PRICE_URI, GAS_ADJUSTMENT).create()
-
-        self.withdrawalTx = WithdrawalTransaction()
-        self.withdrawalTx.seed = self.seed
 
         return self
     
@@ -160,12 +161,12 @@ class Wallet:
     def getBalances(self) -> dict:
         
         # Default pagination options
-        terra = TerraInstance(GAS_PRICE_URI, GAS_ADJUSTMENT).create()
+        #terra = TerraInstance(GAS_PRICE_URI, GAS_ADJUSTMENT).create()
 
         pagOpt:PaginationOptions = PaginationOptions(limit=50, count_total=True)
 
         # Get the current balance in this wallet
-        result, pagination = terra.bank.balance(address = self.address, params = pagOpt)
+        result, pagination = self.terra.bank.balance(address = self.address, params = pagOpt)
 
         # Convert the result into a friendly list
         balances:dict = coin_list(result, {})
@@ -173,7 +174,7 @@ class Wallet:
         # Go through the pagination (if any)
         while pagination['next_key'] is not None:
             pagOpt.key          = pagination["next_key"]
-            result, pagination  = terra.bank.balance(address = self.address, params = pagOpt)
+            result, pagination  = self.terra.bank.balance(address = self.address, params = pagOpt)
             balances            = coin_list(result, balances)
 
         self.balances = balances
@@ -189,8 +190,6 @@ class Wallet:
         # if it's not the same, then the password is wrong or the file has been edited
 
         try:
-            print (self.seed)
-            #generated_wallet_seed:str = cryptocode.decrypt(self.seed, user_password)
             generated_wallet_key     = MnemonicKey(self.seed)
             generated_wallet         = self.terra.wallet(generated_wallet_key)
             generated_wallet_address = generated_wallet.key.acc_address
@@ -202,11 +201,8 @@ class Wallet:
         except:
             return False
 
-
     def getDelegations(self):
         self.details = Delegations().create(self.address)
-
-        print ('delegations:', self.details)
 
         return self.details
     
@@ -220,8 +216,17 @@ class Wallet:
         return lunc
     
     def withdrawal(self):
-        print ('wallet seed 2:', self.seed)
+        # Update the withdrawal class with the data it needs
+        # It will be created via the create() command
+        self.withdrawalTx.seed = self.seed
         return self.withdrawalTx
+    
+    def swap(self):
+
+        self.swapTx.seed = self.seed
+        self.swapTx.balances = self.balances
+
+        return self.swapTx
     
 class Wallets:
     def __init__(self):
@@ -308,12 +313,22 @@ class Delegations(Wallet):
 
         return self.delegations
     
-class TransactionCore(Wallet):
+class TransactionCore():
 
     def __init__(self):
+        
         self.balances:dict = {}
-        self.broadcast_result:BlockTxBroadcastResult    = None
-
+        self.broadcast_result:BlockTxBroadcastResult = None
+        self.current_wallet:Wallet                   = None
+        self.gas_list:json                           = None
+        self.tax_rate:json                           = None
+        self.terra                                   = None
+        
+        terra         = TerraInstance(GAS_PRICE_URI, GAS_ADJUSTMENT)
+        self.terra    = terra.create()
+        self.gas_list = terra.gasList()
+        self.tax_rate = terra.taxRate()
+        
     def calculateFee(self, requested_fee:Fee, fee_coins:Coins) -> Fee:
         other_coin_list:list = []
         has_uluna:int        = 0
@@ -390,7 +405,7 @@ class WithdrawalTransaction(TransactionCore):
 
     def __init__(self):
 
-        self.current_wallet:Wallet                      = None
+        #self.current_wallet:Wallet                      = None
         self.delegator_address:str                      = ''
         self.fee:Fee                                    = None
         self.gas_list:json                              = None
@@ -536,32 +551,30 @@ class DelegationTransaction(TransactionCore):
 
         return tx
 
-class SwapTransaction():
+class SwapTransaction(TransactionCore):
 
-    def __init__(self, wallet_seed:str):
+    def __init__(self, *args, **kwargs):
+
+        super(SwapTransaction, self).__init__(*args, **kwargs)
 
         self.belief_price          = None
-        self.current_wallet:Wallet = None
-        self.exchange_rates:json   = None
         self.fee:Fee               = None
         self.fee_deductables:float = None
-        self.gas_list:json         = None
+        #self.gas_list:json         = None
         self.max_spread:float      = 0.01
         self.tax:float             = None
-        self.tax_rate:json         = None
-        self.terra:LCDClient       = None
+        #self.tax_rate:json         = None
         self.transaction:Tx        = None
-        self.wallet_seed:str       = wallet_seed
         
-        terra         = TerraInstance(GAS_PRICE_URI, GAS_ADJUSTMENT)
-        self.terra    = terra.create()
-        self.gas_list = terra.gasList()
-        self.tax_rate = terra.taxRate()
+
+    def create(self):
 
         # Create the wallet based on the calculated key
-        current_wallet_key  = MnemonicKey(wallet_seed)
+        current_wallet_key  = MnemonicKey(self.seed)
         self.current_wallet = self.terra.wallet(current_wallet_key)
-        
+
+        return self
+
     def beliefPrice(self):
         result = self.terra.wasm.contract_query(UUSD_TO_ULUNA_SWAP_ADDRESS, {"pool": {}})
 
@@ -569,14 +582,15 @@ class SwapTransaction():
 
         return round(belief_price, 18)
 
-    def simulate(self, uusd):
+    def simulate(self):
 
-        self.belief_price    = None
+        self.belief_price    = self.beliefPrice()
         self.fee             = None
         self.tax             = None
-        self.belief_price    = self.beliefPrice()
         self.fee_deductables = None
 
+        uusd = self.balances['uusd']
+        
         # Perform the swap as a simulation, with no fee details
         print ('Simulating a swap!')
         tx:Tx = self.swap(uusd)
@@ -603,14 +617,14 @@ class SwapTransaction():
 
         return tx
     
-    def swap(self, uusd):
+    def swap(self):
 
         if self.belief_price is not None:
 
+            uusd = self.balances['uusd']
+
             if self.tax is not None:
                 uusd = uusd - self.fee_deductables
-
-            #print (f'Requesting to swap {uusd}')
 
             tx_msg = MsgExecuteContract(
                 sender   = self.current_wallet.key.acc_address,
@@ -661,24 +675,24 @@ class SwapTransaction():
             print ('No belief price calculated - did you run the simulation first?')
             exit()
 
-    def broadcast(self) -> BlockTxBroadcastResult:
+    # def broadcast(self) -> BlockTxBroadcastResult:
 
-        result:BlockTxBroadcastResult = self.terra.tx.broadcast(self.transaction)
-        self.broadcast_result         = result
+    #     result:BlockTxBroadcastResult = self.terra.tx.broadcast(self.transaction)
+    #     self.broadcast_result         = result
 
-        # Wait for this transaction to appear in the blockchain
-        if not self.broadcast_result.is_tx_error():
-            while True:
-                result:dict = self.terra.tx.search([("tx.hash", self.broadcast_result.txhash)])
+    #     # Wait for this transaction to appear in the blockchain
+    #     if not self.broadcast_result.is_tx_error():
+    #         while True:
+    #             result:dict = self.terra.tx.search([("tx.hash", self.broadcast_result.txhash)])
                 
-                if len(result['txs']) > 0:
-                    print ('Transaction received')
-                    break
+    #             if len(result['txs']) > 0:
+    #                 print ('Transaction received')
+    #                 break
                     
-                else:
-                    print ('No such tx yet')
+    #             else:
+    #                 print ('No such tx yet')
 
-        return result
+    #     return result
     
 def main():
     
@@ -782,11 +796,11 @@ def main():
             # Swap any udst coins for uluna
             #if user_action == USER_ACTION_SWAP or user_action == USER_ACTION_SWAP_DELEGATE or user_action == USER_ACTION_ALL:
             if user_action in [USER_ACTION_SWAP, USER_ACTION_SWAP_DELEGATE, USER_ACTION_ALL]:
-                print ('Updating balances...')
                 balances = wallet.getBalances()
                 
-                swaps_tx = SwapTransaction(wallet_seed)
-                swaps_tx.simulate(balances['uusd'])
+                swaps_tx = wallet.swap().create()
+
+                swaps_tx.simulate()
                 swaps_tx.swap(balances['uusd'])
                 swaps_tx.broadcast()
 
