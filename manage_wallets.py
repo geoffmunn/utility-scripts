@@ -240,41 +240,7 @@ class Wallets:
         
     def getWallets(self):
        return self.wallets
-
-class TransactionCore:
-
-    def calculateFee(self, requested_fee:Fee, fee_coins:Coins) -> Fee:
-        other_coin_list:list = []
-        has_uluna:int        = 0
-        has_uusd:int         = 0
-        
-        coin:Coin
-        for coin in fee_coins:
-            if coin.denom in self.balances and self.balances[coin.denom] >= coin.amount:
-                
-                if coin.denom == 'uluna':
-                    has_uluna = coin.amount
-                elif coin.denom == 'uusd':
-                    has_uusd = coin.amount
-                else:
-                    other_coin_list.append(coin)
-
-        if has_uluna > 0 or has_uusd > 0 or len(other_coin_list) > 0:
-            
-            # @TODO: check that this works for random alts
-            if len(other_coin_list) > 0:
-                requested_fee.amount = Coin(other_coin_list[0].denom, other_coin_list[0].amount)
-            elif has_uusd > 0:
-                requested_fee.amount = Coin('uusd', has_uusd)
-            else:
-                requested_fee.amount = Coin('uluna', has_uluna)
-
-            #self.fee = requested_fee
-        else:
-            print ('Not enough funds to pay for delegation!')
-
-        return requested_fee
-
+    
 class Delegations:
 
     def __init__(self, wallet_address:str):
@@ -318,6 +284,40 @@ class Delegations:
         
         self.details[validator_name] = {'delegator': delegator_address, 'validator': validator_address, 'rewards': reward_coins}
         
+
+class TransactionCore:
+
+    def calculateFee(self, requested_fee:Fee, fee_coins:Coins) -> Fee:
+        other_coin_list:list = []
+        has_uluna:int        = 0
+        has_uusd:int         = 0
+        
+        coin:Coin
+        for coin in fee_coins:
+            if coin.denom in self.balances and self.balances[coin.denom] >= coin.amount:
+                
+                if coin.denom == 'uluna':
+                    has_uluna = coin.amount
+                elif coin.denom == 'uusd':
+                    has_uusd = coin.amount
+                else:
+                    other_coin_list.append(coin)
+
+        if has_uluna > 0 or has_uusd > 0 or len(other_coin_list) > 0:
+            
+            # @TODO: check that this works for random alts
+            if len(other_coin_list) > 0:
+                requested_fee.amount = Coin(other_coin_list[0].denom, other_coin_list[0].amount)
+            elif has_uusd > 0:
+                requested_fee.amount = Coin('uusd', has_uusd)
+            else:
+                requested_fee.amount = Coin('uluna', has_uluna)
+
+            #self.fee = requested_fee
+        else:
+            print ('Not enough funds to pay for delegation!')
+
+        return requested_fee
     
 class WithdrawalTransaction(TransactionCore):
 
