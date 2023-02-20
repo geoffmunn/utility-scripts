@@ -210,12 +210,29 @@ class Wallet:
         return lunc
     
 class Wallets:
-    def __init__(self, yml_file:dict):
-        self.file         = yml_file
+    def __init__(self):
+        self.file         = None
         self.wallets:dict = {}
         
+        # # Create a list of wallets
+        # for wallet in self.file['wallets']:
+
+        #     delegation_amount:str = ''
+        #     threshold:int         = 0
+
+        #     if 'delegations' in wallet:
+        #         if 'redelegate' in wallet['delegations']:
+        #             delegation_amount = wallet['delegations']['redelegate']
+        #             if 'threshold' in wallet['delegations']:
+        #                 threshold = wallet['delegations']['threshold']
+
+        #     wallet_item:Wallet = Wallet().create(wallet['wallet'], wallet['address'], wallet['seed'])
+        #     wallet_item.updateDelegation(delegation_amount, threshold)
+        #     self.wallets[wallet['wallet']] = wallet_item
+
+    def create(self, yml_file:dict) -> dict:
         # Create a list of wallets
-        for wallet in self.file['wallets']:
+        for wallet in yml_file['wallets']:
 
             delegation_amount:str = ''
             threshold:int         = 0
@@ -230,6 +247,7 @@ class Wallets:
             wallet_item.updateDelegation(delegation_amount, threshold)
             self.wallets[wallet['wallet']] = wallet_item
 
+        return self
 
     def validateAddresses(self, user_password:str) -> bool:
 
@@ -728,9 +746,12 @@ def main():
         print ('The user_config.yml file could not be opened - please run configure_user_wallets.py before running this script')
         exit()
 
-    wallet_obj = Wallets(user_config)
+    # Create the wallet object based on the user config file
+    wallet_obj = Wallets().create(user_config)
+    # Validate them - this is how we know if the password is correct
     wallet_obj.validateAddresses(decrypt_password)
 
+    # Get all the wallets
     user_wallets = wallet_obj.getWallets()
 
     # Check that we have some valid wallets to operate against
