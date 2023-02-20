@@ -230,7 +230,7 @@ class Wallets:
         #     wallet_item.updateDelegation(delegation_amount, threshold)
         #     self.wallets[wallet['wallet']] = wallet_item
 
-    def create(self, yml_file:dict) -> dict:
+    def create(self, yml_file:dict):
         # Create a list of wallets
         for wallet in yml_file['wallets']:
 
@@ -256,8 +256,19 @@ class Wallets:
 
         return True
         
-    def getWallets(self):
-       return self.wallets
+    def getWallets(self, validate):
+       
+        if validate == True:
+            validated_wallets = {}
+            for wallet_name in self.wallets:
+                wallet:Wallet = self.wallets[wallet_name]
+                
+                if wallet.validated == True:
+                    validated_wallets[wallet_name] = wallet
+        else:
+            validated_wallets = self.wallets
+       
+        return validated_wallets
     
 class Delegations:
 
@@ -752,15 +763,7 @@ def main():
     wallet_obj.validateAddresses(decrypt_password)
 
     # Get all the wallets
-    user_wallets = wallet_obj.getWallets()
-
-    # Check that we have some valid wallets to operate against
-    validated_wallets = {}
-    for wallet_name in user_wallets:
-        wallet:Wallet = user_wallets[wallet_name]
-        
-        if wallet.validated == True:
-            validated_wallets[wallet_name] = wallet
+    user_wallets = wallet_obj.getWallets(True)
 
     if user_action == USER_ACTION_WITHDRAW:
         action_string = 'withdrawing rewards'
@@ -773,10 +776,10 @@ def main():
     if user_action == USER_ACTION_ALL:
         action_string = 'withdrawing rewards, swapping USTC etc for LUNC, and then delegating everything'
 
-    if len(validated_wallets) > 0:
+    if len(user_wallets) > 0:
         print (f'You will be {action_string} on the following wallets:')
 
-        for wallet_name in validated_wallets:
+        for wallet_name in user_wallets:
             print (f'  * {wallet_name}')
         
         yes_choices:list    = ['yes', 'y', 'true']
@@ -791,8 +794,8 @@ def main():
         exit()
 
     # Now start doing stuff
-    for wallet_name in validated_wallets:
-        wallet:Wallet = validated_wallets[wallet_name]
+    for wallet_name in user_wallets:
+        wallet:Wallet = user_wallets[wallet_name]
 
         wallet_seed:str = cryptocode.decrypt(wallet.seed, decrypt_password)
 
