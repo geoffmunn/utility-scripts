@@ -141,14 +141,11 @@ class Wallet:
         self.terra:LCDClient  = None
         self.validated: bool  = False
         self.withdrawalTx     = WithdrawalTransaction()
-        self.geoffTest = 'geofftest'
         
     def create(self, name, address, seed, password) -> Wallet:
         self.name    = name
         self.address = address
         self.seed    = cryptocode.decrypt(seed, password)
-
-        print ('creating a terra instance')
         self.terra   = TerraInstance(GAS_PRICE_URI, GAS_ADJUSTMENT).create()
 
         return self
@@ -161,8 +158,6 @@ class Wallet:
     def getBalances(self) -> dict:
         
         # Default pagination options
-        #terra = TerraInstance(GAS_PRICE_URI, GAS_ADJUSTMENT).create()
-
         pagOpt:PaginationOptions = PaginationOptions(limit=50, count_total=True)
 
         # Get the current balance in this wallet
@@ -219,11 +214,12 @@ class Wallet:
         # Update the withdrawal class with the data it needs
         # It will be created via the create() command
         self.withdrawalTx.seed = self.seed
+
         return self.withdrawalTx
     
     def swap(self):
 
-        self.swapTx.seed = self.seed
+        self.swapTx.seed     = self.seed
         self.swapTx.balances = self.balances
 
         return self.swapTx
@@ -405,12 +401,12 @@ class WithdrawalTransaction(TransactionCore):
 
     def __init__(self):
 
-        #self.current_wallet:Wallet                      = None
+        self.current_wallet:Wallet                      = None
         self.delegator_address:str                      = ''
         self.fee:Fee                                    = None
         self.gas_list:json                              = None
         self.seed:str                                   = ''
-        self.terra:LCDClient                            = None
+        #self.terra:LCDClient                            = None
         self.transaction:Tx                             = None
         self.validator_address:str                      = ''
 
@@ -478,7 +474,7 @@ class DelegationTransaction(TransactionCore):
         self.fee:Fee                                    = None
         self.gas_list:json                              = None
         self.sequence:int                               = None
-        self.terra:LCDClient                            = None
+        #self.terra:LCDClient                            = None
         self.transaction:Tx                             = None
         self.validator_address:str                      = validator_address
         self.wallet_seed:str                            = wallet_seed
@@ -557,6 +553,7 @@ class SwapTransaction(TransactionCore):
 
         super(SwapTransaction, self).__init__(*args, **kwargs)
 
+        self.current_wallet:Wallet = None
         self.belief_price          = None
         self.fee:Fee               = None
         self.fee_deductables:float = None
@@ -760,11 +757,9 @@ def main():
 
         print ('####################################')
         print (f'Working on {wallet.name}...')
-        #delegations = Delegations().create(wallet.address)
         delegations = wallet.getDelegations()
  
         for validator in delegations:
-            #if user_action == USER_ACTION_WITHDRAW or user_action == USER_ACTION_ALL:
             if user_action in [USER_ACTION_WITHDRAW, USER_ACTION_ALL]:
                 uluna_reward:int = delegations[validator]['rewards']['uluna']
 
@@ -794,20 +789,19 @@ def main():
                         print (f'Tx Hash: {withdrawal_tx.broadcast_result.txhash}')
 
             # Swap any udst coins for uluna
-            #if user_action == USER_ACTION_SWAP or user_action == USER_ACTION_SWAP_DELEGATE or user_action == USER_ACTION_ALL:
             if user_action in [USER_ACTION_SWAP, USER_ACTION_SWAP_DELEGATE, USER_ACTION_ALL]:
-                balances = wallet.getBalances()
+                # Update the balances so we know we have the correct amount
+                wallet.getBalances()
                 
                 swaps_tx = wallet.swap().create()
 
                 swaps_tx.simulate()
-                swaps_tx.swap(balances['uusd'])
+                swaps_tx.swap()
                 swaps_tx.broadcast()
 
                 print (f'Tx Hash: {swaps_tx.broadcast_result.txhash}')
                     
             # Redelegate anything we might have
-            #if user_action == USER_ACTION_DELEGATE or user_action == USER_ACTION_SWAP_DELEGATE or user_action == USER_ACTION_ALL:
             if user_action in [USER_ACTION_DELEGATE, USER_ACTION_SWAP_DELEGATE, USER_ACTION_ALL]:
                 # Update the balances after having done withdrawals and swaps
                 print ('Updating balances...')
