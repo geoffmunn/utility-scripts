@@ -316,6 +316,10 @@ class Delegations:
 
 class TransactionCore:
 
+    def __init__(self):
+        self.balances:dict = {}
+        self.broadcast_result:BlockTxBroadcastResult    = None
+
     def calculateFee(self, requested_fee:Fee, fee_coins:Coins) -> Fee:
         other_coin_list:list = []
         has_uluna:int        = 0
@@ -342,18 +346,56 @@ class TransactionCore:
             else:
                 requested_fee.amount = Coin('uluna', has_uluna)
 
-            #self.fee = requested_fee
         else:
             print ('Not enough funds to pay for delegation!')
 
         return requested_fee
     
+    def broadcast(self) -> BlockTxBroadcastResult:
+
+        result:BlockTxBroadcastResult = self.terra.tx.broadcast(self.transaction)
+        self.broadcast_result         = result
+
+        # Wait for this transaction to appear in the blockchain
+        if not self.broadcast_result.is_tx_error():
+            while True:
+                result:dict = self.terra.tx.search([("tx.hash", self.broadcast_result.txhash)])
+                
+                if len(result['txs']) > 0:
+                    print ('Transaction received')
+                    break
+                    
+                else:
+                    print ('No such tx yet...')
+
+        return result
+    
+    def updateBalances(self) -> bool:
+
+        # Default pagination options
+        pagOpt:PaginationOptions = PaginationOptions(limit=50, count_total=True)
+        wallet_address           = self.current_wallet.key.acc_address
+
+        # Get the current balance in this wallet
+        result, pagination       = self.terra.bank.balance(address = wallet_address, params = pagOpt)
+
+        # Convert the result into a friendly list
+        balances:dict            = coin_list(result, {})
+
+        # Go through the pagination (if any)
+        while pagination['next_key'] is not None:
+            pagOpt.key          = pagination["next_key"]
+            result, pagination  = self.terra.bank.balance(address = wallet_address, params = pagOpt)
+            balances            = coin_list(result, balances)
+
+        self.balances = balances
+        
+        return True
+    
 class WithdrawalTransaction(TransactionCore):
 
     def __init__(self):
 
-        self.balances:dict                              = {}
-        self.broadcast_result:BlockTxBroadcastResult    = None
         self.current_wallet:Wallet                      = None
         self.delegator_address:str                      = ''
         self.fee:Fee                                    = None
@@ -381,28 +423,6 @@ class WithdrawalTransaction(TransactionCore):
         self.updateBalances()
 
         return self
-
-    def updateBalances(self) -> bool:
-
-        # Default pagination options
-        pagOpt:PaginationOptions = PaginationOptions(limit=50, count_total=True)
-        wallet_address           = self.current_wallet.key.acc_address
-
-        # Get the current balance in this wallet
-        result, pagination       = self.terra.bank.balance(address = wallet_address, params = pagOpt)
-
-        # Convert the result into a friendly list
-        balances:dict            = coin_list(result, {})
-
-        # Go through the pagination (if any)
-        while pagination['next_key'] is not None:
-            pagOpt.key          = pagination["next_key"]
-            result, pagination  = self.terra.bank.balance(address = wallet_address, params = pagOpt)
-            balances            = coin_list(result, balances)
-
-        self.balances = balances
-        
-        return True
     
     def simulate(self) -> Tx:
         
@@ -440,30 +460,11 @@ class WithdrawalTransaction(TransactionCore):
 
         return tx
 
-    def broadcast(self) -> BlockTxBroadcastResult:
-
-        result:BlockTxBroadcastResult = self.terra.tx.broadcast(self.transaction)
-        self.broadcast_result         = result
-
-        # Wait for this transaction to appear in the blockchain
-        if not self.broadcast_result.is_tx_error():
-            while True:
-                result:dict = self.terra.tx.search([("tx.hash", self.broadcast_result.txhash)])
-                
-                if len(result['txs']) > 0:
-                    print ('Transaction received')
-                    break
-                    
-                else:
-                    print ('No such tx yet...')
-
-        return result
-
 class DelegationTransaction(TransactionCore):
 
     def __init__(self, wallet_seed:str, delegator_address:str, validator_address:str):
 
-        self.broadcast_result:BlockTxBroadcastResult    = None
+        #self.broadcast_result:BlockTxBroadcastResult    = None
         self.current_wallet:Wallet                      = None
         self.delegator_address:str                      = delegator_address
         self.fee:Fee                                    = None
@@ -571,25 +572,25 @@ class DelegationTransaction(TransactionCore):
 
         return tx
 
-    def broadcast(self, confirm_tx = False) -> BlockTxBroadcastResult:
+    # def broadcast(self, confirm_tx = False) -> BlockTxBroadcastResult:
 
-        result:BlockTxBroadcastResult = self.terra.tx.broadcast(self.transaction)
-        self.broadcast_result         = result
+    #     result:BlockTxBroadcastResult = self.terra.tx.broadcast(self.transaction)
+    #     self.broadcast_result         = result
 
-        # Wait for this transaction to appear in the blockchain
-        if confirm_tx == True:
-            if not self.broadcast_result.is_tx_error():
-                while True:
-                    result:dict = self.terra.tx.search([("tx.hash", self.broadcast_result.txhash)])
+    #     # Wait for this transaction to appear in the blockchain
+    #     if confirm_tx == True:
+    #         if not self.broadcast_result.is_tx_error():
+    #             while True:
+    #                 result:dict = self.terra.tx.search([("tx.hash", self.broadcast_result.txhash)])
                     
-                    if len(result['txs']) > 0:
-                        print ('Transaction received')
-                        break
+    #                 if len(result['txs']) > 0:
+    #                     print ('Transaction received')
+    #                     break
                         
-                    else:
-                        print ('No such tx yet...')
+    #                 else:
+    #                     print ('No such tx yet...')
 
-        return result
+    #     return result
 
 class SwapTransaction():
 
@@ -816,8 +817,6 @@ def main():
                     # Simulate it
                     withdrawal_tx.simulate()
                     
-                    print ('TEST EXIT')
-                    exit()
                     if withdrawal_tx.fee.to_data()['amount'][0]['denom'] == 'uluna':
                         print (f"Fee is {wallet.formatUluna(int(withdrawal_tx.fee.to_data()['amount'][0]['amount']), True)}")
                     else:
