@@ -213,22 +213,6 @@ class Wallets:
     def __init__(self):
         self.file         = None
         self.wallets:dict = {}
-        
-        # # Create a list of wallets
-        # for wallet in self.file['wallets']:
-
-        #     delegation_amount:str = ''
-        #     threshold:int         = 0
-
-        #     if 'delegations' in wallet:
-        #         if 'redelegate' in wallet['delegations']:
-        #             delegation_amount = wallet['delegations']['redelegate']
-        #             if 'threshold' in wallet['delegations']:
-        #                 threshold = wallet['delegations']['threshold']
-
-        #     wallet_item:Wallet = Wallet().create(wallet['wallet'], wallet['address'], wallet['seed'])
-        #     wallet_item.updateDelegation(delegation_amount, threshold)
-        #     self.wallets[wallet['wallet']] = wallet_item
 
     def create(self, yml_file:dict):
         # Create a list of wallets
@@ -272,27 +256,8 @@ class Wallets:
     
 class Delegations:
 
-    def __init__(self, wallet_address:str):
-        
-        self.details:dict = {}
-
-        terra = TerraInstance(GAS_PRICE_URI, GAS_ADJUSTMENT).create()
-
-        pagOpt:PaginationOptions = PaginationOptions(limit=50, count_total=True)
-        result, pagination       = terra.staking.delegations(delegator = wallet_address, params = pagOpt)
-
-        delegator:Delegation 
-        for delegator in result:
-            self.__iter_result__(terra, delegator)
-
-        while pagination['next_key'] is not None:
-
-            pagOpt.key          = pagination['next_key']
-            result, pagination  = terra.staking.delegations(delegator = wallet_address, params = pagOpt)
-
-            delegator:Delegation 
-            for delegator in result:
-                self.__iter_result__(terra, delegator)
+    def __init__(self):        
+        self.delegations:dict = {}
 
     def __iter_result__(self, terra:LCDClient, delegator):
         
@@ -311,9 +276,29 @@ class Delegations:
         print (f'Withdrawing rewards from {validator_name}')
         print (f'This validator has a {validator_commission}% commission')
         
-        self.details[validator_name] = {'delegator': delegator_address, 'validator': validator_address, 'rewards': reward_coins}
+        self.delegations[validator_name] = {'delegator': delegator_address, 'validator': validator_address, 'rewards': reward_coins}
         
+    def create(self, wallet_address:str):
+        terra = TerraInstance(GAS_PRICE_URI, GAS_ADJUSTMENT).create()
 
+        pagOpt:PaginationOptions = PaginationOptions(limit=50, count_total=True)
+        result, pagination       = terra.staking.delegations(delegator = wallet_address, params = pagOpt)
+
+        delegator:Delegation 
+        for delegator in result:
+            self.__iter_result__(terra, delegator)
+
+        while pagination['next_key'] is not None:
+
+            pagOpt.key          = pagination['next_key']
+            result, pagination  = terra.staking.delegations(delegator = wallet_address, params = pagOpt)
+
+            delegator:Delegation 
+            for delegator in result:
+                self.__iter_result__(terra, delegator)
+
+        return self.delegations
+    
 class TransactionCore:
 
     def __init__(self):
@@ -803,7 +788,7 @@ def main():
         print ('####################################')
         print (f'Working on {wallet.name}...')
 
-        delegations = Delegations(wallet.address)
+        delegations = Delegations().create(wallet.address)
 
         for validator in delegations.details:
             #if user_action == USER_ACTION_WITHDRAW or user_action == USER_ACTION_ALL:
