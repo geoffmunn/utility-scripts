@@ -134,6 +134,7 @@ class Wallet:
     def __init__(self):
         self.address:str      = ''
         self.balances:dict    = {}
+        self.delegateTx       = DelegationTransaction()
         self.details:dict     = {}
         self.name:str         = ''
         self.seed:str         = ''
@@ -224,13 +225,22 @@ class Wallet:
         return self.withdrawalTx
     
     def swap(self):
-        # Update the withdrawal class with the data it needs
+        # Update the swap class with the data it needs
         # It will be created via the create() command
 
         self.swapTx.seed     = self.seed
         self.swapTx.balances = self.balances
 
         return self.swapTx
+    
+    def delegate(self):
+        # Update the delegate class with the data it needs
+        # It will be created via the create() command
+
+        self.delegateTx.seed     = self.seed
+        self.delegateTx.balances = self.balances
+
+        return self.delegateTx
     
 class Wallets:
     def __init__(self):
@@ -335,7 +345,6 @@ class TransactionCore():
         
     def calculateFee(self, requested_fee:Fee, fee_coins:Coins) -> Fee:
 
-        print ('balance to compare against:', self.balances)
         other_coin_list:list = []
         has_uluna:int        = 0
         has_uusd:int         = 0
@@ -474,30 +483,41 @@ class WithdrawalTransaction(TransactionCore):
 
 class DelegationTransaction(TransactionCore):
 
-    def __init__(self, wallet_seed:str, delegator_address:str, validator_address:str, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
 
         super(DelegationTransaction, self).__init__(*args, **kwargs)
 
         #self.broadcast_result:BlockTxBroadcastResult    = None
         self.current_wallet:Wallet                      = None
-        self.delegator_address:str                      = delegator_address
+        #self.delegator_address:str                      = delegator_address
         self.fee:Fee                                    = None
         self.gas_list:json                              = None
         self.sequence:int                               = None
         #self.terra:LCDClient                            = None
         self.transaction:Tx                             = None
-        self.validator_address:str                      = validator_address
-        self.wallet_seed:str                            = wallet_seed
+        #self.validator_address:str                      = validator_address
+        #self.wallet_seed:str                            = wallet_seed
         
-        terra = TerraInstance(GAS_PRICE_URI, GAS_ADJUSTMENT)
-        self.terra = terra.create()
-        self.gas_list = terra.gasList()
+        # terra = TerraInstance(GAS_PRICE_URI, GAS_ADJUSTMENT)
+        # self.terra = terra.create()
+        # self.gas_list = terra.gasList()
+
+        # # Create the wallet based on the calculated key
+        # current_wallet_key         = MnemonicKey(wallet_seed)
+        # self.current_wallet:Wallet = self.terra.wallet(current_wallet_key)
+
+    def create(self, delegator_address:str, validator_address:str):
+
+        self.delegator_address = delegator_address
+        self.validator_address = validator_address
 
         # Create the wallet based on the calculated key
-        current_wallet_key         = MnemonicKey(wallet_seed)
-        self.current_wallet:Wallet = self.terra.wallet(current_wallet_key)
+        current_wallet_key  = MnemonicKey(self.seed)
+        self.current_wallet = self.terra.wallet(current_wallet_key)
 
-    def simulate(self, redelegated_uluna:int, balances:dict) -> bool:
+        return self
+    
+    def simulate(self, redelegated_uluna:int) -> bool:
         
         # Set the fee to be None so it is simulated
         self.fee      = None
@@ -560,7 +580,7 @@ class SwapTransaction(TransactionCore):
 
         super(SwapTransaction, self).__init__(*args, **kwargs)
 
-        self.current_wallet:Wallet = None
+        #self.current_wallet:Wallet = None
         self.belief_price          = None
         self.fee:Fee               = None
         self.fee_deductables:float = None
@@ -570,7 +590,6 @@ class SwapTransaction(TransactionCore):
         #self.tax_rate:json         = None
         self.transaction:Tx        = None
         
-
     def create(self):
 
         # Create the wallet based on the calculated key
@@ -793,7 +812,7 @@ def main():
                             print (f'Tx Hash: {withdrawal_tx.broadcast_result.txhash}')
                     else:
                         print ('The withdrawal could not be completed.')
-                        
+
             # Swap any udst coins for uluna
             if user_action in [USER_ACTION_SWAP, USER_ACTION_SWAP_DELEGATE, USER_ACTION_ALL]:
                 # Update the balances so we know we have the correct amount
@@ -821,39 +840,46 @@ def main():
             if user_action in [USER_ACTION_DELEGATE, USER_ACTION_SWAP_DELEGATE, USER_ACTION_ALL]:
                 # Update the balances after having done withdrawals and swaps
                 print ('Updating balances...')
-                balances = wallet.getBalances()
-                uluna_reward:int = balances['uluna']            
-                
-                delegated_uluna = int(uluna_reward - (WITHDRAWAL_REMAINDER * 1000000))
-                if delegated_uluna > 0:
-                    print (f'Delegating {wallet.formatUluna(delegated_uluna, True)}')
+                wallet.getBalances()
+                #uluna_reward:int = balances['uluna']
+                if 'uluna' in wallet.balances:            
+                    uluna_balance = wallet.balances['uluna']
+                    delegated_uluna = int(uluna_balance - (WITHDRAWAL_REMAINDER * 1000000))
+                    if delegated_uluna > 0:
+                        print (f'Delegating {wallet.formatUluna(delegated_uluna, True)}')
 
-                    delegation_tx = DelegationTransaction(wallet_seed, delegations.details[validator]['delegator'], delegations.details[validator]['validator'])
-                    delegation_tx.simulate(delegated_uluna, balances)
-                    fee_coin:Coin = withdrawal_tx.fee.amount
-                    
-                    if fee_coin.denom == 'uluna':
-                        print (f"Fee is {wallet.formatUluna(int(fee_coin.amount), True)}")
+                        delegation_tx = wallet.delegate().create(delegations[validator]['delegator'], delegations[validator]['validator'])
+
+                        # Simulate it
+                        result = delegation_tx.simulate(delegated_uluna)
+
+                        if result == True:
+                            fee_coin:Coin = delegation_tx.fee.amount
+                            
+                            if fee_coin.denom == 'uluna':
+                                print (f"Fee is {wallet.formatUluna(int(fee_coin.amount), True)}")
+                            else:
+                                print (f"Fee is {fee_coin.amount} {fee_coin.denom}")
+                                
+                            # Now we know what the fee is, we can do it again and finalise it
+                            delegation_tx.delegate(delegated_uluna)
+                            
+                            delegation_tx.broadcast()
+                        
+                            if delegation_tx.broadcast_result.is_tx_error():
+                                print ('Withdrawal failed, an error occurred')
+                                print (delegation_tx.broadcast_result.raw_log)
+                        
+                            else:
+                                print (f'Withdrawn amount: {wallet.formatUluna(delegated_uluna, True)}')
+                                print (f'Tx Hash: {delegation_tx.broadcast_result.txhash}')
+                        else:
+                            print ('The withdrawal could not be completed.')
+
                     else:
-                        print (f"Fee is {fee_coin.amount} {fee_coin.denom}")
-
-                    #print (f"Delegation fee is {wallet.formatUluna(int(delegation_tx.fee.to_data()['amount']['amount']), True)}")
-
-                    delegation_tx.delegate(delegated_uluna)
-                    delegation_tx.broadcast(True)
-                    
-                    print (f'Tx Hash: {delegation_tx.broadcast_result.txhash}')
-                    
-                    # Lack of funds:
-                    if delegation_tx.broadcast_result.is_tx_error():
-                        print ('Delegation failed, an error occurred')
-                        print (delegation_tx.broadcast_result.raw_log)
-                    else:
-                        print ('Completed!')
-
+                        print ('Delegation error: amount is not greater than zero')
                 else:
-                    print ('Delegation error: amount is not greater than zero')
-            
+                    print ('No LUNC to delegate!')
             print ('------------------------------------')
             
     print ('Done!')
