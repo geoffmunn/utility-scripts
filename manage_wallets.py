@@ -385,12 +385,10 @@ class WithdrawalTransaction(TransactionCore):
         # Store the fee so we can actually make the transaction via self.withdraw()
         # We need to go through fee list to find a currency that also exists in the correct amount in this wallet's balances
         # Fee(gas_limit=1471956, amount=Coins('1398359uaud,1398359ucad,1030370uchf,7212585ucny,6623802udkk,919973ueur,809576ugbp,8610943uhkd,16044320400uidr,80074407uinr,120479599ujpy,1251162600ukrw,41693154uluna,3154188275umnt,4415868umyr,9199725unok,55934328uphp,772321usdr,9199725usek,1471956usgd,34002184uthb,29439120utwd,1103967uusd'), payer='', granter='')
+        requested_fee:Fee = tx.auth_info.fee
+        fee_coins:Coins   = requested_fee.amount
+        self.fee          = self.calculateFee(requested_fee, fee_coins)
 
-        requested_fee:Fee    = tx.auth_info.fee
-        fee_coins:Coins = requested_fee.amount
-        self.fee = self.calculateFee(requested_fee, fee_coins)
-
-        print (self.fee)
         # TODO: how do we handle unavailable funds?
         return tx
 
@@ -432,7 +430,7 @@ class WithdrawalTransaction(TransactionCore):
 
         return result
 
-class DelegationTransaction():
+class DelegationTransaction(TransactionCore):
 
     def __init__(self, wallet_seed:str, delegator_address:str, validator_address:str):
 
@@ -474,35 +472,36 @@ class DelegationTransaction():
             fee_bit = bits[1].split('=')
             
             fee_coins:Coins      = Coins.from_str(fee_bit[0].strip(' "'))
-            other_coin_list:list = []
-            has_uluna:int        = 0
-            has_uusd:int         = 0
+            self.fee = self.calculateFee(requested_fee, fee_coins)
+            # other_coin_list:list = []
+            # has_uluna:int        = 0
+            # has_uusd:int         = 0
             
-            coin:Coin
-            for coin in fee_coins:
-                if coin.denom in balances and balances[coin.denom] >= coin.amount:
+            # coin:Coin
+            # for coin in fee_coins:
+            #     if coin.denom in balances and balances[coin.denom] >= coin.amount:
                     
-                    if coin.denom == 'uluna':
-                        has_uluna = coin.amount
-                    elif coin.denom == 'uusd':
-                        has_uusd = coin.amount
-                    else:
-                        other_coin_list.append(coin)
+            #         if coin.denom == 'uluna':
+            #             has_uluna = coin.amount
+            #         elif coin.denom == 'uusd':
+            #             has_uusd = coin.amount
+            #         else:
+            #             other_coin_list.append(coin)
 
-            if has_uluna > 0 or has_uusd > 0 or len(other_coin_list) > 0:
+            # if has_uluna > 0 or has_uusd > 0 or len(other_coin_list) > 0:
                 
-                # @TODO: check that this works for random alts
-                if len(other_coin_list) > 0:
-                    requested_fee.amount = Coin(other_coin_list[0].denom, other_coin_list[0].amount)
-                elif has_uusd > 0:
-                    requested_fee.amount = Coin('uusd', has_uusd)
-                else:
-                    requested_fee.amount = Coin('uluna', has_uluna)
+            #     # @TODO: check that this works for random alts
+            #     if len(other_coin_list) > 0:
+            #         requested_fee.amount = Coin(other_coin_list[0].denom, other_coin_list[0].amount)
+            #     elif has_uusd > 0:
+            #         requested_fee.amount = Coin('uusd', has_uusd)
+            #     else:
+            #         requested_fee.amount = Coin('uluna', has_uluna)
 
-                #print ('new requested fee:', requested_fee)
-                self.fee = requested_fee
-            else:
-                print ('Not enough funds to pay for delegation!')
+            #     #print ('new requested fee:', requested_fee)
+            #     self.fee = requested_fee
+            # else:
+            #     print ('Not enough funds to pay for delegation!')
 
         else:
             print ('Error parsing logs - no fee suggestions found')
