@@ -334,9 +334,13 @@ class TransactionCore():
         self.balances:dict = {}
         self.broadcast_result:BlockTxBroadcastResult = None
         self.current_wallet:Wallet                   = None
+        self.fee:Fee                                 = None
         self.gas_list:json                           = None
+        self.seed:str                                = ''
+        self.sequence:int                            = None
         self.tax_rate:json                           = None
         self.terra                                   = None
+        self.transaction:Tx                          = None
         
         terra         = TerraInstance(GAS_PRICE_URI, GAS_ADJUSTMENT)
         self.terra    = terra.create()
@@ -422,13 +426,8 @@ class WithdrawalTransaction(TransactionCore):
 
         super(WithdrawalTransaction, self).__init__(*args, **kwargs)
 
-        self.current_wallet:Wallet                      = None
-        self.delegator_address:str                      = ''
-        self.fee:Fee                                    = None
-        self.gas_list:json                              = None
-        self.seed:str                                   = ''
-        self.transaction:Tx                             = None
-        self.validator_address:str                      = ''
+        self.delegator_address:str = ''
+        self.validator_address:str = ''
 
     def create(self, delegator_address:str, validator_address:str):
 
@@ -448,9 +447,13 @@ class WithdrawalTransaction(TransactionCore):
         self.sequence = self.current_wallet.sequence()
         self.withdraw()
 
+        # Store the transaction
         tx:Tx = self.transaction
 
+        # Get the stub of the requested fee so we can adjust it
         requested_fee = tx.auth_info.fee
+
+        # Broadcast the transaction (with no fee) so we can get the actual fee options in the error
         simulation_result:BlockTxBroadcastResult = self.broadcast()
         
         bits = simulation_result.raw_log.split('required:')
@@ -472,45 +475,41 @@ class WithdrawalTransaction(TransactionCore):
                 validator_address = self.validator_address
             )
             
-            tx:Tx = self.current_wallet.create_and_sign_tx(
-                CreateTxOptions(
-                    fee         = self.fee,
-                    gas_prices  = self.gas_list,
-                    msgs        = [msg]
-                )
+            options = CreateTxOptions(
+                fee         = self.fee,
+                gas_prices  = self.gas_list,
+                msgs        = [msg]
             )
 
+            # This process often generates sequence errors. If we get a response error, then
+            # bump up the sequence number by one and try again.
+            while True:
+                try:
+                    tx:Tx = self.current_wallet.create_and_sign_tx(options)
+                    break
+                except LCDResponseError as err:
+                    self.sequence    = self.sequence + 1
+                    options.sequence = self.sequence
+                except Exception as err:
+                    print ('Random error has occurred')
+                    print (err)
+                    break
+
+            # Store the transaction
             self.transaction = tx
+
             return True
         except:
             return False
         
-
 class DelegationTransaction(TransactionCore):
 
     def __init__(self, *args, **kwargs):
 
         super(DelegationTransaction, self).__init__(*args, **kwargs)
 
-        #self.broadcast_result:BlockTxBroadcastResult    = None
-        self.current_wallet:Wallet                      = None
-        #self.delegator_address:str                      = delegator_address
-        self.fee:Fee                                    = None
-        self.gas_list:json                              = None
-        self.sequence:int                               = None
-        #self.terra:LCDClient                            = None
-        self.transaction:Tx                             = None
-        #self.validator_address:str                      = validator_address
-        #self.wallet_seed:str                            = wallet_seed
+        self.transaction:Tx        = None
         
-        # terra = TerraInstance(GAS_PRICE_URI, GAS_ADJUSTMENT)
-        # self.terra = terra.create()
-        # self.gas_list = terra.gasList()
-
-        # # Create the wallet based on the calculated key
-        # current_wallet_key         = MnemonicKey(wallet_seed)
-        # self.current_wallet:Wallet = self.terra.wallet(current_wallet_key)
-
     def create(self, delegator_address:str, validator_address:str):
 
         self.delegator_address = delegator_address
@@ -529,11 +528,13 @@ class DelegationTransaction(TransactionCore):
         self.sequence = self.current_wallet.sequence()
         self.delegate(redelegated_uluna)
 
+        # Store the transaction
         tx:Tx = self.transaction
 
-        # Store the fee so we can actually make the transaction via self.delegate()
+        # Get the stub of the requested fee so we can adjust it
         requested_fee = tx.auth_info.fee
 
+        # Broadcast the transaction (with no fee) so we can get the actual fee options in the error
         simulation_result:BlockTxBroadcastResult = self.broadcast()
 
         bits = simulation_result.raw_log.split('required:')
@@ -578,6 +579,7 @@ class DelegationTransaction(TransactionCore):
                     print (err)
                     break
 
+            # Store the transaction
             self.transaction = tx
 
             return True
@@ -590,15 +592,10 @@ class SwapTransaction(TransactionCore):
 
         super(SwapTransaction, self).__init__(*args, **kwargs)
 
-        #self.current_wallet:Wallet = None
         self.belief_price          = None
-        self.fee:Fee               = None
         self.fee_deductables:float = None
-        #self.gas_list:json         = None
         self.max_spread:float      = 0.01
         self.tax:float             = None
-        #self.tax_rate:json         = None
-        self.transaction:Tx        = None
         
     def create(self):
 
@@ -828,7 +825,7 @@ def main():
                         print ('The withdrawal could not be completed')
                 else:
                     print ('The amount of LUNC in this wallet does not exceed the withdrawal threshold')
-                    
+
             # Swap any udst coins for uluna
             if user_action in [USER_ACTION_SWAP, USER_ACTION_SWAP_DELEGATE, USER_ACTION_ALL]:
                 # Update the balances so we know we have the correct amount
