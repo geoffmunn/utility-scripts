@@ -826,7 +826,9 @@ def main():
                                 print (f'Tx Hash: {withdrawal_tx.broadcast_result.txhash}')
                     else:
                         print ('The withdrawal could not be completed')
-
+                else:
+                    print ('The amount of LUNC in this wallet does not exceed the withdrawal threshold')
+                    
             # Swap any udst coins for uluna
             if user_action in [USER_ACTION_SWAP, USER_ACTION_SWAP_DELEGATE, USER_ACTION_ALL]:
                 # Update the balances so we know we have the correct amount
