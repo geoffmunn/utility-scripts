@@ -832,11 +832,11 @@ def main():
                 # Update the balances so we know we have the correct amount
                 wallet.getBalances()
                 
-                if 'ustc' in wallet.balances:
-                    swap_amount = wallet.balances['ustc']
+                if 'uusd' in wallet.balances:
+                    swap_amount = wallet.balances['uusd']
 
                     if swap_amount > 0:
-                        print (f'Swapping {swap_amount} UUST for LUNC')
+                        print (f'Swapping {swap_amount} USTC for LUNC')
 
                         # Set up the basic swap object
                         swaps_tx = wallet.swap().create()
@@ -875,6 +875,7 @@ def main():
                 if 'uluna' in wallet.balances:            
                     uluna_balance = wallet.balances['uluna']
                     delegated_uluna = int(uluna_balance - (WITHDRAWAL_REMAINDER * 1000000))
+
                     if delegated_uluna > 0:
                         print (f'Delegating {wallet.formatUluna(delegated_uluna, True)}')
 
