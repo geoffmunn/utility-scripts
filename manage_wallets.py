@@ -623,11 +623,7 @@ class SwapTransaction(TransactionCore):
         self.tax             = None
         self.fee_deductables = None
 
-        #if 'uusd' in self.balances:
-        #    uusd = self.balances['uusd']
-            
         # Perform the swap as a simulation, with no fee details
-        print ('Simulating a swap!')
         self.swap()
         
         tx:Tx = self.transaction
@@ -635,78 +631,27 @@ class SwapTransaction(TransactionCore):
         # Get the fee details
         requested_fee:Fee = tx.auth_info.fee
         
-        #Fee(gas_limit=711756, amount=Coins('533817uusd'), payer='', granter='')
-        
-        # Broadcast the transaction (with no fee) so we can get the actual fee options in the error
-        # simulation_result:BlockTxBroadcastResult = self.broadcast()
-
-        # bits = simulation_result.raw_log.split('required:')
-        
-        # #for test in bits:
-        # #    print (test)
-        # #    print ('----')
-
-        # #print ("\n")
-        # if len(bits) > 1:
-        #     fee_bit         = bits[1].split('=')
-        # #    print ('fee bit:', fee_bit)
-        #     fee_coins:Coins = Coins.from_str(fee_bit[0].strip(' "'))
-        #     self.fee        = self.calculateFee(requested_fee, fee_coins, True)
-        # else:
-        #     print ('Error parsing logs - no fee suggestions found')
-        
-        # # Get the fee details:
-        # fee_coin:Coin = requested_fee.amount
-        
-        # fee_amount = fee_coin.amount
-        # fee_denom = fee_coin.denom
-
-        # # Take the first fee payment option
-        # self.tax = fee_amount * float(self.tax_rate['tax_rate'])
-        
-        # # Build a fee object with 
-        # new_coin:Coin = Coin(fee_denom, int(fee_coin.amount + self.tax))
-        # requested_fee.amount = new_coin
-
-        # # This will be used by the swap function next time we call it
-        # self.fee = requested_fee
-        
-        # # Store this so we can deduct it off the total amount to swap
-        # self.fee_deductables = int(fee_coin.amount + self.tax)
-
-        # print ('new fee:', self.fee)
-        #Once the fee coins problem is fixed, the following lines can be used:
         # Broadcast the transaction (with no fee) so we can get the actual fee options in the error
         simulation_result:BlockTxBroadcastResult = self.broadcast()
 
-        bits = simulation_result.raw_log.split('required:')
-        
-        if len(bits) > 1:
-            fee_bit         = bits[1].split('=')
-            fee_coins:Coins = Coins.from_str(fee_bit[0].strip(' "'))
-            self.fee        = self.calculateFee(requested_fee, fee_coins, True)
-
-        else:
-            print ('Error parsing logs - no fee suggestions found')
-        
         # Get the fee details:
-        fee_coin:Coin = requested_fee.amount
+        fee_coin:Coin = self.calculateFee(requested_fee, True)
         
-        fee_amount = fee_coin.amount
-        fee_denom = fee_coin.denom
+        fee_amount = fee_coin.amount.amount
+        fee_denom = fee_coin.amount.denom
 
         # Take the first fee payment option
         self.tax = fee_amount * float(self.tax_rate['tax_rate'])
         
         # Build a fee object with 
-        new_coin:Coin = Coin(fee_denom, int(fee_coin.amount + self.tax))
+        new_coin:Coin = Coin(fee_denom, int(fee_amount + self.tax))
         requested_fee.amount = new_coin
 
         # This will be used by the swap function next time we call it
         self.fee = requested_fee
         
         # Store this so we can deduct it off the total amount to swap
-        self.fee_deductables = int(fee_coin.amount + self.tax)
+        self.fee_deductables = int(fee_amount + self.tax)
 
         return True
     
@@ -913,6 +858,7 @@ def main():
                             print (f"Fee is {fee_coin.amount} {fee_coin.denom}")
                         
                         result = swaps_tx.swap()
+
                         if result == True:
 
                             swaps_tx.broadcast()
