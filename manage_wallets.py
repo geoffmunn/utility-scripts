@@ -348,14 +348,14 @@ class TransactionCore():
         self.gas_list = terra.gasList()
         self.tax_rate = terra.taxRate()
         
-    def calculateFee(self, requested_fee:Fee, fee_coins:Coins, use_uusd:bool = False) -> Fee:
+    def calculateFee(self, requested_fee:Fee, use_uusd:bool = False) -> Fee:
 
         other_coin_list:list = []
         has_uluna:int        = 0
         has_uusd:int         = 0
         
         coin:Coin
-        for coin in fee_coins:
+        for coin in requested_fee.amount:
             if coin.denom in self.balances and self.balances[coin.denom] >= coin.amount:
 
                 if coin.denom == 'uusd':
@@ -457,19 +457,19 @@ class WithdrawalTransaction(TransactionCore):
         # Get the stub of the requested fee so we can adjust it
         requested_fee = tx.auth_info.fee
 
-        # Broadcast the transaction (with no fee) so we can get the actual fee options in the error
-        simulation_result:BlockTxBroadcastResult = self.broadcast()
+        print ('requested fee:', requested_fee)
+        # # Broadcast the transaction (with no fee) so we can get the actual fee options in the error
+        # simulation_result:BlockTxBroadcastResult = self.broadcast()
         
-        bits = simulation_result.raw_log.split('required:')
-        if len(bits) > 1:
-            fee_bit         = bits[1].split('=')
-            fee_coins:Coins = Coins.from_str(fee_bit[0].strip(' "'))
-            self.fee        = self.calculateFee(requested_fee, fee_coins)
+        # print (simulation_result)
+        # bits = simulation_result.raw_log.split('required:')
+        # if len(bits) > 1:
+        #     fee_bit         = bits[1].split('=')
+        #     fee_coins:Coins = Coins.from_str(fee_bit[0].strip(' "'))
+        self.fee        = self.calculateFee(requested_fee)
 
-            return True
-        else:
-            print ('Error parsing logs - no fee suggestions found')
-            return False
+        return True
+        
 
     def withdraw(self) -> bool:
 
