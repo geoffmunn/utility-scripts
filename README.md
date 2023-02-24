@@ -52,7 +52,7 @@ One this is done, you can run the ```manage_wallets.py``` script and select the 
 
 Your wallet seed is extremely important and must be kept safe at all times. You need to provide the seed so the wallet can be recreated to allow withdrawals and delegations.
 
-Each wallet seed is encrypted with the cryptocode library (https://pypi.org/project/cryptocode/) which uses AES encryption. You provide a password which makes this impossible to guess or brute-force as long as it's a sufficiently complex password.
+Each wallet seed is encrypted with the cryptocode library (https://pypi.org/project/cryptocode/) which uses AES encryption. You provide a password which makes the encrypted string impossible to guess or brute-force as long as it's a sufficiently complex password.
 
 The encrypted string is saved in the user_config.yml file, and your seed will never be visible in plain text.
 

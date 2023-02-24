@@ -457,15 +457,6 @@ class WithdrawalTransaction(TransactionCore):
         # Get the stub of the requested fee so we can adjust it
         requested_fee = tx.auth_info.fee
 
-        print ('requested fee:', requested_fee)
-        # # Broadcast the transaction (with no fee) so we can get the actual fee options in the error
-        # simulation_result:BlockTxBroadcastResult = self.broadcast()
-        
-        # print (simulation_result)
-        # bits = simulation_result.raw_log.split('required:')
-        # if len(bits) > 1:
-        #     fee_bit         = bits[1].split('=')
-        #     fee_coins:Coins = Coins.from_str(fee_bit[0].strip(' "'))
         self.fee        = self.calculateFee(requested_fee)
 
         return True
@@ -538,19 +529,10 @@ class DelegationTransaction(TransactionCore):
         # Get the stub of the requested fee so we can adjust it
         requested_fee = tx.auth_info.fee
 
-        # Broadcast the transaction (with no fee) so we can get the actual fee options in the error
-        simulation_result:BlockTxBroadcastResult = self.broadcast()
+        self.fee        = self.calculateFee(requested_fee)
 
-        bits = simulation_result.raw_log.split('required:')
-        if len(bits) > 1:
-            fee_bit         = bits[1].split('=')
-            fee_coins:Coins = Coins.from_str(fee_bit[0].strip(' "'))
-            self.fee        = self.calculateFee(requested_fee, fee_coins)
-
-            return True
-        else:
-            print ('Error parsing logs - no fee suggestions found')
-            return False
+        return True
+        
 
     def delegate(self, redelegated_uluna:int) -> bool:
         
@@ -563,8 +545,8 @@ class DelegationTransaction(TransactionCore):
 
             options = CreateTxOptions(
                 fee         = self.fee,
-                #fee_denoms  = ['uluna', 'uusd', 'uaud' ,'ukrw'], # Seems to be ignored
-                #gas_prices  = {'uluna': self.gas_list['uluna']},
+                #fee_denoms  = ['uluna', 'uusd', 'uaud' ,'ukrw'], # 
+                gas_prices = self.gas_list,
                 msgs        = [msg],
                 sequence    = self.sequence
             )
