@@ -137,7 +137,7 @@ def main():
     file.write(output )
     file.close()
 
-    print ('Done. The user_config.yml file has been updated.\n')
+    print ('\nDone. The user_config.yml file has been updated.\n')
 
 if __name__ == "__main__":
     """ This is executed when run from the command line """
