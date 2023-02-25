@@ -1,10 +1,10 @@
-# LUNC-Utility-Scripts
+# Luna Classic utility scripts
 
-Python scripts to use on the LUNC chain.
+These are some Python scripts for use on the Luna Classic chain.
 
 ## What are these?
 
-These scripts will help you manage wallets and make transactions on the Luna Classic chain.
+These scripts will help you manage wallets and make transactions on the Luna Classic chain. These are intended to be useful for anyone making repeated interactions across multiple wallets.
 
 Currently, functionality includes:
 
@@ -14,7 +14,7 @@ Currently, functionality includes:
 
  ## Requirements
 
-  * terra.proto 1.0.1 or terra.proto 1.1.0
+  * terra.proto 1.1.0
   * terra_skd 2.0.6
   * cryptocode
 
@@ -24,6 +24,8 @@ Currently, functionality includes:
   pip install -Iv terra_sdk==2.0.6
   pip install cryptocode
   ```
+
+NOTE: terra.proto 1.0.1 will work but you'll need to use the terra.proto_v1.0.1 branch (not recommended)
 
  ## Installation guide
 
@@ -40,9 +42,21 @@ https://github.com/geoffmunn/utility-scripts
 
 ## Configuration and usage
 
-To run operations on any wallet, you need to run the ```configure_user_wallets.py``` script first. This will require you to name the wallets you want to use and provide some basic details plus the seed. Please take a look at the security section below for details on how your seed is kept safe.
+### configure_user_wallets.py
 
-This script will create a file called ```user_config.yml``` which you can edit if required, but do not modify the encrypted seed string.
+To run operations on any wallet, you need to run the ```configure_user_wallets.py``` script first. This will require you to name the wallets you want to use and provide some basic details as well as the seed. Please take a look at the security section below for details on how your seed is kept safe.
+
+You will be prompted for the following details:
+
+ - **Wallet name**: A unique identifier for your reference. If you use the same name as an existing entry, it will overwrite the existing values
+ - **Terra address**: The address of the wallet - starts with 'terra'
+ - **Wallet seed**: Your secret seed to generate the wallet. This is the ONLY time you'll need to provide this - see the security section below.
+ - **Do you want to withdraw or delegate anything?**: Optional - if you're staking coins then say 'yes'
+ - **Delegation amount**: You can provide a percentage (usually 100%), or a fixed number. This percentage or number comes from the balance in the wallet at the time, unrelated to the withdrawn amount.
+ - **Withdrawal threshold**: The amount that must be in the wallet before it is withdrawn.
+
+
+This script will create a file called ```user_config.yml``` which you can edit if necessary, but do not modify the encrypted seed string.
 
 If this file is corrupted or you forget the password then you can delete it and start again.
 
