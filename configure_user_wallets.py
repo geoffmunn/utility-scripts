@@ -74,6 +74,9 @@ def main():
 
     data:list = {}
     item:dict = {}
+
+    tokens = ['seed', 'address', 'delegations', 'threshold', 'redelegate']
+
     for line in lines:
         if line != '---' and line != '...':
             line = line.strip(' ')
@@ -87,20 +90,9 @@ def main():
                         item['name'] = line[len('- wallet')+1:].strip(' ')
                         existing_name = item['name']
 
-                    if line[0:len('seed')] == 'seed':
-                        item['seed'] = line[len('seed')+1:].strip(' ')
-
-                    if line[0:len('address')] == 'address':
-                        item['address'] = line[len('address')+1:].strip(' ')
-
-                    if line[0:len('delegations')] == 'delegations':
-                        item['delegations'] = ''    # This line has no value
-
-                    if line[0:len('threshold')] == 'threshold':
-                        item['threshold'] = line[len('threshold')+1:].strip(' ')
-
-                    if line[0:len('redelegate')] == 'redelegate':
-                        item['redelegate'] = line[len('redelegate')+1:].strip(' ')
+                    for token in tokens:
+                        if line[0:len(token)] == token:
+                            item[token] = line[len(token) + 1:].strip()
                 
     if len(item)>0:
         data[existing_name] = item
@@ -117,7 +109,7 @@ def main():
     item['name']    = wallet_name
     item['seed']    = wallet_seed_encrypted
     item['address'] = wallet_address
-    
+
     if delegations == True:
         item['delegations'] = ''
         if threshold > 0:
