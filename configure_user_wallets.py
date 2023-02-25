@@ -1,13 +1,12 @@
 import cryptocode
 from getpass import getpass
 
-CONFIG_FILE_NAME    = 'user_config.yml'
+CONFIG_FILE_NAME = 'user_config.yml'
 
 # @TODO
-#   - check if the wallet name already exists
-#       - update existing record
 #   - confirm password?
 #   - check if supplied password is the same as already in use
+#   - support currency preferences
 
 def get_user_choice(question:str, yes_choices:list, no_choices:list):
 
@@ -49,54 +48,104 @@ def get_user_number(question:str, is_percentage:bool) -> int|str:
     return answer
 
 def main():
-    yes_choices:list    = ['yes', 'y', 'true']
-    no_choices:list     = ['no', 'n', 'false']
+    yes_choices:list = ['yes', 'y', 'true']
+    no_choices:list  = ['no', 'n', 'false']
 
-    user_password   = getpass('Secret password (do not forget what this is):')
-    wallet_name     = input('Wallet name: ')
-    wallet_address  = input('Lunc address: ')
-    wallet_seed     = input('Seed phrase (this will be encrypted with your secret password):\n')
-    delegations     = get_user_choice('Do you want to delegate funds? (y/n) ', yes_choices, no_choices)
+    user_password  = getpass('Secret password (do not forget what this is):')
+    wallet_name    = input('Wallet name: ')
+    wallet_address = input('Lunc address: ')
+    wallet_seed    = input('Seed phrase (this will be encrypted with your secret password):\n')
+    delegations    = get_user_choice('Do you want to delegate funds? (y/n) ', yes_choices, no_choices)
 
-    redelegate_amount:str   = ''
-    threshold:int           = 0
+    redelegate_amount:str = ''
+    threshold:int         = 0
 
     if delegations == True:
-        redelegate_amount   = get_user_number('Redelegate amount (eg 100%): ', True)
-        threshold           = get_user_number('What is the minimum amount before we withdraw rewards? ', False)
+        redelegate_amount = get_user_number('Redelegate amount (eg 100%): ', True)
+        threshold         = get_user_number('What is the minimum amount before we withdraw rewards? ', False)
 
     wallet_seed_encrypted = cryptocode.encrypt(wallet_seed, user_password)
 
     # Get the user configuration details from the default location
     with open(CONFIG_FILE_NAME, 'r') as file:
-        output      = file.read()
-        new_output  = ''
+        output = file.read()
 
-    if output is None or output == '':
-        output      = ''
-        new_output  = '---\n\nwallets:\n'
+    lines = output.split("\n")
 
-    # Construct the string we need to write to the file.
-    # For some reason, yaml.safe_dump doesn't preserve the correct structure
+    data:list = {}
+    item:dict = {}
+    for line in lines:
+        if line != '---' and line != '...':
+            line = line.strip(' ')
+            if len(line)>0:
+                if line[0] != '#':
+                    if line[0:len('- wallet')] == '- wallet':
+                        if len(item)>0:
+                            data[existing_name] = item
 
-    new_output += '  - wallet: ' + str(wallet_name) + '\n'
-    new_output += '    seed: ' + str(wallet_seed_encrypted) + '\n'
-    new_output += '    address: ' + str(wallet_address) + '\n'
+                        item = {}
+                        item['name'] = line[len('- wallet')+1:].strip(' ')
+                        existing_name = item['name']
 
+                    if line[0:len('seed')] == 'seed':
+                        item['seed'] = line[len('seed')+1:].strip(' ')
+
+                    if line[0:len('address')] == 'address':
+                        item['address'] = line[len('address')+1:].strip(' ')
+
+                    if line[0:len('delegations')] == 'delegations':
+                        item['delegations'] = ''    # This line has no value
+
+                    if line[0:len('threshold')] == 'threshold':
+                        item['threshold'] = line[len('threshold')+1:].strip(' ')
+
+                    if line[0:len('redelegate')] == 'redelegate':
+                        item['redelegate'] = line[len('redelegate')+1:].strip(' ')
+                
+    if len(item)>0:
+        data[existing_name] = item
+
+    if wallet_name in data:
+        update_wallet = get_user_choice('This wallet already exists, do you want to update it? (y/n) ', yes_choices, no_choices)
+
+        if update_wallet == False:
+            print ('Exiting...')
+            exit()
+    
+    # Now add the new wallet:
+    item = {}
+    item['name']    = wallet_name
+    item['seed']    = wallet_seed_encrypted
+    item['address'] = wallet_address
+    
     if delegations == True:
-        new_output += '    delegations:\n'
+        item['delegations'] = ''
         if threshold > 0:
-            new_output += '      threshold: ' + str(threshold) + '\n'
-        new_output += '      redelegate: ' + str(redelegate_amount) + '\n'
-        
-    new_output += '\n'
+            item['threshold'] = threshold
+        item['redelegate'] = redelegate_amount
 
+    data[wallet_name] = item
+    
+    # Now generate the string
+    output = '---\n\nwallets:'
+
+    for item in data:
+        output += '\n  - wallet: ' + str(data[item]['name']) + '\n'
+        output += '    seed: ' + str(data[item]['seed']) + '\n'
+        output += '    address: ' + str(data[item]['address']) + '\n'
+        if 'delegations' in data[item]:
+            output += '    delegations:\n'
+            if 'threshold' in data[item]:
+                output += '      threshold: ' + str(data[item]['threshold']) + '\n'
+            output += '      redelegate: ' + str(data[item]['redelegate']) + '\n'
+
+    output += '\n...'
+    
     file = open(CONFIG_FILE_NAME, 'w')
-    file.write(output + new_output)
+    file.write(output )
     file.close()
 
-    print ('Done. The user_config.yml file has been updated with this entry:\n')
-    print (new_output)
+    print ('Done. The user_config.yml file has been updated.\n')
 
 if __name__ == "__main__":
     """ This is executed when run from the command line """
