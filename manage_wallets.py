@@ -319,8 +319,8 @@ class Delegations(Wallet):
 
         while pagination['next_key'] is not None:
 
-            pagOpt.key          = pagination['next_key']
-            result, pagination  = terra.staking.delegations(delegator = wallet_address, params = pagOpt)
+            pagOpt.key         = pagination['next_key']
+            result, pagination = terra.staking.delegations(delegator = wallet_address, params = pagOpt)
 
             delegator:Delegation 
             for delegator in result:
@@ -406,18 +406,20 @@ class TransactionCore():
 
         # Default pagination options
         pagOpt:PaginationOptions = PaginationOptions(limit=50, count_total=True)
+
+        # Get the wallet address
         wallet_address           = self.current_wallet.key.acc_address
 
         # Get the current balance in this wallet
-        result, pagination       = self.terra.bank.balance(address = wallet_address, params = pagOpt)
+        result, pagination = self.terra.bank.balance(address = wallet_address, params = pagOpt)
 
         # Convert the result into a friendly list
-        balances:dict            = coin_list(result, {})
+        balances:dict = coin_list(result, {})
 
         # Go through the pagination (if any)
         while pagination['next_key'] is not None:
-            pagOpt.key          = pagination["next_key"]
-            result, pagination  = self.terra.bank.balance(address = wallet_address, params = pagOpt)
+            pagOpt.key         = pagination["next_key"]
+            result, pagination = self.terra.bank.balance(address = wallet_address, params = pagOpt)
             balances            = coin_list(result, balances)
 
         self.balances = balances
@@ -457,7 +459,8 @@ class WithdrawalTransaction(TransactionCore):
         # Get the stub of the requested fee so we can adjust it
         requested_fee = tx.auth_info.fee
 
-        self.fee        = self.calculateFee(requested_fee)
+        # This will be used by the swap function next time we call it
+        self.fee = self.calculateFee(requested_fee)
 
         return True
         
@@ -503,7 +506,7 @@ class DelegationTransaction(TransactionCore):
 
         super(DelegationTransaction, self).__init__(*args, **kwargs)
 
-        self.transaction:Tx        = None
+        self.transaction:Tx = None
         
     def create(self, delegator_address:str, validator_address:str):
 
@@ -529,7 +532,8 @@ class DelegationTransaction(TransactionCore):
         # Get the stub of the requested fee so we can adjust it
         requested_fee = tx.auth_info.fee
 
-        self.fee        = self.calculateFee(requested_fee)
+        # This will be used by the swap function next time we call it
+        self.fee = self.calculateFee(requested_fee)
 
         return True
         
@@ -544,11 +548,11 @@ class DelegationTransaction(TransactionCore):
             )
 
             options = CreateTxOptions(
-                fee         = self.fee,
+                fee        = self.fee,
                 #fee_denoms  = ['uluna', 'uusd', 'uaud' ,'ukrw'], # 
                 gas_prices = self.gas_list,
-                msgs        = [msg],
-                sequence    = self.sequence
+                msgs       = [msg],
+                sequence   = self.sequence
             )
 
             # This process often generates sequence errors. If we get a response error, then
@@ -613,20 +617,16 @@ class SwapTransaction(TransactionCore):
         # Get the fee details
         requested_fee:Fee = tx.auth_info.fee
         
-        # Broadcast the transaction (with no fee) so we can get the actual fee options in the error
-        simulation_result:BlockTxBroadcastResult = self.broadcast()
-
         # Get the fee details:
         fee_coin:Coin = self.calculateFee(requested_fee, True)
-        
-        fee_amount = fee_coin.amount.amount
-        fee_denom = fee_coin.amount.denom
+        fee_amount    = fee_coin.amount.amount
+        fee_denom     = fee_coin.amount.denom
 
         # Take the first fee payment option
         self.tax = fee_amount * float(self.tax_rate['tax_rate'])
         
         # Build a fee object with 
-        new_coin:Coin = Coin(fee_denom, int(fee_amount + self.tax))
+        new_coin:Coin        = Coin(fee_denom, int(fee_amount + self.tax))
         requested_fee.amount = new_coin
 
         # This will be used by the swap function next time we call it
@@ -654,8 +654,8 @@ class SwapTransaction(TransactionCore):
                         swap_amount = swap_amount - self.fee_deductables
 
                 tx_msg = MsgExecuteContract(
-                    sender   = self.current_wallet.key.acc_address,
-                    contract = ASTROPORT_UUSD_TO_ULUNA_ADDRESS,
+                    sender      = self.current_wallet.key.acc_address,
+                    contract    = ASTROPORT_UUSD_TO_ULUNA_ADDRESS,
                     execute_msg = {
                         'swap': {
                             'belief_price': str(self.belief_price),
@@ -674,12 +674,12 @@ class SwapTransaction(TransactionCore):
                 )
 
                 options = CreateTxOptions(
-                    fee         = self.fee,
+                    fee        = self.fee,
                     # fee_denoms  = ['uluna'],
                     # gas_prices  = {'uluna': self.gas_list['uluna']},
-                    fee_denoms  = ['uusd'],
-                    gas_prices  = {'uusd': self.gas_list['uusd']},
-                    msgs        = [tx_msg]
+                    fee_denoms = ['uusd'],
+                    gas_prices = {'uusd': self.gas_list['uusd']},
+                    msgs       = [tx_msg]
                 )
                 
                 while True:
