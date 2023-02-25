@@ -37,11 +37,12 @@ CONFIG_FILE_NAME    = 'user_config.yml'
 GAS_ADJUSTMENT      = 3
 
 # Do not change these
-USER_ACTION_WITHDRAW      = 'w'
-USER_ACTION_SWAP          = 's'
-USER_ACTION_DELEGATE      = 'd'
-USER_ACTION_SWAP_DELEGATE = 'sd'
-USER_ACTION_ALL           = 'a'
+USER_ACTION_WITHDRAW          = 'w'
+USER_ACTION_SWAP              = 's'
+USER_ACTION_DELEGATE          = 'd'
+USER_ACTION_SWAP_DELEGATE     = 'sd'
+USER_ACTION_WITHDRAW_DELEGATE = 'wd'
+USER_ACTION_ALL               = 'a'
 
 # Swap contracts can be found here
 # https://assets.terra.money/cw20/pairs.dex.json
@@ -343,6 +344,7 @@ class TransactionCore():
         self.terra                                   = None
         self.transaction:Tx                          = None
         
+        # Initialise the basic variables:
         terra         = TerraInstance(GAS_PRICE_URI, GAS_ADJUSTMENT)
         self.terra    = terra.create()
         self.gas_list = terra.gasList()
@@ -714,10 +716,11 @@ def main():
     print ('  (W)  Withdraw rewards')
     print ('  (S)  Swap coins')
     print ('  (D)  Delegate')
+    print ('  (WD) Withdraw & Delegate')
     print ('  (SD) Swap & Delegate')
     print ('  (A)  All of the above')
 
-    user_action = get_user_choice('', ['w', 's', 'd', 'sd', 'a'], [])
+    user_action = get_user_choice('', ['w', 's', 'd', 'wd', 'sd', 'a'], [])
 
     try:
         with open(CONFIG_FILE_NAME, 'r') as file:
@@ -740,10 +743,12 @@ def main():
         action_string = 'swapping USTC etc for LUNC'
     if user_action == USER_ACTION_DELEGATE:
         action_string = 'delegating all available funds'
+    if user_action == USER_ACTION_WITHDRAW_DELEGATE:
+        action_string = 'withdrawing rewards and delegating everything'
     if user_action == USER_ACTION_SWAP_DELEGATE:
-        action_string = 'swapping USTC etc for LUNC and delegating everything'
+        action_string = 'swapping USTC for LUNC and delegating everything'
     if user_action == USER_ACTION_ALL:
-        action_string = 'withdrawing rewards, swapping USTC etc for LUNC, and then delegating everything'
+        action_string = 'withdrawing rewards, swapping USTC for LUNC, and then delegating everything'
 
     if len(user_wallets) > 0:
         print (f'You will be {action_string} on the following wallets:')
@@ -771,7 +776,7 @@ def main():
         delegations = wallet.getDelegations()
  
         for validator in delegations:
-            if user_action in [USER_ACTION_WITHDRAW, USER_ACTION_ALL]:
+            if user_action in [USER_ACTION_WITHDRAW, USER_ACTION_WITHDRAW_DELEGATE, USER_ACTION_ALL]:
                 uluna_reward:int = delegations[validator]['rewards']['uluna']
 
                 # Only withdraw the staking rewards if the rewards exceed the threshold (if any)
@@ -857,7 +862,7 @@ def main():
                     print ('Swap amount is not greater than zero')
 
             # Redelegate anything we might have
-            if user_action in [USER_ACTION_DELEGATE, USER_ACTION_SWAP_DELEGATE, USER_ACTION_ALL]:
+            if user_action in [USER_ACTION_DELEGATE, USER_ACTION_WITHDRAW_DELEGATE, USER_ACTION_SWAP_DELEGATE, USER_ACTION_ALL]:
                 # Update the balances after having done withdrawals and swaps
                 wallet.getBalances()
                 if 'uluna' in wallet.balances:            
