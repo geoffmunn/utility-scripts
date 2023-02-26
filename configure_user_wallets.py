@@ -25,12 +25,11 @@ def get_user_choice(question:str, yes_choices:list, no_choices:list):
 def get_user_number(question:str, is_percentage:bool) -> int|str:
 
     while True:
-        answer = input(question)
+        answer = input(question).strip(' ')
 
+        last_char = answer[-1]
         if is_percentage == True:
-            last_char = answer[-1]
-            if last_char == '%':
-                answer = answer[0:-1]
+            answer = answer[0:-1]
 
         if answer.isdigit():
             if is_percentage:
@@ -64,6 +63,8 @@ def main():
         redelegate_amount = get_user_number('Redelegate amount (eg 100%): ', True)
         threshold         = get_user_number('What is the minimum amount before we withdraw rewards? ', False)
 
+
+    exit()
     wallet_seed_encrypted = cryptocode.encrypt(wallet_seed, user_password)
 
     # Get the user configuration details from the default location
