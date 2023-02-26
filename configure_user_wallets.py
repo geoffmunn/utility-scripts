@@ -1,5 +1,6 @@
 import cryptocode
 from getpass import getpass
+from os.path import exists
 
 CONFIG_FILE_NAME = 'user_config.yml'
 
@@ -64,46 +65,48 @@ def main():
         threshold         = get_user_number('What is the minimum amount before we withdraw rewards? ', False)
 
 
-    exit()
     wallet_seed_encrypted = cryptocode.encrypt(wallet_seed, user_password)
 
     # Get the user configuration details from the default location
-    with open(CONFIG_FILE_NAME, 'r') as file:
-        output = file.read()
-
-    lines = output.split("\n")
-
+    file_exists = exists(CONFIG_FILE_NAME)
     data:list = {}
-    item:dict = {}
 
-    tokens = ['seed', 'address', 'delegations', 'threshold', 'redelegate']
+    if file_exists:
+        with open(CONFIG_FILE_NAME, 'r') as file:
+            output = file.read()
 
-    for line in lines:
-        if line != '---' and line != '...':
-            line = line.strip(' ')
-            if len(line)>0:
-                if line[0] != '#':
-                    if line[0:len('- wallet')] == '- wallet':
-                        if len(item)>0:
-                            data[existing_name] = item
+        lines = output.split("\n")
 
-                        item = {}
-                        item['name'] = line[len('- wallet')+1:].strip(' ')
-                        existing_name = item['name']
+        item:dict = {}
 
-                    for token in tokens:
-                        if line[0:len(token)] == token:
-                            item[token] = line[len(token) + 1:].strip()
-                
-    if len(item)>0:
-        data[existing_name] = item
+        tokens = ['seed', 'address', 'delegations', 'threshold', 'redelegate']
 
-    if wallet_name in data:
-        update_wallet = get_user_choice('This wallet already exists, do you want to update it? (y/n) ', yes_choices, no_choices)
+        for line in lines:
+            if line != '---' and line != '...':
+                line = line.strip(' ')
+                if len(line)>0:
+                    if line[0] != '#':
+                        if line[0:len('- wallet')] == '- wallet':
+                            if len(item)>0:
+                                data[existing_name] = item
 
-        if update_wallet == False:
-            print ('Exiting...')
-            exit()
+                            item = {}
+                            item['name'] = line[len('- wallet')+1:].strip(' ')
+                            existing_name = item['name']
+
+                        for token in tokens:
+                            if line[0:len(token)] == token:
+                                item[token] = line[len(token) + 1:].strip()
+                    
+        if len(item)>0:
+            data[existing_name] = item
+
+        if wallet_name in data:
+            update_wallet = get_user_choice('This wallet already exists, do you want to update it? (y/n) ', yes_choices, no_choices)
+
+            if update_wallet == False:
+                print ('Exiting...')
+                exit()
     
     # Now add the new wallet:
     item = {}
