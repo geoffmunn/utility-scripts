@@ -75,10 +75,13 @@ def main():
         with open(CONFIG_FILE_NAME, 'r') as file:
             output = file.read()
 
-        lines = output.split("\n")
+        # Turn the existing user file into a list
+        lines:list = output.split("\n")
 
+        # Existing items will be put here:
         item:dict = {}
 
+        # Key values we're looking for
         tokens = ['seed', 'address', 'delegations', 'threshold', 'redelegate']
 
         for line in lines:
@@ -97,7 +100,8 @@ def main():
                         for token in tokens:
                             if line[0:len(token)] == token:
                                 item[token] = line[len(token) + 1:].strip()
-                    
+
+        # Add any remaining items into the list        
         if len(item)>0:
             data[existing_name] = item
 
@@ -137,6 +141,7 @@ def main():
 
     output += '\n...'
     
+    # Write the entire contents to a new version of the file
     file = open(CONFIG_FILE_NAME, 'w')
     file.write(output )
     file.close()
