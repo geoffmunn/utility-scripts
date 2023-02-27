@@ -13,8 +13,14 @@ Current functionality includes:
  * Swapping USTC for LUNC
  * Staking LUNC with validators
 
- ## Requirements
+ ## Why should you use these scripts?
 
+ By running these on your own computer, you get direct access to the Luna Classic chain. You don't need to rely on 3rd party software like the Terra Station, browser extension wallets, or centralised exchanges.
+ This way you can be sure you're getting the correct prices and fees. You can also edit the script to behave differently if you want to.
+
+ ## Requirements
+ 
+  * python 3.10.9+
   * terra.proto 1.1.0
   * terra_skd 2.0.6
   * cryptocode
@@ -70,6 +76,12 @@ To make transactions on your wallets, you need to run ```manage_wallets.py```. P
  - **Withdrawals**: All the staking rewards are withdrawn. The fee is paid by either a random minor coin (KRT for example), or LUNC, or USDT (in that order).
  - **Swap**: All the available USDT is swapped for LUNC. Currently the fee must be paid in USDT.
  - **Delegate**: LUNC is redelegated back to the same validator. A set amount is always kept in reserve to cover fees for later transactions (100 LUNC). Depending on how the wallet was configured, either a percentage of the available funds is delegated, or a set amount.
+
+### Troubleshooting
+
+**LCD Response Error Status 400 - failed to execute message; message index: 0: Operation exceeds max spread limit: execute wasm contract failed: invalid request**
+
+Seems to be a problem with thbe LCD - try again later and it should work
 
 ## Security notes
 
