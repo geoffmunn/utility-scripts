@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: UTF-8 -*-
 
 import yaml
 import requests
@@ -80,6 +81,66 @@ def get_user_choice(question:str, yes_choices:list, no_choices:list):
         result = booly
 
     return result
+
+def get_user_choice(question:str, yes_choices:list, no_choices:list):
+    """Get the user selection for a prompt and convert it to a standard value
+    """
+    while True:    
+        answer = input(question).lower()
+        if answer in yes_choices or answer in no_choices:
+            break
+    
+    booly = strtobool(answer)
+    if  booly== -1:
+        result = answer
+    else:
+        result = booly
+
+    return result
+
+def get_user_multichoice(question:str, user_wallets:dict):
+        
+    wallets_to_use = {}
+    while True:
+
+        count = 0
+        wallet_numbers = {}
+
+        for wallet_name in user_wallets:
+            count += 1
+            wallet_numbers[count] = user_wallets[wallet_name]
+                
+            if wallet_name in wallets_to_use:
+                glyph = '✅'
+            else:
+                glyph = ''
+
+            print (f"  ({count}) {glyph} {wallet_name}")
+            
+        answer = input(question).lower()
+        
+        if answer.isdigit() and int(answer) in wallet_numbers:
+            key = wallet_numbers[int(answer)].name
+            if key not in wallets_to_use:
+                wallets_to_use[key] = wallet_numbers[int(answer)]
+            else:
+                wallets_to_use.pop(key)
+            
+        if answer == 'c':
+            wallets_to_use = {}
+        
+        if answer == 'a':
+            wallets_to_use = {}
+            for wallet_name in user_wallets:
+                wallets_to_use[wallet_name] = user_wallets[wallet_name]
+
+        if answer == 'x':
+            break
+
+        if answer == 'q':
+            break
+
+    return wallets_to_use, answer
 
 def coin_list(input: Coins, existingList: dict) -> dict:
     """ 
@@ -780,29 +841,24 @@ def main():
     user_wallets = wallet_obj.getWallets(True)
 
     if user_action == USER_ACTION_WITHDRAW:
-        action_string = 'withdrawing rewards'
+        action_string = 'withdraw rewards'
     if user_action == USER_ACTION_SWAP:
-        action_string = 'swapping USTC etc for LUNC'
+        action_string = 'swap USTC for LUNC'
     if user_action == USER_ACTION_DELEGATE:
-        action_string = 'delegating all available funds'
+        action_string = 'delegate all available funds'
     if user_action == USER_ACTION_WITHDRAW_DELEGATE:
-        action_string = 'withdrawing rewards and delegating everything'
+        action_string = 'withdraw rewards and delegating everything'
     if user_action == USER_ACTION_SWAP_DELEGATE:
-        action_string = 'swapping USTC for LUNC and delegating everything'
+        action_string = 'swap USTC for LUNC and delegating everything'
     if user_action == USER_ACTION_ALL:
-        action_string = 'withdrawing rewards, swapping USTC for LUNC, and then delegating everything'
+        action_string = 'withdraw rewards, swap USTC for LUNC, and then delegate everything'
 
     if len(user_wallets) > 0:
-        print (f'You will be {action_string} on the following wallets:')
+        print (f'You can {action_string} on the following wallets:')
 
-        for wallet_name in user_wallets:
-            print (f'  * {wallet_name}')
-        
-        yes_choices:list    = ['yes', 'y', 'true']
-        no_choices:list     = ['no', 'n', 'false']
-        continue_withdrawal = get_user_choice('Do you want to continue? (y/n) ', yes_choices, no_choices)
+        user_wallets,answer = get_user_multichoice("Select a wallet number 1 - " + str(len(user_wallets)) + ", or 'A' to add all of them, 'C' to clear the list, 'X' to continue', and 'Q' to quit: ", user_wallets)
 
-        if continue_withdrawal == False:
+        if answer == 'q':
             print ('Exiting...')
             exit()
     else:
