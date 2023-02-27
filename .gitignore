@@ -130,3 +130,6 @@ dmypy.json
 
 # Confidential user data
 user_config.yml
+
+# OS X junk
+.DS_Store
