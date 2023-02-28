@@ -5,6 +5,7 @@ import yaml
 import requests
 import json
 import cryptocode
+import time
 
 from getpass import getpass
 
@@ -455,6 +456,7 @@ class TransactionCore():
         if not self.broadcast_result.is_tx_error():
             while True:
                 result:dict = self.terra.tx.search([("tx.hash", self.broadcast_result.txhash)])
+                self.terra.tx.search
                 
                 if len(result['txs']) > 0:
                     print ('Transaction received')
@@ -912,6 +914,7 @@ def main():
                             else:
                                 print (f'Withdrawn amount: {wallet.formatUluna(uluna_reward, True)}')
                                 print (f'Tx Hash: {withdrawal_tx.broadcast_result.txhash}')
+                                time.sleep(10)
                     else:
                         print ('The withdrawal could not be completed')
                 else:
@@ -954,6 +957,7 @@ def main():
                         
                             else:
                                 print (f'Tx Hash: {swaps_tx.broadcast_result.txhash}')
+                                time.sleep(10)
                         else:
                             print ('Swap transaction could not be completed')
                 else:
