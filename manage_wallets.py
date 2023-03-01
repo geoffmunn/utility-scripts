@@ -366,10 +366,10 @@ class Wallets:
         return self
         
     def getWallets(self, validate) -> dict:
-       """
-       Return the dictionary of wallets.
-       If validate = True, then only return validated wallets which are known to have a valid seed.
-       """
+        """
+        Return the dictionary of wallets.
+        If validate = True, then only return validated wallets which are known to have a valid seed.
+        """
 
         if validate == True:
             validated_wallets = {}
