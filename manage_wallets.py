@@ -53,11 +53,13 @@ ASTROPORT_UUSD_TO_ULUNA_ADDRESS = 'terra1m6ywlgn6wrjuagcmmezzz2a029gtldhey5k552'
 ASTROPORT_UUSD_TO_MINA_ADDRESS = 'terra134m8n2epp0n40qr08qsvvrzycn2zq4zcpmue48'
 
 def strtobool (val):
-    """Convert a string representation of truth to true (1) or false (0).
+    """
+    Convert a string representation of truth to true (1) or false (0).
     True values are 'y', 'yes', 't', 'true', 'on', and '1'; false values
     are 'n', 'no', 'f', 'false', 'off', and '0'.  Raises ValueError if
     'val' is anything else.
     """
+
     val = val.lower()
     if val in ('y', 'yes', 't', 'true', 'on', '1'):
         return True
@@ -67,10 +69,11 @@ def strtobool (val):
         #raise ValueError("invalid truth value %r" % (val,))
         return -1
     
-def get_user_choice(question:str, yes_choices:list, no_choices:list):
+def get_user_choice(question:str, yes_choices:list, no_choices:list) -> str|bool:
     """
-    Get the user selection for a prompt and convert it to a standard value
+    Get the user selection for a prompt and convert it to a standard value.
     """
+
     while True:    
         answer = input(question).lower()
         if answer in yes_choices or answer in no_choices:
@@ -84,25 +87,12 @@ def get_user_choice(question:str, yes_choices:list, no_choices:list):
 
     return result
 
-def get_user_choice(question:str, yes_choices:list, no_choices:list):
+def get_user_multichoice(question:str, user_wallets:dict) -> dict|str:
     """
-    Get the user selection for a prompt and convert it to a standard value
+    Get multiple user selections from a list.
+    This is a custom function because the options are specific to this list.
     """
-    while True:    
-        answer = input(question).lower()
-        if answer in yes_choices or answer in no_choices:
-            break
-    
-    booly = strtobool(answer)
-    if  booly== -1:
-        result = answer
-    else:
-        result = booly
 
-    return result
-
-def get_user_multichoice(question:str, user_wallets:dict):
-        
     wallets_to_use = {}
     while True:
 
@@ -167,6 +157,9 @@ class TerraInstance:
         self.url            = 'https://lcd.terra.dev'
         
     def create(self) -> LCDClient:
+        """
+        Create an LCD client instance and store it in this object.
+        """
 
         terra:LCDClient = LCDClient(
             chain_id        = self.chain_id,
@@ -179,6 +172,9 @@ class TerraInstance:
         return self.terra
 
     def gasList(self) -> json:
+        """
+        Make a JSON request for the gas prices, and store it against this LCD client instance.
+        """
         if self.gas_price_url is not None:
             gas_list:json = requests.get(self.gas_price_url).json()
         else:
@@ -188,11 +184,18 @@ class TerraInstance:
         return gas_list
     
     def taxRate(self) -> json:
+        """
+        Make a JSON request for the tax rate, and store it against this LCD client instance.
+        """
+
         tax_rate:json = requests.get(TAX_RATE_URI).json()
         
         return tax_rate
 
     def instance(self) -> LCDClient:
+        """
+        Return the LCD client instance that we have created.
+        """
         return self.terra
 
 class Wallet:
@@ -209,6 +212,10 @@ class Wallet:
         self.withdrawalTx     = WithdrawalTransaction()
         
     def create(self, name, address, seed, password) -> Wallet:
+        """
+        Create a wallet object based on the provided details.
+        """
+
         self.name    = name
         self.address = address
         self.seed    = cryptocode.decrypt(seed, password)
@@ -217,12 +224,19 @@ class Wallet:
         return self
     
     def updateDelegation(self, amount:str, threshold:int) -> bool:
+       """
+       Update the delegation details with the amount and threshold details.
+       """
+
        self.delegations = {'delegate': amount, 'threshold': threshold}
 
        return True
     
     def getBalances(self) -> dict:
-        
+        """
+        Get the balances associated with this wallet.
+        """
+
         # Default pagination options
         pagOpt:PaginationOptions = PaginationOptions(limit=50, count_total=True)
 
@@ -247,12 +261,13 @@ class Wallet:
         return balances
 
     def validateAddress(self) -> bool:
-
-        # Check that the password does actually resolve against any wallets
+        """
+        Check that the password does actually resolve against any wallets
         
-        # Go through each wallet and create it based on the password that was provided
-        # then check it against the saved address
-        # if it's not the same, then the password is wrong or the file has been edited
+        Go through each wallet and create it based on the password that was provided
+        and then check it against the saved address
+        If it's not the same, then the password is wrong or the file has been edited.
+        """
 
         try:
             generated_wallet_key     = MnemonicKey(self.seed)
@@ -267,11 +282,18 @@ class Wallet:
             return False
 
     def getDelegations(self):
+        """
+        Get the delegations associated with this wallet address.
+        """
+
         self.details = Delegations().create(self.address)
 
         return self.details
     
     def formatUluna(self, uluna:float, add_suffix:bool = False) -> float|str:
+        """
+        A generic helper function to convert uluna amounts to LUNC.
+        """
 
         lunc:float = uluna / 1000000
 
@@ -281,8 +303,10 @@ class Wallet:
         return lunc
     
     def withdrawal(self):
-        # Update the withdrawal class with the data it needs
-        # It will be created via the create() command
+        """
+        Update the withdrawal class with the data it needs.
+        It will be created via the create() command.
+        """
 
         self.withdrawalTx.seed     = self.seed
         self.withdrawalTx.balances = self.balances
@@ -290,8 +314,10 @@ class Wallet:
         return self.withdrawalTx
     
     def swap(self):
-        # Update the swap class with the data it needs
-        # It will be created via the create() command
+        """
+        Update the swap class with the data it needs.
+        It will be created via the create() command.
+        """
 
         self.swapTx.seed     = self.seed
         self.swapTx.balances = self.balances
@@ -299,8 +325,10 @@ class Wallet:
         return self.swapTx
     
     def delegate(self):
-        # Update the delegate class with the data it needs
-        # It will be created via the create() command
+        """
+        Update the delegate class with the data it needs
+        It will be created via the create() command
+        """
 
         self.delegateTx.seed     = self.seed
         self.delegateTx.balances = self.balances
@@ -313,7 +341,10 @@ class Wallets:
         self.wallets:dict = {}
 
     def create(self, yml_file:dict, user_password:str):
-        # Create a list of wallets
+        """
+        Create a dictionary of wallets. Each wallet is a Wallet object.
+        """
+
         for wallet in yml_file['wallets']:
 
             delegation_amount:str = ''
@@ -334,8 +365,12 @@ class Wallets:
 
         return self
         
-    def getWallets(self, validate):
-       
+    def getWallets(self, validate) -> dict:
+       """
+       Return the dictionary of wallets.
+       If validate = True, then only return validated wallets which are known to have a valid seed.
+       """
+
         if validate == True:
             validated_wallets = {}
             for wallet_name in self.wallets:
@@ -353,8 +388,11 @@ class Delegations(Wallet):
     def __init__(self):        
         self.delegations:dict = {}
 
-    def __iter_result__(self, terra:LCDClient, delegator):
-        
+    def __iter_result__(self, terra:LCDClient, delegator) -> dict:
+        """
+        An internal function which returns a dict object with validator details.
+        """
+
         # Get the basic details about the delegator and validator etc
         delegator_address:str       = delegator.delegation.delegator_address
         validator_address:str       = delegator.delegation.validator_address
@@ -370,12 +408,14 @@ class Delegations(Wallet):
         # Make the commission human-readable
         validator_commission = round(validator_commission * 100, 2)
 
-        #print (f'Getting delegation details from {validator_name}')
-        #print (f'This validator has a {validator_commission}% commission')
-        
         self.delegations[validator_name] = {'delegator': delegator_address, 'validator': validator_address, 'rewards': reward_coins, 'validator_name': validator_name, 'commission': validator_commission}
         
-    def create(self, wallet_address:str):
+    def create(self, wallet_address:str) -> dict:
+        """
+        Create a dictionary of information about the delegations on this wallet.
+        It may contain more than one validator.
+        """
+
         terra = TerraInstance(GAS_PRICE_URI, GAS_ADJUSTMENT).create()
 
         pagOpt:PaginationOptions = PaginationOptions(limit=50, count_total=True)
@@ -397,6 +437,9 @@ class Delegations(Wallet):
         return self.delegations
     
 class TransactionCore():
+    """
+    The core class for all transactions.
+    """
 
     def __init__(self):
         
@@ -418,6 +461,12 @@ class TransactionCore():
         self.tax_rate = terra.taxRate()
         
     def calculateFee(self, requested_fee:Fee, use_uusd:bool = False) -> Fee:
+        """
+        Calculate the fee based on the provided information and what coins are available.
+        This function prefers to pay in minor coins first, followed by uluna, and then ustc.
+
+        If desired, the fee can specifically be uusd.
+        """
 
         other_coin_list:list = []
         has_uluna:int        = 0
@@ -453,6 +502,10 @@ class TransactionCore():
         return requested_fee
     
     def broadcast(self) -> BlockTxBroadcastResult:
+        """
+        A core broadcast function for all transactions.
+        It will wait until the transaction shows up in the search function before finishing.
+        """
 
         result:BlockTxBroadcastResult = self.terra.tx.broadcast(self.transaction)
         self.broadcast_result         = result
@@ -472,30 +525,33 @@ class TransactionCore():
 
         return result
     
-    def updateBalances(self) -> bool:
-
-        # Default pagination options
-        pagOpt:PaginationOptions = PaginationOptions(limit=50, count_total=True)
-
-        # Get the wallet address
-        wallet_address           = self.current_wallet.key.acc_address
-
-        # Get the current balance in this wallet
-        result, pagination = self.terra.bank.balance(address = wallet_address, params = pagOpt)
-
-        self.terra.wallet
-        # Convert the result into a friendly list
-        balances:dict = coin_list(result, {})
-
-        # Go through the pagination (if any)
-        while pagination['next_key'] is not None:
-            pagOpt.key         = pagination["next_key"]
-            result, pagination = self.terra.bank.balance(address = wallet_address, params = pagOpt)
-            balances            = coin_list(result, balances)
-
-        self.balances = balances
+    # def updateBalances(self) -> bool:
+    #     """
         
-        return True
+    #     """
+
+    #     # Default pagination options
+    #     pagOpt:PaginationOptions = PaginationOptions(limit=50, count_total=True)
+
+    #     # Get the wallet address
+    #     wallet_address           = self.current_wallet.key.acc_address
+
+    #     # Get the current balance in this wallet
+    #     result, pagination = self.terra.bank.balance(address = wallet_address, params = pagOpt)
+
+    #     self.terra.wallet
+    #     # Convert the result into a friendly list
+    #     balances:dict = coin_list(result, {})
+
+    #     # Go through the pagination (if any)
+    #     while pagination['next_key'] is not None:
+    #         pagOpt.key         = pagination["next_key"]
+    #         result, pagination = self.terra.bank.balance(address = wallet_address, params = pagOpt)
+    #         balances            = coin_list(result, balances)
+
+    #     self.balances = balances
+        
+    #     return True
     
 class WithdrawalTransaction(TransactionCore):
 
@@ -507,6 +563,9 @@ class WithdrawalTransaction(TransactionCore):
         self.validator_address:str = ''
 
     def create(self, delegator_address:str, validator_address:str):
+        """
+        Create a withdrawal object and set it up with the provided details.
+        """
 
         self.delegator_address:str = delegator_address
         self.validator_address:str = validator_address
@@ -518,6 +577,10 @@ class WithdrawalTransaction(TransactionCore):
         return self
     
     def simulate(self) -> bool:
+        """
+        Simulate a withdrawal so we can get the fee details.
+        The fee details are saved so the actual withdrawal will work.
+        """
         
         # Set the fee to be None so it is simulated
         self.fee      = None
@@ -537,6 +600,10 @@ class WithdrawalTransaction(TransactionCore):
         
 
     def withdraw(self) -> bool:
+        """
+        Make a withdrawal with the information we have so far.
+        If fee is None then it will be a simulation.
+        """
 
         try:
             msg = MsgWithdrawDelegatorReward(
@@ -580,6 +647,9 @@ class DelegationTransaction(TransactionCore):
         self.transaction:Tx = None
         
     def create(self, delegator_address:str, validator_address:str):
+        """
+        Create a delegation object and set it up with the provided details.
+        """
 
         self.delegator_address = delegator_address
         self.validator_address = validator_address
@@ -591,7 +661,11 @@ class DelegationTransaction(TransactionCore):
         return self
     
     def simulate(self, redelegated_uluna:int) -> bool:
-        
+        """
+        Simulate a delegation so we can get the fee details.
+        The fee details are saved so the actual delegation will work.
+        """
+
         # Set the fee to be None so it is simulated
         self.fee      = None
         self.sequence = self.current_wallet.sequence()
@@ -610,7 +684,11 @@ class DelegationTransaction(TransactionCore):
         
 
     def delegate(self, redelegated_uluna:int) -> bool:
-        
+        """
+        Make a delegation with the information we have so far.
+        If fee is None then it will be a simulation.
+        """
+
         try:
             msg = MsgDelegate(
                 delegator_address   = self.delegator_address,
@@ -659,6 +737,9 @@ class SwapTransaction(TransactionCore):
         self.tax:float             = None
         
     def create(self):
+        """
+        Create a swap object and set it up with the provided details.
+        """
 
         # Create the wallet based on the calculated key
         current_wallet_key  = MnemonicKey(self.seed)
@@ -666,7 +747,11 @@ class SwapTransaction(TransactionCore):
 
         return self
 
-    def beliefPrice(self):
+    def beliefPrice(self) -> float:
+        """
+        Figure out the belief price for this swap.
+        """
+
         result = self.terra.wasm.contract_query(UUSD_TO_ULUNA_SWAP_ADDRESS, {"pool": {}})
 
         belief_price:float = int(result['assets'][0]['amount']) / int(result['assets'][1]['amount']) 
@@ -674,6 +759,10 @@ class SwapTransaction(TransactionCore):
         return round(belief_price, 18)
 
     def simulate(self) -> bool:
+        """
+        Simulate a swap so we can get the fee details.
+        The fee details are saved so the actual swap will work.
+        """
 
         self.belief_price    = self.beliefPrice()
         self.fee             = None
@@ -753,6 +842,10 @@ class SwapTransaction(TransactionCore):
         return True
     
     def swap(self) -> bool:
+        """
+        Make a swap with the information we have so far.
+        If fee is None then it will be a simulation.
+        """
 
         if self.belief_price is not None:
 
@@ -843,7 +936,7 @@ def main():
         exit()
 
     print ('Decrypting and validating wallets - please wait...')
-    
+
     # Create the wallet object based on the user config file
     wallet_obj = Wallets().create(user_config, decrypt_password)
     
