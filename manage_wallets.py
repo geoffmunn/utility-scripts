@@ -370,10 +370,10 @@ class Delegations(Wallet):
         # Make the commission human-readable
         validator_commission = round(validator_commission * 100, 2)
 
-        print (f'Withdrawing rewards from {validator_name}')
-        print (f'This validator has a {validator_commission}% commission')
+        #print (f'Getting delegation details from {validator_name}')
+        #print (f'This validator has a {validator_commission}% commission')
         
-        self.delegations[validator_name] = {'delegator': delegator_address, 'validator': validator_address, 'rewards': reward_coins}
+        self.delegations[validator_name] = {'delegator': delegator_address, 'validator': validator_address, 'rewards': reward_coins, 'validator_name': validator_name, 'commission': validator_commission}
         
     def create(self, wallet_address:str):
         terra = TerraInstance(GAS_PRICE_URI, GAS_ADJUSTMENT).create()
@@ -842,6 +842,8 @@ def main():
         print (' 🛑 The user_config.yml file could not be opened - please run configure_user_wallets.py before running this script')
         exit()
 
+    print ('Decrypting and validating wallets - please wait...')
+    
     # Create the wallet object based on the user config file
     wallet_obj = Wallets().create(user_config, decrypt_password)
     
@@ -878,13 +880,17 @@ def main():
         wallet:Wallet = user_wallets[wallet_name]
 
         print ('####################################')
-        print (f'Working on {wallet.name}...')
+        print (f'Accessing the {wallet.name} wallet...')
 
         delegations = wallet.getDelegations()
         for validator in delegations:
+
+            print ('\n------------------------------------')
+            print (f"The {delegations[validator]['validator_name']} validator has a {delegations[validator]['commission']}% commission.")
+
             if user_action in [USER_ACTION_WITHDRAW, USER_ACTION_WITHDRAW_DELEGATE, USER_ACTION_ALL]:
 
-                print ('\n------------------------------------')
+                
                 print ('Starting withdrawals...')
 
                 uluna_reward:int = delegations[validator]['rewards']['uluna']
