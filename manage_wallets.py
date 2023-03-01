@@ -68,7 +68,8 @@ def strtobool (val):
         return -1
     
 def get_user_choice(question:str, yes_choices:list, no_choices:list):
-    """Get the user selection for a prompt and convert it to a standard value
+    """
+    Get the user selection for a prompt and convert it to a standard value
     """
     while True:    
         answer = input(question).lower()
@@ -84,7 +85,8 @@ def get_user_choice(question:str, yes_choices:list, no_choices:list):
     return result
 
 def get_user_choice(question:str, yes_choices:list, no_choices:list):
-    """Get the user selection for a prompt and convert it to a standard value
+    """
+    Get the user selection for a prompt and convert it to a standard value
     """
     while True:    
         answer = input(question).lower()
@@ -180,7 +182,7 @@ class TerraInstance:
         if self.gas_price_url is not None:
             gas_list:json = requests.get(self.gas_price_url).json()
         else:
-            print ('No gas price URL set at self.gas_price_url')
+            print (' 🛑 No gas price URL set at self.gas_price_url')
             exit()
 
         return gas_list
@@ -365,6 +367,9 @@ class Delegations(Wallet):
         rewards:Rewards   = terra.distribution.rewards(delegator_address)
         reward_coins:dict = coin_list(rewards.rewards[validator_address], {})
         
+        # Make the commission human-readable
+        validator_commission = round(validator_commission * 100, 2)
+
         print (f'Withdrawing rewards from {validator_name}')
         print (f'This validator has a {validator_commission}% commission')
         
@@ -478,6 +483,7 @@ class TransactionCore():
         # Get the current balance in this wallet
         result, pagination = self.terra.bank.balance(address = wallet_address, params = pagOpt)
 
+        self.terra.wallet
         # Convert the result into a friendly list
         balances:dict = coin_list(result, {})
 
@@ -554,7 +560,7 @@ class WithdrawalTransaction(TransactionCore):
                     self.sequence    = self.sequence + 1
                     options.sequence = self.sequence
                 except Exception as err:
-                    print ('Random error has occurred')
+                    print (' 🛑 A random error has occurred')
                     print (err)
                     break
 
@@ -630,7 +636,7 @@ class DelegationTransaction(TransactionCore):
                     self.sequence    = self.sequence + 1
                     options.sequence = self.sequence
                 except Exception as err:
-                    print ('Random error has occurred')
+                    print (' 🛑 A random error has occurred')
                     print (err)
                     break
 
@@ -796,11 +802,11 @@ class SwapTransaction(TransactionCore):
                         tx:Tx = self.current_wallet.create_and_sign_tx(options)
                         break
                     except LCDResponseError as err:
-                        print ('LCD Response Error', err)
+                        print (' 🛑 LCD Response Error', err)
                         exit()
                         
                     except Exception as err:
-                        print ('Random error has occurred')
+                        print (' 🛑 A random error has occurred')
                         print (err)
                         break
 
@@ -833,7 +839,7 @@ def main():
         with open(CONFIG_FILE_NAME, 'r') as file:
             user_config = yaml.safe_load(file)
     except :
-        print ('The user_config.yml file could not be opened - please run configure_user_wallets.py before running this script')
+        print (' 🛑 The user_config.yml file could not be opened - please run configure_user_wallets.py before running this script')
         exit()
 
     # Create the wallet object based on the user config file
@@ -861,10 +867,10 @@ def main():
         user_wallets,answer = get_user_multichoice("Select a wallet number 1 - " + str(len(user_wallets)) + ", or 'A' to add all of them, 'C' to clear the list, 'X' to continue', and 'Q' to quit: ", user_wallets)
 
         if answer == 'q':
-            print ('Exiting...')
+            print (' 🛑 Exiting...')
             exit()
     else:
-        print ('This password couldn\'t decrypt any wallets. Make sure it is correct, or rebuild the wallet list by running the configure_user_wallet.py script again.')
+        print (' 🛑 This password couldn\'t decrypt any wallets. Make sure it is correct, or rebuild the wallet list by running the configure_user_wallet.py script again.')
         exit()
 
     # Now start doing stuff
@@ -877,6 +883,10 @@ def main():
         delegations = wallet.getDelegations()
         for validator in delegations:
             if user_action in [USER_ACTION_WITHDRAW, USER_ACTION_WITHDRAW_DELEGATE, USER_ACTION_ALL]:
+
+                print ('\n------------------------------------')
+                print ('Starting withdrawals...')
+
                 uluna_reward:int = delegations[validator]['rewards']['uluna']
 
                 # Only withdraw the staking rewards if the rewards exceed the threshold (if any)
@@ -908,12 +918,12 @@ def main():
                             withdrawal_tx.broadcast()
                         
                             if withdrawal_tx.broadcast_result.is_tx_error():
-                                print ('Withdrawal failed, an error occurred')
+                                print (' 🛎️ Withdrawal failed, an error occurred')
                                 print (withdrawal_tx.broadcast_result.raw_log)
                         
                             else:
-                                print (f'Withdrawn amount: {wallet.formatUluna(uluna_reward, True)}')
-                                print (f'Tx Hash: {withdrawal_tx.broadcast_result.txhash}')
+                                print (f' ✅ Withdrawn amount: {wallet.formatUluna(uluna_reward, True)}')
+                                print (f' ✅ Tx Hash: {withdrawal_tx.broadcast_result.txhash}')
                                 time.sleep(10)
                     else:
                         print ('The withdrawal could not be completed')
@@ -922,6 +932,10 @@ def main():
 
             # Swap any uusd coins for uluna
             if user_action in [USER_ACTION_SWAP, USER_ACTION_SWAP_DELEGATE, USER_ACTION_ALL]:
+
+                print ('\n------------------------------------')
+                print ('Starting swaps...')
+
                 # Update the balances so we know we have the correct amount
                 wallet.getBalances()
                 
@@ -952,11 +966,12 @@ def main():
                             swaps_tx.broadcast()
 
                             if swaps_tx.broadcast_result.is_tx_error():
-                                print ('Swap failed, an error occurred')
+                                print (' 🛎️ Swap failed, an error occurred')
                                 print (swaps_tx.broadcast_result.raw_log)
                         
                             else:
-                                print (f'Tx Hash: {swaps_tx.broadcast_result.txhash}')
+                                print (f' ✅ Swap successfully completed')
+                                print (f' ✅ Tx Hash: {swaps_tx.broadcast_result.txhash}')
                                 time.sleep(10)
                         else:
                             print ('Swap transaction could not be completed')
@@ -968,6 +983,9 @@ def main():
                 
                 # Only delegate if the wallet is configured for delegations
                 if 'delegate' in wallet.delegations:       
+
+                    print ('\n------------------------------------')
+                    print ('Starting delegations...')
 
                     # Update the balances after having done withdrawals and swaps
                     wallet.getBalances()
@@ -1008,11 +1026,11 @@ def main():
                                     delegation_tx.broadcast()
                                 
                                     if delegation_tx.broadcast_result.is_tx_error():
-                                        print ('Delegation failed, an error occurred')
+                                        print (' 🛎️ Delegation failed, an error occurred')
                                         print (delegation_tx.broadcast_result.raw_log)
                                     else:
-                                        print (f'Delegated amount: {wallet.formatUluna(delegated_uluna, True)}')
-                                        print (f'Tx Hash: {delegation_tx.broadcast_result.txhash}')
+                                        print (f' ✅ Delegated amount: {wallet.formatUluna(delegated_uluna, True)}')
+                                        print (f' ✅ Tx Hash: {delegation_tx.broadcast_result.txhash}')
                                 else:
                                     print ('The deleggation could not be completed')
                             else:
@@ -1024,6 +1042,7 @@ def main():
                 else:
                     print ('This wallet is not configured for delegations')
 
+            print (' 💯 All actions on this validator are complete.')
             print ('------------------------------------')
             
     print ('Done!')
