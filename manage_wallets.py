@@ -237,7 +237,7 @@ class Wallet:
 
        return True
     
-    def allowSwaps(self, allow_swaps:bool) -> bool
+    def allowSwaps(self, allow_swaps:bool) -> bool:
         """
         Update the wallet with the allow_swaps status.
         """
