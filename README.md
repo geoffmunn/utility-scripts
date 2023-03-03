@@ -81,7 +81,13 @@ To make transactions on your wallets, you need to run ```manage_wallets.py```. P
 
 **LCD Response Error Status 400 - failed to execute message; message index: 0: Operation exceeds max spread limit: execute wasm contract failed: invalid request**
 
-Seems to be a problem with thbe LCD - try again later and it should work
+Seems to be a problem with the LCD - try again later and it should work
+
+**terra_sdk.exceptions.LCDResponseError: Status 502 - Bad Gateway**
+Network connectivity issues with the LCD endpoint. Try again later.
+
+**out of gas in location: ReadFlat; gasWanted: 150762, gasUsed: 151283: out of gas**
+The gas adjustment value needs to be increased.
 
 ## Security notes
 
