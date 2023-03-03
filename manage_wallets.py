@@ -58,7 +58,7 @@ def strtobool (val):
     """
     Convert a string representation of truth to true (1) or false (0).
     True values are 'y', 'yes', 't', 'true', 'on', and '1'; false values
-    are 'n', 'no', 'f', 'false', 'off', and '0'.  Raises ValueError if
+    are 'n', 'no', 'f', 'false', 'off', and '0'.  Returns -1 if
     'val' is anything else.
     """
 
@@ -604,9 +604,9 @@ class DelegationTransaction(TransactionCore):
 
         try:
             msg = MsgDelegate(
-                delegator_address   = self.delegator_address,
-                validator_address   = self.validator_address,
-                amount              = Coin('uluna', redelegated_uluna)
+                delegator_address  = self.delegator_address,
+                validator_address  = self.validator_address,
+                amount             = Coin('uluna', redelegated_uluna)
             )
 
             options = CreateTxOptions(
@@ -644,10 +644,9 @@ class SendTransaction(TransactionCore):
         super(SendTransaction, self).__init__(*args, **kwargs)
 
         self.recipient_address = ''
-        self.memo = ''
-        self.uluna_amount = 0
-        #self.fee_deductables:float = None
-        self.tax:float             = None
+        self.memo              = ''
+        self.uluna_amount      = 0
+        self.tax:float         = None
 
     def create(self):
         """
@@ -658,7 +657,6 @@ class SendTransaction(TransactionCore):
         current_wallet_key  = MnemonicKey(self.seed)
         self.current_wallet = self.terra.wallet(current_wallet_key)
 
-        print (self.current_wallet.key.acc_address)
         return self
     
     def simulate(self, recipient_address:str, uluna_amount:int, memo:str) -> bool:
@@ -685,6 +683,7 @@ class SendTransaction(TransactionCore):
         # This will be used by the swap function next time we call it
         self.fee = self.calculateFee(requested_fee)
 
+        # Figure out the fee structure
         fee_bit:Coin = Coin.from_str(str(requested_fee.amount))
         fee_amount   = fee_bit.amount
         fee_denom    = fee_bit.denom
