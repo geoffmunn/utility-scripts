@@ -204,6 +204,7 @@ class TerraInstance:
 class Wallet:
     def __init__(self):
         self.address:str      = ''
+        self.allow_swaps:bool = True
         self.balances:dict    = {}
         self.delegateTx       = DelegationTransaction()
         self.details:dict     = {}
@@ -236,6 +237,15 @@ class Wallet:
 
        return True
     
+    def allowSwaps(self, allow_swaps:bool) -> bool
+        """
+        Update the wallet with the allow_swaps status.
+        """
+
+        self.allow_swaps = allow_swaps
+        
+        return True
+
     def getBalances(self) -> dict:
         """
         Get the balances associated with this wallet.
@@ -373,6 +383,9 @@ class Wallets:
 
             wallet_item:Wallet = Wallet().create(wallet['wallet'], wallet['address'], wallet['seed'], user_password)
             wallet_item.updateDelegation(delegation_amount, threshold)
+
+            if 'allow_swaps' in wallet:
+                wallet_item.allowSwaps = bool(wallet['allow_swaps'])
 
             wallet_item.validated = wallet_item.validateAddress()
 
@@ -1034,7 +1047,6 @@ def main():
     # Create the wallet object based on the user config file
     wallet_obj = Wallets().create(user_config, decrypt_password)
     
-    print ('user action:', user_action)
     # Get all the wallets
     user_wallets = wallet_obj.getWallets(True)
 
@@ -1139,50 +1151,53 @@ def main():
             # Swap any uusd coins for uluna
             if user_action in [USER_ACTION_SWAP, USER_ACTION_SWAP_DELEGATE, USER_ACTION_ALL]:
 
-                print ('\n------------------------------------')
-                print ('Starting swaps...')
+                if wallet.allow_swaps == True:
+                    print ('\n------------------------------------')
+                    print ('Starting swaps...')
 
-                # Update the balances so we know we have the correct amount
-                wallet.getBalances()
-                
-                # We are only supporting swaps with uusd (USTC) at the moment
-                swap_amount = wallet.balances['uusd']
+                    # Update the balances so we know we have the correct amount
+                    wallet.getBalances()
+                    
+                    # We are only supporting swaps with uusd (USTC) at the moment
+                    swap_amount = wallet.balances['uusd']
 
-                if swap_amount > 0:
-                    print (f'Swapping {wallet.formatUluna(swap_amount, False)} USTC for LUNC')
+                    if swap_amount > 0:
+                        print (f'Swapping {wallet.formatUluna(swap_amount, False)} USTC for LUNC')
 
-                    # Set up the basic swap object
-                    swaps_tx = wallet.swap().create()
+                        # Set up the basic swap object
+                        swaps_tx = wallet.swap().create()
 
-                    # Simulate it so we can get the fee
-                    result = swaps_tx.simulate()
-
-                    if result == True:
-                        fee_coin:Coin = swaps_tx.fee.amount
-                            
-                        if fee_coin.denom == 'uluna':
-                            print (f"Fee is {wallet.formatUluna(int(fee_coin.amount), True)}")
-                        else:
-                            print (f"Fee is {fee_coin.amount} {fee_coin.denom}")
-                        
-                        result = swaps_tx.swap()
+                        # Simulate it so we can get the fee
+                        result = swaps_tx.simulate()
 
                         if result == True:
-
-                            swaps_tx.broadcast()
-
-                            if swaps_tx.broadcast_result.is_tx_error():
-                                print (' 🛎️ Swap failed, an error occurred')
-                                print (swaps_tx.broadcast_result.raw_log)
-                        
+                            fee_coin:Coin = swaps_tx.fee.amount
+                                
+                            if fee_coin.denom == 'uluna':
+                                print (f"Fee is {wallet.formatUluna(int(fee_coin.amount), True)}")
                             else:
-                                print (f' ✅ Swap successfully completed')
-                                print (f' ✅ Tx Hash: {swaps_tx.broadcast_result.txhash}')
-                                time.sleep(10)
-                        else:
-                            print ('Swap transaction could not be completed')
+                                print (f"Fee is {fee_coin.amount} {fee_coin.denom}")
+                            
+                            result = swaps_tx.swap()
+
+                            if result == True:
+
+                                swaps_tx.broadcast()
+
+                                if swaps_tx.broadcast_result.is_tx_error():
+                                    print (' 🛎️ Swap failed, an error occurred')
+                                    print (swaps_tx.broadcast_result.raw_log)
+                            
+                                else:
+                                    print (f' ✅ Swap successfully completed')
+                                    print (f' ✅ Tx Hash: {swaps_tx.broadcast_result.txhash}')
+                                    time.sleep(10)
+                            else:
+                                print ('Swap transaction could not be completed')
+                    else:
+                        print ('Swap amount is not greater than zero')
                 else:
-                    print ('Swap amount is not greater than zero')
+                    print ('Swaps not allowed on this wallet')
 
             # Redelegate anything we might have
             if user_action in [USER_ACTION_DELEGATE, USER_ACTION_WITHDRAW_DELEGATE, USER_ACTION_SWAP_DELEGATE, USER_ACTION_ALL]:
