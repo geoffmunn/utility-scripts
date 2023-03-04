@@ -48,7 +48,7 @@ def coin_list(input: Coins, existingList: dict) -> dict:
         existingList[coin.denom] = coin.amount
 
     return existingList
-    
+
 class Wallets:
     def __init__(self):
         self.file         = None
@@ -74,7 +74,7 @@ class Wallets:
             wallet_item.updateDelegation(delegation_amount, threshold)
 
             if 'allow_swaps' in wallet:
-                wallet_item.allowSwaps = bool(wallet['allow_swaps'])
+                wallet_item.allow_swaps = bool(wallet['allow_swaps'])
 
             wallet_item.validated = wallet_item.validateAddress()
 
@@ -429,6 +429,31 @@ class TransactionCore():
 
         return requested_fee
     
+    
+    def formatUluna(self, uluna:float, add_suffix:bool = False) -> float|str:
+        """
+        A generic helper function to convert uluna amounts to LUNC.
+        """
+
+        lunc:float = uluna / 1000000
+
+        if add_suffix:
+            lunc = str(lunc) + 'LUNC'
+
+        return lunc
+
+    def readableFee(self) -> str:
+        """
+        Return a description of the fee for the current transaction.
+        """
+        
+        fee_coin:Coin = self.fee.amount
+                        
+        if fee_coin.denom == 'uluna':
+            return (f"Fee is {self.formatUluna(int(fee_coin.amount), True)}")
+        else:
+            return (f"Fee is {fee_coin.amount} {fee_coin.denom}")
+
     def broadcast(self) -> BlockTxBroadcastResult:
         """
         A core broadcast function for all transactions.
