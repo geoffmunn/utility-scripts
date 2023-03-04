@@ -430,29 +430,32 @@ class TransactionCore():
         return requested_fee
     
     
-    def formatUluna(self, uluna:float, add_suffix:bool = False) -> float|str:
-        """
-        A generic helper function to convert uluna amounts to LUNC.
-        """
+    # def formatUluna(self, uluna:float, add_suffix:bool = False) -> float|str:
+    #     """
+    #     A generic helper function to convert uluna amounts to LUNC.
+    #     """
 
-        lunc:float = uluna / 1000000
+    #     lunc:float = uluna / 1000000
 
-        if add_suffix:
-            lunc = str(lunc) + 'LUNC'
+    #     if add_suffix:
+    #         lunc = str(lunc) + 'LUNC'
 
-        return lunc
+    #     return lunc
 
     def readableFee(self) -> str:
         """
         Return a description of the fee for the current transaction.
         """
         
-        fee_coin:Coin = self.fee.amount
-                        
+        fee_coin:Coin = self.fee.amount  
+        amount:float  = fee_coin.amount / 1000000
+
         if fee_coin.denom == 'uluna':
-            return (f"Fee is {self.formatUluna(int(fee_coin.amount), True)}")
+            return (f"Fee is {amount} LUNC")
+        elif fee_coin.denom ==' uusd': 
+            return (f"Fee is {amount} USTC")
         else:
-            return (f"Fee is {fee_coin.amount} {fee_coin.denom}")
+            return (f"Fee is {amount} {fee_coin.denom}")
 
     def broadcast(self) -> BlockTxBroadcastResult:
         """
