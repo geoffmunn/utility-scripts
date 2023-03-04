@@ -14,27 +14,6 @@ from utility_classes import (
     Wallet
 )
 
-# from terra_sdk.client.lcd import LCDClient
-# from terra_sdk.client.lcd.api.distribution import Rewards
-# from terra_sdk.client.lcd.api.tx import (
-#     CreateTxOptions,
-#     Tx
-# )
-# from terra_sdk.client.lcd.params import PaginationOptions
-# from terra_sdk.client.lcd.wallet import Wallet
-# from terra_sdk.core.bank import MsgSend
-# from terra_sdk.core.broadcast import BlockTxBroadcastResult
-from terra_sdk.core.coin import Coin
-from terra_sdk.core.coins import Coins
-# from terra_sdk.core.distribution.msgs import MsgWithdrawDelegatorReward
-# from terra_sdk.core.fee import Fee
-# from terra_sdk.core.staking import MsgDelegate
-# from terra_sdk.core.staking.data.delegation import Delegation
-# from terra_sdk.core.staking.data.validator import Validator
-# from terra_sdk.core.wasm.msgs import MsgExecuteContract
-# from terra_sdk.exceptions import LCDResponseError
-# from terra_sdk.key.mnemonic import MnemonicKey
-
 # User settings - can be changed if required
 WITHDRAWAL_REMAINDER = 100   # This is the amount of Lunc we want to keep after withdrawal and before delegating. You should never delegate the entire balance.
 
@@ -230,13 +209,9 @@ def main():
                     result = withdrawal_tx.simulate()
 
                     if result == True:
-                        fee_coin:Coin = withdrawal_tx.fee.amount
-                        
-                        if fee_coin.denom == 'uluna':
-                            print (f"Fee is {wallet.formatUluna(int(fee_coin.amount), True)}")
-                        else:
-                            print (f"Fee is {fee_coin.amount} {fee_coin.denom}")
-                            
+
+                        print (withdrawal_tx.readableFee())
+
                         # Now we know what the fee is, we can do it again and finalise it
                         result = withdrawal_tx.withdraw()
 
@@ -279,12 +254,14 @@ def main():
                         result = swaps_tx.simulate()
 
                         if result == True:
-                            fee_coin:Coin = swaps_tx.fee.amount
+                            #fee_coin:Coin = swaps_tx.fee.amount
                                 
-                            if fee_coin.denom == 'uluna':
-                                print (f"Fee is {wallet.formatUluna(int(fee_coin.amount), True)}")
-                            else:
-                                print (f"Fee is {fee_coin.amount} {fee_coin.denom}")
+                            # if fee_coin.denom == 'uluna':
+                            #     print (f"Fee is {wallet.formatUluna(int(fee_coin.amount), True)}")
+                            # else:
+                            #     print (f"Fee is {fee_coin.amount} {fee_coin.denom}")
+
+                            print (swaps_tx.readableFee())
                             
                             result = swaps_tx.swap()
 
@@ -341,13 +318,14 @@ def main():
                             result = delegation_tx.simulate(delegated_uluna)
 
                             if result == True:
-                                fee_coin:Coin = delegation_tx.fee.amount
+                                # fee_coin:Coin = delegation_tx.fee.amount
                                 
-                                if fee_coin.denom == 'uluna':
-                                    print (f"Fee is {wallet.formatUluna(int(fee_coin.amount), True)}")
-                                else:
-                                    print (f"Fee is {fee_coin.amount} {fee_coin.denom}")
+                                # if fee_coin.denom == 'uluna':
+                                #     print (f"Fee is {wallet.formatUluna(int(fee_coin.amount), True)}")
+                                # else:
+                                #     print (f"Fee is {fee_coin.amount} {fee_coin.denom}")
                                     
+                                print (delegation_tx.readableFee())
                                 # Now we know what the fee is, we can do it again and finalise it
                                 result = delegation_tx.delegate(delegated_uluna)
                                 
