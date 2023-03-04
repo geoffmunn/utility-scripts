@@ -31,6 +31,24 @@ TAX_RATE_URI        = 'https://lcd.terra.dev/terra/treasury/v1beta1/tax_rate'
 CONFIG_FILE_NAME    = 'user_config.yml'
 GAS_ADJUSTMENT      = 3.5
 
+# Swap contracts can be found here
+# https://assets.terra.money/cw20/pairs.dex.json
+UUSD_TO_ULUNA_SWAP_ADDRESS      = 'terra1l7vy20x940je7lskm6x9s839vjsmekz9k9mv7g'
+ASTROPORT_UUSD_TO_ULUNA_ADDRESS = 'terra1m6ywlgn6wrjuagcmmezzz2a029gtldhey5k552'
+ASTROPORT_UUSD_TO_MINA_ADDRESS = 'terra134m8n2epp0n40qr08qsvvrzycn2zq4zcpmue48'
+
+def coin_list(input: Coins, existingList: dict) -> dict:
+    """ 
+    Converts the Coins list into a dictionary.
+    There might be a built-in function for this, but I couldn't get it working.
+    """
+
+    coin:Coin
+    for coin in input:
+        existingList[coin.denom] = coin.amount
+
+    return existingList
+    
 class Wallets:
     def __init__(self):
         self.file         = None
@@ -676,68 +694,56 @@ class SwapTransaction(TransactionCore):
         
         tx:Tx = self.transaction
 
-        # Get the fee details
-        requested_fee:Fee = tx.auth_info.fee
+        # Get the stub of the requested fee so we can adjust it
+        requested_fee = tx.auth_info.fee
 
-        #print (requested_fee.amount)
+        # This will be used by the swap function next time we call it
+        self.fee = self.calculateFee(requested_fee)
+
+        # Figure out the fee structure
         fee_bit:Coin = Coin.from_str(str(requested_fee.amount))
+        fee_amount   = fee_bit.amount
+        fee_denom    = fee_bit.denom
 
-        
-        #print ('requested fee:', fee_bit)
-        
-        #print ('requested_fee amount:', fee_bit.amount)
-        #print ('requested_fee denom:', fee_bit.denom)
+        swap_amount = self.balances['uusd']
 
-        fee_amount = fee_bit.amount
-        fee_denom = fee_bit.denom
+        # Calculate the tax portion
+        self.tax = swap_amount * float(self.tax_rate['tax_rate'])
 
-        # Broadcast the transaction (with no fee) so we can get the actual fee options in the error
-        simulation_result:BlockTxBroadcastResult = self.broadcast()
-
-        bits = simulation_result.raw_log.strip('(stability): insufficient fee').split('+')
-
-        if len(bits) > 1:
-            stability_tax:Coin = Coin.from_str(bits[1].strip('"'))
-
-            #print ('stability coin:', stability_tax)
-            #print (stability_tax.amount)
-
-            self.tax = stability_tax.amount
-
-            #fee_amount = stability_tax.amount
-            #fee_denom = stability_tax.denom
-
-            #self.tax = Coin(bits[1].strip('"')
-        else:
-            print ('Error parsing logs - no fee suggestions found')
-
-
-
-        # if len(bits) > 1:
-        #     fee_bit         = bits[1].split('=')
-        #     fee_coins:Coins = Coins.from_str(fee_bit[0].strip(' "'))
-        #     self.fee        = self.calculateFee(requested_fee, fee_coins, True)
-
-        # else:
-        #     print ('Error parsing logs - no fee suggestions found')
-
-        
-        # Get the fee details:
-        #fee_coin:Coin = self.calculateFee(requested_fee, True)
-        #fee_amount    = fee_coin.amount.amount
-        #fee_denom     = fee_coin.amount.denom
-
-        # Take the first fee payment option
-        #self.tax = fee_amount * float(self.tax_rate['tax_rate'])
-        
         # Build a fee object with 
         new_coin:Coin        = Coin(fee_denom, int(fee_amount + self.tax))
         requested_fee.amount = new_coin
 
         # This will be used by the swap function next time we call it
         self.fee = requested_fee
+
+        # # Get the fee details
+        # requested_fee:Fee = tx.auth_info.fee
+
+        # fee_bit:Coin = Coin.from_str(str(requested_fee.amount))
+
+        # fee_amount = fee_bit.amount
+        # fee_denom = fee_bit.denom
+
+        # # Broadcast the transaction (with no fee) so we can get the actual fee options in the error
+        # simulation_result:BlockTxBroadcastResult = self.broadcast()
+
+        # bits = simulation_result.raw_log.strip('(stability): insufficient fee').split('+')
+
+        # if len(bits) > 1:
+        #     stability_tax:Coin = Coin.from_str(bits[1].strip('"'))
+
+        #     self.tax = stability_tax.amount
+        # else:
+        #     print ('Error parsing logs - no fee suggestions found')
         
-        #print ('new fee:', self.fee)
+        # # Build a fee object with 
+        # new_coin:Coin        = Coin(fee_denom, int(fee_amount + self.tax))
+        # requested_fee.amount = new_coin
+
+        # # This will be used by the swap function next time we call it
+        # self.fee = requested_fee
+        
         # Store this so we can deduct it off the total amount to swap
         self.fee_deductables = int(fee_amount + self.tax)
 
