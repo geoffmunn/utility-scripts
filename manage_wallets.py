@@ -254,13 +254,7 @@ def main():
                         result = swaps_tx.simulate()
 
                         if result == True:
-                            #fee_coin:Coin = swaps_tx.fee.amount
-                                
-                            # if fee_coin.denom == 'uluna':
-                            #     print (f"Fee is {wallet.formatUluna(int(fee_coin.amount), True)}")
-                            # else:
-                            #     print (f"Fee is {fee_coin.amount} {fee_coin.denom}")
-
+                           
                             print (swaps_tx.readableFee())
                             
                             result = swaps_tx.swap()
@@ -318,14 +312,9 @@ def main():
                             result = delegation_tx.simulate(delegated_uluna)
 
                             if result == True:
-                                # fee_coin:Coin = delegation_tx.fee.amount
-                                
-                                # if fee_coin.denom == 'uluna':
-                                #     print (f"Fee is {wallet.formatUluna(int(fee_coin.amount), True)}")
-                                # else:
-                                #     print (f"Fee is {fee_coin.amount} {fee_coin.denom}")
                                     
                                 print (delegation_tx.readableFee())
+
                                 # Now we know what the fee is, we can do it again and finalise it
                                 result = delegation_tx.delegate(delegated_uluna)
                                 

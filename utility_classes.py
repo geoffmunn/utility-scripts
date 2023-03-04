@@ -428,19 +428,6 @@ class TransactionCore():
             print ('Not enough funds to pay for delegation!')
 
         return requested_fee
-    
-    
-    # def formatUluna(self, uluna:float, add_suffix:bool = False) -> float|str:
-    #     """
-    #     A generic helper function to convert uluna amounts to LUNC.
-    #     """
-
-    #     lunc:float = uluna / 1000000
-
-    #     if add_suffix:
-    #         lunc = str(lunc) + 'LUNC'
-
-    #     return lunc
 
     def readableFee(self) -> str:
         """
@@ -744,33 +731,6 @@ class SwapTransaction(TransactionCore):
 
         # This will be used by the swap function next time we call it
         self.fee = requested_fee
-
-        # # Get the fee details
-        # requested_fee:Fee = tx.auth_info.fee
-
-        # fee_bit:Coin = Coin.from_str(str(requested_fee.amount))
-
-        # fee_amount = fee_bit.amount
-        # fee_denom = fee_bit.denom
-
-        # # Broadcast the transaction (with no fee) so we can get the actual fee options in the error
-        # simulation_result:BlockTxBroadcastResult = self.broadcast()
-
-        # bits = simulation_result.raw_log.strip('(stability): insufficient fee').split('+')
-
-        # if len(bits) > 1:
-        #     stability_tax:Coin = Coin.from_str(bits[1].strip('"'))
-
-        #     self.tax = stability_tax.amount
-        # else:
-        #     print ('Error parsing logs - no fee suggestions found')
-        
-        # # Build a fee object with 
-        # new_coin:Coin        = Coin(fee_denom, int(fee_amount + self.tax))
-        # requested_fee.amount = new_coin
-
-        # # This will be used by the swap function next time we call it
-        # self.fee = requested_fee
         
         # Store this so we can deduct it off the total amount to swap
         self.fee_deductables = int(fee_amount + self.tax)
