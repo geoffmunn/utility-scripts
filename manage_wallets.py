@@ -21,7 +21,7 @@ WITHDRAWAL_REMAINDER = 100   # This is the amount of Lunc we want to keep after 
 GAS_PRICE_URI       = 'https://fcd.terra.dev/v1/txs/gas_prices'
 TAX_RATE_URI        = 'https://lcd.terra.dev/terra/treasury/v1beta1/tax_rate'
 CONFIG_FILE_NAME    = 'user_config.yml'
-GAS_ADJUSTMENT      = 3.5
+GAS_ADJUSTMENT      = 3
 
 # Do not change these
 USER_ACTION_ALL               = 'a'
