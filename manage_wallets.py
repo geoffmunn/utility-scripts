@@ -15,13 +15,13 @@ from utility_classes import (
 )
 
 # User settings - can be changed if required
-WITHDRAWAL_REMAINDER = 100   # This is the amount of Lunc we want to keep after withdrawal and before delegating. You should never delegate the entire balance.
+WITHDRAWAL_REMAINDER:int = 100   # This is the amount of Lunc we want to keep after withdrawal and before delegating. You should never delegate the entire balance.
 
 # System settings - these can be changed, but shouldn't be necessary
-GAS_PRICE_URI       = 'https://fcd.terra.dev/v1/txs/gas_prices'
-TAX_RATE_URI        = 'https://lcd.terra.dev/terra/treasury/v1beta1/tax_rate'
-CONFIG_FILE_NAME    = 'user_config.yml'
-GAS_ADJUSTMENT      = 3
+GAS_PRICE_URI:str       = 'https://fcd.terra.dev/v1/txs/gas_prices'
+TAX_RATE_URI:str        = 'https://lcd.terra.dev/terra/treasury/v1beta1/tax_rate'
+CONFIG_FILE_NAME:str    = 'user_config.yml'
+GAS_ADJUSTMENT:int      = 3
 
 # Do not change these
 USER_ACTION_ALL               = 'a'
@@ -219,7 +219,7 @@ def main():
                             withdrawal_tx.broadcast()
                         
                             if withdrawal_tx.broadcast_result.is_tx_error():
-                                print (' 🛎️ Withdrawal failed, an error occurred')
+                                print (' 🛎️  Withdrawal failed, an error occurred')
                                 print (withdrawal_tx.broadcast_result.raw_log)
                         
                             else:
@@ -227,9 +227,9 @@ def main():
                                 print (f' ✅ Tx Hash: {withdrawal_tx.broadcast_result.txhash}')
                                 time.sleep(10)
                     else:
-                        print ('The withdrawal could not be completed')
+                        print (' 🛎️  The withdrawal could not be completed')
                 else:
-                    print ('The amount of LUNC in this wallet does not exceed the withdrawal threshold')
+                    print (' 🛎️  The amount of LUNC in this wallet does not exceed the withdrawal threshold')
 
             # Swap any uusd coins for uluna
             if user_action in [USER_ACTION_SWAP, USER_ACTION_SWAP_DELEGATE, USER_ACTION_ALL]:
@@ -272,9 +272,9 @@ def main():
                                     print (f' ✅ Tx Hash: {swaps_tx.broadcast_result.txhash}')
                                     time.sleep(10)
                             else:
-                                print ('Swap transaction could not be completed')
+                                print (' 🛎️  Swap transaction could not be completed')
                     else:
-                        print ('Swap amount is not greater than zero')
+                        print (' 🛎️  Swap amount is not greater than zero')
                 else:
                     print ('Swaps not allowed on this wallet')
 
@@ -294,6 +294,7 @@ def main():
 
                         # Figure out how much to delegate based on the user settings
                         uluna_balance = int(wallet.balances['uluna'])
+                        
                         if wallet.delegations['delegate'].strip(' ')[-1] == '%':
                             percentage:int = int(wallet.delegations['delegate'].strip(' ')[0:-1]) / 100
                             delegated_uluna:int = int(uluna_balance * percentage)
@@ -301,7 +302,7 @@ def main():
                             delegated_uluna:int = wallet.delegations['delegate'].strip(' ')
 
                         # Adjust this so we have the desired amount still remaining
-                        delegated_uluna = int(delegated_uluna - (WITHDRAWAL_REMAINDER * 1000000))
+                        delegated_uluna = int(delegated_uluna - ((WITHDRAWAL_REMAINDER) * 1000000))
 
                         if delegated_uluna > 0 and delegated_uluna <= wallet.balances['uluna']:
                             print (f'Delegating {wallet.formatUluna(delegated_uluna, True)}')
@@ -328,13 +329,13 @@ def main():
                                         print (f' ✅ Delegated amount: {wallet.formatUluna(delegated_uluna, True)}')
                                         print (f' ✅ Tx Hash: {delegation_tx.broadcast_result.txhash}')
                                 else:
-                                    print ('The deleggation could not be completed')
+                                    print (' 🛎️  The deleggation could not be completed')
                             else:
-                                print ('The delegation could not be completed')
+                                print ('🛎️  The delegation could not be completed')
                         else:
-                            print ('Delegation error: amount is not greater than zero')
+                            print (' 🛎️  Delegation error: amount is not greater than zero')
                     else:
-                        print ('No LUNC to delegate!')
+                        print (' 🛎️  No LUNC to delegate!')
                 else:
                     print ('This wallet is not configured for delegations')
 
