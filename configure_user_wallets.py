@@ -64,6 +64,7 @@ def main():
         redelegate_amount = get_user_number('Redelegate amount (eg 100%): ', True)
         threshold         = get_user_number('What is the minimum amount before we withdraw rewards? ', False)
 
+    allow_swaps    = get_user_choice('Do you want to allow swaps? (y/n) ', yes_choices, no_choices)
 
     wallet_seed_encrypted = cryptocode.encrypt(wallet_seed, user_password)
 
@@ -82,7 +83,7 @@ def main():
         item:dict = {}
 
         # Key values we're looking for
-        tokens = ['seed', 'address', 'delegations', 'threshold', 'redelegate']
+        tokens = ['seed', 'address', 'delegations', 'threshold', 'redelegate', 'allow_swaps']
 
         for line in lines:
             if line != '---' and line != '...':
@@ -91,6 +92,11 @@ def main():
                     if line[0] != '#':
                         if line[0:len('- wallet')] == '- wallet':
                             if len(item)>0:
+
+                                # defaults in case they're not present:
+                                if 'allow_swaps' not in item:
+                                    item['allow_swaps'] = 'True'
+
                                 data[existing_name] = item
 
                             item = {}
@@ -101,8 +107,13 @@ def main():
                             if line[0:len(token)] == token:
                                 item[token] = line[len(token) + 1:].strip()
 
+
         # Add any remaining items into the list        
         if len(item)>0:
+            # defaults in case they're not present:
+            if 'allow_swaps' not in item:
+                item['allow_swaps'] = 'True'
+                
             data[existing_name] = item
 
         if wallet_name in data:
@@ -124,12 +135,18 @@ def main():
             item['threshold'] = threshold
         item['redelegate'] = redelegate_amount
 
+    item['allow_swaps'] = allow_swaps
+
     data[wallet_name] = item
     
+    print (data)
+    print ('.......')
     # Now generate the string
     output = '---\n\nwallets:'
 
     for item in data:
+
+        print (data[item])
         output += '\n  - wallet: ' + str(data[item]['name']) + '\n'
         output += '    seed: ' + str(data[item]['seed']) + '\n'
         output += '    address: ' + str(data[item]['address']) + '\n'
@@ -138,6 +155,7 @@ def main():
             if 'threshold' in data[item]:
                 output += '      threshold: ' + str(data[item]['threshold']) + '\n'
             output += '      redelegate: ' + str(data[item]['redelegate']) + '\n'
+        output += '    allow_swaps: ' + str(data[item]['allow_swaps']) + "\n"
 
     output += '\n...'
     
