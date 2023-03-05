@@ -53,6 +53,18 @@ def get_user_choice(question:str, yes_choices:list, no_choices:list) -> str|bool
 
     return result
 
+def get_user_number(question:str) -> int:
+    """
+    Get ther user input - must be a number.
+    """ 
+    
+    while True:    
+        answer = input(question).strip(' ')
+        if answer.isdigit():
+            break
+
+    return answer
+
 def get_user_multichoice(question:str, user_wallets:dict) -> dict|str:
     """
     Get multiple user selections from a list.
@@ -136,14 +148,6 @@ def get_user_singlechoice(question:str, user_wallets:dict) -> dict|str:
             else:
                 wallets_to_use.pop(key)
             
-        #if answer == 'c':
-        #    wallets_to_use = {}
-        
-        #if answer == 'a':
-        #    wallets_to_use = {}
-        #    for wallet_name in user_wallets:
-        #        wallets_to_use[wallet_name] = user_wallets[wallet_name]
-
         if answer == 'x':
             break
 
@@ -197,9 +201,9 @@ def main():
         exit()
 
     # If we're sending LUNC then we need a few more details:
-    recipient_address = input('What is the address you are sending to? ')
-    lunc_amount = input('How much are you sending? ')
-    memo = input('Provide a memo (optional): ')
+    recipient_address:str = input('What is the address you are sending to? ')
+    lunc_amount:int       = get_user_number('How much are you sending? ')
+    memo:str              = input('Provide a memo (optional): ').strip(' ')
 
     # Now start doing stuff
     for wallet_name in user_wallets:
@@ -224,12 +228,8 @@ def main():
                 result = send_tx.simulate(recipient_address, uluna_amount, memo)
 
                 if result == True:
-                    fee_coin:Coin = send_tx.fee.amount
                     
-                    if fee_coin.denom == 'uluna':
-                        print (f"Fee is {wallet.formatUluna(int(fee_coin.amount), True)}")
-                    else:
-                        print (f"Fee is {fee_coin.amount} {fee_coin.denom}")
+                    print (send_tx.readableFee())
                         
                     # Now we know what the fee is, we can do it again and finalise it
                     result = send_tx.send()
@@ -244,14 +244,14 @@ def main():
                             print (f' ✅ Sent amount: {wallet.formatUluna(uluna_amount, True)}')
                             print (f' ✅ Tx Hash: {send_tx.broadcast_result.txhash}')
                     else:
-                        print ('The send transaction could not be completed')
+                        print (' 🛎️  The send transaction could not be completed')
                 else:
-                    print ('The send transaction could not be completed')
+                    print (' 🛎️  The send transaction could not be completed')
                     
             else:
-                print ('Sending error: Not enough LUNC will be left in the account to cover fees')
+                print (' 🛎️  Sending error: Not enough LUNC will be left in the account to cover fees')
             
-    print ('Done!')
+    print (' 💯 Done!')
 
 if __name__ == "__main__":
     """ This is executed when run from the command line """
