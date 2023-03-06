@@ -2,7 +2,7 @@ import cryptocode
 from getpass import getpass
 from os.path import exists
 
-CONFIG_FILE_NAME = 'user_config.yml'
+import utility_constants
 
 # @TODO
 #   - confirm password?
@@ -69,11 +69,11 @@ def main():
     wallet_seed_encrypted = cryptocode.encrypt(wallet_seed, user_password)
 
     # Get the user configuration details from the default location
-    file_exists = exists(CONFIG_FILE_NAME)
+    file_exists = exists(utility_constants.CONFIG_FILE_NAME)
     data:list = {}
 
     if file_exists:
-        with open(CONFIG_FILE_NAME, 'r') as file:
+        with open(utility_constants.CONFIG_FILE_NAME, 'r') as file:
             output = file.read()
 
         # Turn the existing user file into a list
@@ -160,7 +160,7 @@ def main():
     output += '\n...'
     
     # Write the entire contents to a new version of the file
-    file = open(CONFIG_FILE_NAME, 'w')
+    file = open(utility_constants.CONFIG_FILE_NAME, 'w')
     file.write(output )
     file.close()
 

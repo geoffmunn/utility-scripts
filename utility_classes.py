@@ -25,18 +25,6 @@ from terra_sdk.core.wasm.msgs import MsgExecuteContract
 from terra_sdk.exceptions import LCDResponseError
 from terra_sdk.key.mnemonic import MnemonicKey
 
-# System settings - these can be changed, but shouldn't be necessary
-GAS_PRICE_URI       = 'https://fcd.terra.dev/v1/txs/gas_prices'
-TAX_RATE_URI        = 'https://lcd.terra.dev/terra/treasury/v1beta1/tax_rate'
-CONFIG_FILE_NAME    = 'user_config.yml'
-GAS_ADJUSTMENT      = 3.5
-
-# Swap contracts can be found here
-# https://assets.terra.money/cw20/pairs.dex.json
-UUSD_TO_ULUNA_SWAP_ADDRESS      = 'terra1l7vy20x940je7lskm6x9s839vjsmekz9k9mv7g'
-ASTROPORT_UUSD_TO_ULUNA_ADDRESS = 'terra1m6ywlgn6wrjuagcmmezzz2a029gtldhey5k552'
-ASTROPORT_UUSD_TO_MINA_ADDRESS = 'terra134m8n2epp0n40qr08qsvvrzycn2zq4zcpmue48'
-
 def coin_list(input: Coins, existingList: dict) -> dict:
     """ 
     Converts the Coins list into a dictionary.
