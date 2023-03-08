@@ -89,7 +89,7 @@ def main():
                 label_widths.append(0)
                 validator_column_count += 1
 
-    # First, get all the coins we'll be charting (column 1)
+    # Then, get all the coins we'll be charting (column 1)
 
     for wallet_name in user_wallets:
         wallet:Wallet = user_wallets[wallet_name]
@@ -98,9 +98,7 @@ def main():
         if len(wallet_name) > label_widths[1]:
             label_widths[1] = len(wallet_name)
 
-        for denom in wallet.balances:
-            #amount = float(wallet.balances[denom]) / utility_constants.COIN_DIVISOR
-            
+        for denom in wallet.balances:            
             raw_amount = float(wallet.balances[denom]) / utility_constants.COIN_DIVISOR
             amount = ("%.6f" % (raw_amount)).rstrip('0').rstrip('.')
 
@@ -158,8 +156,8 @@ def main():
 
                         # Find the validator column that this applies to:
                         val_count = 0
-                        for test in validator_template:
-                            if test == validator:
+                        for val_name in validator_template:
+                            if val_name == validator:
                                 break
                             val_count +=1
 
@@ -181,14 +179,7 @@ def main():
         header_string += ' Wallet |'
 
     val_count = 1
-    #available
     for validator in validator_template:
-        # print (f'[ {validator} ]')
-        # print (f'[{padding_str[0:label_widths[1 + val_count]-len(validator)]}]')
-        # print (f'[0:{label_widths[1 + val_count]-len(validator)}]')
-        # print (label_widths[1 + val_count])
-        # print (len(validator))
-
         if label_widths[1 + val_count] >= len(validator):
             header_string += ' ' + validator + ' ' + padding_str[0:label_widths[1 + val_count]-len(validator)] + '|'
         else:
@@ -227,10 +218,6 @@ def main():
     print (header_string)
     print (horizontal_spacer)
     print (body_string)
-    
-    #print (Token   Wallet  Current CryptoPlant Gingko  Garuda  TerraCVita)
-    #print (balance_coins)
-    
 
 if __name__ == "__main__":
     """ This is executed when run from the command line """
