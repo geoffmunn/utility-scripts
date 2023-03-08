@@ -261,7 +261,7 @@ def main():
                     print ('Swaps not allowed on this wallet')
 
             # Redelegate anything we might have
-            if user_action in [utility_constants.USER_ACTION_DELEGATE, utility_constants.USER_ACTION_WITHDRAW_DELEGATE, utility_constants.USER_ACTION_SWAP_DELEGATE, USER_ACTION_ALL]:
+            if user_action in [utility_constants.USER_ACTION_DELEGATE, utility_constants.USER_ACTION_WITHDRAW_DELEGATE, utility_constants.USER_ACTION_SWAP_DELEGATE, utility_constants.USER_ACTION_ALL]:
                 
                 # Only delegate if the wallet is configured for delegations
                 if 'delegate' in wallet.delegations:       
