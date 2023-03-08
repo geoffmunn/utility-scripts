@@ -106,8 +106,8 @@ def main():
 
     label_widths = []
 
-    label_widths.append(len(' Coin '))
-    label_widths.append(len(' Wallet '))
+    label_widths.append(len('Coin'))
+    label_widths.append(len('Wallet'))
 
     for wallet_name in user_wallets:
         wallet:Wallet = user_wallets[wallet_name]
@@ -176,10 +176,10 @@ def main():
 
     padding_str = '                                           '
 
-    #wallet_column_title = (' Wallet' + padding_str)[0:wallet_label_width]
-    #current_column_title = (' Current' + padding_str)[0:current_label_width]
+    print('labels:', label_widths)
+
     if label_widths[0] > len('Coin'):
-        header_string = ' Coin' + padding_str[0:label_widths[0]-len(' Coin ')] + '|'
+        header_string = ' Coin' + padding_str[0:label_widths[0]-len('Coin')] + ' |'
     else:
         header_string = ' Coin |'
 
@@ -197,8 +197,8 @@ def main():
     body_string = ''
     for coin_type in balance_coins:
 
-        current_coin =  ' ' + coin_type + padding_str[0:label_widths[0]-len('Coin ')] + '|'
-
+        current_coin =  ' ' + coin_type + padding_str[0:label_widths[0]-len(coin_type)] + ' |'
+        
         body_string += current_coin
 
         first = True
