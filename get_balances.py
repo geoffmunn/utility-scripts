@@ -67,24 +67,29 @@ def main():
 
     balance_coins = {}
 
+    label_widths = []
+
+    label_widths.append(len('Coin'))
+    label_widths.append(len('Wallet'))
+    label_widths.append(0)
+
     # First, create a template of all the validators
     validator_template:dict = {'Available': 0}
+    validator_column_count = len(label_widths)
     for wallet_name in user_wallets:
         wallet:Wallet = user_wallets[wallet_name]
         
         delegations = wallet.getDelegations()
 
         for validator in delegations:
-            validator_template.update({validator: ''})
+            
+            if validator not in validator_template:
+                validator_template.update({validator: ''})
 
+                label_widths.append(0)
+                validator_column_count += 1
 
     # First, get all the coins we'll be charting (column 1)
-
-    label_widths = []
-
-    label_widths.append(len('Coin'))
-    label_widths.append(len('Wallet'))
-    label_widths.append(0)
 
     for wallet_name in user_wallets:
         wallet:Wallet = user_wallets[wallet_name]
@@ -107,12 +112,6 @@ def main():
                     if len(coin_denom) > label_widths[0]:
                         label_widths[0] = len(coin_denom)
 
-                    # if coin_denom not in balance_coins:
-                    #     balance_coins.update({coin_denom: {}})
-
-                    # if wallet_name not in balance_coins[coin_denom]:
-                    #     balance_coins.update({coin_denom: {wallet_name: validator_template}})
-
                     if coin_denom not in balance_coins:
                         balance_coins[coin_denom] = {}
 
@@ -131,10 +130,9 @@ def main():
                     balance_coins.update({coin_denom: cur_wallets})
 
         delegations = wallet.getDelegations()
+        
         for validator in delegations:
             for denom in delegations[validator]['rewards']:
-                #amount = round(float(delegations[validator]['rewards'][denom]) / utility_constants.COIN_DIVISOR, 6)
-
                 raw_amount = float(delegations[validator]['rewards'][denom]) / utility_constants.COIN_DIVISOR
                 amount = ("%.6f" % (raw_amount)).rstrip('0').rstrip('.')
 
@@ -144,11 +142,6 @@ def main():
 
                         coin_denom = copy.deepcopy(coin_lookup[denom])
 
-                        # if coin_denom not in balance_coins:
-                        #     balance_coins.update({coin_denom: {}})
-
-                        # if wallet_name not in balance_coins[coin_denom]:
-                        #     balance_coins.update({coin_denom: {wallet_name: validator_template}})
                         if coin_denom not in balance_coins:
                             balance_coins[coin_denom] = {}
 
@@ -163,11 +156,19 @@ def main():
 
                         balance_coins.update({coin_denom: cur_wallets})
 
-    print ('----------')
+                        # Find the validator column that this applies to:
+                        val_count = 0
+                        for test in validator_template:
+                            if test == validator:
+                                break
+                            val_count +=1
 
-    padding_str = '                                           '
+                        if len(str(amount)) > label_widths[2 + val_count]:
+                            label_widths[2+val_count] = len(str(amount))
 
-    print('labels:', label_widths)
+                        
+
+    padding_str = ' ' * 100
 
     if label_widths[0] > len('Coin'):
         header_string = ' Coin' + padding_str[0:label_widths[0]-len('Coin')] + ' |'
@@ -179,9 +180,24 @@ def main():
     else:
         header_string += ' Wallet |'
 
+    val_count = 1
+    #available
     for validator in validator_template:
-        header_string += ' ' + validator + ' |'
+        # print (f'[ {validator} ]')
+        # print (f'[{padding_str[0:label_widths[1 + val_count]-len(validator)]}]')
+        # print (f'[0:{label_widths[1 + val_count]-len(validator)}]')
+        # print (label_widths[1 + val_count])
+        # print (len(validator))
 
+        if label_widths[1 + val_count] >= len(validator):
+            header_string += ' ' + validator + ' ' + padding_str[0:label_widths[1 + val_count]-len(validator)] + '|'
+        else:
+            header_string += ' ' + validator[0:label_widths[1 + val_count]-len(validator)] + ' |' 
+
+        val_count += 1
+
+    horizontal_spacer = '-' * len(header_string)
+    
     body_string = ''
     for coin_type in balance_coins:
 
@@ -195,14 +211,21 @@ def main():
             else:
                 body_string += padding_str[0:len(current_coin) - 1] + '| ' + ((wallet_name + padding_str)[0:label_widths[1]]) + ' |'
 
+            val_count = 1
             for validator in balance_coins[coin_type][wallet_name]:
-                body_string += ' ' + (str(balance_coins[coin_type][wallet_name][validator])) + ' |'
+                body_string += ' ' +  (((str(balance_coins[coin_type][wallet_name][validator])) + padding_str)[0:label_widths[1 + val_count]]) + ' |'
+                val_count += 1
 
             body_string += '\n'
 
             first = False
 
+        body_string += horizontal_spacer + '\n'
+
+    print ('\n\n')
+    print (horizontal_spacer)
     print (header_string)
+    print (horizontal_spacer)
     print (body_string)
     
     #print (Token   Wallet  Current CryptoPlant Gingko  Garuda  TerraCVita)
