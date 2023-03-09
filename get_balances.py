@@ -85,7 +85,7 @@ def main():
     if just_main_coins == True:
         coin_lookup = basic_coin_lookup
     else:
-        coin_type = full_coin_lookup
+        coin_lookup = full_coin_lookup
 
     try:
         with open(utility_constants.CONFIG_FILE_NAME, 'r') as file:
