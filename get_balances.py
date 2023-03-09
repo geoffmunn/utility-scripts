@@ -86,7 +86,7 @@ def main():
         coin_lookup = basic_coin_lookup
     else:
         coin_type = full_coin_lookup
-        
+
     try:
         with open(utility_constants.CONFIG_FILE_NAME, 'r') as file:
             user_config = yaml.safe_load(file)
@@ -256,7 +256,7 @@ def main():
 
         body_string += horizontal_spacer + '\n'
 
-    print ('\n\n')
+    print ('\n')
     print (horizontal_spacer)
     print (header_string)
     print (horizontal_spacer)
