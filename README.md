@@ -11,6 +11,7 @@ They are intended to be useful for anyone making repeated interactions across mu
 
 Current functionality includes:
 
+ * Viewing the balances across all your wallets
  * Withdrawing rewards from validator delegations
  * Swapping USTC for LUNC
  * Staking LUNC with validators
@@ -73,6 +74,10 @@ You can edit this file if you need to, but do not modify the encrypted seed stri
 
 If this file is corrupted or you forget the password then you can delete it and start again.
 
+### get_balances.py
+
+This will return the balances for each coin type on all of your wallets. You provide the same password as you used in the configuration step, and say yes or no to just getting the LUNC and USTC summaries.
+
 ### manage_wallets.py
 
 To make transactions on your wallets, you need to run ```manage_wallets.py```. Provide the same password you used in the configuration step, and then select the operation you want to do.
@@ -115,3 +120,5 @@ Each wallet seed is encrypted with the cryptocode library (https://pypi.org/proj
 The encrypted string is saved in the user_config.yml file, and your seed will never be visible in plain text.
 
 When you run the ```manage_wallets.py``` script, you provide the same password you used to encrypt the seed. If this password doesn't decrypt any valid wallets then the script will stop.
+
+If you have any questions or concerns about the security aspect of your seed, then please raise an issue on this project.
