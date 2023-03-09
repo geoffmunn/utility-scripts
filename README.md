@@ -1,6 +1,6 @@
 # Luna Classic utility scripts
 
-These are Python scripts for use on the Luna Classic chain. These scripts demonsrate full independance from the TFL infrastructure.
+These are Python scripts for use on the Luna Classic chain. These scripts demonstrate full independance from the TFL infrastructure.
 
 
 ## What are these?
@@ -22,7 +22,7 @@ Current functionality includes:
  By running these on your own computer, you get direct access to the Luna Classic chain. You don't need to rely on 3rd party software like the Terra Station, browser extension wallets, or centralised exchanges.
 
 
- You can also be sure you're getting the correct prices and fees. You can also edit the script to behave differently if you want to.
+ You can also be sure you're getting the correct prices and fees. You can edit the script to behave differently if you want to.
 
  ## Requirements
  
@@ -57,7 +57,9 @@ https://github.com/geoffmunn/utility-scripts
 
 ### configure_user_wallets.py
 
-Before you can manage your wallets, you need to run the ```configure_user_wallets.py``` script first. This will require you to name the wallets you want to use and provide some basic details as well as the seed. Please take a look at the security section below for details on how your seed is kept safe.
+Before you can manage your wallets, you need to run the ```configure_user_wallets.py``` script first. This will require you to name the wallets you want to use and provide some basic details as well as the seed. 
+
+Please take a look at the security section below for details on how your seed is kept safe.
 
 You will be prompted for the following details:
 
@@ -66,7 +68,7 @@ You will be prompted for the following details:
  - **Wallet seed**: Your secret seed to generate the wallet. This is the ONLY time you'll need to provide this - see the security section below.
  - **Do you want to withdraw or delegate anything?**: Optional - if you're staking coins then say 'yes'
  - **Delegation amount**: You can provide a percentage (usually 100%), or a fixed number. This percentage or number comes from the balance in the wallet at the time, unrelated to the withdrawn amount.
- - **Withdrawal threshold**: The amount that must be in the wallet before it is withdrawn.
+ - **Withdrawal threshold**: The amount that must be available as a staking reward before it is withdrawn.
  - **Allow swaps?**: Yes or no - if you say 'no' then the swaps function will not apply to this wallet.
 
 This script will create a file called ```user_config.yml```.
@@ -85,7 +87,8 @@ To make transactions on your wallets, you need to run ```manage_wallets.py```. P
  - **Withdrawals**: All the staking rewards are withdrawn. The fee is paid by either a random minor coin (KRT for example), or LUNC, or USDT (in that order).
  - **Swap**: All the available USDT is swapped for LUNC. Currently the fee must be paid in USDT.
  - **Delegate**: LUNC is redelegated back to the same validator. A set amount is always kept in reserve to cover fees for later transactions (100 LUNC). Depending on how the wallet was configured, either a percentage of the available funds is delegated, or a set amount.
- **Special note about delegations**: delegating will also withdraw all existing rewards (which are not part of the delegation), so you balance afterwards might also reflect the withdrawals.
+
+ **Special note about delegations**: delegating will also withdraw all existing rewards (which are not part of the delegation), so your balance afterwards might also reflect the withdrawals.
 
 ### send_transaction.py
 
@@ -119,6 +122,6 @@ Each wallet seed is encrypted with the cryptocode library (https://pypi.org/proj
 
 The encrypted string is saved in the user_config.yml file, and your seed will never be visible in plain text.
 
-When you run the ```manage_wallets.py``` script, you provide the same password you used to encrypt the seed. If this password doesn't decrypt any valid wallets then the script will stop.
+When you run any of the other scripts, you provide the same password you used to encrypt the seed. If this password doesn't decrypt any valid wallets then the script will stop.
 
 If you have any questions or concerns about the security aspect of your seed, then please raise an issue on this project.
