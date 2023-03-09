@@ -4,6 +4,8 @@ import requests
 import json
 import cryptocode
 
+import utility_constants
+
 from terra_sdk.client.lcd import LCDClient
 from terra_sdk.client.lcd.api.distribution import Rewards
 from terra_sdk.client.lcd.api.tx import (
@@ -24,18 +26,6 @@ from terra_sdk.core.staking.data.validator import Validator
 from terra_sdk.core.wasm.msgs import MsgExecuteContract
 from terra_sdk.exceptions import LCDResponseError
 from terra_sdk.key.mnemonic import MnemonicKey
-
-# System settings - these can be changed, but shouldn't be necessary
-GAS_PRICE_URI       = 'https://fcd.terra.dev/v1/txs/gas_prices'
-TAX_RATE_URI        = 'https://lcd.terra.dev/terra/treasury/v1beta1/tax_rate'
-CONFIG_FILE_NAME    = 'user_config.yml'
-GAS_ADJUSTMENT      = 3.5
-
-# Swap contracts can be found here
-# https://assets.terra.money/cw20/pairs.dex.json
-UUSD_TO_ULUNA_SWAP_ADDRESS      = 'terra1l7vy20x940je7lskm6x9s839vjsmekz9k9mv7g'
-ASTROPORT_UUSD_TO_ULUNA_ADDRESS = 'terra1m6ywlgn6wrjuagcmmezzz2a029gtldhey5k552'
-ASTROPORT_UUSD_TO_MINA_ADDRESS = 'terra134m8n2epp0n40qr08qsvvrzycn2zq4zcpmue48'
 
 def coin_list(input: Coins, existingList: dict) -> dict:
     """ 
@@ -123,7 +113,7 @@ class Wallet:
         self.name    = name
         self.address = address
         self.seed    = cryptocode.decrypt(seed, password)
-        self.terra   = TerraInstance(GAS_PRICE_URI, GAS_ADJUSTMENT).create()
+        self.terra   = TerraInstance(utility_constants.GAS_PRICE_URI, utility_constants.GAS_ADJUSTMENT).create()
 
         return self
     
@@ -301,7 +291,7 @@ class TerraInstance:
         Make a JSON request for the tax rate, and store it against this LCD client instance.
         """
 
-        tax_rate:json = requests.get(TAX_RATE_URI).json()
+        tax_rate:json = requests.get(utility_constants.TAX_RATE_URI).json()
         
         return tax_rate
 
@@ -344,7 +334,7 @@ class Delegations(Wallet):
         It may contain more than one validator.
         """
 
-        terra = TerraInstance(GAS_PRICE_URI, GAS_ADJUSTMENT).create()
+        terra = TerraInstance(utility_constants.GAS_PRICE_URI, utility_constants.GAS_ADJUSTMENT).create()
 
         pagOpt:PaginationOptions = PaginationOptions(limit=50, count_total=True)
         result, pagination       = terra.staking.delegations(delegator = wallet_address, params = pagOpt)
@@ -383,7 +373,7 @@ class TransactionCore():
         self.transaction:Tx                          = None
         
         # Initialise the basic variables:
-        terra         = TerraInstance(GAS_PRICE_URI, GAS_ADJUSTMENT)
+        terra         = TerraInstance(utility_constants.GAS_PRICE_URI, utility_constants.GAS_ADJUSTMENT)
         self.terra    = terra.create()
         self.gas_list = terra.gasList()
         self.tax_rate = terra.taxRate()
@@ -687,7 +677,7 @@ class SwapTransaction(TransactionCore):
         Figure out the belief price for this swap.
         """
 
-        result = self.terra.wasm.contract_query(UUSD_TO_ULUNA_SWAP_ADDRESS, {"pool": {}})
+        result = self.terra.wasm.contract_query(utility_constants.UUSD_TO_ULUNA_SWAP_ADDRESS, {"pool": {}})
 
         belief_price:float = int(result['assets'][0]['amount']) / int(result['assets'][1]['amount']) 
 
@@ -759,7 +749,7 @@ class SwapTransaction(TransactionCore):
 
                 tx_msg = MsgExecuteContract(
                     sender      = self.current_wallet.key.acc_address,
-                    contract    = ASTROPORT_UUSD_TO_ULUNA_ADDRESS,
+                    contract    = utility_constants.ASTROPORT_UUSD_TO_ULUNA_ADDRESS,
                     execute_msg = {
                         'swap': {
                             'belief_price': str(self.belief_price),

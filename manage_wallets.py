@@ -2,9 +2,6 @@
 # -*- coding: UTF-8 -*-
 
 import yaml
-import requests
-import json
-import cryptocode
 import time
 
 from getpass import getpass
@@ -14,22 +11,7 @@ from utility_classes import (
     Wallet
 )
 
-# User settings - can be changed if required
-WITHDRAWAL_REMAINDER:int = 100   # This is the amount of Lunc we want to keep after withdrawal and before delegating. You should never delegate the entire balance.
-
-# System settings - these can be changed, but shouldn't be necessary
-GAS_PRICE_URI:str       = 'https://fcd.terra.dev/v1/txs/gas_prices'
-TAX_RATE_URI:str        = 'https://lcd.terra.dev/terra/treasury/v1beta1/tax_rate'
-CONFIG_FILE_NAME:str    = 'user_config.yml'
-GAS_ADJUSTMENT:int      = 3
-
-# Do not change these
-USER_ACTION_ALL               = 'a'
-USER_ACTION_DELEGATE          = 'd'
-USER_ACTION_SWAP              = 's'
-USER_ACTION_SWAP_DELEGATE     = 'sd'
-USER_ACTION_WITHDRAW          = 'w'
-USER_ACTION_WITHDRAW_DELEGATE = 'wd'
+import utility_constants
 
 def strtobool (val):
     """
@@ -131,7 +113,7 @@ def main():
     user_action = get_user_choice('', ['w', 's', 'd', 'wd', 'sd', 'a'], [])
 
     try:
-        with open(CONFIG_FILE_NAME, 'r') as file:
+        with open(utility_constants.CONFIG_FILE_NAME, 'r') as file:
             user_config = yaml.safe_load(file)
     except :
         print (' 🛑 The user_config.yml file could not be opened - please run configure_user_wallets.py before running this script')
@@ -146,17 +128,17 @@ def main():
     user_wallets = wallet_obj.getWallets(True)
 
     action_string = ''
-    if user_action == USER_ACTION_WITHDRAW:
+    if user_action == utility_constants.USER_ACTION_WITHDRAW:
         action_string = 'withdraw rewards'
-    if user_action == USER_ACTION_SWAP:
+    if user_action == utility_constants.USER_ACTION_SWAP:
         action_string = 'swap USTC for LUNC'
-    if user_action == USER_ACTION_DELEGATE:
+    if user_action == utility_constants.USER_ACTION_DELEGATE:
         action_string = 'delegate all available funds'
-    if user_action == USER_ACTION_WITHDRAW_DELEGATE:
+    if user_action == utility_constants.USER_ACTION_WITHDRAW_DELEGATE:
         action_string = 'withdraw rewards and delegating everything'
-    if user_action == USER_ACTION_SWAP_DELEGATE:
+    if user_action == utility_constants.USER_ACTION_SWAP_DELEGATE:
         action_string = 'swap USTC for LUNC and delegating everything'
-    if user_action == USER_ACTION_ALL:
+    if user_action == utility_constants.USER_ACTION_ALL:
         action_string = 'withdraw rewards, swap USTC for LUNC, and then delegate everything'
 
     if action_string == '':
@@ -188,7 +170,7 @@ def main():
             print ('\n------------------------------------')
             print (f"The {delegations[validator]['validator_name']} validator has a {delegations[validator]['commission']}% commission.")
 
-            if user_action in [USER_ACTION_WITHDRAW, USER_ACTION_WITHDRAW_DELEGATE, USER_ACTION_ALL]:
+            if user_action in [utility_constants.USER_ACTION_WITHDRAW, utility_constants.USER_ACTION_WITHDRAW_DELEGATE, utility_constants.USER_ACTION_ALL]:
 
                 print ('Starting withdrawals...')
 
@@ -232,7 +214,7 @@ def main():
                     print (' 🛎️  The amount of LUNC in this wallet does not exceed the withdrawal threshold')
 
             # Swap any uusd coins for uluna
-            if user_action in [USER_ACTION_SWAP, USER_ACTION_SWAP_DELEGATE, USER_ACTION_ALL]:
+            if user_action in [utility_constants.USER_ACTION_SWAP, utility_constants.USER_ACTION_SWAP_DELEGATE, utility_constants.USER_ACTION_ALL]:
 
                 if wallet.allow_swaps == True:
                     print ('\n------------------------------------')
@@ -279,7 +261,7 @@ def main():
                     print ('Swaps not allowed on this wallet')
 
             # Redelegate anything we might have
-            if user_action in [USER_ACTION_DELEGATE, USER_ACTION_WITHDRAW_DELEGATE, USER_ACTION_SWAP_DELEGATE, USER_ACTION_ALL]:
+            if user_action in [utility_constants.USER_ACTION_DELEGATE, utility_constants.USER_ACTION_WITHDRAW_DELEGATE, utility_constants.USER_ACTION_SWAP_DELEGATE, utility_constants.USER_ACTION_ALL]:
                 
                 # Only delegate if the wallet is configured for delegations
                 if 'delegate' in wallet.delegations:       
@@ -302,7 +284,7 @@ def main():
                             delegated_uluna:int = wallet.delegations['delegate'].strip(' ')
 
                         # Adjust this so we have the desired amount still remaining
-                        delegated_uluna = int(delegated_uluna - ((WITHDRAWAL_REMAINDER) * 1000000))
+                        delegated_uluna = int(delegated_uluna - ((utility_constants.WITHDRAWAL_REMAINDER) * 1000000))
 
                         if delegated_uluna > 0 and delegated_uluna <= wallet.balances['uluna']:
                             print (f'Delegating {wallet.formatUluna(delegated_uluna, True)}')

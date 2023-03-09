@@ -9,14 +9,10 @@ from utility_classes import (
     Wallet
 )
 
+import utility_constants
+
 from terra_sdk.core.coin import Coin
 from terra_sdk.core.coins import Coins
-
-# User settings - can be changed if required
-WITHDRAWAL_REMAINDER = 100   # This is the amount of Lunc we want to keep after withdrawal and before delegating. You should never delegate the entire balance.
-
-# System settings - these can be changed, but shouldn't be necessary
-CONFIG_FILE_NAME    = 'user_config.yml'
 
 def strtobool (val):
     """
@@ -174,7 +170,7 @@ def main():
     decrypt_password:str = getpass() # the secret password that encrypts the seed phrase
 
     try:
-        with open(CONFIG_FILE_NAME, 'r') as file:
+        with open(utility_constants.CONFIG_FILE_NAME, 'r') as file:
             user_config = yaml.safe_load(file)
     except :
         print (' 🛑 The user_config.yml file could not be opened - please run configure_user_wallets.py before running this script')
@@ -219,7 +215,7 @@ def main():
             # Adjust this so we have the desired amount still remaining
             uluna_amount = int(lunc_amount) * 1000000
 
-            if uluna_amount > 0 and uluna_amount <= (wallet.balances['uluna'] - (WITHDRAWAL_REMAINDER * 1000000)):
+            if uluna_amount > 0 and uluna_amount <= (wallet.balances['uluna'] - (utility_constants.WITHDRAWAL_REMAINDER * 1000000)):
                 print (f'Sending {wallet.formatUluna(uluna_amount, True)}')
 
                 send_tx = wallet.send().create()
