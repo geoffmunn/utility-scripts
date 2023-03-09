@@ -13,7 +13,7 @@ from utility_classes import (
 
 import utility_constants
 
-coin_lookup = {
+full_coin_lookup = {
     'uaud': 'AUT',
     'ucad': 'CAT',
     'uchf': 'CHT',
@@ -38,12 +38,55 @@ coin_lookup = {
     'utwd': 'TWT',
     'uusd': 'UST'
 }
+basic_coin_lookup = {
+    'uluna': 'LUNC',
+    'uusd': 'UST'
+}
+
+def strtobool (val):
+    """
+    Convert a string representation of truth to true (1) or false (0).
+    True values are 'y', 'yes', 't', 'true', 'on', and '1'; false values
+    are 'n', 'no', 'f', 'false', 'off', and '0'.  Returns -1 if
+    'val' is anything else.
+    """
+
+    val = val.lower()
+    if val in ('y', 'yes', 't', 'true', 'on', '1'):
+        return True
+    elif val in ('n', 'no', 'f', 'false', 'off', '0'):
+        return False
+    else:
+        #raise ValueError("invalid truth value %r" % (val,))
+        return -1
+    
+def get_user_choice(question:str) -> str|bool:
+    """
+    Get the user selection for a prompt and convert it to a standard value.
+    """
+
+    while True:    
+        answer = input(question).lower()
+        
+        booly = strtobool(answer)
+        
+        if booly != -1:
+            break;
+    
+    return booly
 
 def main():
     
     # Get the password that decrypts the user wallets
     decrypt_password:str = getpass() # the secret password that encrypts the seed phrase
 
+    just_main_coins:bool = get_user_choice('Show just LUNC and USTC? (y/n) ')
+
+    if just_main_coins == True:
+        coin_lookup = basic_coin_lookup
+    else:
+        coin_type = full_coin_lookup
+        
     try:
         with open(utility_constants.CONFIG_FILE_NAME, 'r') as file:
             user_config = yaml.safe_load(file)
