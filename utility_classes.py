@@ -198,10 +198,10 @@ class Wallet:
         A generic helper function to convert uluna amounts to LUNC.
         """
 
-        lunc:float = uluna / 1000000
+        lunc:float = uluna / utility_constants.COIN_DIVISOR
 
         if add_suffix:
-            lunc = str(lunc) + 'LUNC'
+            lunc = str(lunc) + ' LUNC'
 
         return lunc
     
@@ -424,15 +424,33 @@ class TransactionCore():
         Return a description of the fee for the current transaction.
         """
         
-        fee_coin:Coin = self.fee.amount  
-        amount:float  = fee_coin.amount / 1000000
+        fee_coins:Coins = self.fee.amount
 
-        if fee_coin.denom == 'uluna':
-            return (f"Fee is {amount} LUNC")
-        elif fee_coin.denom ==' uusd': 
-            return (f"Fee is {amount} USTC")
-        else:
-            return (f"Fee is {amount} {fee_coin.denom}")
+        fee_string = 'The fee is '
+        first = True
+        fee_coin:Coin
+        for fee_coin in fee_coins.to_list():
+
+            amount = fee_coin.amount / utility_constants.COIN_DIVISOR
+            denom = utility_constants.BASIC_COIN_LOOKUP[fee_coin.denom]
+
+            if first == False:
+                fee_string += ', and ' + str(amount) + ' ' + denom
+            else:
+                fee_string += str(amount) + ' ' + denom
+
+            first = False
+
+        return fee_string
+        # fee_coin:Coin = self.fee.amount  
+        # amount:float  = fee_coin.amount / 1000000
+
+        # if fee_coin.denom == 'uluna':
+        #     return (f"Fee is {amount} LUNC")
+        # elif fee_coin.denom ==' uusd': 
+        #     return (f"Fee is {amount} USTC")
+        # else:
+        #     return (f"Fee is {amount} {fee_coin.denom}")
 
     def broadcast(self) -> BlockTxBroadcastResult:
         """
@@ -442,6 +460,8 @@ class TransactionCore():
 
         result:BlockTxBroadcastResult = self.terra.tx.broadcast(self.transaction)
         self.broadcast_result         = result
+
+        #print ('result code:', self.broadcast_result.code)
 
         # Wait for this transaction to appear in the blockchain
         if not self.broadcast_result.is_tx_error():
@@ -456,7 +476,10 @@ class TransactionCore():
                 else:
                     print ('No such tx yet...')
 
-        return result
+        # we need to check for code 11 and change the gas adjustment value and try again
+        # Code 0 means it worked or did not return any failures (tx might still be in progress)
+
+        return self.broadcast_result
 
 class DelegationTransaction(TransactionCore):
 
@@ -597,7 +620,7 @@ class SendTransaction(TransactionCore):
         self.tax = uluna_amount * float(self.tax_rate['tax_rate'])
 
         # Build a fee object with 
-        new_coin:Coin        = Coin(fee_denom, int(fee_amount + self.tax))
+        new_coin:Coins        = Coins({Coin(fee_denom, int(fee_amount + self.tax)), Coin('uluna', 200000)})
         requested_fee.amount = new_coin
 
         # This will be used by the swap function next time we call it
