@@ -201,8 +201,8 @@ def main():
                             withdrawal_tx.broadcast()
                         
                             if withdrawal_tx.broadcast_result.is_tx_error():
-                                print (' 🛎️  Withdrawal failed, an error occurred')
-                                print (withdrawal_tx.broadcast_result.raw_log)
+                                print (' 🛎️  The withdrawal failed, an error occurred:')
+                                print (f' 🛎️  {withdrawal_tx.broadcast_result.raw_log}')
                         
                             else:
                                 print (f' ✅ Withdrawn amount: {wallet.formatUluna(uluna_reward, True)}')
@@ -246,8 +246,8 @@ def main():
                                 swaps_tx.broadcast()
 
                                 if swaps_tx.broadcast_result.is_tx_error():
-                                    print (' 🛎️ Swap failed, an error occurred')
-                                    print (swaps_tx.broadcast_result.raw_log)
+                                    print (' 🛎️ The swap failed, an error occurred:')
+                                    print (f' 🛎️  {swaps_tx.broadcast_result.raw_log}')
                             
                                 else:
                                     print (f' ✅ Swap successfully completed')
@@ -305,8 +305,8 @@ def main():
                                     delegation_tx.broadcast()
                                 
                                     if delegation_tx.broadcast_result.is_tx_error():
-                                        print (' 🛎️ Delegation failed, an error occurred')
-                                        print (delegation_tx.broadcast_result.raw_log)
+                                        print (' 🛎️ The delegation failed, an error occurred:')
+                                        print (f' 🛎️  {delegation_tx.broadcast_result.raw_log}')
                                     else:
                                         print (f' ✅ Delegated amount: {wallet.formatUluna(delegated_uluna, True)}')
                                         print (f' ✅ Tx Hash: {delegation_tx.broadcast_result.txhash}')
