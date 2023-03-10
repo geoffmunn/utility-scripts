@@ -633,43 +633,43 @@ class SendTransaction(TransactionCore):
         If fee is None then it will be a simulation.
         """
 
-        #try:
+        try:
 
-        msg = MsgSend(
-            from_address = self.current_wallet.key.acc_address,
-            to_address   = self.recipient_address,
-            amount       = Coins(str(self.uluna_amount) + 'uluna')
-        )
+            msg = MsgSend(
+                from_address = self.current_wallet.key.acc_address,
+                to_address   = self.recipient_address,
+                amount       = Coins(str(self.uluna_amount) + 'uluna')
+            )
 
-        options = CreateTxOptions(
-            fee        = self.fee,
-            #fee_denoms  = ['uluna', 'uusd', 'uaud' ,'ukrw'], # 
-            gas_prices = self.gas_list,
-            msgs       = [msg],
-            sequence   = self.sequence,
-            memo = self.memo
-        )
+            options = CreateTxOptions(
+                fee        = self.fee,
+                #fee_denoms  = ['uluna', 'uusd', 'uaud' ,'ukrw'], # 
+                gas_prices = self.gas_list,
+                msgs       = [msg],
+                sequence   = self.sequence,
+                memo = self.memo
+            )
 
-        # This process often generates sequence errors. If we get a response error, then
-        # bump up the sequence number by one and try again.
-        while True:
-            try:
-                tx:Tx = self.current_wallet.create_and_sign_tx(options)
-                break
-            except LCDResponseError as err:
-                self.sequence    = self.sequence + 1
-                options.sequence = self.sequence
-            except Exception as err:
-                print (' 🛑 A random error has occurred')
-                print (err)
-                break
+            # This process often generates sequence errors. If we get a response error, then
+            # bump up the sequence number by one and try again.
+            while True:
+                try:
+                    tx:Tx = self.current_wallet.create_and_sign_tx(options)
+                    break
+                except LCDResponseError as err:
+                    self.sequence    = self.sequence + 1
+                    options.sequence = self.sequence
+                except Exception as err:
+                    print (' 🛑 A random error has occurred')
+                    print (err)
+                    break
 
-        # Store the transaction
-        self.transaction = tx
+            # Store the transaction
+            self.transaction = tx
 
-        return True
-        #except:
-        #    return False
+            return True
+        except:
+            return False
         
 class SwapTransaction(TransactionCore):
 
