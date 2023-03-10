@@ -369,7 +369,7 @@ class TransactionCore():
         self.seed:str                                = ''
         self.sequence:int                            = None
         self.tax_rate:json                           = None
-        self.terra                                   = None
+        self.terra:LCDClient                         = None
         self.transaction:Tx                          = None
         
         # Initialise the basic variables:
@@ -442,15 +442,6 @@ class TransactionCore():
             first = False
 
         return fee_string
-        # fee_coin:Coin = self.fee.amount  
-        # amount:float  = fee_coin.amount / 1000000
-
-        # if fee_coin.denom == 'uluna':
-        #     return (f"Fee is {amount} LUNC")
-        # elif fee_coin.denom ==' uusd': 
-        #     return (f"Fee is {amount} USTC")
-        # else:
-        #     return (f"Fee is {amount} {fee_coin.denom}")
 
     def broadcast(self) -> BlockTxBroadcastResult:
         """
@@ -480,6 +471,13 @@ class TransactionCore():
         # Code 0 means it worked or did not return any failures (tx might still be in progress)
 
         return self.broadcast_result
+    
+    def blockHeight(self):
+        """
+        Return the current block height.
+        This is used to predict when transactions should appear in wallet updates.
+        """
+        return self.terra.tendermind.block_info()['block']['header']['height']
 
 class DelegationTransaction(TransactionCore):
 
