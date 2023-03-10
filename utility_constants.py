@@ -7,7 +7,8 @@ WITHDRAWAL_REMAINDER = 100   # This is the amount of Lunc we want to keep after 
 GAS_PRICE_URI       = 'https://fcd.terra.dev/v1/txs/gas_prices'
 TAX_RATE_URI        = 'https://lcd.terra.dev/terra/treasury/v1beta1/tax_rate'
 CONFIG_FILE_NAME    = 'user_config.yml'
-GAS_ADJUSTMENT      = 3
+#GAS_ADJUSTMENT      = 3.5
+GAS_ADJUSTMENT      = 1
 
 # Swap contracts can be found here
 # https://assets.terra.money/cw20/pairs.dex.json
@@ -24,3 +25,34 @@ USER_ACTION_WITHDRAW          = 'w'
 USER_ACTION_WITHDRAW_DELEGATE = 'wd'
 
 COIN_DIVISOR = 1000000
+
+FULL_COIN_LOOKUP = {
+    'uaud': 'AUT',
+    'ucad': 'CAT',
+    'uchf': 'CHT',
+    'ucny': 'CNT',
+    'udkk': 'DKT',
+    'ueur': 'EUT',
+    'ugbp': 'GBT',
+    'uhkd': 'HKT',
+    'uidr': 'IDT',
+    'uinr': 'INT',
+    'ujpy': 'JPT',
+    'ukrw': 'KRT',
+    'uluna': 'LUNC',
+    'umnt': 'MNT',
+    'umyr': 'MYT',
+    'unok': 'NOT',
+    'uphp': 'PHT',
+    'usdr': 'SDT',
+    'usek': 'SET',
+    'usgd': 'SGT',
+    'uthb': 'THT',
+    'utwd': 'TWT',
+    'uusd': 'UST'
+}
+
+BASIC_COIN_LOOKUP = {
+    'uluna': 'LUNC',
+    'uusd': 'UST'
+}
