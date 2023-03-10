@@ -234,8 +234,8 @@ def main():
                         send_tx.broadcast()
                     
                         if send_tx.broadcast_result.is_tx_error():
-                            print (' 🛎️ Send transaction failed, an error occurred')
-                            print (send_tx.broadcast_result.raw_log)
+                            print (' 🛎️  The send transaction failed, an error occurred:')
+                            print (f' 🛎️  {send_tx.broadcast_result.raw_log}')
                         else:
                             print (f' ✅ Sent amount: {wallet.formatUluna(uluna_amount, True)}')
                             print (f' ✅ Tx Hash: {send_tx.broadcast_result.txhash}')
