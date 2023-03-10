@@ -213,9 +213,9 @@ def main():
 
         if 'uluna' in wallet.balances:
             # Adjust this so we have the desired amount still remaining
-            uluna_amount = int(lunc_amount) * 1000000
+            uluna_amount = int(lunc_amount) * utility_constants.COIN_DIVISOR
 
-            if uluna_amount > 0 and uluna_amount <= (wallet.balances['uluna'] - (utility_constants.WITHDRAWAL_REMAINDER * 1000000)):
+            if uluna_amount > 0 and uluna_amount <= (wallet.balances['uluna'] - (utility_constants.WITHDRAWAL_REMAINDER * utility_constants.COIN_DIVISOR)):
                 print (f'Sending {wallet.formatUluna(uluna_amount, True)}')
 
                 send_tx = wallet.send().create()
