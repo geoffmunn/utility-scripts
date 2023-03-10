@@ -145,7 +145,10 @@ def get_user_singlechoice(question:str, user_wallets:dict) -> dict|str:
                 wallets_to_use.pop(key)
             
         if answer == 'x':
-            break
+            if len(wallets_to_use) > 0:
+                break
+            else:
+                print ('\nPlease select a wallet first.\n')
 
         if answer == 'q':
             break
