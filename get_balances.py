@@ -13,35 +13,35 @@ from utility_classes import (
 
 import utility_constants
 
-full_coin_lookup = {
-    'uaud': 'AUT',
-    'ucad': 'CAT',
-    'uchf': 'CHT',
-    'ucny': 'CNT',
-    'udkk': 'DKT',
-    'ueur': 'EUT',
-    'ugbp': 'GBT',
-    'uhkd': 'HKT',
-    'uidr': 'IDT',
-    'uinr': 'INT',
-    'ujpy': 'JPT',
-    'ukrw': 'KRT',
-    'uluna': 'LUNC',
-    'umnt': 'MNT',
-    'umyr': 'MYT',
-    'unok': 'NOT',
-    'uphp': 'PHT',
-    'usdr': 'SDT',
-    'usek': 'SET',
-    'usgd': 'SGT',
-    'uthb': 'THT',
-    'utwd': 'TWT',
-    'uusd': 'UST'
-}
-basic_coin_lookup = {
-    'uluna': 'LUNC',
-    'uusd': 'UST'
-}
+# full_coin_lookup = {
+#     'uaud': 'AUT',
+#     'ucad': 'CAT',
+#     'uchf': 'CHT',
+#     'ucny': 'CNT',
+#     'udkk': 'DKT',
+#     'ueur': 'EUT',
+#     'ugbp': 'GBT',
+#     'uhkd': 'HKT',
+#     'uidr': 'IDT',
+#     'uinr': 'INT',
+#     'ujpy': 'JPT',
+#     'ukrw': 'KRT',
+#     'uluna': 'LUNC',
+#     'umnt': 'MNT',
+#     'umyr': 'MYT',
+#     'unok': 'NOT',
+#     'uphp': 'PHT',
+#     'usdr': 'SDT',
+#     'usek': 'SET',
+#     'usgd': 'SGT',
+#     'uthb': 'THT',
+#     'utwd': 'TWT',
+#     'uusd': 'UST'
+# }
+# basic_coin_lookup = {
+#     'uluna': 'LUNC',
+#     'uusd': 'UST'
+# }
 
 def strtobool (val):
     """
@@ -83,9 +83,9 @@ def main():
     just_main_coins:bool = get_user_choice('Show just LUNC and USTC? (y/n) ')
 
     if just_main_coins == True:
-        coin_lookup = basic_coin_lookup
+        coin_lookup = utility_constants.BASIC_COIN_LOOKUP
     else:
-        coin_lookup = full_coin_lookup
+        coin_lookup = utility_constants.FULL_COIN_LOOKUP
 
     try:
         with open(utility_constants.CONFIG_FILE_NAME, 'r') as file:
