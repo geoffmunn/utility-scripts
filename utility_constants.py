@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # User settings - can be changed if required
-WITHDRAWAL_REMAINDER = 100   # This is the amount of Lunc we want to keep after withdrawal and before delegating. You should never delegate the entire balance.
+WITHDRAWAL_REMAINDER = 250   # This is the amount of Lunc we want to keep after withdrawal and before delegating. You should never delegate the entire balance.
 
 # System settings - these can be changed, but shouldn't be necessary
 GAS_PRICE_URI       = 'https://fcd.terra.dev/v1/txs/gas_prices'
