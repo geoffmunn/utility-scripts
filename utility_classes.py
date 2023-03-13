@@ -491,20 +491,20 @@ class TransactionCore():
         #     ('tx.hash', 'E07E1FD8B06D65A8BB7ABC10EABB6716E3F574D9C5C685BE9976CB42F5F4FF22')
         # ])
 
-        print ('transaction search result:', result)
+        #print ('transaction search result:', result)
 
         retry_count = 0
         while True:
             if len(result['txs']) > 0 and int(result['pagination']['total']) > 0:
                 if result['txs'][0].code == 0:
-                    print ('found the hash!')
+                    print ('Found the hash!')
                     transaction_found = True
                     break
 
             retry_count += 1
 
-            if retry_count <= 10:
-                print ('hash not found, giving it another go')
+            if retry_count <= utility_constants.SEARCH_RETRY_COUNT:
+                print ('Tx hash not found, giving it another go')
                 time.sleep(1)
             else:
                 break
@@ -565,7 +565,10 @@ class TransactionCore():
         # Find the transaction on the network and return the result
         transaction_confirmed = self.findTransaction()
 
-        print ('Transaction confirmed?', transaction_confirmed)
+        if transaction_confirmed == True:
+            print ('This transaction should be visible in your wallet now.')
+        else:
+            print ('The transaction did not appear after many searches. Future transactions might fail due to a lack of expected funds.')
             
         return self.broadcast_result
 
