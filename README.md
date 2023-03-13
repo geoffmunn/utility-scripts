@@ -7,7 +7,7 @@ These are Python scripts for use on the Luna Classic chain. These scripts demons
 
 These scripts will help you manage wallets and make transactions on the Luna Classic chain.
 
-They are intended to be useful for anyone making repeated interactions across multiple wallets.
+They are intended to be useful for anyone making repeated interactions across multiple wallets. These are especially useful for people who are comfortable with the python environment.
 
 Current functionality includes:
 
@@ -85,7 +85,7 @@ This will return the balances for each coin type on all of your wallets. You pro
 To make transactions on your wallets, you need to run ```manage_wallets.py```. Provide the same password you used in the configuration step, and then select the operation you want to do.
 
  - **Withdrawals**: All the staking rewards are withdrawn. The fee is paid by either a random minor coin (KRT for example), or LUNC, or USDT (in that order).
- - **Swap**: All the available USDT is swapped for LUNC. Currently the fee must be paid in USDT.
+ - **Swap**: All the available USTC is swapped for LUNC. Currently the fee must be paid in USTC.
  - **Delegate**: LUNC is redelegated back to the same validator. A set amount is always kept in reserve to cover fees for later transactions (100 LUNC). Depending on how the wallet was configured, either a percentage of the available funds is delegated, or a set amount.
 
  **Special note about delegations**: delegating will also withdraw all existing rewards (which are not part of the delegation), so your balance afterwards might also reflect the withdrawals.

@@ -198,7 +198,6 @@ def main():
                         result = withdrawal_tx.withdraw()
 
                         if result == True:
-                            print ('blockheight at broadcast:', withdrawal_tx.blockHeight())
                             withdrawal_tx.broadcast()
                         
                             if withdrawal_tx.broadcast_result.is_tx_error():
@@ -208,8 +207,6 @@ def main():
                             else:
                                 print (f' ✅ Withdrawn amount: {wallet.formatUluna(uluna_reward, True)}')
                                 print (f' ✅ Tx Hash: {withdrawal_tx.broadcast_result.txhash}')
-                                time.sleep(10)
-                                print ('blockheight at finish:', withdrawal_tx.blockHeight())
                     else:
                         print (' 🛎️  The withdrawal could not be completed')
                 else:
@@ -226,40 +223,40 @@ def main():
                     wallet.getBalances()
                     
                     # We are only supporting swaps with uusd (USTC) at the moment
-                    swap_amount = wallet.balances['uusd']
+                    if 'uusd' in wallet.balances:
+                        swap_amount = wallet.balances['uusd']
 
-                    if swap_amount > 0:
-                        print (f'Swapping {wallet.formatUluna(swap_amount, False)} USTC for LUNC')
+                        if swap_amount > 0:
+                            print (f'Swapping {wallet.formatUluna(swap_amount, False)} USTC for LUNC')
 
-                        # Set up the basic swap object
-                        swaps_tx = wallet.swap().create()
+                            # Set up the basic swap object
+                            swaps_tx = wallet.swap().create()
 
-                        # Simulate it so we can get the fee
-                        result = swaps_tx.simulate()
-
-                        if result == True:
-                           
-                            print (swaps_tx.readableFee())
-                            
-                            result = swaps_tx.swap()
+                            # Simulate it so we can get the fee
+                            result = swaps_tx.simulate()
 
                             if result == True:
-                                print ('blockheight at start:', withdrawal_tx.blockHeight())
-                                swaps_tx.broadcast()
-
-                                if swaps_tx.broadcast_result.is_tx_error():
-                                    print (' 🛎️ The swap failed, an error occurred:')
-                                    print (f' 🛎️  {swaps_tx.broadcast_result.raw_log}')
                             
+                                print (swaps_tx.readableFee())
+                                
+                                result = swaps_tx.swap()
+
+                                if result == True:
+                                    swaps_tx.broadcast()
+
+                                    if swaps_tx.broadcast_result.is_tx_error():
+                                        print (' 🛎️ The swap failed, an error occurred:')
+                                        print (f' 🛎️  {swaps_tx.broadcast_result.raw_log}')
+                                
+                                    else:
+                                        print (f' ✅ Swap successfully completed')
+                                        print (f' ✅ Tx Hash: {swaps_tx.broadcast_result.txhash}')
                                 else:
-                                    print (f' ✅ Swap successfully completed')
-                                    print (f' ✅ Tx Hash: {swaps_tx.broadcast_result.txhash}')
-                                    time.sleep(10)
-                                    print ('blockheight at finish:', withdrawal_tx.blockHeight())
-                            else:
-                                print (' 🛎️  Swap transaction could not be completed')
+                                    print (' 🛎️  Swap transaction could not be completed')
+                        else:
+                            print (' 🛎️  Swap amount is not greater than zero')
                     else:
-                        print (' 🛎️  Swap amount is not greater than zero')
+                        print (' 🛎️  No UST in the wallet to swap!')
                 else:
                     print ('Swaps not allowed on this wallet')
 

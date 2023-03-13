@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+from datetime import tzinfo
+import time
 import requests
 import json
 import cryptocode
@@ -26,6 +28,8 @@ from terra_sdk.core.staking.data.validator import Validator
 from terra_sdk.core.wasm.msgs import MsgExecuteContract
 from terra_sdk.exceptions import LCDResponseError
 from terra_sdk.key.mnemonic import MnemonicKey
+
+from terra_sdk.core.tx import AuthInfo, SignerData, SignMode, Tx, TxBody, TxInfo
 
 def coin_list(input: Coins, existingList: dict) -> dict:
     """ 
@@ -306,7 +310,7 @@ class Delegations(Wallet):
     def __init__(self):        
         self.delegations:dict = {}
 
-    def __iter_result__(self, terra:LCDClient, delegator) -> dict:
+    def __iter_result__(self, terra:LCDClient, delegator:Delegation) -> dict:
         """
         An internal function which returns a dict object with validator details.
         """
@@ -314,11 +318,10 @@ class Delegations(Wallet):
         # Get the basic details about the delegator and validator etc
         delegator_address:str       = delegator.delegation.delegator_address
         validator_address:str       = delegator.delegation.validator_address
-        validator_details           = terra.staking.validator(validator_address)
         validator_details:Validator = terra.staking.validator(validator_address)
         validator_name:str          = validator_details.description.moniker
         validator_commission:float  = float(validator_details.commission.commission_rates.rate)
-
+        
         # Get any rewards
         rewards:Rewards   = terra.distribution.rewards(delegator_address)
         reward_coins:dict = coin_list(rewards.rewards[validator_address], {})
@@ -326,6 +329,7 @@ class Delegations(Wallet):
         # Make the commission human-readable
         validator_commission = round(validator_commission * 100, 2)
 
+        # Set up the object with the details we're interested in
         self.delegations[validator_name] = {'delegator': delegator_address, 'validator': validator_address, 'rewards': reward_coins, 'validator_name': validator_name, 'commission': validator_commission}
         
     def create(self, wallet_address:str) -> dict:
@@ -353,7 +357,55 @@ class Delegations(Wallet):
                 self.__iter_result__(terra, delegator)
 
         return self.delegations
-    
+
+class Validators():
+
+    def __init__(self):        
+        self.validators:dict = {}
+
+    def __iter_result__(self, validator:Validator) -> dict:
+        """
+        An internal function which returns a dict object with validator details.
+        """
+
+        # Get the basic details about validator
+        commission = validator.commission
+        details = validator.description.details
+        identity = validator.description.identity
+        is_jailed = validator.jailed
+        moniker = validator.description.moniker
+        operator_address = validator.operator_address
+        status = validator.status
+        token_count = validator.tokens
+        unbonding_time = validator.unbonding_time
+
+        self.validators[moniker] = {'commission': commission, 'details': details, 'identity': identity, 'is_jailed': is_jailed, 'operator_address': operator_address, 'status': status, 'token_count': token_count, 'unbonding_time': unbonding_time}
+        
+    def create(self, show_active_only = True) -> dict:
+        """
+        Create a dictionary of information about the validators that are available.
+        """
+
+        terra = TerraInstance(utility_constants.GAS_PRICE_URI, utility_constants.GAS_ADJUSTMENT).create()
+
+        pagOpt:PaginationOptions = PaginationOptions(limit=50, count_total=True)
+        result, pagination       = terra.staking.validators(params = pagOpt)
+
+        validator:Validator
+        for validator in result:
+            self.__iter_result__(validator)
+
+        while pagination['next_key'] is not None:
+
+            pagOpt.key         = pagination['next_key']
+            result, pagination = terra.staking.validators(params = pagOpt)
+
+            validator:Validator
+            for validator in result:
+                self.__iter_result__(validator)
+
+        return self.validators
+
 class TransactionCore():
     """
     The core class for all transactions.
@@ -405,19 +457,59 @@ class TransactionCore():
             
             # @TODO: check that this works for random alts
             if len(other_coin_list) > 0:
-                requested_fee.amount = Coin(other_coin_list[0].denom, other_coin_list[0].amount)
+                requested_fee.amount = Coins({Coin(other_coin_list[0].denom, other_coin_list[0].amount)})
             elif has_uluna > 0:
-                requested_fee.amount = Coin('uluna', has_uluna)
+                requested_fee.amount = Coins({Coin('uluna', has_uluna)})
             else:
-                requested_fee.amount = Coin('uusd', has_uusd)
+                requested_fee.amount = Coins({Coin('uusd', has_uusd)})
 
             # Override the calculations if we've been told to use uusd
             if use_uusd == True:
-                requested_fee.amount = Coin('uusd', has_uusd)
+                requested_fee.amount = Coins({Coin('uusd', has_uusd)})
         else:
             print ('Not enough funds to pay for delegation!')
 
         return requested_fee
+
+    def findTransaction(self) -> bool:
+        """
+        Do a search for any transaction with the current tx hash.
+        If it can't be found within 10 attempts, then give up.
+        """
+
+        transaction_found:bool = False
+
+        result:dict = self.terra.tx.search([
+            ("message.sender", self.current_wallet.key.acc_address),
+            ("message.recipient", self.current_wallet.key.acc_address),
+            ('tx.hash', self.broadcast_result.txhash)
+        ])
+
+        # result:dict = self.terra.tx.search([
+        #     ("message.sender", "terra16adz90jdqgy23v95wyk24mwn6nlxwscpr386nq"),
+        #     ("message.receiver", "terra16adz90jdqgy23v95wyk24mwn6nlxwscpr386nq"),
+        #     ('tx.hash', 'E07E1FD8B06D65A8BB7ABC10EABB6716E3F574D9C5C685BE9976CB42F5F4FF22')
+        # ])
+
+        print ('transaction search result:', result)
+
+        retry_count = 0
+        while True:
+            if len(result['txs']) > 0 and int(result['pagination']['total']) > 0:
+                if result['txs'][0].code == 0:
+                    print ('found the hash!')
+                    transaction_found = True
+                    break
+
+            retry_count += 1
+
+            if retry_count <= 10:
+                print ('hash not found, giving it another go')
+                time.sleep(1)
+            else:
+                break
+
+        return transaction_found
 
     def readableFee(self) -> str:
         """
@@ -432,7 +524,7 @@ class TransactionCore():
         for fee_coin in fee_coins.to_list():
 
             amount = fee_coin.amount / utility_constants.COIN_DIVISOR
-            denom = utility_constants.BASIC_COIN_LOOKUP[fee_coin.denom]
+            denom = utility_constants.FULL_COIN_LOOKUP[fee_coin.denom]
 
             if first == False:
                 fee_string += ', and ' + str(amount) + ' ' + denom
@@ -452,8 +544,6 @@ class TransactionCore():
         result:BlockTxBroadcastResult = self.terra.tx.broadcast(self.transaction)
         self.broadcast_result         = result
 
-        #print ('result code:', self.broadcast_result.code)
-
         # Wait for this transaction to appear in the blockchain
         if not self.broadcast_result.is_tx_error():
             while True:
@@ -470,14 +560,14 @@ class TransactionCore():
         # we need to check for code 11 and change the gas adjustment value and try again
         # Code 0 means it worked or did not return any failures (tx might still be in progress)
 
+        #time.sleep(10)
+
+        # Find the transaction on the network and return the result
+        transaction_confirmed = self.findTransaction()
+
+        print ('Transaction confirmed?', transaction_confirmed)
+            
         return self.broadcast_result
-    
-    def blockHeight(self):
-        """
-        Return the current block height.
-        This is used to predict when transactions should appear in wallet updates.
-        """
-        return self.terra.tendermind.block_info()['block']['header']['height']
 
 class DelegationTransaction(TransactionCore):
 
@@ -561,6 +651,7 @@ class DelegationTransaction(TransactionCore):
             self.transaction = tx
 
             return True
+        
         except:
             return False
         
@@ -738,7 +829,7 @@ class SwapTransaction(TransactionCore):
 
         # Build a fee object with 
         new_coin:Coin        = Coin(fee_denom, int(fee_amount + self.tax))
-        requested_fee.amount = new_coin
+        requested_fee.amount = Coins({new_coin})
 
         # This will be used by the swap function next time we call it
         self.fee = requested_fee
@@ -755,9 +846,11 @@ class SwapTransaction(TransactionCore):
         """
 
         if self.belief_price is not None:
-
+            
             if self.fee is not None:
-                fee_denom:str = self.fee.amount.denom
+                fee_amount = self.fee.amount.to_list()
+                fee_coin:Coin = fee_amount[0]
+                fee_denom:str = fee_coin.denom
             else:
                 fee_denom:str = 'uusd'
 
@@ -847,7 +940,22 @@ class WithdrawalTransaction(TransactionCore):
         Simulate a withdrawal so we can get the fee details.
         The fee details are saved so the actual withdrawal will work.
         """
-        
+
+        # result:dict = self.terra.tx.search([
+        #     #("message.sender", "terra1kgge7tyctna52qfskpkw73xu4fhmd0y29ravr6"),
+        #     #("message.receiver", "terra16adz90jdqgy23v95wyk24mwn6nlxwscpr386nq"),
+        #     ('tx.hash', 'D97AF1EB6907D3D11887DC4C92FE8289F6CA828039CEB6FB7D549DB555199B49')
+        # ])
+
+        # print (result)
+        # if len(result['txs']) > 0 and int(result['pagination']['total']) > 0:
+        #     print ('found!')
+        #     #print (result['code'])
+        #     #print (result['pagination']['total'])
+
+
+        # exit()
+
         # Set the fee to be None so it is simulated
         self.fee      = None
         self.sequence = self.current_wallet.sequence()
