@@ -324,7 +324,7 @@ def main():
             print (' 💯 All actions on this validator are complete.')
             print ('------------------------------------')
 
-    print (' 💯 Done!')
+    print (' 💯 Done!\n')
 
 if __name__ == "__main__":
     """ This is executed when run from the command line """

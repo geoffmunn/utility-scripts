@@ -250,7 +250,7 @@ def main():
             else:
                 print (' 🛎️  Sending error: Not enough LUNC will be left in the account to cover fees')
             
-    print (' 💯 Done!')
+    print (' 💯 Done!\n')
 
 if __name__ == "__main__":
     """ This is executed when run from the command line """
