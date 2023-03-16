@@ -13,36 +13,6 @@ from utility_classes import (
 
 import utility_constants
 
-# full_coin_lookup = {
-#     'uaud': 'AUT',
-#     'ucad': 'CAT',
-#     'uchf': 'CHT',
-#     'ucny': 'CNT',
-#     'udkk': 'DKT',
-#     'ueur': 'EUT',
-#     'ugbp': 'GBT',
-#     'uhkd': 'HKT',
-#     'uidr': 'IDT',
-#     'uinr': 'INT',
-#     'ujpy': 'JPT',
-#     'ukrw': 'KRT',
-#     'uluna': 'LUNC',
-#     'umnt': 'MNT',
-#     'umyr': 'MYT',
-#     'unok': 'NOT',
-#     'uphp': 'PHT',
-#     'usdr': 'SDT',
-#     'usek': 'SET',
-#     'usgd': 'SGT',
-#     'uthb': 'THT',
-#     'utwd': 'TWT',
-#     'uusd': 'UST'
-# }
-# basic_coin_lookup = {
-#     'uluna': 'LUNC',
-#     'uusd': 'UST'
-# }
-
 def strtobool (val):
     """
     Convert a string representation of truth to true (1) or false (0).
