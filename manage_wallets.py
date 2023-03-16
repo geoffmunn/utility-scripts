@@ -2,7 +2,6 @@
 # -*- coding: UTF-8 -*-
 
 import yaml
-import time
 
 from getpass import getpass
 
@@ -135,9 +134,9 @@ def main():
     if user_action == utility_constants.USER_ACTION_DELEGATE:
         action_string = 'delegate all available funds'
     if user_action == utility_constants.USER_ACTION_WITHDRAW_DELEGATE:
-        action_string = 'withdraw rewards and delegating everything'
+        action_string = 'withdraw rewards and delegate everything'
     if user_action == utility_constants.USER_ACTION_SWAP_DELEGATE:
-        action_string = 'swap USTC for LUNC and delegating everything'
+        action_string = 'swap USTC for LUNC and delegate everything'
     if user_action == utility_constants.USER_ACTION_ALL:
         action_string = 'withdraw rewards, swap USTC for LUNC, and then delegate everything'
 
@@ -258,6 +257,7 @@ def main():
                     else:
                         print (' 🛎️  No UST in the wallet to swap!')
                 else:
+                    print ('\n------------------------------------')
                     print ('Swaps not allowed on this wallet')
 
             # Redelegate anything we might have
