@@ -17,12 +17,18 @@ ASTROPORT_UUSD_TO_ULUNA_ADDRESS = 'terra1m6ywlgn6wrjuagcmmezzz2a029gtldhey5k552'
 ASTROPORT_UUSD_TO_MINA_ADDRESS = 'terra134m8n2epp0n40qr08qsvvrzycn2zq4zcpmue48'
 
 # Do not change these
+# Wallet management constants:
 USER_ACTION_ALL               = 'a'
 USER_ACTION_DELEGATE          = 'd'
 USER_ACTION_SWAP              = 's'
 USER_ACTION_SWAP_DELEGATE     = 'sd'
 USER_ACTION_WITHDRAW          = 'w'
 USER_ACTION_WITHDRAW_DELEGATE = 'wd'
+
+# Validator management constants:
+USER_ACTION_VALIDATOR_DELEGATE   = 'd'
+USER_ACTION_VALIDATOR_UNDELEGATE = 'u'
+USER_ACTION_VALIDATOR_SWITCH     = 's'
 
 COIN_DIVISOR = 1000000
 MAX_VALIDATOR_COUNT = 130
