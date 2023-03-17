@@ -49,7 +49,7 @@ def get_user_choice(question:str, yes_choices:list, no_choices:list) -> str|bool
 
     return result
 
-def get_user_number(question:str) -> int:
+def get_user_number(question:str, max_number:int) -> int:
     """
     Get ther user input - must be a number.
     """ 
@@ -57,9 +57,11 @@ def get_user_number(question:str) -> int:
     while True:    
         answer = input(question).strip(' ')
         if answer.isdigit():
-            break
 
-    return answer
+            if int(answer) > 0 and int(answer) <= max_number:
+                break
+
+    return int(answer)
 
 def get_user_multichoice(question:str, user_wallets:dict) -> dict|str:
     """
@@ -115,23 +117,75 @@ def get_user_singlechoice(question:str, user_wallets:dict) -> dict|str:
     This is a custom function because the options are specific to this list.
     """
 
+    label_widths = []
+
+    label_widths.append(len('Number'))
+    label_widths.append(len('Wallet name'))
+    label_widths.append(len('LUNC'))
+    label_widths.append(len('USTC'))
+
+    for wallet_name in user_wallets:
+        if len(wallet_name) > label_widths[1]:
+            label_widths[1] = len(wallet_name)
+
+        if len(str(user_wallets[wallet_name].balances['uluna'])) > label_widths[2]:
+            label_widths[2] = len(str(user_wallets[wallet_name].balances['uluna']))
+
+        if len(str(user_wallets[wallet_name].balances['uusd'])) > label_widths[3]:
+            label_widths[3] = len(str(user_wallets[wallet_name].balances['uusd']))
+
+    padding_str = ' ' * 100
+
+    header_string = ' Number |'
+
+    if label_widths[1] > len('Wallet name'):
+        header_string +=  ' Wallet name' + padding_str[0:label_widths[1]-len('Wallet name')] + ' '
+    else:
+        header_string +=  ' Wallet name '
+
+    if label_widths[2] > len('LUNC'):
+        header_string += '| LUNC ' + padding_str[0:label_widths[2]-len('LUNC')] + ' '
+    else:
+        header_string += '| LUNC '
+
+    if label_widths[3] > len('USTC'):
+        header_string += '| USTC'  + padding_str[0:label_widths[3]-len('USTC')] + ' '
+    else:
+        header_string += '| USTC '
+
+    horizontal_spacer = '-' * len(header_string)
+
     wallets_to_use = {}
     while True:
 
         count = 0
         wallet_numbers = {}
 
+        print (horizontal_spacer)
+        print (header_string)
+        print (horizontal_spacer)
+
         for wallet_name in user_wallets:
+            wallet:Wallet  = user_wallets[wallet_name]
+
             count += 1
-            wallet_numbers[count] = user_wallets[wallet_name]
+            wallet_numbers[count] = wallet
                 
             if wallet_name in wallets_to_use:
                 glyph = '✅'
             else:
-                glyph = ''
+                glyph = '  '
 
-            print (f"  ({count}) {glyph} {wallet_name}")
+            count_str =  f' {count}' + padding_str[0:6 - (len(str(count)) + 2)]
             
+            wallet_name_str = wallet_name + padding_str[0:label_widths[1] - len(wallet_name)]             
+            lunc_str = wallet.formatUluna(wallet.balances['uluna'], False)
+            ustc_str = wallet.formatUluna(wallet.balances['uusd'], False)
+            
+            print (f"{count_str}{glyph} | {wallet_name_str} | {lunc_str} | {ustc_str}")
+            
+        print (horizontal_spacer + '\n')
+
         answer = input(question).lower()
         
         if answer.isdigit() and int(answer) in wallet_numbers:
@@ -153,7 +207,12 @@ def get_user_singlechoice(question:str, user_wallets:dict) -> dict|str:
         if answer == 'q':
             break
 
-    return wallets_to_use, answer
+    # Get the first (and only) validator from the list
+    for item in wallets_to_use:
+        user_wallet = wallets_to_use[item]
+        break;
+    
+    return user_wallet, answer
 
 def coin_list(input: Coins, existingList: dict) -> dict:
     """ 
@@ -187,10 +246,15 @@ def main():
     # Get all the wallets
     user_wallets = wallet_obj.getWallets(True)
 
+    # Get the balances on each wallet (for display purposes)
+    for wallet_name in user_wallets:
+        wallet:Wallet = user_wallets[wallet_name]
+        wallet.getBalances()
+
     if len(user_wallets) > 0:
         print (f'You can send LUNC on the following wallets:')
 
-        user_wallets,answer = get_user_singlechoice("Select a wallet number 1 - " + str(len(user_wallets)) + ", 'X' to continue', or 'Q' to quit: ", user_wallets)
+        wallet, answer = get_user_singlechoice("Select a wallet number 1 - " + str(len(user_wallets)) + ", 'X' to continue', or 'Q' to quit: ", user_wallets)
 
         if answer == 'q':
             print (' 🛑 Exiting...')
@@ -201,54 +265,53 @@ def main():
 
     # If we're sending LUNC then we need a few more details:
     recipient_address:str = input('What is the address you are sending to? ')
-    lunc_amount:int       = get_user_number('How much are you sending? ')
+
+    # Get the balances
+    #Ewallet.getBalances()
+
+    print (f"The {wallet.name} wallet holds {wallet.formatUluna(wallet.balances['uluna'], True)}")
+    
+    lunc_amount:int       = get_user_number('How much are you sending? ', int(wallet.balances['uluna']))
     memo:str              = input('Provide a memo (optional): ').strip(' ')
 
     # Now start doing stuff
-    for wallet_name in user_wallets:
-        wallet:Wallet = user_wallets[wallet_name]
+    print (f'\nAccessing the {wallet.name} wallet...')
 
-        print ('####################################')
-        print (f'Accessing the {wallet.name} wallet...')
+    if 'uluna' in wallet.balances:
+        # Adjust this so we have the desired amount still remaining
+        uluna_amount = int(lunc_amount) * utility_constants.COIN_DIVISOR
 
-        # Update the balances after having done withdrawals and swaps
-        wallet.getBalances()
+        if uluna_amount > 0 and uluna_amount <= (wallet.balances['uluna'] - (utility_constants.WITHDRAWAL_REMAINDER * utility_constants.COIN_DIVISOR)):
+            print (f'Sending {wallet.formatUluna(uluna_amount, True)}')
 
-        if 'uluna' in wallet.balances:
-            # Adjust this so we have the desired amount still remaining
-            uluna_amount = int(lunc_amount) * utility_constants.COIN_DIVISOR
+            send_tx = wallet.send().create()
 
-            if uluna_amount > 0 and uluna_amount <= (wallet.balances['uluna'] - (utility_constants.WITHDRAWAL_REMAINDER * utility_constants.COIN_DIVISOR)):
-                print (f'Sending {wallet.formatUluna(uluna_amount, True)}')
+            # Simulate it
+            result = send_tx.simulate(recipient_address, uluna_amount, memo)
 
-                send_tx = wallet.send().create()
-
-                # Simulate it
-                result = send_tx.simulate(recipient_address, uluna_amount, memo)
-
+            if result == True:
+                
+                print (send_tx.readableFee())
+                    
+                # Now we know what the fee is, we can do it again and finalise it
+                result = send_tx.send()
+                
                 if result == True:
-                    
-                    print (send_tx.readableFee())
-                        
-                    # Now we know what the fee is, we can do it again and finalise it
-                    result = send_tx.send()
-                    
-                    if result == True:
-                        send_tx.broadcast()
-                    
-                        if send_tx.broadcast_result.is_tx_error():
-                            print (' 🛎️  The send transaction failed, an error occurred:')
-                            print (f' 🛎️  {send_tx.broadcast_result.raw_log}')
-                        else:
-                            print (f' ✅ Sent amount: {wallet.formatUluna(uluna_amount, True)}')
-                            print (f' ✅ Tx Hash: {send_tx.broadcast_result.txhash}')
+                    send_tx.broadcast()
+                
+                    if send_tx.broadcast_result.is_tx_error():
+                        print (' 🛎️  The send transaction failed, an error occurred:')
+                        print (f' 🛎️  {send_tx.broadcast_result.raw_log}')
                     else:
-                        print (' 🛎️  The send transaction could not be completed')
+                        print (f' ✅ Sent amount: {wallet.formatUluna(uluna_amount, True)}')
+                        print (f' ✅ Tx Hash: {send_tx.broadcast_result.txhash}')
                 else:
                     print (' 🛎️  The send transaction could not be completed')
-                    
             else:
-                print (' 🛎️  Sending error: Not enough LUNC will be left in the account to cover fees')
+                print (' 🛎️  The send transaction could not be completed')
+                
+        else:
+            print (' 🛎️  Sending error: Not enough LUNC will be left in the account to cover fees')
             
     print (' 💯 Done!\n')
 
