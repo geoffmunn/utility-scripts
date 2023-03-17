@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from datetime import tzinfo
+import itertools
 import time
 import requests
 import json
@@ -361,7 +362,8 @@ class Delegations(Wallet):
 class Validators():
 
     def __init__(self):        
-        self.validators:dict = {}
+        self.validators:dict        = {}
+        self.sorted_validators:dict = {}
 
     def __iter_result__(self, validator:Validator) -> dict:
         """
@@ -369,19 +371,21 @@ class Validators():
         """
 
         # Get the basic details about validator
-        commission = validator.commission
-        details = validator.description.details
-        identity = validator.description.identity
-        is_jailed = validator.jailed
-        moniker = validator.description.moniker
+        commission       = validator.commission
+        details          = validator.description.details
+        identity         = validator.description.identity
+        is_jailed        = validator.jailed
+        moniker          = validator.description.moniker
         operator_address = validator.operator_address
-        status = validator.status
-        token_count = validator.tokens
-        unbonding_time = validator.unbonding_time
-
-        self.validators[moniker] = {'commission': commission, 'details': details, 'identity': identity, 'is_jailed': is_jailed, 'operator_address': operator_address, 'status': status, 'token_count': token_count, 'unbonding_time': unbonding_time}
+        status           = validator.status
+        token_count      = validator.tokens
+        unbonding_time   = validator.unbonding_time
         
-    def create(self, show_active_only = True) -> dict:
+        commision_rate   = int(commission.commission_rates.rate * 100)
+
+        self.validators[moniker] = {'commission': commision_rate, 'details': details, 'identity': identity, 'is_jailed': is_jailed, 'moniker': moniker, 'operator_address': operator_address, 'status': status, 'token_count': token_count, 'unbonding_time': unbonding_time, 'voting_power': 0}
+        
+    def create(self) -> dict:
         """
         Create a dictionary of information about the validators that are available.
         """
@@ -399,10 +403,44 @@ class Validators():
 
             pagOpt.key         = pagination['next_key']
             result, pagination = terra.staking.validators(params = pagOpt)
-
+            
             validator:Validator
             for validator in result:
                 self.__iter_result__(validator)
+
+        # Go through each validator and create an ordered list
+        sorted_validators:dict = {}
+
+        # Calculate the voting power for each validator:
+        coin_total = 0
+        for validator in self.validators:
+            coin_total += int(self.validators[validator]['token_count'])
+
+        for validator in self.validators:
+
+            moniker = self.validators[validator]['moniker']
+
+            self.validators[validator]['voting_power'] = (int(self.validators[validator]['token_count']) / coin_total) * 100
+
+            key = self.validators[validator]['token_count']
+            if key not in sorted_validators:
+                sorted_validators[moniker] = {}
+            
+            current:dict = sorted_validators[moniker]
+
+            current[moniker] = self.validators[validator]['voting_power']
+
+            sorted_validators[moniker] = key
+
+
+        sorted_list:list = sorted(sorted_validators.items(), key=lambda x:x[1], reverse=True)[0:130]
+        sorted_validators = dict(sorted_list)
+
+        # Populate the sorted list with the actual validators
+        for validator in sorted_validators:
+            sorted_validators[validator] = self.validators[validator]
+
+        self.sorted_validators = sorted_validators
 
         return self.validators
 
