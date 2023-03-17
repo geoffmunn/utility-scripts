@@ -101,16 +101,21 @@ def main():
     decrypt_password:str = getpass() # the secret password that encrypts the seed phrase
 
     # Get the desired actions
-    print ('What action do you want to take?')
+    print ('\nWhat action do you want to take?')
     print ('  (W)  Withdraw rewards')
     print ('  (S)  Swap coins')
     print ('  (D)  Delegate')
+    print ('  (A)  All of the above')
     print ('  (WD) Withdraw & Delegate')
     print ('  (SD) Swap & Delegate')
-    print ('  (A)  All of the above')
+    print ('  (Q)  Quit')
 
-    user_action = get_user_choice('', ['w', 's', 'd', 'wd', 'sd', 'a'], [])
+    user_action = get_user_choice('', ['w', 's', 'd', 'wd', 'sd', 'a', 'q'], [])
 
+    if user_action == 'q':
+        print (' 🛑 Exiting...')
+        exit()
+        
     try:
         with open(utility_constants.CONFIG_FILE_NAME, 'r') as file:
             user_config = yaml.safe_load(file)
