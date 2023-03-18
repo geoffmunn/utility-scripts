@@ -203,7 +203,7 @@ class Wallet:
         A generic helper function to convert uluna amounts to LUNC.
         """
 
-        lunc:float = uluna / utility_constants.COIN_DIVISOR
+        lunc:float = round(float(uluna / utility_constants.COIN_DIVISOR), 6)
 
         if add_suffix:
             lunc = str(lunc) + ' LUNC'
