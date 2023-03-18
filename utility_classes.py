@@ -342,21 +342,24 @@ class Delegations(Wallet):
         terra = TerraInstance(utility_constants.GAS_PRICE_URI, utility_constants.GAS_ADJUSTMENT).create()
 
         pagOpt:PaginationOptions = PaginationOptions(limit=50, count_total=True)
-        result, pagination       = terra.staking.delegations(delegator = wallet_address, params = pagOpt)
-
-        delegator:Delegation 
-        for delegator in result:
-            self.__iter_result__(terra, delegator)
-
-        while pagination['next_key'] is not None:
-
-            pagOpt.key         = pagination['next_key']
-            result, pagination = terra.staking.delegations(delegator = wallet_address, params = pagOpt)
+        try:
+            result, pagination       = terra.staking.delegations(delegator = wallet_address, params = pagOpt)
 
             delegator:Delegation 
             for delegator in result:
                 self.__iter_result__(terra, delegator)
 
+            while pagination['next_key'] is not None:
+
+                pagOpt.key         = pagination['next_key']
+                result, pagination = terra.staking.delegations(delegator = wallet_address, params = pagOpt)
+
+                delegator:Delegation 
+                for delegator in result:
+                    self.__iter_result__(terra, delegator)
+        except:
+            print (' 🛎️  Network error: delegations could not be retrieved.')
+            
         return self.delegations
 
 class Validators():
