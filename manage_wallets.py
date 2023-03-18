@@ -53,22 +53,101 @@ def get_user_multichoice(question:str, user_wallets:dict) -> dict|str:
     This is a custom function because the options are specific to this list.
     """
 
+    label_widths = []
+
+    label_widths.append(len('Number'))
+    label_widths.append(len('Wallet name'))
+    label_widths.append(len('LUNC'))
+    label_widths.append(len('USTC'))
+
+    for wallet_name in user_wallets:
+        wallet:Wallet = user_wallets[wallet_name]
+
+        # Get the delegations for this wallet
+        delegations = wallet.getDelegations()
+
+        # Initialise the reward values
+        uluna_reward:int = 0
+        ustc_reward:int  = 0
+
+        for validator in delegations:
+            if 'uluna' in delegations[validator]['rewards']:
+                uluna_reward += wallet.formatUluna(delegations[validator]['rewards']['uluna'], False)
+            if 'uusd' in delegations[validator]['rewards']:
+                ustc_reward += wallet.formatUluna(delegations[validator]['rewards']['uusd'], False)
+
+        if len(wallet_name) > label_widths[1]:
+            label_widths[1] = len(wallet_name)
+
+        if len(str(uluna_reward)) > label_widths[2]:
+            label_widths[2] = len(str(uluna_reward))
+
+        if len(str(ustc_reward)) > label_widths[3]:
+            label_widths[3] = len(str(ustc_reward))
+
+    padding_str = ' ' * 100
+
+    header_string = ' Number |'
+
+    if label_widths[1] > len('Wallet name'):
+        header_string +=  ' Wallet name' + padding_str[0:label_widths[1] - len('Wallet name')] + ' '
+    else:
+        header_string +=  ' Wallet name '
+
+    if label_widths[2] > len('LUNC'):
+        header_string += '| LUNC' + padding_str[0:label_widths[2] - len('LUNC')] + ' '
+    else:
+        header_string += '| LUNC'
+
+    if label_widths[3] > len('USTC'):
+        header_string += '| USTC'  + padding_str[0:label_widths[3] - len('USTC')] + ' '
+    else:
+        header_string += '| USTC '
+
+    horizontal_spacer = '-' * len(header_string)
+
     wallets_to_use = {}
     while True:
 
         count = 0
         wallet_numbers = {}
 
+        print (horizontal_spacer)
+        print (header_string)
+        print (horizontal_spacer)
+
         for wallet_name in user_wallets:
+            wallet:Wallet  = user_wallets[wallet_name]
+            delegations    = wallet.getDelegations()
+
             count += 1
-            wallet_numbers[count] = user_wallets[wallet_name]
+            wallet_numbers[count] = wallet
                 
             if wallet_name in wallets_to_use:
                 glyph = '✅'
             else:
-                glyph = ''
+                glyph = '  '
 
-            print (f"  ({count}) {glyph} {wallet_name}")
+            count_str =  f' {count}' + padding_str[0:6 - (len(str(count)) + 2)]
+            
+            wallet_name_str = wallet_name + padding_str[0:label_widths[1] - len(wallet_name)]  
+
+            uluna_reward:int = 0
+            ustc_reward:int  = 0
+
+            for validator in delegations:
+                if 'uluna' in delegations[validator]['rewards']:
+                    uluna_reward += delegations[validator]['rewards']['uluna']
+                if 'uusd' in delegations[validator]['rewards']:
+                    ustc_reward += delegations[validator]['rewards']['uusd']
+
+            formatted_val = str(wallet.formatUluna(uluna_reward, False))
+            lunc_str      = formatted_val + padding_str[0:(label_widths[2] - (len(str(formatted_val))))]
+            ustc_str      = wallet.formatUluna(ustc_reward, False)
+            
+            print (f"{count_str}{glyph} | {wallet_name_str} | {lunc_str} | {ustc_str}")
+            
+        print (horizontal_spacer + '\n')
             
         answer = input(question).lower()
         
@@ -130,6 +209,13 @@ def main():
     
     # Get all the wallets
     user_wallets = wallet_obj.getWallets(True)
+
+    # Get the balances on each wallet (for display purposes)
+    for wallet_name in user_wallets:
+        wallet:Wallet = user_wallets[wallet_name]
+        delegations = wallet.getDelegations()
+        # for validator in delegations:
+        #     uluna_reward:int = delegations[validator]['rewards']['uluna']
 
     action_string = ''
     if user_action == utility_constants.USER_ACTION_WITHDRAW:
