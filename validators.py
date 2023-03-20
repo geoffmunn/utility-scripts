@@ -182,8 +182,8 @@ def get_user_singlechoice(question:str, user_wallets:dict) -> dict|str:
             count_str =  f' {count}' + padding_str[0:6 - (len(str(count)) + 2)]
             
             wallet_name_str = wallet_name + padding_str[0:label_widths[1] - len(wallet_name)]             
-            lunc_str = wallet.formatUluna(wallet.balances['uluna'], False)
-            ustc_str = wallet.formatUluna(wallet.balances['uusd'], False)
+            lunc_str = ("%.6f" % (wallet.formatUluna(wallet.balances['uluna'], False))).rstrip('0').rstrip('.')
+            ustc_str = ("%.6f" % (wallet.formatUluna(wallet.balances['uusd'], False))).rstrip('0').rstrip('.')
             
             print (f"{count_str}{glyph} | {wallet_name_str} | {lunc_str} | {ustc_str}")
             
@@ -353,7 +353,8 @@ def main():
 
     # Create the wallet object based on the user config file
     wallet_obj = Wallets().create(user_config, decrypt_password)
-    
+    #wallet_obj = Wallets().ac(user_config, decrypt_password)
+
     # Get all the wallets
     user_wallets = wallet_obj.getWallets(True)
 
@@ -363,7 +364,7 @@ def main():
         wallet.getBalances()
 
     if len(user_wallets) > 0:
-        print (f'You can send LUNC on the following wallets:')
+        print (f'You have these wallets available:')
 
         wallet,answer = get_user_singlechoice("Select a wallet number 1 - " + str(len(user_wallets)) + ", 'X' to continue', or 'Q' to quit: ", user_wallets)
 
@@ -409,7 +410,7 @@ def main():
             exit()
 
         print (f"The {wallet.name} wallet holds {wallet.formatUluna(wallet.balances['uluna'], True)}")
-        delegated_lunc:int = get_user_number('How much are you delegating? ', int(wallet.balances['uluna']))
+        delegated_lunc:int = get_user_number('How much are you delegating? ', int(wallet.formatUluna(wallet.balances['uluna'], False)))
         delegated_uluna:int = delegated_lunc * utility_constants.COIN_DIVISOR
 
         print (f'Delegating {delegated_lunc}...')
