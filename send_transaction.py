@@ -273,7 +273,7 @@ def main():
 
     print (f"The {wallet.name} wallet holds {wallet.formatUluna(wallet.balances['uluna'], True)}")
     
-    lunc_amount:int       = get_user_number('How much are you sending? ', int(wallet.balances['uluna']))
+    lunc_amount:int       = get_user_number('How much are you sending? ', int(wallet.formatUluna(wallet.balances['uluna'], False)))
     memo:str              = input('Provide a memo (optional): ').strip(' ')
 
     # Now start doing stuff
