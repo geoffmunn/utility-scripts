@@ -157,6 +157,8 @@ def get_user_singlechoice(question:str, user_wallets:dict) -> dict|str:
     horizontal_spacer = '-' * len(header_string)
 
     wallets_to_use = {}
+    user_wallet    = {}
+
     while True:
 
         count = 0
