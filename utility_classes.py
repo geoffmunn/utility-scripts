@@ -258,7 +258,9 @@ class TerraInstance:
     def __init__(self, gas_price_url:str, gas_adjustment:float):
         self.chain_id       = 'columbus-5'
         self.gas_adjustment = gas_adjustment
+        self.gas_list       = None
         self.gas_price_url  = gas_price_url
+        self.tax_rate      = None
         self.terra          = None
         #self.url            = 'https://lcd.terrarebels.net'
         #self.url            = 'https://lcd.terra.dev'
@@ -283,22 +285,39 @@ class TerraInstance:
         """
         Make a JSON request for the gas prices, and store it against this LCD client instance.
         """
-        if self.gas_price_url is not None:
-            gas_list:json = requests.get(self.gas_price_url).json()
-        else:
-            print (' 🛑 No gas price URL set at self.gas_price_url')
-            exit()
 
-        return gas_list
+        if self.gas_list is None:
+            try:
+                if self.gas_price_url is not None:
+                    gas_list:json = requests.get(self.gas_price_url).json()
+
+                    self.gas_list = gas_list
+                else:
+                    print (' 🛑 No gas price URL set at self.gas_price_url')
+                    exit()
+            except:
+                print (' 🛑 Error getting gas prices')
+                print (requests.get(self.gas_price_url).content)
+                exit()
+
+        return self.gas_list
     
     def taxRate(self) -> json:
         """
         Make a JSON request for the tax rate, and store it against this LCD client instance.
         """
 
-        tax_rate:json = requests.get(utility_constants.TAX_RATE_URI).json()
-        
-        return tax_rate
+        if self.tax_rate is None:
+            try:
+                tax_rate:json = requests.get(utility_constants.TAX_RATE_URI).json()
+
+                self.tax_rate = tax_rate
+            except:
+                print (' 🛑 Error getting the tax rate')
+                print (requests.get(self.gas_price_url).content)
+                exit()
+
+        return self.tax_rate
 
     def instance(self) -> LCDClient:
         """
@@ -359,7 +378,7 @@ class Delegations(Wallet):
                     self.__iter_result__(terra, delegator)
         except:
             print (' 🛎️  Network error: delegations could not be retrieved.')
-            
+
         return self.delegations
 
 class Validators():
@@ -468,8 +487,8 @@ class TransactionCore():
         # Initialise the basic variables:
         terra         = TerraInstance(utility_constants.GAS_PRICE_URI, utility_constants.GAS_ADJUSTMENT)
         self.terra    = terra.create()
-        self.gas_list = terra.gasList()
-        self.tax_rate = terra.taxRate()
+
+        # The gas list and tax rate values will be updated when the class is properly created
         
     def calculateFee(self, requested_fee:Fee, use_uusd:bool = False) -> Fee:
         """
@@ -631,6 +650,10 @@ class DelegationTransaction(TransactionCore):
         current_wallet_key  = MnemonicKey(self.seed)
         self.current_wallet = self.terra.wallet(current_wallet_key)
 
+        # Get the gas prices and tax rage:
+        self.gas_list = self.terra.gasList()
+        self.tax_rate = self.terra.taxRate()
+
         return self
     
     def simulate(self, redelegated_uluna:int) -> bool:
@@ -717,6 +740,10 @@ class SendTransaction(TransactionCore):
         # Create the wallet based on the calculated key
         current_wallet_key  = MnemonicKey(self.seed)
         self.current_wallet = self.terra.wallet(current_wallet_key)
+
+        # Get the gas prices and tax rage:
+        self.gas_list = self.terra.gasList()
+        self.tax_rate = self.terra.taxRate()
 
         return self
     
@@ -825,6 +852,10 @@ class SwapTransaction(TransactionCore):
         # Create the wallet based on the calculated key
         current_wallet_key  = MnemonicKey(self.seed)
         self.current_wallet = self.terra.wallet(current_wallet_key)
+
+        # Get the gas prices and tax rage:
+        self.gas_list = self.terra.gasList()
+        self.tax_rate = self.terra.taxRate()
 
         return self
 
@@ -977,6 +1008,10 @@ class WithdrawalTransaction(TransactionCore):
         current_wallet_key  = MnemonicKey(self.seed)
         self.current_wallet = self.terra.wallet(current_wallet_key)
 
+        # Get the gas prices and tax rage:
+        self.gas_list = self.terra.gasList()
+        self.tax_rate = self.terra.taxRate()
+
         return self
     
     def simulate(self) -> bool:
@@ -984,21 +1019,6 @@ class WithdrawalTransaction(TransactionCore):
         Simulate a withdrawal so we can get the fee details.
         The fee details are saved so the actual withdrawal will work.
         """
-
-        # result:dict = self.terra.tx.search([
-        #     #("message.sender", "terra1kgge7tyctna52qfskpkw73xu4fhmd0y29ravr6"),
-        #     #("message.receiver", "terra16adz90jdqgy23v95wyk24mwn6nlxwscpr386nq"),
-        #     ('tx.hash', 'D97AF1EB6907D3D11887DC4C92FE8289F6CA828039CEB6FB7D549DB555199B49')
-        # ])
-
-        # print (result)
-        # if len(result['txs']) > 0 and int(result['pagination']['total']) > 0:
-        #     print ('found!')
-        #     #print (result['code'])
-        #     #print (result['pagination']['total'])
-
-
-        # exit()
 
         # Set the fee to be None so it is simulated
         self.fee      = None
