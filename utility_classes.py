@@ -6,6 +6,7 @@ import time
 import requests
 import json
 import cryptocode
+import asyncio
 
 import utility_constants
 
@@ -49,6 +50,38 @@ class Wallets:
         self.file         = None
         self.wallets:dict = {}
 
+    def getWallet(self, wallet, user_password):
+        delegation_amount:str = ''
+        threshold:int         = 0
+
+        if 'delegations' in wallet:
+            if 'redelegate' in wallet['delegations']:
+                delegation_amount = wallet['delegations']['redelegate']
+                if 'threshold' in wallet['delegations']:
+                    threshold = wallet['delegations']['threshold']
+
+
+        wallet_item:Wallet = Wallet().create(wallet['wallet'], wallet['address'], wallet['seed'], user_password)
+        wallet_item.updateDelegation(delegation_amount, threshold)
+
+        if 'allow_swaps' in wallet:
+            wallet_item.allow_swaps = bool(wallet['allow_swaps'])
+
+        wallet_item.validated = wallet_item.validateAddress()
+    
+        self.wallets[wallet['wallet']] = wallet_item
+
+    # async def async_create(self, yml_file:dict, user_password:str):
+        
+    #     asyncio.gather(*(self.getWallet(wallet, user_password) for wallet in yml_file['wallets']))
+
+        
+
+    # def ac(self, yml_file:dict, user_password:str):
+    #     asyncio.run(self.async_create(yml_file, user_password))
+
+    #     return self
+
     def create(self, yml_file:dict, user_password:str):
         """
         Create a dictionary of wallets. Each wallet is a Wallet object.
@@ -64,6 +97,7 @@ class Wallets:
                     delegation_amount = wallet['delegations']['redelegate']
                     if 'threshold' in wallet['delegations']:
                         threshold = wallet['delegations']['threshold']
+
 
             wallet_item:Wallet = Wallet().create(wallet['wallet'], wallet['address'], wallet['seed'], user_password)
             wallet_item.updateDelegation(delegation_amount, threshold)
@@ -118,7 +152,7 @@ class Wallet:
         self.name    = name
         self.address = address
         self.seed    = cryptocode.decrypt(seed, password)
-        self.terra   = TerraInstance(utility_constants.GAS_PRICE_URI, utility_constants.GAS_ADJUSTMENT).create()
+        self.terra   = TerraInstance().create()
 
         return self
     
@@ -192,9 +226,11 @@ class Wallet:
     def getDelegations(self):
         """
         Get the delegations associated with this wallet address.
+        The results are cached so if the list is refreshed then it is much quicker.
         """
 
-        self.details = Delegations().create(self.address)
+        if len(self.details) == 0:
+            self.details = Delegations().create(self.address)
 
         return self.details
     
@@ -255,12 +291,12 @@ class Wallet:
         return self.delegateTx
     
 class TerraInstance:
-    def __init__(self, gas_price_url:str, gas_adjustment:float):
+    def __init__(self):
         self.chain_id       = 'columbus-5'
-        self.gas_adjustment = gas_adjustment
-        self.gas_list       = None
-        self.gas_price_url  = gas_price_url
-        self.tax_rate      = None
+        self.gas_adjustment = utility_constants.GAS_ADJUSTMENT
+        #self.gas_list       = None
+        #self.gas_price_url  = gas_price_url
+        #self.tax_rate      = None
         self.terra          = None
         #self.url            = 'https://lcd.terrarebels.net'
         #self.url            = 'https://lcd.terra.dev'
@@ -280,44 +316,6 @@ class TerraInstance:
         self.terra = terra
 
         return self.terra
-
-    def gasList(self) -> json:
-        """
-        Make a JSON request for the gas prices, and store it against this LCD client instance.
-        """
-
-        if self.gas_list is None:
-            try:
-                if self.gas_price_url is not None:
-                    gas_list:json = requests.get(self.gas_price_url).json()
-
-                    self.gas_list = gas_list
-                else:
-                    print (' 🛑 No gas price URL set at self.gas_price_url')
-                    exit()
-            except:
-                print (' 🛑 Error getting gas prices')
-                print (requests.get(self.gas_price_url).content)
-                exit()
-
-        return self.gas_list
-    
-    def taxRate(self) -> json:
-        """
-        Make a JSON request for the tax rate, and store it against this LCD client instance.
-        """
-
-        if self.tax_rate is None:
-            try:
-                tax_rate:json = requests.get(utility_constants.TAX_RATE_URI).json()
-
-                self.tax_rate = tax_rate
-            except:
-                print (' 🛑 Error getting the tax rate')
-                print (requests.get(self.gas_price_url).content)
-                exit()
-
-        return self.tax_rate
 
     def instance(self) -> LCDClient:
         """
@@ -358,26 +356,27 @@ class Delegations(Wallet):
         It may contain more than one validator.
         """
 
-        terra = TerraInstance(utility_constants.GAS_PRICE_URI, utility_constants.GAS_ADJUSTMENT).create()
+        if len(self.delegations) == 0:
+            terra = TerraInstance().create()
 
-        pagOpt:PaginationOptions = PaginationOptions(limit=50, count_total=True)
-        try:
-            result, pagination       = terra.staking.delegations(delegator = wallet_address, params = pagOpt)
-
-            delegator:Delegation 
-            for delegator in result:
-                self.__iter_result__(terra, delegator)
-
-            while pagination['next_key'] is not None:
-
-                pagOpt.key         = pagination['next_key']
-                result, pagination = terra.staking.delegations(delegator = wallet_address, params = pagOpt)
+            pagOpt:PaginationOptions = PaginationOptions(limit=50, count_total=True)
+            try:
+                result, pagination       = terra.staking.delegations(delegator = wallet_address, params = pagOpt)
 
                 delegator:Delegation 
                 for delegator in result:
                     self.__iter_result__(terra, delegator)
-        except:
-            print (' 🛎️  Network error: delegations could not be retrieved.')
+
+                while pagination['next_key'] is not None:
+
+                    pagOpt.key         = pagination['next_key']
+                    result, pagination = terra.staking.delegations(delegator = wallet_address, params = pagOpt)
+
+                    delegator:Delegation 
+                    for delegator in result:
+                        self.__iter_result__(terra, delegator)
+            except:
+                print (' 🛎️  Network error: delegations could not be retrieved.')
 
         return self.delegations
 
@@ -412,7 +411,7 @@ class Validators():
         Create a dictionary of information about the validators that are available.
         """
 
-        terra = TerraInstance(utility_constants.GAS_PRICE_URI, utility_constants.GAS_ADJUSTMENT).create()
+        terra = TerraInstance().create()
 
         pagOpt:PaginationOptions = PaginationOptions(limit=50, count_total=True)
         result, pagination       = terra.staking.validators(params = pagOpt)
@@ -478,6 +477,7 @@ class TransactionCore():
         self.current_wallet:Wallet                   = None
         self.fee:Fee                                 = None
         self.gas_list:json                           = None
+        self.gas_price_url:str                       = None
         self.seed:str                                = ''
         self.sequence:int                            = None
         self.tax_rate:json                           = None
@@ -485,8 +485,9 @@ class TransactionCore():
         self.transaction:Tx                          = None
         
         # Initialise the basic variables:
-        terra         = TerraInstance(utility_constants.GAS_PRICE_URI, utility_constants.GAS_ADJUSTMENT)
-        self.terra    = terra.create()
+        self.gas_price_url = utility_constants.GAS_PRICE_URI
+        terra              = TerraInstance()
+        self.terra         = terra.create()
 
         # The gas list and tax rate values will be updated when the class is properly created
         
@@ -545,14 +546,6 @@ class TransactionCore():
             ('tx.hash', self.broadcast_result.txhash)
         ])
 
-        # result:dict = self.terra.tx.search([
-        #     ("message.sender", "terra16adz90jdqgy23v95wyk24mwn6nlxwscpr386nq"),
-        #     ("message.receiver", "terra16adz90jdqgy23v95wyk24mwn6nlxwscpr386nq"),
-        #     ('tx.hash', 'E07E1FD8B06D65A8BB7ABC10EABB6716E3F574D9C5C685BE9976CB42F5F4FF22')
-        # ])
-
-        #print ('transaction search result:', result)
-
         retry_count = 0
         while True:
             if len(result['txs']) > 0 and int(result['pagination']['total']) > 0:
@@ -571,6 +564,44 @@ class TransactionCore():
 
         return transaction_found
 
+    def gasList(self) -> json:
+        """
+        Make a JSON request for the gas prices, and store it against this LCD client instance.
+        """
+
+        if self.gas_list is None:
+            try:
+                if self.gas_price_url is not None:
+                    gas_list:json = requests.get(self.gas_price_url).json()
+
+                    self.gas_list = gas_list
+                else:
+                    print (' 🛑 No gas price URL set at self.gas_price_url')
+                    exit()
+            except:
+                print (' 🛑 Error getting gas prices')
+                print (requests.get(self.gas_price_url).content)
+                exit()
+
+        return self.gas_list
+    
+    def taxRate(self) -> json:
+        """
+        Make a JSON request for the tax rate, and store it against this LCD client instance.
+        """
+
+        if self.tax_rate is None:
+            try:
+                tax_rate:json = requests.get(utility_constants.TAX_RATE_URI).json()
+
+                self.tax_rate = tax_rate
+            except:
+                print (' 🛑 Error getting the tax rate')
+                print (requests.get(self.gas_price_url).content)
+                exit()
+
+        return self.tax_rate
+    
     def readableFee(self) -> str:
         """
         Return a description of the fee for the current transaction.
@@ -604,33 +635,33 @@ class TransactionCore():
         result:BlockTxBroadcastResult = self.terra.tx.broadcast(self.transaction)
         self.broadcast_result         = result
 
-        # Wait for this transaction to appear in the blockchain
-        if not self.broadcast_result.is_tx_error():
-            while True:
-                result:dict = self.terra.tx.search([("tx.hash", self.broadcast_result.txhash)])
-                self.terra.tx.search
-                
-                if len(result['txs']) > 0:
-                    print ('Transaction received')
-                    break
-                    
-                else:
-                    print ('No such tx yet...')
+        if self.broadcast_result.code == 11:
+            # Send this back for a retry with a higher gas adjustment value
+            return self.broadcast_result
 
-        # we need to check for code 11 and change the gas adjustment value and try again
-        # Code 0 means it worked or did not return any failures (tx might still be in progress)
-
-        #time.sleep(10)
-
-        # Find the transaction on the network and return the result
-        transaction_confirmed = self.findTransaction()
-
-        if transaction_confirmed == True:
-            print ('This transaction should be visible in your wallet now.')
         else:
-            print ('The transaction did not appear after many searches. Future transactions might fail due to a lack of expected funds.')
+            # Wait for this transaction to appear in the blockchain
+            if not self.broadcast_result.is_tx_error():
+                while True:
+                    result:dict = self.terra.tx.search([("tx.hash", self.broadcast_result.txhash)])
+                    self.terra.tx.search
+                    
+                    if len(result['txs']) > 0:
+                        print ('Transaction received')
+                        break
+                        
+                    else:
+                        print ('No such tx yet...')
+
+            # Find the transaction on the network and return the result
+            transaction_confirmed = self.findTransaction()
+
+            if transaction_confirmed == True:
+                print ('This transaction should be visible in your wallet now.')
+            else:
+                print ('The transaction did not appear after many searches. Future transactions might fail due to a lack of expected funds.')
             
-        return self.broadcast_result
+            return self.broadcast_result
 
 class DelegationTransaction(TransactionCore):
 
@@ -650,9 +681,9 @@ class DelegationTransaction(TransactionCore):
         current_wallet_key  = MnemonicKey(self.seed)
         self.current_wallet = self.terra.wallet(current_wallet_key)
 
-        # Get the gas prices and tax rage:
-        self.gas_list = self.terra.gasList()
-        self.tax_rate = self.terra.taxRate()
+        # Get the gas prices and tax rate:
+        self.gas_list = self.gasList()
+        self.tax_rate = self.taxRate()
 
         return self
     
@@ -741,9 +772,9 @@ class SendTransaction(TransactionCore):
         current_wallet_key  = MnemonicKey(self.seed)
         self.current_wallet = self.terra.wallet(current_wallet_key)
 
-        # Get the gas prices and tax rage:
-        self.gas_list = self.terra.gasList()
-        self.tax_rate = self.terra.taxRate()
+        # Get the gas prices and tax rate:
+        self.gas_list = self.gasList()
+        self.tax_rate = self.taxRate()
 
         return self
     
@@ -853,9 +884,9 @@ class SwapTransaction(TransactionCore):
         current_wallet_key  = MnemonicKey(self.seed)
         self.current_wallet = self.terra.wallet(current_wallet_key)
 
-        # Get the gas prices and tax rage:
-        self.gas_list = self.terra.gasList()
-        self.tax_rate = self.terra.taxRate()
+        # Get the gas prices and tax rate:
+        self.gas_list = self.gasList()
+        self.tax_rate = self.taxRate()
 
         return self
 
@@ -1008,9 +1039,9 @@ class WithdrawalTransaction(TransactionCore):
         current_wallet_key  = MnemonicKey(self.seed)
         self.current_wallet = self.terra.wallet(current_wallet_key)
 
-        # Get the gas prices and tax rage:
-        self.gas_list = self.terra.gasList()
-        self.tax_rate = self.terra.taxRate()
+        # Get the gas prices and tax rate:
+        self.gas_list = self.gasList()
+        self.tax_rate = self.taxRate()
 
         return self
     
