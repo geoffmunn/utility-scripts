@@ -301,6 +301,14 @@ def main():
                 if result == True:
                     send_tx.broadcast()
                 
+                    if send_tx.broadcast_result.code == 11:
+                        print (' 🛎️  Increasing the gas adjustment fee and trying again')
+                        send_tx.terra.gas_adjustment += 0.5
+                        send_tx.simulate(recipient_address, uluna_amount, memo)
+                        print (send_tx.readableFee())
+                        send_tx.send()
+                        send_tx.broadcast()
+
                     if send_tx.broadcast_result.is_tx_error():
                         print (' 🛎️  The send transaction failed, an error occurred:')
                         print (f' 🛎️  {send_tx.broadcast_result.raw_log}')
