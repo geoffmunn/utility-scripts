@@ -79,28 +79,32 @@ def main():
     # Now start doing stuff
 
     balance_coins = {}
+    label_widths  = []
 
-    label_widths = []
-
+    # These are the default widths of the first 4 columns
+    # We need to go through each validator find its name and width
     label_widths.append(len('Coin'))
     label_widths.append(len('Wallet'))
-    label_widths.append(0)
+    label_widths.append(len('Available'))
+    label_widths.append(len('Delegated'))
 
     # First, create a template of all the validators
-    validator_template:dict = {'Available': 0}
-    validator_column_count = len(label_widths)
+    validator_template:dict     = {'Available': 0, 'Delegated': 0}
+    #validator_column_count:int  = len(label_widths)
+
     for wallet_name in user_wallets:
         wallet:Wallet = user_wallets[wallet_name]
         
-        delegations = wallet.getDelegations()
+        delegations:dict = wallet.getDelegations()
 
         for validator in delegations:
             
             if validator not in validator_template:
                 validator_template.update({validator: ''})
 
+                # The default width is zero until we find out what the maximum width/value is:
                 label_widths.append(0)
-                validator_column_count += 1
+                #validator_column_count += 1
 
     # Then, get all the coins we'll be charting (column 1)
 
@@ -108,12 +112,13 @@ def main():
         wallet:Wallet = user_wallets[wallet_name]
         wallet.getBalances()
 
+        # Update the wallet name column max width
         if len(wallet_name) > label_widths[1]:
             label_widths[1] = len(wallet_name)
 
         for denom in wallet.balances:            
             raw_amount = float(wallet.balances[denom]) / utility_constants.COIN_DIVISOR
-            amount = ("%.6f" % (raw_amount)).rstrip('0').rstrip('.')
+            amount     = ("%.6f" % (raw_amount)).rstrip('0').rstrip('.')
 
             if float(amount) > 0:
 
@@ -132,8 +137,12 @@ def main():
                     cur_vals:dict = copy.deepcopy(balance_coins[coin_denom][wallet_name])
                     cur_vals.update({'Available': amount})
                     
+
                     if len(str(amount)) > label_widths[2]:
-                        label_widths[2]= len(str(amount))
+                        label_widths[2] = len(str(amount))
+
+                    # Get the total number of delegations here and populate label_widths[3]
+                    #label_widths[3] = 4
 
                     cur_wallets:dict = copy.deepcopy(balance_coins[coin_denom])
                     cur_wallets.update({wallet_name: cur_vals})
@@ -143,7 +152,15 @@ def main():
         delegations = wallet.getDelegations()
         
         for validator in delegations:
+            
             for denom in delegations[validator]['rewards']:
+
+                if denom == 'uluna':
+                    raw_amount = delegations[validator]['balance_amount'] / utility_constants.COIN_DIVISOR
+                    delegated_amount = ("%.6f" % (raw_amount)).rstrip('0').rstrip('.')
+                else:
+                    delegated_amount = ''
+
                 raw_amount = float(delegations[validator]['rewards'][denom]) / utility_constants.COIN_DIVISOR
                 amount = ("%.6f" % (raw_amount)).rstrip('0').rstrip('.')
 
@@ -160,6 +177,7 @@ def main():
                             balance_coins[coin_denom].update({wallet_name: validator_template})
                             
                         cur_vals:dict = copy.deepcopy(balance_coins[coin_denom][wallet_name])
+                        cur_vals.update({'Delegated': delegated_amount})
                         cur_vals.update({validator: amount})
                         
                         cur_wallets:dict = copy.deepcopy(balance_coins[coin_denom])
@@ -171,13 +189,14 @@ def main():
                         val_count = 0
                         for val_name in validator_template:
                             if val_name == validator:
+                                if len(str(amount)) > label_widths[2 + val_count]:
+                                    label_widths[2 + val_count] = len(str(amount))
                                 break
-                            val_count +=1
+                            val_count += 1
 
-                        if len(str(amount)) > label_widths[2 + val_count]:
-                            label_widths[2+val_count] = len(str(amount))
-
-                        
+                        # Update the delegation column width:
+                        if len(str(delegated_amount)) > label_widths[3]:
+                            label_widths[3] = len(str(delegated_amount))
 
     padding_str = ' ' * 100
 
