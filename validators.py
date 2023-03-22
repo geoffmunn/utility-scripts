@@ -247,7 +247,8 @@ def get_validator_singlechoice(question:str, validators:dict) -> dict|str:
     horizontal_spacer = '-' * len(header_string)
 
     validators_to_use = {}
-
+    user_validator    = {}
+    
     while True:
 
         count = 0
