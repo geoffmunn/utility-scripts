@@ -5,6 +5,7 @@ import yaml
 from getpass import getpass
 
 from utility_classes import (
+    UserConfig,
     Wallets,
     Wallet
 )
@@ -30,24 +31,6 @@ def strtobool (val):
     else:
         #raise ValueError("invalid truth value %r" % (val,))
         return -1
-    
-def get_user_choice(question:str, yes_choices:list, no_choices:list) -> str|bool:
-    """
-    Get the user selection for a prompt and convert it to a standard value.
-    """
-
-    while True:    
-        answer = input(question).lower()
-        if answer in yes_choices or answer in no_choices:
-            break
-    
-    booly = strtobool(answer)
-    if  booly== -1:
-        result = answer
-    else:
-        result = booly
-
-    return result
 
 def get_user_number(question:str, max_number:int) -> int:
     """
@@ -62,54 +45,6 @@ def get_user_number(question:str, max_number:int) -> int:
                 break
 
     return int(answer)
-
-def get_user_multichoice(question:str, user_wallets:dict) -> dict|str:
-    """
-    Get multiple user selections from a list.
-    This is a custom function because the options are specific to this list.
-    """
-
-    wallets_to_use = {}
-    while True:
-
-        count = 0
-        wallet_numbers = {}
-
-        for wallet_name in user_wallets:
-            count += 1
-            wallet_numbers[count] = user_wallets[wallet_name]
-                
-            if wallet_name in wallets_to_use:
-                glyph = '✅'
-            else:
-                glyph = ''
-
-            print (f"  ({count}) {glyph} {wallet_name}")
-            
-        answer = input(question).lower()
-        
-        if answer.isdigit() and int(answer) in wallet_numbers:
-            key = wallet_numbers[int(answer)].name
-            if key not in wallets_to_use:
-                wallets_to_use[key] = wallet_numbers[int(answer)]
-            else:
-                wallets_to_use.pop(key)
-            
-        if answer == 'c':
-            wallets_to_use = {}
-        
-        if answer == 'a':
-            wallets_to_use = {}
-            for wallet_name in user_wallets:
-                wallets_to_use[wallet_name] = user_wallets[wallet_name]
-
-        if answer == 'x':
-            break
-
-        if answer == 'q':
-            break
-
-    return wallets_to_use, answer
 
 def get_user_singlechoice(question:str, user_wallets:dict) -> dict|str:
     """
@@ -216,27 +151,14 @@ def get_user_singlechoice(question:str, user_wallets:dict) -> dict|str:
     
     return user_wallet, answer
 
-def coin_list(input: Coins, existingList: dict) -> dict:
-    """ 
-    Converts the Coins list into a dictionary.
-    There might be a built-in function for this, but I couldn't get it working.
-    """
-
-    coin:Coin
-    for coin in input:
-        existingList[coin.denom] = coin.amount
-
-    return existingList
-
 def main():
     
     # Get the password that decrypts the user wallets
     decrypt_password:str = getpass() # the secret password that encrypts the seed phrase
 
-    try:
-        with open(utility_constants.CONFIG_FILE_NAME, 'r') as file:
-            user_config = yaml.safe_load(file)
-    except :
+    # Get the user config file contents
+    user_config:str = UserConfig().contents()
+    if user_config == '':
         print (' 🛑 The user_config.yml file could not be opened - please run configure_user_wallets.py before running this script')
         exit()
 

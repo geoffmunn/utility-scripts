@@ -6,6 +6,7 @@ import yaml
 from getpass import getpass
 
 from utility_classes import (
+    UserConfig,
     Wallets,
     Wallet
 )
@@ -195,10 +196,9 @@ def main():
         print (' 🛑 Exiting...')
         exit()
         
-    try:
-        with open(utility_constants.CONFIG_FILE_NAME, 'r') as file:
-            user_config = yaml.safe_load(file)
-    except :
+    # Get the user config file contents
+    user_config:str = UserConfig().contents()
+    if user_config == '':
         print (' 🛑 The user_config.yml file could not be opened - please run configure_user_wallets.py before running this script')
         exit()
 

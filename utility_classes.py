@@ -7,6 +7,7 @@ import requests
 import json
 import cryptocode
 import asyncio
+import yaml
 
 import utility_constants
 
@@ -44,6 +45,24 @@ def coin_list(input: Coins, existingList: dict) -> dict:
         existingList[coin.denom] = coin.amount
 
     return existingList
+
+class UserConfig:
+    def __init__(self):
+        self.user_config = None
+        self.file_exists:bool
+
+        try:
+            with open(utility_constants.CONFIG_FILE_NAME, 'r') as file:
+                self.user_config = yaml.safe_load(file)
+                self.file_exists = True
+        except:
+            self.file_exists = False
+
+    def contents(self) -> str:
+        if self.file_exists == True:
+            return self.user_config    
+        else:
+            return ''
 
 class Wallets:
     def __init__(self):
