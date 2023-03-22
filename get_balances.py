@@ -41,7 +41,7 @@ def get_user_choice(question:str) -> str|bool:
         booly = strtobool(answer)
         
         if booly != -1:
-            break;
+            break
     
     return booly
 
