@@ -340,6 +340,10 @@ class Delegations(Wallet):
         validator_name:str          = validator_details.description.moniker
         validator_commission:float  = float(validator_details.commission.commission_rates.rate)
         
+        # Get the delegated amount:
+        balance_denom:str    = delegator.balance.denom
+        balance_amount:float = delegator.balance.amount
+
         # Get any rewards
         rewards:Rewards   = terra.distribution.rewards(delegator_address)
         reward_coins:dict = coin_list(rewards.rewards[validator_address], {})
@@ -348,7 +352,7 @@ class Delegations(Wallet):
         validator_commission = round(validator_commission * 100, 2)
 
         # Set up the object with the details we're interested in
-        self.delegations[validator_name] = {'delegator': delegator_address, 'validator': validator_address, 'rewards': reward_coins, 'validator_name': validator_name, 'commission': validator_commission}
+        self.delegations[validator_name] = {'balance_amount': balance_amount, 'balance_denom': balance_denom, 'commission': validator_commission, 'delegator': delegator_address, 'rewards': reward_coins, 'validator': validator_address,  'validator_name': validator_name}
         
     def create(self, wallet_address:str) -> dict:
         """
@@ -363,6 +367,7 @@ class Delegations(Wallet):
             try:
                 result, pagination       = terra.staking.delegations(delegator = wallet_address, params = pagOpt)
 
+                terra.staking.delegation
                 delegator:Delegation 
                 for delegator in result:
                     self.__iter_result__(terra, delegator)
