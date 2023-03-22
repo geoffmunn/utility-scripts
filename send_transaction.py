@@ -32,19 +32,34 @@ def strtobool (val):
         #raise ValueError("invalid truth value %r" % (val,))
         return -1
 
-def get_user_number(question:str, max_number:int) -> int:
+def isDigit(x):
+    """
+    A better method for identifying digits. This one can handle decimal places.
+    """
+
+    try:
+        float(x)
+        return True
+    except ValueError:
+        return False
+    
+def get_user_number(question:str, max_number:float) -> int:
     """
     Get ther user input - must be a number.
     """ 
     
     while True:    
         answer = input(question).strip(' ')
-        if answer.isdigit():
+        if isDigit(answer):
 
-            if int(answer) > 0 and int(answer) <= max_number:
+            if float(answer) > 0 and float(answer) <= max_number:
                 break
+            elif float(answer) <= 0:
+                print (f' 🛎️  The transfer amount must be greater than zero')
+            elif float(answer) > max_number:
+                print (f' 🛎️  The transfer amount must be less than {max_number}')
 
-    return int(answer)
+    return float(answer)
 
 def get_user_singlechoice(question:str, user_wallets:dict) -> dict|str:
     """
@@ -147,9 +162,24 @@ def get_user_singlechoice(question:str, user_wallets:dict) -> dict|str:
     # Get the first (and only) validator from the list
     for item in wallets_to_use:
         user_wallet = wallets_to_use[item]
-        break;
+        break
     
     return user_wallet, answer
+
+def get_user_text(question:str, max_length:int) -> str:
+    """
+    Get a text string from the user - must be less than a definied length
+    """
+
+    while True:    
+        answer = input(question).strip(' ')
+
+        if len(answer) > max_length:
+            print (f' 🛎️  The length must be less than {max_length}')
+        else:
+            break
+
+    return str(answer)
 
 def main():
     
@@ -195,8 +225,8 @@ def main():
 
     print (f"The {wallet.name} wallet holds {wallet.formatUluna(wallet.balances['uluna'], True)}")
     
-    lunc_amount:int       = get_user_number('How much are you sending? ', int(wallet.formatUluna(wallet.balances['uluna'], False)))
-    memo:str              = input('Provide a memo (optional): ').strip(' ')
+    lunc_amount:int       = get_user_number('How much are you sending? ', float(wallet.formatUluna(wallet.balances['uluna'], False)))
+    memo:str              = get_user_text('Provide a memo (optional): ', 255)
 
     # Now start doing stuff
     print (f'\nAccessing the {wallet.name} wallet...')
