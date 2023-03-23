@@ -2,49 +2,17 @@
 # -*- coding: UTF-8 -*-
 
 import copy
-import yaml
 
 from getpass import getpass
 
 from utility_classes import (
+    get_user_choice,
     UserConfig,
     Wallets,
     Wallet
 )
 
 import utility_constants
-
-def strtobool (val):
-    """
-    Convert a string representation of truth to true (1) or false (0).
-    True values are 'y', 'yes', 't', 'true', 'on', and '1'; false values
-    are 'n', 'no', 'f', 'false', 'off', and '0'.  Returns -1 if
-    'val' is anything else.
-    """
-
-    val = val.lower()
-    if val in ('y', 'yes', 't', 'true', 'on', '1'):
-        return True
-    elif val in ('n', 'no', 'f', 'false', 'off', '0'):
-        return False
-    else:
-        #raise ValueError("invalid truth value %r" % (val,))
-        return -1
-    
-def get_user_choice(question:str) -> str|bool:
-    """
-    Get the user selection for a prompt and convert it to a standard value.
-    """
-
-    while True:    
-        answer = input(question).lower()
-        
-        booly = strtobool(answer)
-        
-        if booly != -1:
-            break
-    
-    return booly
 
 def main():
     
