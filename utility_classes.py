@@ -46,6 +46,143 @@ def coin_list(input: Coins, existingList: dict) -> dict:
 
     return existingList
 
+def isDigit(x):
+    """
+    A better method for identifying digits. This one can handle decimal places.
+    """
+
+    try:
+        float(x)
+        return True
+    except ValueError:
+        return False
+    
+def strtobool (val):
+    """
+    Convert a string representation of truth to true (1) or false (0).
+    True values are 'y', 'yes', 't', 'true', 'on', and '1'; false values
+    are 'n', 'no', 'f', 'false', 'off', and '0'.  Returns -1 if
+    'val' is anything else.
+    """
+
+    val = val.lower()
+    if val in ('y', 'yes', 't', 'true', 'on', '1'):
+        return True
+    elif val in ('n', 'no', 'f', 'false', 'off', '0'):
+        return False
+    else:
+        #raise ValueError("invalid truth value %r" % (val,))
+        return -1
+    
+def get_user_choice(question:str) -> str|bool:
+    """
+    Get the user selection for a prompt and convert it to a standard value.
+    """
+
+    while True:    
+        answer = input(question).lower()
+        
+        booly = strtobool(answer)
+        
+        if booly != -1:
+            break
+    
+    return booly
+
+def get_user_text(question:str, max_length:int, allow_blanks:bool) -> str:
+    """
+    Get a text string from the user - must be less than a definied length
+    """
+
+    while True:    
+        answer = input(question).strip(' ')
+
+        if len(answer) > max_length:
+            print (f' 🛎️  The length must be less than {max_length}')
+        elif len(answer) == 0 and allow_blanks == False:
+            print (f' 🛎️  This value cannot be blank or empty')
+        else:
+            break
+
+    return str(answer)
+    
+# def get_user_number(question:str, max_number:float, percentages_allowed:bool) -> float|str:
+#     """
+#     Get ther user input - must be a number.
+#     """ 
+    
+#     while True:    
+#         answer = input(question).strip(' ')
+
+#         if answer == '':
+#             print (f' 🛎️  The value cannot be blank or empty')
+#         else:
+#             last_char = answer[-1]
+#             if percentages_allowed == True and last_char == '%':
+#                 answer = answer[0:-1]
+
+#             if isDigit(answer):
+
+#                 if percentages_allowed == True and last_char == '%':
+#                     if int(answer) > 0 and int(answer) <= 100:
+#                         break
+#                 elif max_number != utility_constants.NO_MAX_NUMBER and (float(answer) > 0 and float(answer) <= max_number):
+#                     break
+#                 elif max_number != utility_constants.NO_MAX_NUMBER and float(answer) > max_number:
+#                     print (f' 🛎️  The transfer amount must be less than {max_number}')
+#                 elif float(answer) <= 0:
+#                     print (f' 🛎️  The transfer amount must be greater than zero')
+#                 else:
+#                     # This is just a regular number that we'll accept
+#                     break
+
+#     if percentages_allowed == True and last_char == '%':
+#         answer = answer + '%'
+#     else:
+#         answer = float(answer)
+
+#     return answer
+
+def get_user_number(question:str, params:dict) -> float|str:
+    """
+    Get ther user input - must be a number.
+    """ 
+    
+    while True:    
+        answer = input(question).strip(' ')
+
+        #print ('answer', answer)
+        #print ('params:', params)
+        if answer == '':
+            print (f' 🛎️  The value cannot be blank or empty')
+        else:
+            last_char = answer[-1]
+            if 'percentages_allowed' in params and last_char == '%':
+                answer = answer[0:-1]
+
+            if isDigit(answer):
+
+                if 'percentages_allowed' in params and last_char == '%':
+                    if int(answer) > params['min_number'] and int(answer) <= 100:
+                        break
+                elif 'max_number' in params and (float(answer) > params['min_number'] and float(answer) <= params['max_number']):
+                    break
+                elif 'max_number' in params and float(answer) > params['max_number']:
+                    print (f" 🛎️  The amount must be less than {params['max_number']}")
+                elif 'min_number' in params and float(answer) <= params['min_number']:
+                    print (f" 🛎️  The amount must be greater than {params['min_number']}")
+                else:
+                    # This is just a regular number that we'll accept
+                    if last_char != '%':
+                        break
+
+    if 'percentages_allowed' in params and last_char == '%':
+        answer = answer + '%'
+    else:
+        answer = float(answer)
+
+    return answer
+
 class UserConfig:
     def __init__(self):
         self.user_config = None
