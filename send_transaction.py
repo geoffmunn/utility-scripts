@@ -1,65 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 
-import yaml
 from getpass import getpass
 
 from utility_classes import (
+    get_user_number,
+    get_user_text,
     UserConfig,
     Wallets,
     Wallet
 )
 
 import utility_constants
-
-from terra_sdk.core.coin import Coin
-from terra_sdk.core.coins import Coins
-
-def strtobool (val):
-    """
-    Convert a string representation of truth to true (1) or false (0).
-    True values are 'y', 'yes', 't', 'true', 'on', and '1'; false values
-    are 'n', 'no', 'f', 'false', 'off', and '0'.  Returns -1 if
-    'val' is anything else.
-    """
-
-    val = val.lower()
-    if val in ('y', 'yes', 'true', 'on', '1'):
-        return True
-    elif val in ('n', 'no', 'false', 'off', '0'):
-        return False
-    else:
-        #raise ValueError("invalid truth value %r" % (val,))
-        return -1
-
-def isDigit(x):
-    """
-    A better method for identifying digits. This one can handle decimal places.
-    """
-
-    try:
-        float(x)
-        return True
-    except ValueError:
-        return False
-    
-def get_user_number(question:str, max_number:float) -> int:
-    """
-    Get ther user input - must be a number.
-    """ 
-    
-    while True:    
-        answer = input(question).strip(' ')
-        if isDigit(answer):
-
-            if float(answer) > 0 and float(answer) <= max_number:
-                break
-            elif float(answer) <= 0:
-                print (f' 🛎️  The transfer amount must be greater than zero')
-            elif float(answer) > max_number:
-                print (f' 🛎️  The transfer amount must be less than {max_number}')
-
-    return float(answer)
 
 def get_user_singlechoice(question:str, user_wallets:dict) -> dict|str:
     """
@@ -166,21 +118,6 @@ def get_user_singlechoice(question:str, user_wallets:dict) -> dict|str:
     
     return user_wallet, answer
 
-def get_user_text(question:str, max_length:int) -> str:
-    """
-    Get a text string from the user - must be less than a definied length
-    """
-
-    while True:    
-        answer = input(question).strip(' ')
-
-        if len(answer) > max_length:
-            print (f' 🛎️  The length must be less than {max_length}')
-        else:
-            break
-
-    return str(answer)
-
 def main():
     
     # Get the password that decrypts the user wallets
@@ -220,13 +157,12 @@ def main():
     # If we're sending LUNC then we need a few more details:
     recipient_address:str = input('What is the address you are sending to? ')
 
-    # Get the balances
-    #Ewallet.getBalances()
-
     print (f"The {wallet.name} wallet holds {wallet.formatUluna(wallet.balances['uluna'], True)}")
     
-    lunc_amount:int       = get_user_number('How much are you sending? ', float(wallet.formatUluna(wallet.balances['uluna'], False)))
-    memo:str              = get_user_text('Provide a memo (optional): ', 255)
+    lunc_amount:int = get_user_number('How much are you sending? ', {'max_number': float(wallet.formatUluna(wallet.balances['uluna'], False)), 'min_number': 0, 'percentages_allowed': False})
+    memo:str        = get_user_text('Provide a memo (optional): ', 255, True)
+
+    # NOTE: I'm pretty sure the memo size is int64, but I've capped it at 255 so python doens't panic
 
     # Now start doing stuff
     print (f'\nAccessing the {wallet.name} wallet...')
