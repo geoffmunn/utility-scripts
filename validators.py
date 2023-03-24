@@ -5,6 +5,8 @@ import yaml
 from getpass import getpass
 
 from utility_classes import (
+    get_user_choice,
+    get_user_number,
     UserConfig,
     Validators,
     Wallets,
@@ -16,54 +18,54 @@ import utility_constants
 from terra_sdk.core.coin import Coin
 from terra_sdk.core.coins import Coins
 
-def strtobool (val):
-    """
-    Convert a string representation of truth to true (1) or false (0).
-    True values are 'y', 'yes', 't', 'true', 'on', and '1'; false values
-    are 'n', 'no', 'f', 'false', 'off', and '0'.  Returns -1 if
-    'val' is anything else.
-    """
+# def strtobool (val):
+#     """
+#     Convert a string representation of truth to true (1) or false (0).
+#     True values are 'y', 'yes', 't', 'true', 'on', and '1'; false values
+#     are 'n', 'no', 'f', 'false', 'off', and '0'.  Returns -1 if
+#     'val' is anything else.
+#     """
 
-    val = val.lower()
-    if val in ('y', 'yes', 'true', 'on', '1'):
-        return True
-    elif val in ('n', 'no', 'false', 'off', '0'):
-        return False
-    else:
-        #raise ValueError("invalid truth value %r" % (val,))
-        return -1
+#     val = val.lower()
+#     if val in ('y', 'yes', 'true', 'on', '1'):
+#         return True
+#     elif val in ('n', 'no', 'false', 'off', '0'):
+#         return False
+#     else:
+#         #raise ValueError("invalid truth value %r" % (val,))
+#         return -1
     
-def get_user_choice(question:str, yes_choices:list, no_choices:list) -> str|bool:
-    """
-    Get the user selection for a prompt and convert it to a standard value.
-    """
+# def get_user_choice(question:str, yes_choices:list, no_choices:list) -> str|bool:
+#     """
+#     Get the user selection for a prompt and convert it to a standard value.
+#     """
 
-    while True:    
-        answer = input(question).lower()
-        if answer in yes_choices or answer in no_choices:
-            break
+#     while True:    
+#         answer = input(question).lower()
+#         if answer in yes_choices or answer in no_choices:
+#             break
     
-    booly = strtobool(answer)
-    if  booly== -1:
-        result = answer
-    else:
-        result = booly
+#     booly = strtobool(answer)
+#     if  booly== -1:
+#         result = answer
+#     else:
+#         result = booly
 
-    return result
+#     return result
 
-def get_user_number(question:str, max_number:int) -> int:
-    """
-    Get ther user input - must be a number.
-    """ 
+# def get_user_number(question:str, max_number:int) -> int:
+#     """
+#     Get ther user input - must be a number.
+#     """ 
     
-    while True:    
-        answer = input(question).strip(' ')
-        if answer.isdigit():
+#     while True:    
+#         answer = input(question).strip(' ')
+#         if answer.isdigit():
 
-            if int(answer) > 0 and int(answer) <= max_number:
-                break
+#             if int(answer) > 0 and int(answer) <= max_number:
+#                 break
 
-    return int(answer)
+#     return int(answer)
 
 def get_user_multichoice(question:str, user_wallets:dict) -> dict|str:
     """
@@ -218,7 +220,7 @@ def get_user_singlechoice(question:str, user_wallets:dict) -> dict|str:
     
     return user_wallet, answer
 
-def get_validator_singlechoice(question:str, validators:dict) -> dict|str:
+def get_validator_singlechoice(question:str, validators:dict, filter_list:list) -> dict|str:
     """
     Get a single user selection from a list.
     This is a custom function because the options are specific to this list.
@@ -260,27 +262,29 @@ def get_validator_singlechoice(question:str, validators:dict) -> dict|str:
         print (horizontal_spacer)
         
         for validator_name in validators:
-            count += 1
-            validator_numbers[count] = validators[validator_name]
+
+            if len(filter_list) == 0 or (len(filter_list) > 0 and validator_name in filter_list):
+                count += 1
+                validator_numbers[count] = validators[validator_name]
+                    
+                if validator_name in validators_to_use:
+                    glyph = '✅'
+                else:
+                    glyph = '  '
+
+                voting_power = str(round(validators[validator_name]['voting_power'],2)) + '%'
+                commission = str(validators[validator_name]['commission']) + '%'
+
+                count_str =  f' {count}' + padding_str[0:6 - (len(str(count)) + 2)]
                 
-            if validator_name in validators_to_use:
-                glyph = '✅'
-            else:
-                glyph = '  '
+                validator_name_str = ' ' + validator_name + padding_str[0:label_widths[1] - len(validator_name)]             
+                commission_str = commission + padding_str[0:label_widths[2] - len(commission)]
+                voting_power_str = ' ' + voting_power + padding_str[0:label_widths[3] - len(voting_power)]
 
-            voting_power = str(round(validators[validator_name]['voting_power'],2)) + '%'
-            commission = str(validators[validator_name]['commission']) + '%'
+                print (f"{count_str}{glyph} | {commission_str} |{voting_power_str} |{validator_name_str}")
 
-            count_str =  f' {count}' + padding_str[0:6 - (len(str(count)) + 2)]
-            
-            validator_name_str = ' ' + validator_name + padding_str[0:label_widths[1] - len(validator_name)]             
-            commission_str = commission + padding_str[0:label_widths[2] - len(commission)]
-            voting_power_str = ' ' + voting_power + padding_str[0:label_widths[3] - len(voting_power)]
-
-            print (f"{count_str}{glyph} | {commission_str} |{voting_power_str} |{validator_name_str}")
-
-            if count == utility_constants.MAX_VALIDATOR_COUNT:
-                break
+                if count == utility_constants.MAX_VALIDATOR_COUNT:
+                    break
             
         print (horizontal_spacer + '\n')
 
@@ -354,7 +358,6 @@ def main():
 
     # Create the wallet object based on the user config file
     wallet_obj = Wallets().create(user_config, decrypt_password)
-    #wallet_obj = Wallets().ac(user_config, decrypt_password)
 
     # Get all the wallets
     user_wallets = wallet_obj.getWallets(True)
@@ -367,7 +370,7 @@ def main():
     if len(user_wallets) > 0:
         print (f'You have these wallets available:')
 
-        wallet,answer = get_user_singlechoice("Select a wallet number 1 - " + str(len(user_wallets)) + ", 'X' to continue', or 'Q' to quit: ", user_wallets)
+        wallet, answer = get_user_singlechoice("Select a wallet number 1 - " + str(len(user_wallets)) + ", 'X' to continue', or 'Q' to quit: ", user_wallets)
 
         if answer == 'q':
             print (' 🛑 Exiting...')
@@ -383,7 +386,7 @@ def main():
     print ('  (S)  Switch validators')
     print ('  (Q)  Quit')
     
-    user_action = get_user_choice('', ['d', 'u', 's', 'q'], [])
+    user_action = get_user_choice('', ['d', 'u', 's', 'q'])
 
     if user_action == 'q':
         print (' 🛑 Exiting...')
@@ -394,7 +397,7 @@ def main():
     validators = Validators()
     validators.create()
 
-    sorted_validators = validators.sorted_validators
+    sorted_validators:dict = validators.sorted_validators
 
     if len(sorted_validators) == 0:
         print (' 🛑 No validators could be retrieved - perhaps there are network issues?')
@@ -404,7 +407,7 @@ def main():
 
         print (f'Select a validator to delegate to:')
 
-        user_validator, answer = get_validator_singlechoice("Select a validator number 1 - " + str(len(sorted_validators)) + ", 'X' to continue', or 'Q' to quit: ", sorted_validators)
+        user_validator, answer = get_validator_singlechoice("Select a validator number 1 - " + str(len(sorted_validators)) + ", 'X' to continue', or 'Q' to quit: ", sorted_validators, [])
 
         if answer == 'q':
             print (' 🛑 Exiting...')
@@ -447,7 +450,36 @@ def main():
     #    if validators[validator]['is_jailed'] == False:
     #        print(validator, validators[validator]['voting_power'])
 
+    if user_action == utility_constants.USER_ACTION_VALIDATOR_UNDELEGATE:
+        print (f'Select a validator to undelegate from:')
 
+        # Get the validators currently being used
+        
+        delegations:dict = wallet.getDelegations()
+        filter_list:list = []
+
+        for validator in delegations:
+            filter_list.append(validator)
+
+        from_validator, answer = get_validator_singlechoice("Select a validator number 1 - " + str(len(filter_list)) + ", 'X' to continue', or 'Q' to quit: ", sorted_validators, filter_list)
+
+        if answer == 'q':
+            print (' 🛑 Exiting...')
+            exit()
+
+        to_validator, answer = get_validator_singlechoice("Select a validator number 1 - " + str(len(sorted_validators)) + ", 'X' to continue', or 'Q' to quit: ", sorted_validators, [])
+
+        print (from_validator)
+        exit()
+        
+    if user_action == utility_constants.USER_ACTION_VALIDATOR_SWITCH:
+        print (f'Select a validator to delegate switch FROM:')
+
+        user_validator, answer = get_validator_singlechoice("Select a validator number 1 - " + str(len(sorted_validators)) + ", 'X' to continue', or 'Q' to quit: ", sorted_validators)
+
+        if answer == 'q':
+            print (' 🛑 Exiting...')
+            exit()
     exit()
     
     # Get the password that decrypts the user wallets
