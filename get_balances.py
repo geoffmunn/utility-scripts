@@ -19,7 +19,7 @@ def main():
     # Get the password that decrypts the user wallets
     decrypt_password:str = getpass() # the secret password that encrypts the seed phrase
 
-    just_main_coins:bool = get_user_choice('Show just LUNC and USTC? (y/n) ')
+    just_main_coins:bool = get_user_choice('Show just LUNC and USTC? (y/n) ', [])
 
     if just_main_coins == True:
         coin_lookup = utility_constants.BASIC_COIN_LOOKUP

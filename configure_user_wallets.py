@@ -20,7 +20,7 @@ def main():
     wallet_name    = get_user_text('Wallet name: ', 255, False)
     wallet_address = get_user_text('Lunc address: ', 44, False)
     wallet_seed    = get_user_text('Seed phrase (this will be encrypted with your secret password):\n', 1024, False)
-    delegations    = get_user_choice('Do you want to delegate funds? (y/n) ')
+    delegations    = get_user_choice('Do you want to delegate funds? (y/n) ', [])
 
     redelegate_amount:str = ''
     threshold:int         = 0
@@ -29,7 +29,7 @@ def main():
         redelegate_amount = get_user_number('Redelegate amount (eg 100%): ', {'percentages_allowed': True, 'min_number': 0})
         threshold         = get_user_number('What is the minimum amount before we withdraw rewards? ', {'min_number': 0})
 
-    allow_swaps = get_user_choice('Do you want to allow swaps? (y/n) ')
+    allow_swaps = get_user_choice('Do you want to allow swaps? (y/n) ', [])
 
     # Create an encrypted version of the provided seed, using the provided password
     wallet_seed_encrypted = cryptocode.encrypt(wallet_seed, user_password)
@@ -83,7 +83,7 @@ def main():
             data[existing_name] = item
 
         if wallet_name in data:
-            update_wallet = get_user_choice('This wallet already exists, do you want to update it? (y/n) ')
+            update_wallet = get_user_choice('This wallet already exists, do you want to update it? (y/n) ', [])
 
             if update_wallet == False:
                 print ('Exiting...')

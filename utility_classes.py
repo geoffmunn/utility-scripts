@@ -74,20 +74,27 @@ def strtobool (val):
         #raise ValueError("invalid truth value %r" % (val,))
         return -1
     
-def get_user_choice(question:str) -> str|bool:
+def get_user_choice(question:str, allowed_options:list) -> str|bool:
     """
     Get the user selection for a prompt and convert it to a standard value.
     """
 
+    result = ''
+
     while True:    
         answer = input(question).lower()
         
-        booly = strtobool(answer)
-        
-        if booly != -1:
-            break
-    
-    return booly
+        if len(allowed_options) == 0:
+            result = strtobool(answer)
+            
+            if result != -1:
+                break
+        else:
+            if answer in allowed_options:
+                result = answer
+                break
+
+    return result
 
 def get_user_text(question:str, max_length:int, allow_blanks:bool) -> str:
     """

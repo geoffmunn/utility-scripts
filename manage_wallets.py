@@ -156,7 +156,7 @@ def main():
     print ('  (SD) Swap & Delegate')
     print ('  (Q)  Quit')
 
-    user_action = get_user_choice('', ['w', 's', 'd', 'wd', 'sd', 'a', 'q'], [])
+    user_action = get_user_choice('', ['w', 's', 'd', 'wd', 'sd', 'a', 'q'])
 
     if user_action == 'q':
         print (' 🛑 Exiting...')
