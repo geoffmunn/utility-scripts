@@ -7,6 +7,7 @@ from getpass import getpass
 
 from utility_classes import (
     get_user_choice,
+    isPercentage,
     UserConfig,
     Wallets,
     Wallet
@@ -366,8 +367,8 @@ def main():
                         # Figure out how much to delegate based on the user settings
                         uluna_balance = int(wallet.balances['uluna'])
                         
-                        if str(wallet.delegations['delegate']).strip(' ')[-1] == '%':
-                            percentage:int = int(wallet.delegations['delegate'].strip(' ')[0:-1]) / 100
+                        if isPercentage(wallet.delegations['delegate']):
+                            percentage:int = int(str(wallet.delegations['delegate']).strip(' ')[0:-1]) / 100
                             delegated_uluna:int = int(uluna_balance * percentage)
                         else:
                             delegated_uluna:int = int(str(wallet.delegations['delegate']).strip(' '))
