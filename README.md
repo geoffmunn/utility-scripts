@@ -38,8 +38,6 @@ Current functionality includes:
   pip install cryptocode
   ```
 
-NOTE: terra.proto 1.0.1 will work but you'll need to use the terra.proto_v1.0.1 branch (not recommended)
-
  ## Installation guide
 
 ### Step 1
@@ -67,8 +65,8 @@ You will be prompted for the following details:
  - **Terra address**: The address of the wallet - starts with 'terra'
  - **Wallet seed**: Your secret seed to generate the wallet. This is the ONLY time you'll need to provide this - see the security section below.
  - **Do you want to withdraw or delegate anything?**: Optional - if you're staking coins then say 'yes'
- - **Delegation amount**: You can provide a percentage (usually 100%), or a fixed number. This percentage or number comes from the balance in the wallet at the time, unrelated to the withdrawn amount.
- - **Withdrawal threshold**: The amount that must be available as a staking reward before it is withdrawn.
+ - **Delegation amount**: You can provide a percentage (usually 100%), or a fixed number (in LUNC). This percentage or number comes from the balance in the wallet at the time, unrelated to the withdrawn amount.
+ - **Withdrawal threshold**: The amount in LUNC that must be available as a staking reward before it is withdrawn. If you want to always withdraw everything, enter '0'.
  - **Allow swaps?**: Yes or no - if you say 'no' then the swaps function will not apply to this wallet.
 
 This script will create a file called ```user_config.yml```.
@@ -113,6 +111,19 @@ Network connectivity issues with the LCD endpoint. Try again later.
 **out of gas in location: ReadFlat; gasWanted: 150762, gasUsed: 151283: out of gas**
 
 The gas adjustment value needs to be increased.
+
+## Gas adjustment
+
+By default, the gas adjustment value starts at 3. This _should_ work for most transactions, but sometimes it doesn't.
+When it fails, the script will increase the value by 0.1 and try again. This will keep repeating until the gas adjustment value reaches 4, and then fail if it hasn't successfully finished at this point.
+
+You can change the values in the utility_constants.py file:
+
+```
+GAS_ADJUSTMENT           = 3
+GAS_ADJUSTMENT_INCREMENT = 0.1
+MAX_GAS_ADJUSTMENT       = 4
+```
 
 ## Security notes
 
