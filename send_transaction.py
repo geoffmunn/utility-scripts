@@ -6,6 +6,7 @@ from getpass import getpass
 from utility_classes import (
     get_user_number,
     get_user_text,
+    isPercentage,
     UserConfig,
     Wallets,
     Wallet
@@ -159,9 +160,13 @@ def main():
 
     print (f"The {wallet.name} wallet holds {wallet.formatUluna(wallet.balances['uluna'], True)}")
     
-    lunc_amount:int = get_user_number('How much are you sending? ', {'max_number': float(wallet.formatUluna(wallet.balances['uluna'], False)), 'min_number': 0, 'percentages_allowed': False})
+    lunc_amount:str = get_user_number('How much are you sending? ', {'max_number': float(wallet.formatUluna(wallet.balances['uluna'], False)), 'min_number': 0, 'percentages_allowed': True})
     memo:str        = get_user_text('Provide a memo (optional): ', 255, True)
 
+    if isPercentage(lunc_amount):
+        percentage:int = int(str(lunc_amount).strip(' ')[0:-1]) / 100
+        lunc_amount:int = int((wallet.formatUluna(wallet.balances['uluna'], False) - utility_constants.WITHDRAWAL_REMAINDER) * percentage)
+        
     # NOTE: I'm pretty sure the memo size is int64, but I've capped it at 255 so python doens't panic
 
     # Now start doing stuff
