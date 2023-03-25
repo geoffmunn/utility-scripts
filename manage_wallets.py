@@ -233,7 +233,7 @@ def main():
                 uluna_reward:int = delegations[validator]['rewards']['uluna']
 
                 # Only withdraw the staking rewards if the rewards exceed the threshold (if any)
-                if wallet.formatUluna(uluna_reward, False) > wallet.delegations['threshold']:
+                if uluna_reward > wallet.delegations['threshold']:
 
                     print (f'Withdrawing {wallet.formatUluna(uluna_reward, False)} rewards')
 
@@ -366,11 +366,11 @@ def main():
                         # Figure out how much to delegate based on the user settings
                         uluna_balance = int(wallet.balances['uluna'])
                         
-                        if wallet.delegations['delegate'].strip(' ')[-1] == '%':
+                        if str(wallet.delegations['delegate']).strip(' ')[-1] == '%':
                             percentage:int = int(wallet.delegations['delegate'].strip(' ')[0:-1]) / 100
                             delegated_uluna:int = int(uluna_balance * percentage)
                         else:
-                            delegated_uluna:int = wallet.delegations['delegate'].strip(' ')
+                            delegated_uluna:int = int(str(wallet.delegations['delegate']).strip(' '))
 
                         # Adjust this so we have the desired amount still remaining
                         delegated_uluna = int(delegated_uluna - ((utility_constants.WITHDRAWAL_REMAINDER) * utility_constants.COIN_DIVISOR))
@@ -392,7 +392,7 @@ def main():
                                 
                                 if result == True:
                                     delegation_tx.broadcast()
-                                
+
                                     if delegation_tx.broadcast_result.code == 11:
                                         while True:
                                             print (' 🛎️  Increasing the gas adjustment fee and trying again')
@@ -420,7 +420,10 @@ def main():
                             else:
                                 print ('🛎️  The delegation could not be completed')
                         else:
-                            print (' 🛎️  Delegation error: amount is not greater than zero')
+                            if delegated_uluna <= 0:
+                                print (' 🛎️  Delegation error: the delegated amount is not greater than zero')
+                            else:
+                                print (f' 🛎️  Delegation error: the delegated amount of {wallet.formatUluna(delegated_uluna, True)} exceeds the available amount of {wallet.formatUluna(uluna_balance, True)}')
                     else:
                         print (' 🛎️  No LUNC to delegate!')
                 else:
