@@ -192,7 +192,8 @@ def main():
                     if send_tx.broadcast_result.code == 11:
                         while True:
                             print (' 🛎️  Increasing the gas adjustment fee and trying again')
-                            send_tx.terra.gas_adjustment += 0.5
+                            send_tx.terra.gas_adjustment += utility_constants.GAS_ADJUSTMENT_INCREMENT
+                            print (f' 🛎️  Gas adjustment value is now {send_tx.terra.gas_adjustment}')
                             send_tx.simulate(recipient_address, uluna_amount, memo)
                             print (send_tx.readableFee())
                             send_tx.send()
