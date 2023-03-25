@@ -26,7 +26,7 @@ def main():
     threshold:int         = 0
 
     if delegations == True:
-        redelegate_amount = get_user_number('Redelegate amount (eg 100%): ', {'percentages_allowed': True, 'min_number': 0})
+        redelegate_amount = get_user_number('Redelegate amount (eg 100%, 5000): ', {'percentages_allowed': True, 'min_number': 0})
         threshold         = get_user_number('What is the minimum amount in LUNC before we withdraw rewards? ', {'min_number': 0})
 
         # Convert the amount and threshold into uluna:
