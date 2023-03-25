@@ -117,7 +117,7 @@ The gas adjustment value needs to be increased.
 By default, the gas adjustment value starts at 3. This _should_ work for most transactions, but sometimes it doesn't.
 When it fails, the script will increase the value by 0.1 and try again. This will keep repeating until the gas adjustment value reaches 4, and then fail if it hasn't successfully finished at this point.
 
-You can change the values in the utility_constants.py file:
+You can change the values in the ```utility_constants.py``` file:
 
 ```
 GAS_ADJUSTMENT           = 3
