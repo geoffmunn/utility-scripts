@@ -46,15 +46,25 @@ def coin_list(input: Coins, existingList: dict) -> dict:
 
     return existingList
 
-def isDigit(x):
+def isDigit(value):
     """
     A better method for identifying digits. This one can handle decimal places.
     """
 
     try:
-        float(x)
+        float(value)
         return True
     except ValueError:
+        return False
+    
+def isPercentage(value):
+    """
+    A helpter function to figure out if a value is a percentage or not.
+    """
+    last_char = str(value).strip(' ')[-1]
+    if last_char == '%':
+        return True
+    else:
         return False
     
 def strtobool (val):
@@ -112,43 +122,6 @@ def get_user_text(question:str, max_length:int, allow_blanks:bool) -> str:
             break
 
     return str(answer)
-    
-# def get_user_number(question:str, max_number:float, percentages_allowed:bool) -> float|str:
-#     """
-#     Get ther user input - must be a number.
-#     """ 
-    
-#     while True:    
-#         answer = input(question).strip(' ')
-
-#         if answer == '':
-#             print (f' 🛎️  The value cannot be blank or empty')
-#         else:
-#             last_char = answer[-1]
-#             if percentages_allowed == True and last_char == '%':
-#                 answer = answer[0:-1]
-
-#             if isDigit(answer):
-
-#                 if percentages_allowed == True and last_char == '%':
-#                     if int(answer) > 0 and int(answer) <= 100:
-#                         break
-#                 elif max_number != utility_constants.NO_MAX_NUMBER and (float(answer) > 0 and float(answer) <= max_number):
-#                     break
-#                 elif max_number != utility_constants.NO_MAX_NUMBER and float(answer) > max_number:
-#                     print (f' 🛎️  The transfer amount must be less than {max_number}')
-#                 elif float(answer) <= 0:
-#                     print (f' 🛎️  The transfer amount must be greater than zero')
-#                 else:
-#                     # This is just a regular number that we'll accept
-#                     break
-
-#     if percentages_allowed == True and last_char == '%':
-#         answer = answer + '%'
-#     else:
-#         answer = float(answer)
-
-#     return answer
 
 def get_user_number(question:str, params:dict) -> float|str:
     """
@@ -158,18 +131,17 @@ def get_user_number(question:str, params:dict) -> float|str:
     while True:    
         answer = input(question).strip(' ')
 
-        #print ('answer', answer)
-        #print ('params:', params)
+        is_percentage = isPercentage(answer)
+
         if answer == '':
             print (f' 🛎️  The value cannot be blank or empty')
         else:
-            last_char = answer[-1]
-            if 'percentages_allowed' in params and last_char == '%':
+            if 'percentages_allowed' in params and is_percentage == True:
                 answer = answer[0:-1]
 
             if isDigit(answer):
 
-                if 'percentages_allowed' in params and last_char == '%':
+                if 'percentages_allowed' in params and is_percentage == True:
                     if int(answer) > params['min_number'] and int(answer) <= 100:
                         break
                 elif 'max_number' in params and (float(answer) > params['min_number'] and float(answer) <= params['max_number']):
@@ -180,10 +152,10 @@ def get_user_number(question:str, params:dict) -> float|str:
                     print (f" 🛎️  The amount must be greater than {params['min_number']}")
                 else:
                     # This is just a regular number that we'll accept
-                    if last_char != '%':
+                    if is_percentage == False:
                         break
 
-    if 'percentages_allowed' in params and last_char == '%':
+    if 'percentages_allowed' in params and is_percentage == True:
         answer = answer + '%'
     else:
         answer = float(answer)
@@ -974,7 +946,7 @@ class DelegationTransaction(TransactionCore):
                 validator_dst_address=validator2_address,
                 validator_src_address=validator1_address,
                 delegator_address=test1.key.acc_address,
-                amount=Coin.parse("10uluna"),
+                amount=Coin.parse("10uluna")
             )
 
             options = CreateTxOptions(
