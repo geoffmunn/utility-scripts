@@ -1,12 +1,9 @@
 #!/usr/bin/env python3
 
-from datetime import tzinfo
-import itertools
 import time
 import requests
 import json
 import cryptocode
-import asyncio
 import yaml
 
 import utility_constants
@@ -25,14 +22,17 @@ from terra_sdk.core.coin import Coin
 from terra_sdk.core.coins import Coins
 from terra_sdk.core.distribution.msgs import MsgWithdrawDelegatorReward
 from terra_sdk.core.fee import Fee
-from terra_sdk.core.staking import MsgDelegate
+from terra_sdk.core.staking import (
+    MsgBeginRedelegate,
+    MsgDelegate,
+    MsgUndelegate
+)
 from terra_sdk.core.staking.data.delegation import Delegation
 from terra_sdk.core.staking.data.validator import Validator
+from terra_sdk.core.tx import Tx
 from terra_sdk.core.wasm.msgs import MsgExecuteContract
 from terra_sdk.exceptions import LCDResponseError
 from terra_sdk.key.mnemonic import MnemonicKey
-
-from terra_sdk.core.tx import AuthInfo, SignerData, SignMode, Tx, TxBody, TxInfo
 
 def coin_list(input: Coins, existingList: dict) -> dict:
     """ 
@@ -878,7 +878,7 @@ class DelegationTransaction(TransactionCore):
         return True
         
 
-    def delegate(self, redelegated_uluna:int) -> bool:
+    def delegate(self, delegated_uluna:int) -> bool:
         """
         Make a delegation with the information we have so far.
         If fee is None then it will be a simulation.
@@ -888,7 +888,7 @@ class DelegationTransaction(TransactionCore):
             msg = MsgDelegate(
                 delegator_address  = self.delegator_address,
                 validator_address  = self.validator_address,
-                amount             = Coin('uluna', redelegated_uluna)
+                amount             = Coin('uluna', delegated_uluna)
             )
 
             options = CreateTxOptions(
@@ -920,6 +920,92 @@ class DelegationTransaction(TransactionCore):
         
         except:
             return False
+        
+    def undelegate(self, undelegated_uluna:int):
+        """
+        Undelegate funds from the provided validator
+        If fee is None then it will be a simulation.
+        """
+
+        try:
+            msg = MsgUndelegate(
+                delegator_address  = self.delegator_address,
+                validator_address  = self.validator_address,
+                amount             = Coin('uluna', undelegated_uluna)
+            )
+
+            options = CreateTxOptions(
+                fee        = self.fee,
+                gas_prices = self.gas_list,
+                msgs       = [msg],
+                sequence   = self.sequence
+            )
+
+            # This process often generates sequence errors. If we get a response error, then
+            # bump up the sequence number by one and try again.
+            while True:
+                try:
+                    tx:Tx = self.current_wallet.create_and_sign_tx(options)
+                    break
+                except LCDResponseError as err:
+                    self.sequence    = self.sequence + 1
+                    options.sequence = self.sequence
+                except Exception as err:
+                    print (' 🛑 A random error has occurred')
+                    print (err)
+                    break
+
+            # Store the transaction
+            self.transaction = tx
+
+            return True
+        
+        except:
+            return False
+
+    def redelegate(self, redelegated_uluna:int):
+        """
+        Redelegate funds from one validator to another.
+        If fee is None then it will be a simulation.
+        """
+
+        try:
+            msg = MsgUndelegate(
+                validator_dst_address=validator2_address,
+                validator_src_address=validator1_address,
+                delegator_address=test1.key.acc_address,
+                amount=Coin.parse("10uluna"),
+            )
+
+            options = CreateTxOptions(
+                fee        = self.fee,
+                gas_prices = self.gas_list,
+                msgs       = [msg],
+                sequence   = self.sequence
+            )
+
+            # This process often generates sequence errors. If we get a response error, then
+            # bump up the sequence number by one and try again.
+            while True:
+                try:
+                    tx:Tx = self.current_wallet.create_and_sign_tx(options)
+                    break
+                except LCDResponseError as err:
+                    self.sequence    = self.sequence + 1
+                    options.sequence = self.sequence
+                except Exception as err:
+                    print (' 🛑 A random error has occurred')
+                    print (err)
+                    break
+
+            # Store the transaction
+            self.transaction = tx
+
+            return True
+        
+        except:
+            return False 
+        
         
 class SendTransaction(TransactionCore):
     def __init__(self, *args, **kwargs):
