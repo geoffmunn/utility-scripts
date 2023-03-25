@@ -256,6 +256,22 @@ def main():
                         if result == True:
                             withdrawal_tx.broadcast()
                         
+                            if withdrawal_tx.broadcast_result.code == 11:
+                                while True:
+                                    print (' 🛎️  Increasing the gas adjustment fee and trying again')
+                                    withdrawal_tx.terra.gas_adjustment += utility_constants.GAS_ADJUSTMENT_INCREMENT
+                                    print (f' 🛎️  Gas adjustment value is now {withdrawal_tx.terra.gas_adjustment}')
+                                    withdrawal_tx.simulate()
+                                    print (withdrawal_tx.readableFee())
+                                    withdrawal_tx.send()
+                                    withdrawal_tx.broadcast()
+
+                                    if withdrawal_tx.broadcast_result.code != 11:
+                                        break
+
+                                    if withdrawal_tx.terra.gas_adjustment >= utility_constants.MAX_GAS_ADJUSTMENT:
+                                        break
+                                    
                             if withdrawal_tx.broadcast_result.is_tx_error():
                                 print (' 🛎️  The withdrawal failed, an error occurred:')
                                 print (f' 🛎️  {withdrawal_tx.broadcast_result.raw_log}')
@@ -300,6 +316,22 @@ def main():
                                 if result == True:
                                     swaps_tx.broadcast()
 
+                                    if swaps_tx.broadcast_result.code == 11:
+                                        while True:
+                                            print (' 🛎️  Increasing the gas adjustment fee and trying again')
+                                            swaps_tx.terra.gas_adjustment += utility_constants.GAS_ADJUSTMENT_INCREMENT
+                                            print (f' 🛎️  Gas adjustment value is now {swaps_tx.terra.gas_adjustment}')
+                                            swaps_tx.simulate()
+                                            print (swaps_tx.readableFee())
+                                            swaps_tx.send()
+                                            swaps_tx.broadcast()
+
+                                            if swaps_tx.broadcast_result.code != 11:
+                                                break
+
+                                            if swaps_tx.terra.gas_adjustment >= utility_constants.MAX_GAS_ADJUSTMENT:
+                                                break
+                                            
                                     if swaps_tx.broadcast_result.is_tx_error():
                                         print (' 🛎️ The swap failed, an error occurred:')
                                         print (f' 🛎️  {swaps_tx.broadcast_result.raw_log}')
@@ -361,6 +393,22 @@ def main():
                                 if result == True:
                                     delegation_tx.broadcast()
                                 
+                                    if delegation_tx.broadcast_result.code == 11:
+                                        while True:
+                                            print (' 🛎️  Increasing the gas adjustment fee and trying again')
+                                            delegation_tx.terra.gas_adjustment += utility_constants.GAS_ADJUSTMENT_INCREMENT
+                                            print (f' 🛎️  Gas adjustment value is now {delegation_tx.terra.gas_adjustment}')
+                                            delegation_tx.simulate(delegated_uluna)
+                                            print (delegation_tx.readableFee())
+                                            delegation_tx.send()
+                                            delegation_tx.broadcast()
+
+                                            if delegation_tx.broadcast_result.code != 11:
+                                                break
+
+                                            if delegation_tx.terra.gas_adjustment >= utility_constants.MAX_GAS_ADJUSTMENT:
+                                                break
+                                        
                                     if delegation_tx.broadcast_result.is_tx_error():
                                         print (' 🛎️ The delegation failed, an error occurred:')
                                         print (f' 🛎️  {delegation_tx.broadcast_result.raw_log}')
