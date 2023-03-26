@@ -2,95 +2,33 @@
 # -*- coding: UTF-8 -*-
 
 import copy
-import yaml
 
 from getpass import getpass
 
 from utility_classes import (
+    get_user_choice,
+    UserConfig,
     Wallets,
     Wallet
 )
 
 import utility_constants
 
-full_coin_lookup = {
-    'uaud': 'AUT',
-    'ucad': 'CAT',
-    'uchf': 'CHT',
-    'ucny': 'CNT',
-    'udkk': 'DKT',
-    'ueur': 'EUT',
-    'ugbp': 'GBT',
-    'uhkd': 'HKT',
-    'uidr': 'IDT',
-    'uinr': 'INT',
-    'ujpy': 'JPT',
-    'ukrw': 'KRT',
-    'uluna': 'LUNC',
-    'umnt': 'MNT',
-    'umyr': 'MYT',
-    'unok': 'NOT',
-    'uphp': 'PHT',
-    'usdr': 'SDT',
-    'usek': 'SET',
-    'usgd': 'SGT',
-    'uthb': 'THT',
-    'utwd': 'TWT',
-    'uusd': 'UST'
-}
-basic_coin_lookup = {
-    'uluna': 'LUNC',
-    'uusd': 'UST'
-}
-
-def strtobool (val):
-    """
-    Convert a string representation of truth to true (1) or false (0).
-    True values are 'y', 'yes', 't', 'true', 'on', and '1'; false values
-    are 'n', 'no', 'f', 'false', 'off', and '0'.  Returns -1 if
-    'val' is anything else.
-    """
-
-    val = val.lower()
-    if val in ('y', 'yes', 't', 'true', 'on', '1'):
-        return True
-    elif val in ('n', 'no', 'f', 'false', 'off', '0'):
-        return False
-    else:
-        #raise ValueError("invalid truth value %r" % (val,))
-        return -1
-    
-def get_user_choice(question:str) -> str|bool:
-    """
-    Get the user selection for a prompt and convert it to a standard value.
-    """
-
-    while True:    
-        answer = input(question).lower()
-        
-        booly = strtobool(answer)
-        
-        if booly != -1:
-            break;
-    
-    return booly
-
 def main():
     
     # Get the password that decrypts the user wallets
     decrypt_password:str = getpass() # the secret password that encrypts the seed phrase
 
-    just_main_coins:bool = get_user_choice('Show just LUNC and USTC? (y/n) ')
+    just_main_coins:bool = get_user_choice('Show just LUNC and USTC? (y/n) ', [])
 
     if just_main_coins == True:
-        coin_lookup = basic_coin_lookup
+        coin_lookup = utility_constants.BASIC_COIN_LOOKUP
     else:
-        coin_lookup = full_coin_lookup
+        coin_lookup = utility_constants.FULL_COIN_LOOKUP
 
-    try:
-        with open(utility_constants.CONFIG_FILE_NAME, 'r') as file:
-            user_config = yaml.safe_load(file)
-    except :
+    # Get the user config file contents
+    user_config:str = UserConfig().contents()
+    if user_config == '':
         print (' 🛑 The user_config.yml file could not be opened - please run configure_user_wallets.py before running this script')
         exit()
 
@@ -109,28 +47,32 @@ def main():
     # Now start doing stuff
 
     balance_coins = {}
+    label_widths  = []
 
-    label_widths = []
-
+    # These are the default widths of the first 4 columns
+    # We need to go through each validator find its name and width
     label_widths.append(len('Coin'))
     label_widths.append(len('Wallet'))
-    label_widths.append(0)
+    label_widths.append(len('Available'))
+    label_widths.append(len('Delegated'))
 
     # First, create a template of all the validators
-    validator_template:dict = {'Available': 0}
-    validator_column_count = len(label_widths)
+    validator_template:dict     = {'Available': 0, 'Delegated': 0}
+    #validator_column_count:int  = len(label_widths)
+
     for wallet_name in user_wallets:
         wallet:Wallet = user_wallets[wallet_name]
         
-        delegations = wallet.getDelegations()
+        delegations:dict = wallet.getDelegations()
 
         for validator in delegations:
             
             if validator not in validator_template:
                 validator_template.update({validator: ''})
 
+                # The default width is zero until we find out what the maximum width/value is:
                 label_widths.append(0)
-                validator_column_count += 1
+                #validator_column_count += 1
 
     # Then, get all the coins we'll be charting (column 1)
 
@@ -138,12 +80,13 @@ def main():
         wallet:Wallet = user_wallets[wallet_name]
         wallet.getBalances()
 
+        # Update the wallet name column max width
         if len(wallet_name) > label_widths[1]:
             label_widths[1] = len(wallet_name)
 
         for denom in wallet.balances:            
             raw_amount = float(wallet.balances[denom]) / utility_constants.COIN_DIVISOR
-            amount = ("%.6f" % (raw_amount)).rstrip('0').rstrip('.')
+            amount     = ("%.6f" % (raw_amount)).rstrip('0').rstrip('.')
 
             if float(amount) > 0:
 
@@ -162,8 +105,12 @@ def main():
                     cur_vals:dict = copy.deepcopy(balance_coins[coin_denom][wallet_name])
                     cur_vals.update({'Available': amount})
                     
+
                     if len(str(amount)) > label_widths[2]:
-                        label_widths[2]= len(str(amount))
+                        label_widths[2] = len(str(amount))
+
+                    # Get the total number of delegations here and populate label_widths[3]
+                    #label_widths[3] = 4
 
                     cur_wallets:dict = copy.deepcopy(balance_coins[coin_denom])
                     cur_wallets.update({wallet_name: cur_vals})
@@ -173,7 +120,15 @@ def main():
         delegations = wallet.getDelegations()
         
         for validator in delegations:
+            
             for denom in delegations[validator]['rewards']:
+
+                if denom == 'uluna':
+                    raw_amount = delegations[validator]['balance_amount'] / utility_constants.COIN_DIVISOR
+                    delegated_amount = ("%.6f" % (raw_amount)).rstrip('0').rstrip('.')
+                else:
+                    delegated_amount = ''
+
                 raw_amount = float(delegations[validator]['rewards'][denom]) / utility_constants.COIN_DIVISOR
                 amount = ("%.6f" % (raw_amount)).rstrip('0').rstrip('.')
 
@@ -190,6 +145,7 @@ def main():
                             balance_coins[coin_denom].update({wallet_name: validator_template})
                             
                         cur_vals:dict = copy.deepcopy(balance_coins[coin_denom][wallet_name])
+                        cur_vals.update({'Delegated': delegated_amount})
                         cur_vals.update({validator: amount})
                         
                         cur_wallets:dict = copy.deepcopy(balance_coins[coin_denom])
@@ -201,13 +157,14 @@ def main():
                         val_count = 0
                         for val_name in validator_template:
                             if val_name == validator:
+                                if len(str(amount)) > label_widths[2 + val_count]:
+                                    label_widths[2 + val_count] = len(str(amount))
                                 break
-                            val_count +=1
+                            val_count += 1
 
-                        if len(str(amount)) > label_widths[2 + val_count]:
-                            label_widths[2+val_count] = len(str(amount))
-
-                        
+                        # Update the delegation column width:
+                        if len(str(delegated_amount)) > label_widths[3]:
+                            label_widths[3] = len(str(delegated_amount))
 
     padding_str = ' ' * 100
 

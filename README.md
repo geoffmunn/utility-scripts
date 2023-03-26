@@ -7,7 +7,7 @@ These are Python scripts for use on the Luna Classic chain. These scripts demons
 
 These scripts will help you manage wallets and make transactions on the Luna Classic chain.
 
-They are intended to be useful for anyone making repeated interactions across multiple wallets.
+They are intended to be useful for anyone making repeated interactions across multiple wallets. These are especially useful for people who are comfortable with the python environment.
 
 Current functionality includes:
 
@@ -38,8 +38,6 @@ Current functionality includes:
   pip install cryptocode
   ```
 
-NOTE: terra.proto 1.0.1 will work but you'll need to use the terra.proto_v1.0.1 branch (not recommended)
-
  ## Installation guide
 
 ### Step 1
@@ -67,8 +65,8 @@ You will be prompted for the following details:
  - **Terra address**: The address of the wallet - starts with 'terra'
  - **Wallet seed**: Your secret seed to generate the wallet. This is the ONLY time you'll need to provide this - see the security section below.
  - **Do you want to withdraw or delegate anything?**: Optional - if you're staking coins then say 'yes'
- - **Delegation amount**: You can provide a percentage (usually 100%), or a fixed number. This percentage or number comes from the balance in the wallet at the time, unrelated to the withdrawn amount.
- - **Withdrawal threshold**: The amount that must be available as a staking reward before it is withdrawn.
+ - **Delegation amount**: You can provide a percentage (usually 100%), or a fixed number (in LUNC). This percentage or number comes from the balance in the wallet at the time, unrelated to the withdrawn amount.
+ - **Withdrawal threshold**: The amount in LUNC that must be available as a staking reward before it is withdrawn. If you want to always withdraw everything, enter '0'.
  - **Allow swaps?**: Yes or no - if you say 'no' then the swaps function will not apply to this wallet.
 
 This script will create a file called ```user_config.yml```.
@@ -85,7 +83,7 @@ This will return the balances for each coin type on all of your wallets. You pro
 To make transactions on your wallets, you need to run ```manage_wallets.py```. Provide the same password you used in the configuration step, and then select the operation you want to do.
 
  - **Withdrawals**: All the staking rewards are withdrawn. The fee is paid by either a random minor coin (KRT for example), or LUNC, or USDT (in that order).
- - **Swap**: All the available USDT is swapped for LUNC. Currently the fee must be paid in USDT.
+ - **Swap**: All the available USTC is swapped for LUNC. Currently the fee must be paid in USTC.
  - **Delegate**: LUNC is redelegated back to the same validator. A set amount is always kept in reserve to cover fees for later transactions (100 LUNC). Depending on how the wallet was configured, either a percentage of the available funds is delegated, or a set amount.
 
  **Special note about delegations**: delegating will also withdraw all existing rewards (which are not part of the delegation), so your balance afterwards might also reflect the withdrawals.
@@ -102,6 +100,9 @@ Two points to remember:
 
 Examples of errors and what they might mean:
 
+**The script is stuck on 'Starting delegations' and isn't doing anything**
+Sometimes it seems to timeout and nothing will happen for many minutes. In these cases you can press 'control+C' (on the Mac) to quit the script. You can run ```python3 get_balances.py``` to check where your coins currently sit, and re-run the ```manage_wallets.py``` script to start again.
+
 **LCD Response Error Status 400 - failed to execute message; message index: 0: Operation exceeds max spread limit: execute wasm contract failed: invalid request**
 
 Seems to be a problem with the LCD - try again later and it should work
@@ -113,6 +114,19 @@ Network connectivity issues with the LCD endpoint. Try again later.
 **out of gas in location: ReadFlat; gasWanted: 150762, gasUsed: 151283: out of gas**
 
 The gas adjustment value needs to be increased.
+
+## Gas adjustment
+
+By default, the gas adjustment value starts at 3. This _should_ work for most transactions, but sometimes it doesn't.
+When it fails, the script will increase the value by 0.1 and try again. This will keep repeating until the gas adjustment value reaches 4, and then fail if it hasn't successfully finished at this point.
+
+You can change the values in the ```utility_constants.py``` file:
+
+```
+GAS_ADJUSTMENT           = 3
+GAS_ADJUSTMENT_INCREMENT = 0.1
+MAX_GAS_ADJUSTMENT       = 4
+```
 
 ## Security notes
 

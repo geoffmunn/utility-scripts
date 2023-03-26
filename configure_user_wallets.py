@@ -2,70 +2,40 @@ import cryptocode
 from getpass import getpass
 from os.path import exists
 
+from utility_classes import (
+    get_user_choice,
+    get_user_number,
+    get_user_text
+)
+
 import utility_constants
 
 # @TODO
 #   - confirm password?
 #   - check if supplied password is the same as already in use
-#   - support currency preferences
-
-def get_user_choice(question:str, yes_choices:list, no_choices:list):
-
-    while True:    
-        answer = input(question).lower()
-        if answer in yes_choices or answer in no_choices:
-            break
-    
-    if answer in yes_choices:
-        answer = True
-    elif answer in no_choices:
-        answer = False
-
-    return answer
-
-def get_user_number(question:str, is_percentage:bool) -> int|str:
-
-    while True:
-        answer = input(question).strip(' ')
-
-        last_char = answer[-1]
-        if is_percentage == True:
-            answer = answer[0:-1]
-
-        if answer.isdigit():
-            if is_percentage:
-                if int(answer) > 0 and int(answer) <= 100:
-                    break
-            else:
-                if int(answer) >= 0:
-                    break
-
-    if is_percentage == True and last_char == '%':
-        answer = answer + '%'
-    else:
-        answer = int(answer)
-
-    return answer
 
 def main():
-    yes_choices:list = ['yes', 'y', 'true']
-    no_choices:list  = ['no', 'n', 'false']
 
     user_password  = getpass('Secret password (do not forget what this is):')
-    wallet_name    = input('Wallet name: ')
-    wallet_address = input('Lunc address: ')
-    wallet_seed    = input('Seed phrase (this will be encrypted with your secret password):\n')
-    delegations    = get_user_choice('Do you want to delegate funds? (y/n) ', yes_choices, no_choices)
+    wallet_name    = get_user_text('Wallet name: ', 255, False)
+    wallet_address = get_user_text('Lunc address: ', 44, False)
+    wallet_seed    = get_user_text('Seed phrase (this will be encrypted with your secret password):\n', 1024, False)
+    delegations    = get_user_choice('Do you want to delegate funds? (y/n) ', [])
 
     redelegate_amount:str = ''
     threshold:int         = 0
 
     if delegations == True:
-        redelegate_amount = get_user_number('Redelegate amount (eg 100%): ', True)
-        threshold         = get_user_number('What is the minimum amount before we withdraw rewards? ', False)
+        redelegate_amount = get_user_number('Redelegate amount (eg 100%, 5000): ', {'percentages_allowed': True, 'min_number': 0})
+        threshold         = get_user_number('What is the minimum amount in LUNC before we withdraw rewards? ', {'min_number': 0})
 
-    allow_swaps    = get_user_choice('Do you want to allow swaps? (y/n) ', yes_choices, no_choices)
+        # Convert the amount and threshold into uluna:
+        threshold         = threshold * utility_constants.COIN_DIVISOR
+        redelegate_amount = redelegate_amount * utility_constants.COIN_DIVISOR
 
+    allow_swaps = get_user_choice('Do you want to allow swaps? (y/n) ', [])
+
+    # Create an encrypted version of the provided seed, using the provided password
     wallet_seed_encrypted = cryptocode.encrypt(wallet_seed, user_password)
 
     # Get the user configuration details from the default location
@@ -117,7 +87,7 @@ def main():
             data[existing_name] = item
 
         if wallet_name in data:
-            update_wallet = get_user_choice('This wallet already exists, do you want to update it? (y/n) ', yes_choices, no_choices)
+            update_wallet = get_user_choice('This wallet already exists, do you want to update it? (y/n) ', [])
 
             if update_wallet == False:
                 print ('Exiting...')
@@ -139,14 +109,10 @@ def main():
 
     data[wallet_name] = item
     
-    print (data)
-    print ('.......')
     # Now generate the string
     output = '---\n\nwallets:'
 
     for item in data:
-
-        print (data[item])
         output += '\n  - wallet: ' + str(data[item]['name']) + '\n'
         output += '    seed: ' + str(data[item]['seed']) + '\n'
         output += '    address: ' + str(data[item]['address']) + '\n'
