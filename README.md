@@ -100,6 +100,9 @@ Two points to remember:
 
 Examples of errors and what they might mean:
 
+**The script is stuck on 'Starting delegations' and isn't doing anything**
+Sometimes it seems to timeout and nothing will happen for many minutes. In these cases you can press 'control+C' (on the Mac) to quit the script. You can run ```python3 get_balances.py``` to check where your coins currently sit, and re-run the ```manage_wallets.py``` script to start again.
+
 **LCD Response Error Status 400 - failed to execute message; message index: 0: Operation exceeds max spread limit: execute wasm contract failed: invalid request**
 
 Seems to be a problem with the LCD - try again later and it should work
