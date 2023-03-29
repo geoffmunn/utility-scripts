@@ -460,7 +460,7 @@ class TerraInstance:
     
 class Delegations(Wallet):
 
-    def __init__(self):        
+    def __init__(self):
         self.delegations:dict = {}
 
     def __iter_result__(self, terra:LCDClient, delegator:Delegation) -> dict:
@@ -806,6 +806,7 @@ class TransactionCore():
 class DelegationTransaction(TransactionCore):
 
     def __init__(self, *args, **kwargs):
+        self.delegated_uluna:int = 0
 
         super(DelegationTransaction, self).__init__(*args, **kwargs)
         
@@ -827,7 +828,8 @@ class DelegationTransaction(TransactionCore):
 
         return self
     
-    def simulate(self, redelegated_uluna:int) -> bool:
+    #def simulate(self, redelegated_uluna:int) -> bool:
+    def simulate(self) -> bool:
         """
         Simulate a delegation so we can get the fee details.
         The fee details are saved so the actual delegation will work.
@@ -836,7 +838,8 @@ class DelegationTransaction(TransactionCore):
         # Set the fee to be None so it is simulated
         self.fee      = None
         self.sequence = self.current_wallet.sequence()
-        self.delegate(redelegated_uluna)
+        #self.delegate(redelegated_uluna)
+        self.delegate()
 
         # Store the transaction
         tx:Tx = self.transaction
@@ -850,7 +853,8 @@ class DelegationTransaction(TransactionCore):
         return True
         
 
-    def delegate(self, delegated_uluna:int) -> bool:
+    #def delegate(self, delegated_uluna:int) -> bool:
+    def delegate(self) -> bool:
         """
         Make a delegation with the information we have so far.
         If fee is None then it will be a simulation.
@@ -860,7 +864,7 @@ class DelegationTransaction(TransactionCore):
             msg = MsgDelegate(
                 delegator_address  = self.delegator_address,
                 validator_address  = self.validator_address,
-                amount             = Coin('uluna', delegated_uluna)
+                amount             = Coin('uluna', self.delegated_uluna)
             )
 
             options = CreateTxOptions(
@@ -893,7 +897,8 @@ class DelegationTransaction(TransactionCore):
         except:
             return False
         
-    def undelegate(self, undelegated_uluna:int):
+    #def undelegate(self, undelegated_uluna:int):
+    def undelegate(self):
         """
         Undelegate funds from the provided validator
         If fee is None then it will be a simulation.
@@ -903,7 +908,7 @@ class DelegationTransaction(TransactionCore):
             msg = MsgUndelegate(
                 delegator_address  = self.delegator_address,
                 validator_address  = self.validator_address,
-                amount             = Coin('uluna', undelegated_uluna)
+                amount             = Coin('uluna', self.undelegated_uluna)
             )
 
             options = CreateTxOptions(

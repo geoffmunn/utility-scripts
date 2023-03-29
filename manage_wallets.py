@@ -264,7 +264,7 @@ def main():
                                     print (f' 🛎️  Gas adjustment value is now {withdrawal_tx.terra.gas_adjustment}')
                                     withdrawal_tx.simulate()
                                     print (withdrawal_tx.readableFee())
-                                    withdrawal_tx.send()
+                                    withdrawal_tx.withdraw()
                                     withdrawal_tx.broadcast()
 
                                     if withdrawal_tx.broadcast_result.code != 11:
@@ -324,7 +324,7 @@ def main():
                                             print (f' 🛎️  Gas adjustment value is now {swaps_tx.terra.gas_adjustment}')
                                             swaps_tx.simulate()
                                             print (swaps_tx.readableFee())
-                                            swaps_tx.send()
+                                            swaps_tx.swap()
                                             swaps_tx.broadcast()
 
                                             if swaps_tx.broadcast_result.code != 11:
@@ -381,15 +381,18 @@ def main():
 
                             delegation_tx = wallet.delegate().create(delegations[validator]['delegator'], delegations[validator]['validator'])
 
+                            # Assign the delegation amount to the object
+                            delegation_tx.delegated_uluna = delegated_uluna
+
                             # Simulate it
-                            result = delegation_tx.simulate(delegated_uluna)
+                            result = delegation_tx.simulate()
 
                             if result == True:
                                     
                                 print (delegation_tx.readableFee())
 
                                 # Now we know what the fee is, we can do it again and finalise it
-                                result = delegation_tx.delegate(delegated_uluna)
+                                result = delegation_tx.delegate()
                                 
                                 if result == True:
                                     delegation_tx.broadcast()
@@ -399,9 +402,9 @@ def main():
                                             print (' 🛎️  Increasing the gas adjustment fee and trying again')
                                             delegation_tx.terra.gas_adjustment += utility_constants.GAS_ADJUSTMENT_INCREMENT
                                             print (f' 🛎️  Gas adjustment value is now {delegation_tx.terra.gas_adjustment}')
-                                            delegation_tx.simulate(delegated_uluna)
+                                            delegation_tx.simulate()
                                             print (delegation_tx.readableFee())
-                                            delegation_tx.send()
+                                            delegation_tx.delegate()
                                             delegation_tx.broadcast()
 
                                             if delegation_tx.broadcast_result.code != 11:
