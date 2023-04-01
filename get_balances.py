@@ -41,7 +41,7 @@ def main():
     user_wallets = wallet_obj.getWallets(True)
 
     if len(user_wallets) == 0:
-        print (' 🛑 This password couldn\'t decrypt any wallets. Make sure it is correct, or rebuild the wallet list by running the configure_user_wallet.py script again.')
+        print (" 🛑 This password couldn't decrypt any wallets. Make sure it is correct, or rebuild the wallet list by running the configure_user_wallet.py script again.")
         exit()
 
     # Now start doing stuff
