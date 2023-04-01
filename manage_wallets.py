@@ -211,7 +211,7 @@ def main():
             print (' 🛑 Exiting...')
             exit()
     else:
-        print (' 🛑 This password couldn\'t decrypt any wallets. Make sure it is correct, or rebuild the wallet list by running the configure_user_wallet.py script again.')
+        print (" 🛑 This password couldn't decrypt any wallets. Make sure it is correct, or rebuild the wallet list by running the configure_user_wallet.py script again.")
         exit()
 
     # Now start doing stuff
@@ -385,12 +385,12 @@ def main():
                             delegation_tx.delegated_uluna = delegated_uluna
 
                             # Simulate it
-                            result = delegation_tx.simulate()
+                            result = delegation_tx.simulate(delegation_tx.delegate)
 
                             if result == True:
                                     
                                 print (delegation_tx.readableFee())
-
+                                
                                 # Now we know what the fee is, we can do it again and finalise it
                                 result = delegation_tx.delegate()
                                 
@@ -402,7 +402,7 @@ def main():
                                             print (' 🛎️  Increasing the gas adjustment fee and trying again')
                                             delegation_tx.terra.gas_adjustment += utility_constants.GAS_ADJUSTMENT_INCREMENT
                                             print (f' 🛎️  Gas adjustment value is now {delegation_tx.terra.gas_adjustment}')
-                                            delegation_tx.simulate()
+                                            delegation_tx.simulate(delegation_tx.delegate)
                                             print (delegation_tx.readableFee())
                                             delegation_tx.delegate()
                                             delegation_tx.broadcast()
@@ -420,7 +420,7 @@ def main():
                                         print (f' ✅ Delegated amount: {wallet.formatUluna(delegated_uluna, True)}')
                                         print (f' ✅ Tx Hash: {delegation_tx.broadcast_result.txhash}')
                                 else:
-                                    print (' 🛎️  The deleggation could not be completed')
+                                    print (' 🛎️  The delegation could not be completed')
                             else:
                                 print ('🛎️  The delegation could not be completed')
                         else:
