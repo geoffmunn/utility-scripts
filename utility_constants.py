@@ -8,7 +8,7 @@ SEARCH_RETRY_COUNT   = 30    # This is the number of times we will check for a t
 GAS_PRICE_URI            = 'https://fcd.terra.dev/v1/txs/gas_prices'
 TAX_RATE_URI             = 'https://lcd.terra.dev/terra/treasury/v1beta1/tax_rate'
 CONFIG_FILE_NAME         = 'user_config.yml'
-GAS_ADJUSTMENT           = 3
+GAS_ADJUSTMENT           = 1
 GAS_ADJUSTMENT_INCREMENT = 0.1
 MAX_GAS_ADJUSTMENT       = 4
 
