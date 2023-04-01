@@ -379,10 +379,13 @@ def main():
                         if delegated_uluna > 0 and delegated_uluna <= wallet.balances['uluna']:
                             print (f'Delegating {wallet.formatUluna(delegated_uluna, True)}')
 
-                            delegation_tx = wallet.delegate().create(delegations[validator]['delegator'], delegations[validator]['validator'])
+                            # Create the delegation object
+                            delegation_tx = wallet.delegate().create()
 
-                            # Assign the delegation amount to the object
-                            delegation_tx.delegated_uluna = delegated_uluna
+                            # Assign the details:
+                            delegation_tx.delegator_address = delegations[validator]['delegator']
+                            delegation_tx.validator_address = delegations[validator]['validator']
+                            delegation_tx.delegated_uluna   = delegated_uluna
 
                             # Simulate it
                             result = delegation_tx.simulate(delegation_tx.delegate)

@@ -645,6 +645,43 @@ class TransactionCore():
 
         # The gas list and tax rate values will be updated when the class is properly created
         
+    def broadcast(self) -> BlockTxBroadcastResult:
+        """
+        A core broadcast function for all transactions.
+        It will wait until the transaction shows up in the search function before finishing.
+        """
+
+        result:BlockTxBroadcastResult = self.terra.tx.broadcast(self.transaction)
+        self.broadcast_result         = result
+
+        if self.broadcast_result.code == 11:
+            # Send this back for a retry with a higher gas adjustment value
+            return self.broadcast_result
+
+        else:
+            # Wait for this transaction to appear in the blockchain
+            if not self.broadcast_result.is_tx_error():
+                while True:
+                    result:dict = self.terra.tx.search([("tx.hash", self.broadcast_result.txhash)])
+                    self.terra.tx.search
+                    
+                    if len(result['txs']) > 0:
+                        print ('Transaction received')
+                        break
+                        
+                    else:
+                        print ('No such tx yet...')
+
+            # Find the transaction on the network and return the result
+            transaction_confirmed = self.findTransaction()
+
+            if transaction_confirmed == True:
+                print ('This transaction should be visible in your wallet now.')
+            else:
+                print ('The transaction did not appear after many searches. Future transactions might fail due to a lack of expected funds.')
+            
+            return self.broadcast_result
+        
     def calculateFee(self, requested_fee:Fee, use_uusd:bool = False) -> Fee:
         """
         Calculate the fee based on the provided information and what coins are available.
@@ -739,23 +776,6 @@ class TransactionCore():
 
         return self.gas_list
     
-    def taxRate(self) -> json:
-        """
-        Make a JSON request for the tax rate, and store it against this LCD client instance.
-        """
-
-        if self.tax_rate is None:
-            try:
-                tax_rate:json = requests.get(utility_constants.TAX_RATE_URI).json()
-
-                self.tax_rate = tax_rate
-            except:
-                print (' 🛑 Error getting the tax rate')
-                print (requests.get(self.gas_price_url).content)
-                exit()
-
-        return self.tax_rate
-    
     def readableFee(self) -> str:
         """
         Return a description of the fee for the current transaction.
@@ -779,62 +799,40 @@ class TransactionCore():
             first = False
 
         return fee_string
-
-    def broadcast(self) -> BlockTxBroadcastResult:
+    
+    def taxRate(self) -> json:
         """
-        A core broadcast function for all transactions.
-        It will wait until the transaction shows up in the search function before finishing.
+        Make a JSON request for the tax rate, and store it against this LCD client instance.
         """
 
-        result:BlockTxBroadcastResult = self.terra.tx.broadcast(self.transaction)
-        self.broadcast_result         = result
+        if self.tax_rate is None:
+            try:
+                tax_rate:json = requests.get(utility_constants.TAX_RATE_URI).json()
 
-        if self.broadcast_result.code == 11:
-            # Send this back for a retry with a higher gas adjustment value
-            return self.broadcast_result
+                self.tax_rate = tax_rate
+            except:
+                print (' 🛑 Error getting the tax rate')
+                print (requests.get(self.gas_price_url).content)
+                exit()
 
-        else:
-            # Wait for this transaction to appear in the blockchain
-            if not self.broadcast_result.is_tx_error():
-                while True:
-                    result:dict = self.terra.tx.search([("tx.hash", self.broadcast_result.txhash)])
-                    self.terra.tx.search
-                    
-                    if len(result['txs']) > 0:
-                        print ('Transaction received')
-                        break
-                        
-                    else:
-                        print ('No such tx yet...')
-
-            # Find the transaction on the network and return the result
-            transaction_confirmed = self.findTransaction()
-
-            if transaction_confirmed == True:
-                print ('This transaction should be visible in your wallet now.')
-            else:
-                print ('The transaction did not appear after many searches. Future transactions might fail due to a lack of expected funds.')
-            
-            return self.broadcast_result
+        return self.tax_rate
 
 class DelegationTransaction(TransactionCore):
 
     def __init__(self, *args, **kwargs):
 
-        self.action = ''
-        self.delegator_address = ''
-        self.delegated_uluna:int = 0
-        self.validator_address = ''
+        self.action:str                = ''
+        self.delegator_address:str     = ''
+        self.delegated_uluna:int       = 0
+        self.validator_address_old:str = ''
+        self.validator_address:str     = ''
 
         super(DelegationTransaction, self).__init__(*args, **kwargs)
         
-    def create(self, delegator_address:str, validator_address:str):
+    def create(self):
         """
         Create a delegation object and set it up with the provided details.
         """
-
-        self.delegator_address = delegator_address
-        self.validator_address = validator_address
 
         # Create the wallet based on the calculated key
         current_wallet_key  = MnemonicKey(self.seed)
@@ -846,32 +844,6 @@ class DelegationTransaction(TransactionCore):
 
         return self
     
-    def simulate(self, action) -> bool:
-        """
-        Simulate a delegation so we can get the fee details.
-        The fee details are saved so the actual delegation will work.
-        """
-
-        # Set the fee to be None so it is simulated
-        self.fee      = None
-        self.sequence = self.current_wallet.sequence()
-        
-        # This is a provided function. Depending on the original function, we might be delegating or undelegating
-        action()
-
-        # Store the transaction
-        tx:Tx = self.transaction
-
-        # Get the stub of the requested fee so we can adjust it
-        requested_fee = tx.auth_info.fee
-
-        # This will be used by the swap function next time we call it
-        self.fee = self.calculateFee(requested_fee)
-
-        return True
-        
-
-    #def delegate(self, delegated_uluna:int) -> bool:
     def delegate(self) -> bool:
         """
         Make a delegation with the information we have so far.
@@ -915,6 +887,74 @@ class DelegationTransaction(TransactionCore):
         except:
             return False
         
+    def redelegate(self):
+        """
+        Redelegate funds from one validator to another.
+        If fee is None then it will be a simulation.
+        """
+
+        try:
+
+            msgRedel = MsgBeginRedelegate(
+                validator_dst_address = self.validator_address,
+                validator_src_address = self.validator_address_old,
+                delegator_address     = self.delegator_address,
+                amount                = Coin('uluna', self.delegated_uluna)
+            )
+
+            options = CreateTxOptions(
+                fee        = self.fee,
+                gas_prices = self.gas_list,
+                msgs       = [msgRedel],
+                sequence   = self.sequence
+            )
+
+            # This process often generates sequence errors. If we get a response error, then
+            # bump up the sequence number by one and try again.
+            while True:
+                try:
+                    tx:Tx = self.current_wallet.create_and_sign_tx(options)
+                    break
+                except LCDResponseError as err:
+                    self.sequence    = self.sequence + 1
+                    options.sequence = self.sequence
+                except Exception as err:
+                    print (' 🛑 A random error has occurred')
+                    print (err)
+                    break
+
+            # Store the transaction
+            self.transaction = tx
+
+            return True
+        
+        except:
+            return False 
+    
+    def simulate(self, action) -> bool:
+        """
+        Simulate a delegation so we can get the fee details.
+        The fee details are saved so the actual delegation will work.
+        """
+
+        # Set the fee to be None so it is simulated
+        self.fee      = None
+        self.sequence = self.current_wallet.sequence()
+        
+        # This is a provided function. Depending on the original function, we might be delegating or undelegating
+        action()
+
+        # Store the transaction
+        tx:Tx = self.transaction
+
+        # Get the stub of the requested fee so we can adjust it
+        requested_fee = tx.auth_info.fee
+
+        # This will be used by the swap function next time we call it
+        self.fee = self.calculateFee(requested_fee)
+
+        return True
+        
     def undelegate(self):
         """
         Undelegate funds from the provided validator
@@ -956,49 +996,6 @@ class DelegationTransaction(TransactionCore):
         
         except:
             return False
-
-    def redelegate(self, redelegated_uluna:int):
-        """
-        Redelegate funds from one validator to another.
-        If fee is None then it will be a simulation.
-        """
-
-        try:
-            msg = MsgUndelegate(
-                validator_dst_address=validator2_address,
-                validator_src_address=validator1_address,
-                delegator_address=test1.key.acc_address,
-                amount=Coin.parse("10uluna")
-            )
-
-            options = CreateTxOptions(
-                fee        = self.fee,
-                gas_prices = self.gas_list,
-                msgs       = [msg],
-                sequence   = self.sequence
-            )
-
-            # This process often generates sequence errors. If we get a response error, then
-            # bump up the sequence number by one and try again.
-            while True:
-                try:
-                    tx:Tx = self.current_wallet.create_and_sign_tx(options)
-                    break
-                except LCDResponseError as err:
-                    self.sequence    = self.sequence + 1
-                    options.sequence = self.sequence
-                except Exception as err:
-                    print (' 🛑 A random error has occurred')
-                    print (err)
-                    break
-
-            # Store the transaction
-            self.transaction = tx
-
-            return True
-        
-        except:
-            return False 
         
         
 class SendTransaction(TransactionCore):
@@ -1026,48 +1023,6 @@ class SendTransaction(TransactionCore):
 
         return self
     
-    def simulate(self, recipient_address:str, uluna_amount:int, memo:str) -> bool:
-        """
-        Simulate a delegation so we can get the fee details.
-        The fee details are saved so the actual delegation will work.
-        """
-
-        self.recipient_address = recipient_address
-        self.memo              = memo
-        self.uluna_amount      = uluna_amount
-
-        # Set the fee to be None so it is simulated
-        self.fee      = None
-        self.sequence = self.current_wallet.sequence()
-        self.send()
-
-        # Store the transaction
-        tx:Tx = self.transaction
-
-        # Get the stub of the requested fee so we can adjust it
-        requested_fee = tx.auth_info.fee
-
-        # This will be used by the swap function next time we call it
-        self.fee = self.calculateFee(requested_fee)
-
-        # Figure out the fee structure
-        fee_bit:Coin = Coin.from_str(str(requested_fee.amount))
-        fee_amount   = fee_bit.amount
-        fee_denom    = fee_bit.denom
-
-        # Calculate the tax portion
-        self.tax = uluna_amount * float(self.tax_rate['tax_rate'])
-
-        # Build a fee object with 
-        new_coin:Coins        = Coins({Coin(fee_denom, int(fee_amount + self.tax)), Coin('uluna', 200000)})
-        requested_fee.amount = new_coin
-
-        # This will be used by the swap function next time we call it
-        self.fee = requested_fee
-        
-        return True
-        
-
     def send(self) -> bool:
         """
         Complete a send transaction with the information we have so far.
@@ -1111,6 +1066,47 @@ class SendTransaction(TransactionCore):
             return True
         except:
             return False
+    
+    def simulate(self, recipient_address:str, uluna_amount:int, memo:str) -> bool:
+        """
+        Simulate a delegation so we can get the fee details.
+        The fee details are saved so the actual delegation will work.
+        """
+
+        self.recipient_address = recipient_address
+        self.memo              = memo
+        self.uluna_amount      = uluna_amount
+
+        # Set the fee to be None so it is simulated
+        self.fee      = None
+        self.sequence = self.current_wallet.sequence()
+        self.send()
+
+        # Store the transaction
+        tx:Tx = self.transaction
+
+        # Get the stub of the requested fee so we can adjust it
+        requested_fee = tx.auth_info.fee
+
+        # This will be used by the swap function next time we call it
+        self.fee = self.calculateFee(requested_fee)
+
+        # Figure out the fee structure
+        fee_bit:Coin = Coin.from_str(str(requested_fee.amount))
+        fee_amount   = fee_bit.amount
+        fee_denom    = fee_bit.denom
+
+        # Calculate the tax portion
+        self.tax = uluna_amount * float(self.tax_rate['tax_rate'])
+
+        # Build a fee object with 
+        new_coin:Coins        = Coins({Coin(fee_denom, int(fee_amount + self.tax)), Coin('uluna', 200000)})
+        requested_fee.amount = new_coin
+
+        # This will be used by the swap function next time we call it
+        self.fee = requested_fee
+        
+        return True
         
 class SwapTransaction(TransactionCore):
 
@@ -1122,6 +1118,17 @@ class SwapTransaction(TransactionCore):
         self.fee_deductables:float = None
         self.max_spread:float      = 0.01
         self.tax:float             = None
+
+    def beliefPrice(self) -> float:
+        """
+        Figure out the belief price for this swap.
+        """
+
+        result = self.terra.wasm.contract_query(utility_constants.UUSD_TO_ULUNA_SWAP_ADDRESS, {"pool": {}})
+
+        belief_price:float = int(result['assets'][0]['amount']) / int(result['assets'][1]['amount']) 
+
+        return round(belief_price, 18)
         
     def create(self):
         """
@@ -1137,17 +1144,6 @@ class SwapTransaction(TransactionCore):
         self.tax_rate = self.taxRate()
 
         return self
-
-    def beliefPrice(self) -> float:
-        """
-        Figure out the belief price for this swap.
-        """
-
-        result = self.terra.wasm.contract_query(utility_constants.UUSD_TO_ULUNA_SWAP_ADDRESS, {"pool": {}})
-
-        belief_price:float = int(result['assets'][0]['amount']) / int(result['assets'][1]['amount']) 
-
-        return round(belief_price, 18)
 
     def simulate(self) -> bool:
         """
