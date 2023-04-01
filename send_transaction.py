@@ -31,28 +31,38 @@ def get_user_singlechoice(question:str, user_wallets:dict) -> dict|str:
         if len(wallet_name) > label_widths[1]:
             label_widths[1] = len(wallet_name)
 
-        if len(str(user_wallets[wallet_name].balances['uluna'])) > label_widths[2]:
-            label_widths[2] = len(str(user_wallets[wallet_name].balances['uluna']))
+        if 'uluna' in user_wallets[wallet_name].balances:
+            uluna_val = user_wallets[wallet_name].formatUluna(user_wallets[wallet_name].balances['uluna'])
+        else:
+            uluna_val = ''
+            
+        if 'uusd' in user_wallets[wallet_name].balances:
+            ustc_val = user_wallets[wallet_name].formatUluna(user_wallets[wallet_name].balances['uusd'])
+        else:
+            ustc_val = ''
 
-        if len(str(user_wallets[wallet_name].balances['uusd'])) > label_widths[3]:
-            label_widths[3] = len(str(user_wallets[wallet_name].balances['uusd']))
+        if len(str(uluna_val)) > label_widths[2]:
+            label_widths[2] = len(str(uluna_val))
+
+        if len(str(ustc_val)) > label_widths[3]:
+            label_widths[3] = len(str(ustc_val))
 
     padding_str = ' ' * 100
 
     header_string = ' Number |'
 
     if label_widths[1] > len('Wallet name'):
-        header_string +=  ' Wallet name' + padding_str[0:label_widths[1]-len('Wallet name')] + ' '
+        header_string +=  ' Wallet name' + padding_str[0:label_widths[1] - len('Wallet name')] + ' '
     else:
         header_string +=  ' Wallet name '
 
     if label_widths[2] > len('LUNC'):
-        header_string += '| LUNC ' + padding_str[0:label_widths[2]-len('LUNC')] + ' '
+        header_string += '| LUNC' + padding_str[0:label_widths[2] - len('LUNC')] + ' '
     else:
         header_string += '| LUNC '
 
     if label_widths[3] > len('USTC'):
-        header_string += '| USTC'  + padding_str[0:label_widths[3]-len('USTC')] + ' '
+        header_string += '| USTC'  + padding_str[0:label_widths[3] - len('USTC')] + ' '
     else:
         header_string += '| USTC '
 
@@ -83,9 +93,19 @@ def get_user_singlechoice(question:str, user_wallets:dict) -> dict|str:
 
             count_str =  f' {count}' + padding_str[0:6 - (len(str(count)) + 2)]
             
-            wallet_name_str = wallet_name + padding_str[0:label_widths[1] - len(wallet_name)]             
-            lunc_str = wallet.formatUluna(wallet.balances['uluna'], False)
-            ustc_str = wallet.formatUluna(wallet.balances['uusd'], False)
+            wallet_name_str = wallet_name + padding_str[0:label_widths[1] - len(wallet_name)]
+
+            if 'uluna' in wallet.balances:
+                lunc_str = ("%.6f" % (wallet.formatUluna(wallet.balances['uluna'], False))).rstrip('0').rstrip('.')
+            else: 
+                lunc_str = ''
+
+            lunc_str = lunc_str + padding_str[0:label_widths[2] - len(lunc_str)]
+            
+            if 'uusd' in wallet.balances:
+                ustc_str = ("%.6f" % (wallet.formatUluna(wallet.balances['uusd'], False))).rstrip('0').rstrip('.')
+            else:
+                ustc_str = ' '
             
             print (f"{count_str}{glyph} | {wallet_name_str} | {lunc_str} | {ustc_str}")
             
