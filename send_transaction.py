@@ -172,9 +172,13 @@ def main():
             print (' 🛑 Exiting...')
             exit()
     else:
-        print (' 🛑 This password couldn\'t decrypt any wallets. Make sure it is correct, or rebuild the wallet list by running the configure_user_wallet.py script again.')
+        print (" 🛑 This password couldn't decrypt any wallets. Make sure it is correct, or rebuild the wallet list by running the configure_user_wallet.py script again.")
         exit()
 
+    if 'uluna' not in wallet.balances:
+        print (" 🛑 This wallet doesn't have any LUNC available to transfer.")
+        exit()
+                       
     # If we're sending LUNC then we need a few more details:
     recipient_address:str = input('What is the address you are sending to? ')
 
