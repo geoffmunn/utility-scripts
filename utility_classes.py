@@ -278,27 +278,6 @@ class Wallet:
         self.terra:LCDClient  = None
         self.validated: bool  = False
         self.withdrawalTx     = WithdrawalTransaction()
-        
-    def create(self, name, address, seed, password) -> Wallet:
-        """
-        Create a wallet object based on the provided details.
-        """
-
-        self.name    = name
-        self.address = address
-        self.seed    = cryptocode.decrypt(seed, password)
-        self.terra   = TerraInstance().create()
-
-        return self
-    
-    def updateDelegation(self, amount:str, threshold:int) -> bool:
-       """
-       Update the delegation details with the amount and threshold details.
-       """
-
-       self.delegations = {'delegate': amount, 'threshold': threshold}
-
-       return True
     
     def allowSwaps(self, allow_swaps:bool) -> bool:
         """
@@ -308,7 +287,45 @@ class Wallet:
         self.allow_swaps = allow_swaps
         
         return True
+    
+    def create(self, name:str = '', address:str = '', seed:str = '', password:str = '') -> Wallet:
+        """
+        Create a wallet object based on the provided details.
+        """
 
+        self.name    = name
+        self.address = address
+
+        if seed != '' and password != '':
+            self.seed = cryptocode.decrypt(seed, password)
+
+        self.terra = TerraInstance().create()
+
+        return self
+    
+    def delegate(self):
+        """
+        Update the delegate class with the data it needs
+        It will be created via the create() command
+        """
+
+        self.delegateTx.seed     = self.seed
+        self.delegateTx.balances = self.balances
+
+        return self.delegateTx
+
+    def formatUluna(self, uluna:float, add_suffix:bool = False) -> float|str:
+        """
+        A generic helper function to convert uluna amounts to LUNC.
+        """
+
+        lunc:float = round(float(uluna / utility_constants.COIN_DIVISOR), 6)
+
+        if add_suffix:
+            lunc = str(lunc) + ' LUNC'
+
+        return lunc
+    
     def getBalances(self) -> dict:
         """
         Get the balances associated with this wallet.
@@ -336,7 +353,60 @@ class Wallet:
         self.balances = balances
 
         return balances
+    
+    def getDelegations(self):
+        """
+        Get the delegations associated with this wallet address.
+        The results are cached so if the list is refreshed then it is much quicker.
+        """
 
+        if len(self.details) == 0:
+            self.details = Delegations().create(self.address)
+
+        return self.details
+    
+    def newWallet(self):
+        """
+        Creates a new wallet and returns the seed and address
+        """
+        mk = MnemonicKey()
+        
+        wallet:Wallet = self.terra.wallet(mk)
+        
+        return mk.mnemonic, wallet.key.acc_address
+
+    
+    def send(self):
+        """
+        Update the send class with the data it needs.
+        It will be created via the create() command.
+        """
+
+        self.sendTx.seed     = self.seed
+        self.sendTx.balances = self.balances
+
+        return self.sendTx
+    
+    def swap(self):
+        """
+        Update the swap class with the data it needs.
+        It will be created via the create() command.
+        """
+
+        self.swapTx.seed     = self.seed
+        self.swapTx.balances = self.balances
+
+        return self.swapTx
+    
+    def updateDelegation(self, amount:str, threshold:int) -> bool:
+       """
+       Update the delegation details with the amount and threshold details.
+       """
+
+       self.delegations = {'delegate': amount, 'threshold': threshold}
+
+       return True
+    
     def validateAddress(self) -> bool:
         """
         Check that the password does actually resolve against any wallets
@@ -357,29 +427,6 @@ class Wallet:
                 return False
         except:
             return False
-
-    def getDelegations(self):
-        """
-        Get the delegations associated with this wallet address.
-        The results are cached so if the list is refreshed then it is much quicker.
-        """
-
-        if len(self.details) == 0:
-            self.details = Delegations().create(self.address)
-
-        return self.details
-    
-    def formatUluna(self, uluna:float, add_suffix:bool = False) -> float|str:
-        """
-        A generic helper function to convert uluna amounts to LUNC.
-        """
-
-        lunc:float = round(float(uluna / utility_constants.COIN_DIVISOR), 6)
-
-        if add_suffix:
-            lunc = str(lunc) + ' LUNC'
-
-        return lunc
     
     def withdrawal(self):
         """
@@ -391,39 +438,6 @@ class Wallet:
         self.withdrawalTx.balances = self.balances
 
         return self.withdrawalTx
-    
-    def send(self):
-        """
-        Update the send class with the data it needs.
-        It will be created via the create() command.
-        """
-
-        self.sendTx.seed     = self.seed
-        self.sendTx.balances = self.balances
-
-        return self.sendTx
-
-    def swap(self):
-        """
-        Update the swap class with the data it needs.
-        It will be created via the create() command.
-        """
-
-        self.swapTx.seed     = self.seed
-        self.swapTx.balances = self.balances
-
-        return self.swapTx
-    
-    def delegate(self):
-        """
-        Update the delegate class with the data it needs
-        It will be created via the create() command
-        """
-
-        self.delegateTx.seed     = self.seed
-        self.delegateTx.balances = self.balances
-
-        return self.delegateTx
     
 class TerraInstance:
     def __init__(self):
@@ -806,7 +820,11 @@ class TransactionCore():
 class DelegationTransaction(TransactionCore):
 
     def __init__(self, *args, **kwargs):
+
+        self.action = ''
+        self.delegator_address = ''
         self.delegated_uluna:int = 0
+        self.validator_address = ''
 
         super(DelegationTransaction, self).__init__(*args, **kwargs)
         
@@ -828,8 +846,7 @@ class DelegationTransaction(TransactionCore):
 
         return self
     
-    #def simulate(self, redelegated_uluna:int) -> bool:
-    def simulate(self) -> bool:
+    def simulate(self, action) -> bool:
         """
         Simulate a delegation so we can get the fee details.
         The fee details are saved so the actual delegation will work.
@@ -838,8 +855,9 @@ class DelegationTransaction(TransactionCore):
         # Set the fee to be None so it is simulated
         self.fee      = None
         self.sequence = self.current_wallet.sequence()
-        #self.delegate(redelegated_uluna)
-        self.delegate()
+        
+        # This is a provided function. Depending on the original function, we might be delegating or undelegating
+        action()
 
         # Store the transaction
         tx:Tx = self.transaction
@@ -897,7 +915,6 @@ class DelegationTransaction(TransactionCore):
         except:
             return False
         
-    #def undelegate(self, undelegated_uluna:int):
     def undelegate(self):
         """
         Undelegate funds from the provided validator
