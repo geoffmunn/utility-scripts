@@ -5,8 +5,8 @@ WITHDRAWAL_REMAINDER = 250   # This is the amount of Lunc we want to keep after 
 SEARCH_RETRY_COUNT   = 30    # This is the number of times we will check for a transaction to appear in the chain before deciding it didn't work.
 
 # System settings - these can be changed, but shouldn't be necessary
-GAS_PRICE_URI            = 'https://fcd.terra.dev/v1/txs/gas_prices'
-TAX_RATE_URI             = 'https://lcd.terra.dev/terra/treasury/v1beta1/tax_rate'
+GAS_PRICE_URI            = 'https://terra-classic-fcd.publicnode.com/v1/txs/gas_prices'
+TAX_RATE_URI             = 'https://terra-classic-lcd.publicnode.com/terra/treasury/v1beta1/tax_rate'
 CONFIG_FILE_NAME         = 'user_config.yml'
 GAS_ADJUSTMENT           = 1
 GAS_ADJUSTMENT_INCREMENT = 0.1
