@@ -461,14 +461,13 @@ def main():
         # Get the validators currently being used
         
         delegations:dict = wallet.getDelegations()
-
         
         filter_list:list = []
 
         for validator in delegations:
             filter_list.append(validator)
 
-        user_validator, answer = get_validator_singlechoice("Select a validator number 1 - " + str(len(filter_list)) + ", 'X' to continue', or 'Q' to quit: ", sorted_validators, filter_list)
+        user_validator, answer = get_validator_singlechoice("Select a validator number 1 - " + str(len(filter_list)) + ", 'X' to continue', or 'Q' to quit: ", sorted_validators, filter_list, delegations)
 
         if answer == 'q':
             print (' 🛑 Exiting...')
@@ -481,43 +480,63 @@ def main():
         
         if isPercentage(undelegated_lunc):
             percentage:int = int(str(undelegated_lunc).strip(' ')[0:-1]) / 100
-            undelegated_lunc:int = int((wallet.formatUluna(available_undelegation_uluna, False) - utility_constants.WITHDRAWAL_REMAINDER) * percentage)
+            undelegated_lunc:int = int((wallet.formatUluna(available_undelegation_uluna, False)) * percentage)
+
+        undelegated_lunc:int  = int(str(undelegated_lunc).replace('.0', ''))
+        undelegated_uluna:int = int(undelegated_lunc * utility_constants.COIN_DIVISOR)
 
         print (f'Undelegating {undelegated_lunc}...')
 
-        undelegated_luna:int = undelegated_lunc * utility_constants.COIN_DIVISOR
-
         print (' 🛎️  Undelegated funds will not be available for 21 days.')
         answer = get_user_choice('Are you sure you want to undelegate from this validator? (y/n) ', [])
+        
+        # Create the delegation object    
+        undelegation_tx = wallet.delegate().create()
 
-        # Start the undelegation process        
-
-        undelegation_tx = wallet.delegate().create(wallet.address, user_validator['operator_address'])
+        # Assign the details
+        undelegation_tx.delegator_address = wallet.address
+        undelegation_tx.validator_address = user_validator['operator_address']
+        undelegation_tx.delegated_uluna   = undelegated_uluna
 
         # Simulate it
-        undelegation_tx.delegated_uluna = undelegated_luna
         result = undelegation_tx.simulate(undelegation_tx.undelegate)
 
         if result == True:
                 
-            print (delegation_tx.readableFee())
+            print (undelegation_tx.readableFee())
 
             # Now we know what the fee is, we can do it again and finalise it
-            result = delegation_tx.undelegate()
+            result = undelegation_tx.undelegate()
 
             if result == True:
-                delegation_tx.broadcast()
+                undelegation_tx.broadcast()
             
-                if delegation_tx.broadcast_result.is_tx_error():
-                    print (' 🛎️ The delegation failed, an error occurred:')
-                    print (f' 🛎️  {delegation_tx.broadcast_result.raw_log}')
+                if undelegation_tx.broadcast_result.code == 11:
+                    while True:
+                        print (' 🛎️  Increasing the gas adjustment fee and trying again')
+                        undelegation_tx.terra.gas_adjustment += utility_constants.GAS_ADJUSTMENT_INCREMENT
+                        print (f' 🛎️  Gas adjustment value is now {undelegation_tx.terra.gas_adjustment}')
+                        undelegation_tx.simulate(undelegation_tx.undelegate)
+                        print (undelegation_tx.readableFee())
+                        undelegation_tx.undelegate()
+                        undelegation_tx.broadcast()
+
+                        if undelegation_tx.broadcast_result.code != 11:
+                            break
+
+                        if undelegation_tx.terra.gas_adjustment >= utility_constants.MAX_GAS_ADJUSTMENT:
+                            break
+
+                if undelegation_tx.broadcast_result.is_tx_error():
+                    print (' 🛎️ The undelegation failed, an error occurred:')
+                    print (f' 🛎️  {undelegation_tx.broadcast_result.raw_log}')
                 else:
-                    print (f' ✅ Delegated amount: {wallet.formatUluna(delegated_uluna, True)}')
-                    print (f' ✅ Tx Hash: {delegation_tx.broadcast_result.txhash}')
+                    print (f' ✅ Undelegated amount: {wallet.formatUluna(undelegated_uluna, True)}')
+                    print (f' ✅ Tx Hash: {undelegation_tx.broadcast_result.txhash}')
             else:
-                print (' 🛎️  The delegation could not be completed')
+                print (' 🛎️  The undelegation could not be completed')
         else:
-            print ('🛎️  The delegation could not be completed')
+            print ('🛎️  The undelegation could not be completed')
         
     if user_action == utility_constants.USER_ACTION_VALIDATOR_SWITCH:
         # Get the validators currently being used
@@ -541,10 +560,6 @@ def main():
         if answer == 'q':
             print (' 🛑 Exiting...')
             exit()
-
-        print (delegations[from_validator['moniker']]['balance_amount'])
-
-        #print (delegations[from_validator])
         
         print (f"The {from_validator['moniker']} wallet holds {wallet.formatUluna(delegations[from_validator['moniker']]['balance_amount'], True)}")
         delegated_lunc:int = get_user_number('How much are you delegating? ', {'max_number': int(wallet.formatUluna(wallet.balances['uluna'])), 'min_number': 0, 'percentages_allowed': True})
