@@ -1041,9 +1041,9 @@ class SendTransaction(TransactionCore):
                 fee        = self.fee,
                 #fee_denoms  = ['uluna', 'uusd', 'uaud' ,'ukrw'], # 
                 gas_prices = self.gas_list,
+                memo = self.memo,
                 msgs       = [msg],
                 sequence   = self.sequence,
-                memo = self.memo
             )
 
             # This process often generates sequence errors. If we get a response error, then
@@ -1100,7 +1100,7 @@ class SendTransaction(TransactionCore):
         self.tax = uluna_amount * float(self.tax_rate['tax_rate'])
 
         # Build a fee object with 
-        new_coin:Coins        = Coins({Coin(fee_denom, int(fee_amount + self.tax)), Coin('uluna', 200000)})
+        new_coin:Coins       = Coins({Coin(fee_denom, int(fee_amount + self.tax)), Coin('uluna', 200000)})
         requested_fee.amount = new_coin
 
         # This will be used by the swap function next time we call it
@@ -1155,6 +1155,10 @@ class SwapTransaction(TransactionCore):
         self.fee             = None
         self.tax             = None
         self.fee_deductables = None
+        self.sequence        = self.current_wallet.sequence()
+
+        # Bump up the gas adjustment - it needs to be higher for swaps it turns out
+        self.terra.gas_adjustment = 3
 
         # Perform the swap as a simulation, with no fee details
         self.swap()
@@ -1237,7 +1241,8 @@ class SwapTransaction(TransactionCore):
                     # gas_prices  = {'uluna': self.gas_list['uluna']},
                     fee_denoms = ['uusd'],
                     gas_prices = {'uusd': self.gas_list['uusd']},
-                    msgs       = [tx_msg]
+                    msgs       = [tx_msg],
+                    sequence   = self.sequence,
                 )
                 
                 while True:
@@ -1245,9 +1250,10 @@ class SwapTransaction(TransactionCore):
                         tx:Tx = self.current_wallet.create_and_sign_tx(options)
                         break
                     except LCDResponseError as err:
-                        print (' 🛑 LCD Response Error', err)
-                        exit()
-                        
+                        self.sequence    = self.sequence + 1
+                        options.sequence = self.sequence
+                        print ('boosting sequence number')
+                        print (err)
                     except Exception as err:
                         print (' 🛑 A random error has occurred')
                         print (err)
