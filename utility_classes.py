@@ -375,7 +375,6 @@ class Wallet:
         
         return mk.mnemonic, wallet.key.acc_address
 
-    
     def send(self):
         """
         Update the send class with the data it needs.
@@ -764,7 +763,6 @@ class TransactionCore():
             try:
                 if self.gas_price_url is not None:
                     gas_list:json = requests.get(self.gas_price_url).json()
-
                     self.gas_list = gas_list
                 else:
                     print (' 🛑 No gas price URL set at self.gas_price_url')
@@ -783,13 +781,14 @@ class TransactionCore():
         
         fee_coins:Coins = self.fee.amount
 
+        # Build a human-readable fee description:
         fee_string = 'The fee is '
-        first = True
+        first      = True
         fee_coin:Coin
         for fee_coin in fee_coins.to_list():
 
             amount = fee_coin.amount / utility_constants.COIN_DIVISOR
-            denom = utility_constants.FULL_COIN_LOOKUP[fee_coin.denom]
+            denom  = utility_constants.FULL_COIN_LOOKUP[fee_coin.denom]
 
             if first == False:
                 fee_string += ', and ' + str(amount) + ' ' + denom
@@ -808,7 +807,6 @@ class TransactionCore():
         if self.tax_rate is None:
             try:
                 tax_rate:json = requests.get(utility_constants.TAX_RATE_URI).json()
-
                 self.tax_rate = tax_rate
             except:
                 print (' 🛑 Error getting the tax rate')
@@ -852,9 +850,9 @@ class DelegationTransaction(TransactionCore):
 
         try:
             msg = MsgDelegate(
-                delegator_address  = self.delegator_address,
-                validator_address  = self.validator_address,
-                amount             = Coin('uluna', self.delegated_uluna)
+                delegator_address = self.delegator_address,
+                validator_address = self.validator_address,
+                amount            = Coin('uluna', self.delegated_uluna)
             )
 
             options = CreateTxOptions(
@@ -963,9 +961,9 @@ class DelegationTransaction(TransactionCore):
 
         try:
             msg = MsgUndelegate(
-                delegator_address  = self.delegator_address,
-                validator_address  = self.validator_address,
-                amount             = Coin('uluna', self.delegated_uluna)
+                delegator_address = self.delegator_address,
+                validator_address = self.validator_address,
+                amount            = Coin('uluna', self.delegated_uluna)
             )
 
             options = CreateTxOptions(
@@ -1202,11 +1200,11 @@ class SwapTransaction(TransactionCore):
         if self.belief_price is not None:
             
             if self.fee is not None:
-                fee_amount = self.fee.amount.to_list()
-                fee_coin:Coin = fee_amount[0]
-                fee_denom:str = fee_coin.denom
+                fee_amount:list = self.fee.amount.to_list()
+                fee_coin:Coin   = fee_amount[0]
+                fee_denom:str   = fee_coin.denom
             else:
-                fee_denom:str = 'uusd'
+                fee_denom:str   = 'uusd'
 
             if fee_denom in self.balances:
                 swap_amount = self.balances['uusd']
@@ -1331,9 +1329,9 @@ class WithdrawalTransaction(TransactionCore):
             )
             
             options = CreateTxOptions(
-                fee         = self.fee,
-                gas_prices  = self.gas_list,
-                msgs        = [msg]
+                fee        = self.fee,
+                gas_prices = self.gas_list,
+                msgs       = [msg]
             )
 
             # This process often generates sequence errors. If we get a response error, then
