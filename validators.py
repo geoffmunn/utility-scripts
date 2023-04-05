@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 
-import yaml
 from getpass import getpass
 
 from utility_classes import (
@@ -385,11 +384,13 @@ def main():
         print (' 🛑 No validators could be retrieved - perhaps there are network issues?')
         exit()
 
+    delegations = wallet.getDelegations()
+
     if user_action == utility_constants.USER_ACTION_VALIDATOR_DELEGATE:
 
         print (f'Select a validator to delegate to:')
 
-        user_validator, answer = get_validator_singlechoice("Select a validator number 1 - " + str(len(sorted_validators)) + ", 'X' to continue', or 'Q' to quit: ", sorted_validators, [])
+        user_validator, answer = get_validator_singlechoice("Select a validator number 1 - " + str(len(sorted_validators)) + ", 'X' to continue', or 'Q' to quit: ", sorted_validators, [], delegations)
 
         if answer == 'q':
             print (' 🛑 Exiting...')
@@ -459,8 +460,6 @@ def main():
         print (f'Select a validator to undelegate from:')
 
         # Get the validators currently being used
-        
-        delegations:dict = wallet.getDelegations()
         
         filter_list:list = []
 
@@ -541,7 +540,6 @@ def main():
     if user_action == utility_constants.USER_ACTION_VALIDATOR_SWITCH:
         # Get the validators currently being used
         
-        delegations:dict = wallet.getDelegations()
         filter_list:list = []
 
         for validator in delegations:
