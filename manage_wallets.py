@@ -27,12 +27,14 @@ def get_user_multichoice(question:str, user_wallets:dict) -> dict|str:
     label_widths.append(len('Wallet name'))
     label_widths.append(len('LUNC'))
     label_widths.append(len('USTC'))
+    label_widths.append(len('Available'))
 
     for wallet_name in user_wallets:
         wallet:Wallet = user_wallets[wallet_name]
 
-        # Get the delegations for this wallet
+        # Get the delegations and balances for this wallet
         delegations = wallet.getDelegations()
+        balances    = wallet.getBalances()
 
         # Initialise the reward values
         uluna_reward:int = 0
@@ -53,6 +55,9 @@ def get_user_multichoice(question:str, user_wallets:dict) -> dict|str:
         if len(str(ustc_reward)) > label_widths[3]:
             label_widths[3] = len(str(ustc_reward))
 
+        if 'uluna' in balances:
+            label_widths[4] = len(str(wallet.formatUluna(balances['uluna'], False)))
+
     padding_str = ' ' * 100
 
     header_string = ' Number |'
@@ -62,13 +67,18 @@ def get_user_multichoice(question:str, user_wallets:dict) -> dict|str:
     else:
         header_string +=  ' Wallet name '
 
+    if label_widths[4] > len('Available'):
+        header_string += '| Available' + padding_str[0:label_widths[4] - len('Available')] + ' '
+    else:
+        header_string += '| Available '
+
     if label_widths[2] > len('LUNC'):
         header_string += '| LUNC' + padding_str[0:label_widths[2] - len('LUNC')] + ' '
     else:
         header_string += '| LUNC'
 
     if label_widths[3] > len('USTC'):
-        header_string += '| USTC'  + padding_str[0:label_widths[3] - len('USTC')] + ' '
+        header_string += '| USTC' + padding_str[0:label_widths[3] - len('USTC')] + ' '
     else:
         header_string += '| USTC '
 
@@ -85,8 +95,9 @@ def get_user_multichoice(question:str, user_wallets:dict) -> dict|str:
         print (horizontal_spacer)
 
         for wallet_name in user_wallets:
-            wallet:Wallet  = user_wallets[wallet_name]
-            delegations    = wallet.getDelegations()
+            wallet:Wallet = user_wallets[wallet_name]
+            delegations   = wallet.getDelegations()
+            balances      = wallet.getBalances()
 
             count += 1
             wallet_numbers[count] = wallet
@@ -100,8 +111,9 @@ def get_user_multichoice(question:str, user_wallets:dict) -> dict|str:
             
             wallet_name_str = wallet_name + padding_str[0:label_widths[1] - len(wallet_name)]  
 
-            uluna_reward:int = 0
-            ustc_reward:int  = 0
+            uluna_reward:int  = 0
+            ustc_reward:int   = 0
+            uluna_balance:int = 0
 
             for validator in delegations:
                 if 'uluna' in delegations[validator]['rewards']:
@@ -111,9 +123,15 @@ def get_user_multichoice(question:str, user_wallets:dict) -> dict|str:
 
             formatted_val = str(wallet.formatUluna(uluna_reward, False))
             lunc_str      = formatted_val + padding_str[0:(label_widths[2] - (len(str(formatted_val))))]
-            ustc_str      = wallet.formatUluna(ustc_reward, False)
+
+            formatted_val = str(wallet.formatUluna(ustc_reward, False))
+            ustc_str      = formatted_val + padding_str[0:(label_widths[3] - (len(str(formatted_val))))]
             
-            print (f"{count_str}{glyph} | {wallet_name_str} | {lunc_str} | {ustc_str}")
+            if 'uluna' in wallet.balances:
+                formatted_val = str(wallet.formatUluna(wallet.balances['uluna'], False))
+                uluna_balance = formatted_val + padding_str[0:(label_widths[4] - (len(str(formatted_val))))]
+
+            print (f"{count_str}{glyph} | {wallet_name_str} | {uluna_balance} | {lunc_str} | {ustc_str}")
             
         print (horizontal_spacer + '\n')
             
