@@ -47,18 +47,18 @@ def get_user_multichoice(question:str, user_wallets:dict) -> dict|str:
             else:
                 wallets_to_use.pop(key)
             
-        if answer == 'c':
+        if answer == utility_constants.USER_ACTION_CLEAR:
             wallets_to_use = {}
         
-        if answer == 'a':
+        if answer == utility_constants.USER_ACTION_ALL:
             wallets_to_use = {}
             for wallet_name in user_wallets:
                 wallets_to_use[wallet_name] = user_wallets[wallet_name]
 
-        if answer == 'x':
+        if answer == utility_constants.USER_ACTION_CONTINUE:
             break
 
-        if answer == 'q':
+        if answer == utility_constants.USER_ACTION_QUIT:
             break
 
     return wallets_to_use, answer
@@ -221,7 +221,7 @@ def get_user_singlechoice(question:str, user_wallets:dict) -> dict|str:
             else:
                 wallets_to_use.pop(key)
             
-        if answer == 'x':
+        if answer == utility_constants.USER_ACTION_CONTINUE:
             if len(wallets_to_use) > 0:
                 break
             else:
@@ -344,7 +344,7 @@ def get_validator_singlechoice(question:str, validators:dict, filter_list:list, 
             else:
                 print ('\nPlease select a validator first.\n')
 
-        if answer == 'q':
+        if answer == utility_constants.USER_ACTION_QUIT:
             break
 
     # Get the first (and only) validator from the list
@@ -403,7 +403,7 @@ def main():
 
         wallet, answer = get_user_singlechoice("Select a wallet number 1 - " + str(len(user_wallets)) + ", 'X' to continue', or 'Q' to quit: ", user_wallets)
 
-        if answer == 'q':
+        if answer == utility_constants.USER_ACTION_QUIT:
             print (' 🛑 Exiting...')
             exit()
     else:
@@ -417,9 +417,14 @@ def main():
     print ('  (S)  Switch validators')
     print ('  (Q)  Quit')
     
-    user_action = get_user_choice('', ['d', 'u', 's', 'q'])
+    user_action = get_user_choice('', [
+        utility_constants.USER_ACTION_VALIDATOR_DELEGATE,
+        utility_constants.USER_ACTION_VALIDATOR_UNDELEGATE,
+        utility_constants.USER_ACTION_VALIDATOR_SWITCH,
+        utility_constants.USER_ACTION_QUIT
+    ])
 
-    if user_action == 'q':
+    if user_action == utility_constants.USER_ACTION_QUIT:
         print (' 🛑 Exiting...')
         exit()
 
@@ -442,7 +447,7 @@ def main():
 
         user_validator, answer = get_validator_singlechoice("Select a validator number 1 - " + str(len(sorted_validators)) + ", 'X' to continue', or 'Q' to quit: ", sorted_validators, [], delegations)
 
-        if answer == 'q':
+        if answer == utility_constants.USER_ACTION_QUIT:
             print (' 🛑 Exiting...')
             exit()
 
@@ -518,7 +523,7 @@ def main():
 
         user_validator, answer = get_validator_singlechoice("Select a validator number 1 - " + str(len(filter_list)) + ", 'X' to continue', or 'Q' to quit: ", sorted_validators, filter_list, delegations)
 
-        if answer == 'q':
+        if answer == utility_constants.USER_ACTION_QUIT:
             print (' 🛑 Exiting...')
             exit()
 
@@ -598,14 +603,14 @@ def main():
         print (f'Select a validator to delegate switch FROM:')
         from_validator, answer = get_validator_singlechoice("Select a validator number 1 - " + str(len(filter_list)) + ", 'X' to continue', or 'Q' to quit: ", sorted_validators, filter_list, delegations)
 
-        if answer == 'q':
+        if answer == utility_constants.USER_ACTION_QUIT:
             print (' 🛑 Exiting...')
             exit()
 
         print (f'Select a validator to delegate switch TO:')
         to_validator, answer = get_validator_singlechoice("Select a validator number 1 - " + str(len(sorted_validators)) + ", 'X' to continue', or 'Q' to quit: ", sorted_validators, [], delegations)
 
-        if answer == 'q':
+        if answer == utility_constants.USER_ACTION_QUIT:
             print (' 🛑 Exiting...')
             exit()
         
@@ -668,12 +673,8 @@ def main():
                 print (' 🛎️  The delegation could not be completed')
         else:
             print ('🛎️  The delegation could not be completed')
-
-        #print (from_validator)
-
-        #print (to_validator)
-        
-    # print (' 💯 Done!')
+    
+    print (' 💯 Done!')
 
 if __name__ == "__main__":
     """ This is executed when run from the command line """
