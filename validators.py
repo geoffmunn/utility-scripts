@@ -75,18 +75,23 @@ def get_user_singlechoice(question:str, user_wallets:dict) -> dict|str:
     label_widths.append(len('Wallet name'))
     label_widths.append(len('LUNC'))
     label_widths.append(len('USTC'))
+    label_widths.append(len('Delegations'))
+    label_widths.append(len('Undelegations'))
 
     for wallet_name in user_wallets:
+
+        wallet:Wallet = user_wallets[wallet_name]
+
         if len(wallet_name) > label_widths[1]:
             label_widths[1] = len(wallet_name)
 
-        if 'uluna' in user_wallets[wallet_name].balances:
-            uluna_val = user_wallets[wallet_name].formatUluna(user_wallets[wallet_name].balances['uluna'])
+        if 'uluna' in wallet.balances:
+            uluna_val = wallet.formatUluna(wallet.balances['uluna'])
         else:
             uluna_val = ''
             
-        if 'uusd' in user_wallets[wallet_name].balances:
-            ustc_val = user_wallets[wallet_name].formatUluna(user_wallets[wallet_name].balances['uusd'])
+        if 'uusd' in wallet.balances:
+            ustc_val = wallet.formatUluna(wallet.balances['uusd'])
         else:
             ustc_val = ''
 
@@ -95,6 +100,18 @@ def get_user_singlechoice(question:str, user_wallets:dict) -> dict|str:
 
         if len(str(ustc_val)) > label_widths[3]:
             label_widths[3] = len(str(ustc_val))
+
+        # Calculate the delegations and undelegations
+        delegations = wallet.getDelegations()
+
+        for delegation in delegations:
+            if len(str(wallet.formatUluna(delegations[delegation]['balance_amount'], False))) > label_widths[4]:
+                label_widths[4] = len(str(wallet.formatUluna(delegations[delegation]['balance_amount'], False)))
+
+        undelegations = wallet.getUndelegations()
+        for undelegation in undelegations:
+            if len(str(wallet.formatUluna(undelegations[undelegation]['balance_amount'], False))) > label_widths[5]:
+                label_widths[5] = len(str(wallet.formatUluna(undelegations[undelegation]['balance_amount'], False)))
 
     padding_str = ' ' * 100
 
@@ -114,6 +131,16 @@ def get_user_singlechoice(question:str, user_wallets:dict) -> dict|str:
         header_string += '| USTC'  + padding_str[0:label_widths[3] - len('USTC')] + ' '
     else:
         header_string += '| USTC '
+
+    if label_widths[4] > len('Delegations'):
+        header_string += '| Delegations'  + padding_str[0:label_widths[4] - len('Delegations')] + ' '
+    else:
+        header_string += '| Delegations '
+
+    if label_widths[5] > len('Undelegations'):
+        header_string += '| Undelegations'  + padding_str[0:label_widths[5] - len('Undelegations')] + ' '
+    else:
+        header_string += '| Undelegations '
 
     horizontal_spacer = '-' * len(header_string)
 
@@ -155,8 +182,30 @@ def get_user_singlechoice(question:str, user_wallets:dict) -> dict|str:
                 ustc_str = ("%.6f" % (wallet.formatUluna(wallet.balances['uusd'], False))).rstrip('0').rstrip('.')
             else:
                 ustc_str = ' '
+
+            ustc_str = ustc_str + padding_str[0:label_widths[3] - len(ustc_str)]
+
+            delegations_balance:float   = 0
+            undelegations_balance:float = 0
+            delegations_str:str = ''
+            undelegations_str:str = ''
+
+            delegations   = wallet.getDelegations()
+            undelegations = wallet.getUndelegations()
             
-            print (f"{count_str}{glyph} | {wallet_name_str} | {lunc_str} | {ustc_str}")
+            for delegation in delegations:
+                delegations_balance += int(delegations[delegation]['balance_amount'])
+
+            delegations_str = str(wallet.formatUluna(delegations_balance, False))
+            delegations_str = delegations_str + padding_str[0:label_widths[4] - len(delegations_str)]
+
+            for undelegation in undelegations:
+                undelegations_balance += float(undelegations[undelegation]['balance_amount'])
+                
+            undelegations_str = str(wallet.formatUluna(undelegations_balance, False))
+            undelegations_str = undelegations_str + padding_str[0:label_widths[5] - len(undelegations_str)]
+
+            print (f"{count_str}{glyph} | {wallet_name_str} | {lunc_str} | {ustc_str} | {delegations_str} | {undelegations_str}")
             
         print (horizontal_spacer + '\n')
 
@@ -347,6 +396,7 @@ def main():
     for wallet_name in user_wallets:
         wallet:Wallet = user_wallets[wallet_name]
         wallet.getBalances()
+        wallet.getDelegations()
 
     if len(user_wallets) > 0:
         print (f'You have these wallets available:')

@@ -25,7 +25,8 @@ from terra_sdk.core.fee import Fee
 from terra_sdk.core.staking import (
     MsgBeginRedelegate,
     MsgDelegate,
-    MsgUndelegate
+    MsgUndelegate,
+    UnbondingDelegation
 )
 from terra_sdk.core.staking.data.delegation import Delegation
 from terra_sdk.core.staking.data.validator import Validator
@@ -266,18 +267,19 @@ class Wallets:
     
 class Wallet:
     def __init__(self):
-        self.address:str      = ''
-        self.allow_swaps:bool = True
-        self.balances:dict    = {}
-        self.delegateTx       = DelegationTransaction()
-        self.details:dict     = {}
-        self.name:str         = ''
-        self.seed:str         = ''
-        self.sendTx           = SendTransaction()
-        self.swapTx           = SwapTransaction()
-        self.terra:LCDClient  = None
-        self.validated: bool  = False
-        self.withdrawalTx     = WithdrawalTransaction()
+        self.address:str               = ''
+        self.allow_swaps:bool          = True
+        self.balances:dict             = {}
+        self.delegateTx                = DelegationTransaction()
+        self.delegation_details:dict   = None
+        self.undelegation_details:dict = None
+        self.name:str                  = ''
+        self.seed:str                  = ''
+        self.sendTx                    = SendTransaction()
+        self.swapTx                    = SwapTransaction()
+        self.terra:LCDClient           = None
+        self.validated: bool           = False
+        self.withdrawalTx              = WithdrawalTransaction()
     
     def allowSwaps(self, allow_swaps:bool) -> bool:
         """
@@ -360,10 +362,21 @@ class Wallet:
         The results are cached so if the list is refreshed then it is much quicker.
         """
 
-        if len(self.details) == 0:
-            self.details = Delegations().create(self.address)
+        if self.delegation_details is None:
+            self.delegation_details = Delegations().create(self.address)
 
-        return self.details
+        return self.delegation_details
+    
+    def getUndelegations(self):
+        """
+        Get the undelegations associated with this wallet address.
+        The results are cached so if the list is refreshed then it is much quicker.
+        """
+
+        if self.undelegation_details is None:
+            self.undelegation_details = Undelegations().create(self.address)
+
+        return self.undelegation_details
     
     def newWallet(self):
         """
@@ -513,9 +526,8 @@ class Delegations(Wallet):
 
             pagOpt:PaginationOptions = PaginationOptions(limit=50, count_total=True)
             try:
-                result, pagination       = terra.staking.delegations(delegator = wallet_address, params = pagOpt)
+                result, pagination = terra.staking.delegations(delegator = wallet_address, params = pagOpt)
 
-                terra.staking.delegation
                 delegator:Delegation 
                 for delegator in result:
                     self.__iter_result__(terra, delegator)
@@ -532,6 +544,62 @@ class Delegations(Wallet):
                 print (' 🛎️  Network error: delegations could not be retrieved.')
 
         return self.delegations
+    
+class Undelegations(Wallet):
+
+    def __init__(self):
+        self.undelegations:dict = {}
+
+    def __iter_result__(self, undelegation:UnbondingDelegation) -> dict:
+        """
+        An internal function which returns a dict object with validator details.
+        """
+
+        # Get the basic details about the delegator and validator etc
+        delegator_address:str       = undelegation.delegator_address
+        validator_address:str       = undelegation.validator_address
+        entries:list                = undelegation.entries
+
+        # Get the total balance from all the entries
+        balance_total:int = 0
+        for entry in entries:
+            balance_total += entry.balance
+
+        # Set up the object with the details we're interested in
+        self.undelegations[validator_address] = {'balance_amount': balance_total, 'delegator_address': delegator_address, 'validator_address': validator_address}
+ 
+    def create(self, wallet_address:str) -> dict:
+        """
+        Create a dictionary of information about the delegations on this wallet.
+        It may contain more than one validator.
+        """
+
+        if len(self.undelegations) == 0:
+            terra = TerraInstance().create()
+
+            pagOpt:PaginationOptions = PaginationOptions(limit=50, count_total=True)
+            try:
+            
+                result, pagination = terra.staking.unbonding_delegations(delegator = wallet_address, params = pagOpt)
+
+                unbonding:UnbondingDelegation
+                for unbonding in result:
+
+                    self.__iter_result__(unbonding)
+
+                while pagination['next_key'] is not None:
+
+                    pagOpt.key         = pagination['next_key']
+                    result, pagination = terra.staking.unbonding_delegations(delegator = wallet_address, params = pagOpt)
+
+                    unbonding:UnbondingDelegation
+                    for unbonding in result:
+                        self.__iter_result__(unbonding)
+
+            except:
+                print (' 🛎️  Network error: undelegations could not be retrieved.')
+
+        return self.undelegations
 
 class Validators():
 
@@ -994,7 +1062,6 @@ class DelegationTransaction(TransactionCore):
         
         except:
            return False
-        
         
 class SendTransaction(TransactionCore):
     def __init__(self, *args, **kwargs):
