@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 
-import yaml
-
 from getpass import getpass
 
 from utility_classes import (
@@ -144,18 +142,18 @@ def get_user_multichoice(question:str, user_wallets:dict) -> dict|str:
             else:
                 wallets_to_use.pop(key)
             
-        if answer == 'c':
+        if answer == utility_constants.USER_ACTION_CLEAR:
             wallets_to_use = {}
         
-        if answer == 'a':
+        if answer == utility_constants.USER_ACTION_ALL:
             wallets_to_use = {}
             for wallet_name in user_wallets:
                 wallets_to_use[wallet_name] = user_wallets[wallet_name]
 
-        if answer == 'x':
+        if answer == utility_constants.USER_ACTION_CONTINUE:
             break
 
-        if answer == 'q':
+        if answer == utility_constants.USER_ACTION_QUIT:
             break
 
     return wallets_to_use, answer
@@ -175,9 +173,17 @@ def main():
     print ('  (SD) Swap & Delegate')
     print ('  (Q)  Quit')
 
-    user_action = get_user_choice('', ['w', 's', 'd', 'wd', 'sd', 'a', 'q'])
+    user_action = get_user_choice('', [
+        utility_constants.USER_ACTION_WITHDRAW,
+        utility_constants.USER_ACTION_SWAP,
+        utility_constants.USER_ACTION_DELEGATE,
+        utility_constants.USER_ACTION_ALL,
+        utility_constants.USER_ACTION_WITHDRAW_DELEGATE,
+        utility_constants.USER_ACTION_SWAP_DELEGATE,
+        utility_constants.USER_ACTION_QUIT
+    ])
 
-    if user_action == 'q':
+    if user_action == utility_constants.USER_ACTION_QUIT:
         print (' 🛑 Exiting...')
         exit()
         
@@ -225,7 +231,7 @@ def main():
 
         user_wallets,answer = get_user_multichoice("Select a wallet number 1 - " + str(len(user_wallets)) + ", or 'A' to add all of them, 'C' to clear the list, 'X' to continue', or 'Q' to quit: ", user_wallets)
 
-        if answer == 'q':
+        if answer == utility_constants.USER_ACTION_QUIT:
             print (' 🛑 Exiting...')
             exit()
     else:
