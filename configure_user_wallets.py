@@ -18,15 +18,10 @@ import utility_constants
 
 def main():
 
-    user_password  = getpass('Secret password (do not forget what this is):')
-    wallet_name    = get_user_text('Wallet name: ', 255, False)
-
-    # >>> from terra_sdk.key.mnemonic import MnemonicKey
-    # >>> mk = MnemonicKey()
-    # >>> wallet = terra.wallet(mk)
-    # >>> wallet.account_number()
-
+    user_password = getpass('Secret password (do not forget what this is):')
+    wallet_name   = get_user_text('Wallet name: ', 255, False)
     is_new_wallet = get_user_choice('You want to create a new wallet? (y/n) ', [])
+    
     if is_new_wallet == True:
         new_wallet:Wallet = Wallet().create(wallet_name, '', '', '')
         wallet_seed, wallet_address = new_wallet.newWallet()
@@ -45,7 +40,7 @@ def main():
         wallet_address = get_user_text('Lunc address: ', 44, False)        
         wallet_seed    = get_user_text('Seed phrase (this will be encrypted with your secret password):\n', 1024, False)
 
-    delegations    = get_user_choice('Do you want to delegate funds to validators? (y/n) ', [])
+    delegations = get_user_choice('Do you want to delegate funds to validators? (y/n) ', [])
 
     redelegate_amount:str = ''
     threshold:int         = 0
@@ -84,10 +79,10 @@ def main():
         for line in lines:
             if line != '---' and line != '...':
                 line = line.strip(' ')
-                if len(line)>0:
+                if len(line) > 0:
                     if line[0] != '#':
                         if line[0:len('- wallet')] == '- wallet':
-                            if len(item)>0:
+                            if len(item) > 0:
 
                                 # defaults in case they're not present:
                                 if 'allow_swaps' not in item:
@@ -95,8 +90,8 @@ def main():
 
                                 data[existing_name] = item
 
-                            item = {}
-                            item['name'] = line[len('- wallet')+1:].strip(' ')
+                            item          = {}
+                            item['name']  = line[len('- wallet')+1:].strip(' ')
                             existing_name = item['name']
 
                         for token in tokens:
@@ -105,7 +100,7 @@ def main():
 
 
         # Add any remaining items into the list        
-        if len(item)>0:
+        if len(item) > 0:
             # defaults in case they're not present:
             if 'allow_swaps' not in item:
                 item['allow_swaps'] = 'True'
@@ -120,7 +115,7 @@ def main():
                 exit()
     
     # Now add the new wallet:
-    item = {}
+    item            = {}
     item['name']    = wallet_name
     item['seed']    = wallet_seed_encrypted
     item['address'] = wallet_address
