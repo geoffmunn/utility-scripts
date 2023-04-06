@@ -168,7 +168,7 @@ def main():
 
         wallet, answer = get_user_singlechoice("Select a wallet number 1 - " + str(len(user_wallets)) + ", 'X' to continue', or 'Q' to quit: ", user_wallets)
 
-        if answer == 'q':
+        if answer == utility_constants.USER_ACTION_QUIT:
             print (' 🛑 Exiting...')
             exit()
     else:
