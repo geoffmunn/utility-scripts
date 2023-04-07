@@ -13,6 +13,8 @@ from utility_classes import (
     Wallet
 )
 
+from datetime import timedelta, datetime, timezone
+
 import utility_constants
 
 def get_user_multichoice(question:str, user_wallets:dict) -> dict|str:
@@ -359,22 +361,6 @@ def remove_exponent(num):
 
 def main():
 
-
-    #DONE: step 1: select one wallet (show balances against wallet)
-    #DONE: step 2: select (delegate, undelegate, switch)
-    #DONE: step 2.1: delegate:
-    #DONE: step 2.1.1: select one validator
-    #DONE: step 2.1.2: select amount to delegate
-    #step 2.2: undelegate:
-    #step 2.2.1 select one validator
-    #step 2.2.2 confirm that undelegation is required
-    #DONE: step 2.3: switch
-    #DONE: step 2.3.1: select current validator
-    #DONE: step 2.3.2: select new validator
-    #DONE: step 2.3.3: select amount to switch
-    #step 2.3.3: confirm that switch is required
-
-
     # Get the password that decrypts the user wallets
     decrypt_password:str = getpass() # the secret password that encrypts the seed phrase
 
@@ -415,10 +401,12 @@ def main():
     print ('  (D)  Delegate to a validator')
     print ('  (U)  Undelegate all coins from a validator')
     print ('  (S)  Switch validators')
+    print ('  (L)  List undelegations in progress')
     print ('  (Q)  Quit')
     
     user_action = get_user_choice('', [
         utility_constants.USER_ACTION_VALIDATOR_DELEGATE,
+        utility_constants.USER_ACTION_VALIDATOR_LIST_UNDELEGATIONS,
         utility_constants.USER_ACTION_VALIDATOR_UNDELEGATE,
         utility_constants.USER_ACTION_VALIDATOR_SWITCH,
         utility_constants.USER_ACTION_QUIT
@@ -674,7 +662,37 @@ def main():
         else:
             print ('🛎️  The delegation could not be completed')
     
-    print (' 💯 Done!')
+    if user_action == utility_constants.USER_ACTION_VALIDATOR_LIST_UNDELEGATIONS:
+        
+        validators = Validators()
+        validators.create()
+
+        validator_list:dict = validators.validators_by_address
+
+        if len(validator_list) == 0:
+            print (' 🛑 No validators could be retrieved - perhaps there are network issues?')
+            exit()
+            
+        undelegations = wallet.getUndelegations()
+        today = datetime.now(timezone.utc)
+
+        print ('')
+
+        if len (undelegations) > 0:
+            for undelegation in undelegations:
+                print (validator_list[undelegations[undelegation]['validator_address']]['moniker'])
+                for entry in undelegations[undelegation]['entries']:
+
+                    finish_day = entry.completion_time
+                    days_until = (finish_day - today).days
+
+                    print (f"{wallet.formatUluna(entry.balance, True)} becomes available in {days_until} days")
+        else:
+            print ('No undelegations are currently in progress')
+                
+        print ('')
+       
+    #print (' 💯 Done!')
 
 if __name__ == "__main__":
     """ This is executed when run from the command line """

@@ -556,9 +556,9 @@ class Undelegations(Wallet):
         """
 
         # Get the basic details about the delegator and validator etc
-        delegator_address:str       = undelegation.delegator_address
-        validator_address:str       = undelegation.validator_address
-        entries:list                = undelegation.entries
+        delegator_address:str = undelegation.delegator_address
+        validator_address:str = undelegation.validator_address
+        entries:list          = undelegation.entries
 
         # Get the total balance from all the entries
         balance_total:int = 0
@@ -566,7 +566,7 @@ class Undelegations(Wallet):
             balance_total += entry.balance
 
         # Set up the object with the details we're interested in
-        self.undelegations[validator_address] = {'balance_amount': balance_total, 'delegator_address': delegator_address, 'validator_address': validator_address}
+        self.undelegations[validator_address] = {'balance_amount': balance_total, 'delegator_address': delegator_address, 'validator_address': validator_address, 'entries': entries}
  
     def create(self, wallet_address:str) -> dict:
         """
@@ -596,7 +596,8 @@ class Undelegations(Wallet):
                     for unbonding in result:
                         self.__iter_result__(unbonding)
 
-            except:
+            except Exception as err:
+                print (err)
                 print (' 🛎️  Network error: undelegations could not be retrieved.')
 
         return self.undelegations
@@ -604,8 +605,9 @@ class Undelegations(Wallet):
 class Validators():
 
     def __init__(self):        
-        self.validators:dict        = {}
-        self.sorted_validators:dict = {}
+        self.validators:dict            = {}
+        self.sorted_validators:dict     = {}
+        self.validators_by_address:dict = {}
 
     def __iter_result__(self, validator:Validator) -> dict:
         """
@@ -681,6 +683,7 @@ class Validators():
         # Populate the sorted list with the actual validators
         for validator in sorted_validators:
             sorted_validators[validator] = self.validators[validator]
+            self.validators_by_address[self.validators[validator]['operator_address']] = self.validators[validator]
 
         self.sorted_validators = sorted_validators
 
