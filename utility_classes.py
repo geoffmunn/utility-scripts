@@ -269,7 +269,7 @@ class Wallet:
     def __init__(self):
         self.address:str               = ''
         self.allow_swaps:bool          = True
-        self.balances:dict             = {}
+        self.balances:dict             = None
         self.delegateTx                = DelegationTransaction()
         self.delegation_details:dict   = None
         self.undelegation_details:dict = None
@@ -328,33 +328,37 @@ class Wallet:
 
         return lunc
     
-    def getBalances(self) -> dict:
+    def getBalances(self, clear_cache:bool = False) -> dict:
         """
         Get the balances associated with this wallet.
         """
 
-        # Default pagination options
-        pagOpt:PaginationOptions = PaginationOptions(limit=50, count_total=True)
+        if clear_cache == True:
+            self.balances = None
+            
+        if self.balances is None:
+            # Default pagination options
+            pagOpt:PaginationOptions = PaginationOptions(limit=50, count_total=True)
 
-        # Get the current balance in this wallet
-        result:Coins
-        result, pagination = self.terra.bank.balance(address = self.address, params = pagOpt)
+            # Get the current balance in this wallet
+            result:Coins
+            result, pagination = self.terra.bank.balance(address = self.address, params = pagOpt)
 
-        # Convert the result into a friendly list
-        balances:dict = {}
-        for coin in result:
-            balances[coin.denom] = coin.amount
-
-        # Go through the pagination (if any)
-        while pagination['next_key'] is not None:
-            pagOpt.key          = pagination["next_key"]
-            result, pagination  = self.terra.bank.balance(address = self.address, params = pagOpt)
+            # Convert the result into a friendly list
+            balances:dict = {}
             for coin in result:
                 balances[coin.denom] = coin.amount
 
-        self.balances = balances
+            # Go through the pagination (if any)
+            while pagination['next_key'] is not None:
+                pagOpt.key          = pagination["next_key"]
+                result, pagination  = self.terra.bank.balance(address = self.address, params = pagOpt)
+                for coin in result:
+                    balances[coin.denom] = coin.amount
 
-        return balances
+            self.balances = balances
+
+        return self.balances
     
     def getDelegations(self):
         """
