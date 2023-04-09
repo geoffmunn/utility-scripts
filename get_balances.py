@@ -41,7 +41,7 @@ def main():
     user_wallets = wallet_obj.getWallets(True)
 
     if len(user_wallets) == 0:
-        print (' 🛑 This password couldn\'t decrypt any wallets. Make sure it is correct, or rebuild the wallet list by running the configure_user_wallet.py script again.')
+        print (" 🛑 This password couldn't decrypt any wallets. Make sure it is correct, or rebuild the wallet list by running the configure_user_wallet.py script again.")
         exit()
 
     # Now start doing stuff
@@ -58,7 +58,6 @@ def main():
 
     # First, create a template of all the validators
     validator_template:dict     = {'Available': 0, 'Delegated': 0}
-    #validator_column_count:int  = len(label_widths)
 
     for wallet_name in user_wallets:
         wallet:Wallet = user_wallets[wallet_name]
@@ -72,7 +71,6 @@ def main():
 
                 # The default width is zero until we find out what the maximum width/value is:
                 label_widths.append(0)
-                #validator_column_count += 1
 
     # Then, get all the coins we'll be charting (column 1)
 
@@ -105,29 +103,24 @@ def main():
                     cur_vals:dict = copy.deepcopy(balance_coins[coin_denom][wallet_name])
                     cur_vals.update({'Available': amount})
                     
-
                     if len(str(amount)) > label_widths[2]:
                         label_widths[2] = len(str(amount))
 
                     # Get the total number of delegations here and populate label_widths[3]
-                    #label_widths[3] = 4
-
                     cur_wallets:dict = copy.deepcopy(balance_coins[coin_denom])
                     cur_wallets.update({wallet_name: cur_vals})
 
                     balance_coins.update({coin_denom: cur_wallets})
 
         delegations = wallet.getDelegations()
-        
+        delegated_amount = 0
         for validator in delegations:
             
             for denom in delegations[validator]['rewards']:
 
                 if denom == 'uluna':
                     raw_amount = delegations[validator]['balance_amount'] / utility_constants.COIN_DIVISOR
-                    delegated_amount = ("%.6f" % (raw_amount)).rstrip('0').rstrip('.')
-                else:
-                    delegated_amount = ''
+                    delegated_amount += float(("%.6f" % (raw_amount)).rstrip('0').rstrip('.'))
 
                 raw_amount = float(delegations[validator]['rewards'][denom]) / utility_constants.COIN_DIVISOR
                 amount = ("%.6f" % (raw_amount)).rstrip('0').rstrip('.')
@@ -145,7 +138,12 @@ def main():
                             balance_coins[coin_denom].update({wallet_name: validator_template})
                             
                         cur_vals:dict = copy.deepcopy(balance_coins[coin_denom][wallet_name])
-                        cur_vals.update({'Delegated': delegated_amount})
+
+                        if denom == 'uluna':
+                            cur_vals.update({'Delegated': delegated_amount})
+                        else:
+                            cur_vals.update({'Delegated': ''})
+                            
                         cur_vals.update({validator: amount})
                         
                         cur_wallets:dict = copy.deepcopy(balance_coins[coin_denom])

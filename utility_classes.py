@@ -25,7 +25,8 @@ from terra_sdk.core.fee import Fee
 from terra_sdk.core.staking import (
     MsgBeginRedelegate,
     MsgDelegate,
-    MsgUndelegate
+    MsgUndelegate,
+    UnbondingDelegation
 )
 from terra_sdk.core.staking.data.delegation import Delegation
 from terra_sdk.core.staking.data.validator import Validator
@@ -266,30 +267,152 @@ class Wallets:
     
 class Wallet:
     def __init__(self):
-        self.address:str      = ''
-        self.allow_swaps:bool = True
-        self.balances:dict    = {}
-        self.delegateTx       = DelegationTransaction()
-        self.details:dict     = {}
-        self.name:str         = ''
-        self.seed:str         = ''
-        self.sendTx           = SendTransaction()
-        self.swapTx           = SwapTransaction()
-        self.terra:LCDClient  = None
-        self.validated: bool  = False
-        self.withdrawalTx     = WithdrawalTransaction()
+        self.address:str               = ''
+        self.allow_swaps:bool          = True
+        self.balances:dict             = None
+        self.delegateTx                = DelegationTransaction()
+        self.delegation_details:dict   = None
+        self.undelegation_details:dict = None
+        self.name:str                  = ''
+        self.seed:str                  = ''
+        self.sendTx                    = SendTransaction()
+        self.swapTx                    = SwapTransaction()
+        self.terra:LCDClient           = None
+        self.validated: bool           = False
+        self.withdrawalTx              = WithdrawalTransaction()
+    
+    def allowSwaps(self, allow_swaps:bool) -> bool:
+        """
+        Update the wallet with the allow_swaps status.
+        """
+
+        self.allow_swaps = allow_swaps
         
-    def create(self, name, address, seed, password) -> Wallet:
+        return True
+    
+    def create(self, name:str = '', address:str = '', seed:str = '', password:str = '') -> Wallet:
         """
         Create a wallet object based on the provided details.
         """
 
         self.name    = name
         self.address = address
-        self.seed    = cryptocode.decrypt(seed, password)
-        self.terra   = TerraInstance().create()
+
+        if seed != '' and password != '':
+            self.seed = cryptocode.decrypt(seed, password)
+
+        self.terra = TerraInstance().create()
 
         return self
+    
+    def delegate(self):
+        """
+        Update the delegate class with the data it needs
+        It will be created via the create() command
+        """
+
+        self.delegateTx.seed     = self.seed
+        self.delegateTx.balances = self.balances
+
+        return self.delegateTx
+
+    def formatUluna(self, uluna:float, add_suffix:bool = False) -> float|str:
+        """
+        A generic helper function to convert uluna amounts to LUNC.
+        """
+
+        lunc:float = round(float(uluna / utility_constants.COIN_DIVISOR), 6)
+
+        if add_suffix:
+            lunc = str(lunc) + ' LUNC'
+
+        return lunc
+    
+    def getBalances(self, clear_cache:bool = False) -> dict:
+        """
+        Get the balances associated with this wallet.
+        """
+
+        if clear_cache == True:
+            self.balances = None
+            
+        if self.balances is None:
+            # Default pagination options
+            pagOpt:PaginationOptions = PaginationOptions(limit=50, count_total=True)
+
+            # Get the current balance in this wallet
+            result:Coins
+            result, pagination = self.terra.bank.balance(address = self.address, params = pagOpt)
+
+            # Convert the result into a friendly list
+            balances:dict = {}
+            for coin in result:
+                balances[coin.denom] = coin.amount
+
+            # Go through the pagination (if any)
+            while pagination['next_key'] is not None:
+                pagOpt.key          = pagination["next_key"]
+                result, pagination  = self.terra.bank.balance(address = self.address, params = pagOpt)
+                for coin in result:
+                    balances[coin.denom] = coin.amount
+
+            self.balances = balances
+
+        return self.balances
+    
+    def getDelegations(self):
+        """
+        Get the delegations associated with this wallet address.
+        The results are cached so if the list is refreshed then it is much quicker.
+        """
+
+        if self.delegation_details is None:
+            self.delegation_details = Delegations().create(self.address)
+
+        return self.delegation_details
+    
+    def getUndelegations(self):
+        """
+        Get the undelegations associated with this wallet address.
+        The results are cached so if the list is refreshed then it is much quicker.
+        """
+
+        if self.undelegation_details is None:
+            self.undelegation_details = Undelegations().create(self.address)
+
+        return self.undelegation_details
+    
+    def newWallet(self):
+        """
+        Creates a new wallet and returns the seed and address
+        """
+        mk = MnemonicKey()
+        
+        wallet:Wallet = self.terra.wallet(mk)
+        
+        return mk.mnemonic, wallet.key.acc_address
+
+    def send(self):
+        """
+        Update the send class with the data it needs.
+        It will be created via the create() command.
+        """
+
+        self.sendTx.seed     = self.seed
+        self.sendTx.balances = self.balances
+
+        return self.sendTx
+    
+    def swap(self):
+        """
+        Update the swap class with the data it needs.
+        It will be created via the create() command.
+        """
+
+        self.swapTx.seed     = self.seed
+        self.swapTx.balances = self.balances
+
+        return self.swapTx
     
     def updateDelegation(self, amount:str, threshold:int) -> bool:
        """
@@ -300,43 +423,6 @@ class Wallet:
 
        return True
     
-    def allowSwaps(self, allow_swaps:bool) -> bool:
-        """
-        Update the wallet with the allow_swaps status.
-        """
-
-        self.allow_swaps = allow_swaps
-        
-        return True
-
-    def getBalances(self) -> dict:
-        """
-        Get the balances associated with this wallet.
-        """
-
-        # Default pagination options
-        pagOpt:PaginationOptions = PaginationOptions(limit=50, count_total=True)
-
-        # Get the current balance in this wallet
-        result:Coins
-        result, pagination = self.terra.bank.balance(address = self.address, params = pagOpt)
-
-        # Convert the result into a friendly list
-        balances:dict = {}
-        for coin in result:
-            balances[coin.denom] = coin.amount
-
-        # Go through the pagination (if any)
-        while pagination['next_key'] is not None:
-            pagOpt.key          = pagination["next_key"]
-            result, pagination  = self.terra.bank.balance(address = self.address, params = pagOpt)
-            for coin in result:
-                balances[coin.denom] = coin.amount
-
-        self.balances = balances
-
-        return balances
-
     def validateAddress(self) -> bool:
         """
         Check that the password does actually resolve against any wallets
@@ -357,29 +443,6 @@ class Wallet:
                 return False
         except:
             return False
-
-    def getDelegations(self):
-        """
-        Get the delegations associated with this wallet address.
-        The results are cached so if the list is refreshed then it is much quicker.
-        """
-
-        if len(self.details) == 0:
-            self.details = Delegations().create(self.address)
-
-        return self.details
-    
-    def formatUluna(self, uluna:float, add_suffix:bool = False) -> float|str:
-        """
-        A generic helper function to convert uluna amounts to LUNC.
-        """
-
-        lunc:float = round(float(uluna / utility_constants.COIN_DIVISOR), 6)
-
-        if add_suffix:
-            lunc = str(lunc) + ' LUNC'
-
-        return lunc
     
     def withdrawal(self):
         """
@@ -391,39 +454,6 @@ class Wallet:
         self.withdrawalTx.balances = self.balances
 
         return self.withdrawalTx
-    
-    def send(self):
-        """
-        Update the send class with the data it needs.
-        It will be created via the create() command.
-        """
-
-        self.sendTx.seed     = self.seed
-        self.sendTx.balances = self.balances
-
-        return self.sendTx
-
-    def swap(self):
-        """
-        Update the swap class with the data it needs.
-        It will be created via the create() command.
-        """
-
-        self.swapTx.seed     = self.seed
-        self.swapTx.balances = self.balances
-
-        return self.swapTx
-    
-    def delegate(self):
-        """
-        Update the delegate class with the data it needs
-        It will be created via the create() command
-        """
-
-        self.delegateTx.seed     = self.seed
-        self.delegateTx.balances = self.balances
-
-        return self.delegateTx
     
 class TerraInstance:
     def __init__(self):
@@ -460,7 +490,7 @@ class TerraInstance:
     
 class Delegations(Wallet):
 
-    def __init__(self):        
+    def __init__(self):
         self.delegations:dict = {}
 
     def __iter_result__(self, terra:LCDClient, delegator:Delegation) -> dict:
@@ -500,9 +530,8 @@ class Delegations(Wallet):
 
             pagOpt:PaginationOptions = PaginationOptions(limit=50, count_total=True)
             try:
-                result, pagination       = terra.staking.delegations(delegator = wallet_address, params = pagOpt)
+                result, pagination = terra.staking.delegations(delegator = wallet_address, params = pagOpt)
 
-                terra.staking.delegation
                 delegator:Delegation 
                 for delegator in result:
                     self.__iter_result__(terra, delegator)
@@ -519,12 +548,70 @@ class Delegations(Wallet):
                 print (' 🛎️  Network error: delegations could not be retrieved.')
 
         return self.delegations
+    
+class Undelegations(Wallet):
+
+    def __init__(self):
+        self.undelegations:dict = {}
+
+    def __iter_result__(self, undelegation:UnbondingDelegation) -> dict:
+        """
+        An internal function which returns a dict object with validator details.
+        """
+
+        # Get the basic details about the delegator and validator etc
+        delegator_address:str = undelegation.delegator_address
+        validator_address:str = undelegation.validator_address
+        entries:list          = undelegation.entries
+
+        # Get the total balance from all the entries
+        balance_total:int = 0
+        for entry in entries:
+            balance_total += entry.balance
+
+        # Set up the object with the details we're interested in
+        self.undelegations[validator_address] = {'balance_amount': balance_total, 'delegator_address': delegator_address, 'validator_address': validator_address, 'entries': entries}
+ 
+    def create(self, wallet_address:str) -> dict:
+        """
+        Create a dictionary of information about the delegations on this wallet.
+        It may contain more than one validator.
+        """
+
+        if len(self.undelegations) == 0:
+            terra = TerraInstance().create()
+
+            pagOpt:PaginationOptions = PaginationOptions(limit=50, count_total=True)
+            try:
+            
+                result, pagination = terra.staking.unbonding_delegations(delegator = wallet_address, params = pagOpt)
+
+                unbonding:UnbondingDelegation
+                for unbonding in result:
+
+                    self.__iter_result__(unbonding)
+
+                while pagination['next_key'] is not None:
+
+                    pagOpt.key         = pagination['next_key']
+                    result, pagination = terra.staking.unbonding_delegations(delegator = wallet_address, params = pagOpt)
+
+                    unbonding:UnbondingDelegation
+                    for unbonding in result:
+                        self.__iter_result__(unbonding)
+
+            except Exception as err:
+                print (err)
+                print (' 🛎️  Network error: undelegations could not be retrieved.')
+
+        return self.undelegations
 
 class Validators():
 
     def __init__(self):        
-        self.validators:dict        = {}
-        self.sorted_validators:dict = {}
+        self.validators:dict            = {}
+        self.sorted_validators:dict     = {}
+        self.validators_by_address:dict = {}
 
     def __iter_result__(self, validator:Validator) -> dict:
         """
@@ -600,6 +687,7 @@ class Validators():
         # Populate the sorted list with the actual validators
         for validator in sorted_validators:
             sorted_validators[validator] = self.validators[validator]
+            self.validators_by_address[self.validators[validator]['operator_address']] = self.validators[validator]
 
         self.sorted_validators = sorted_validators
 
@@ -630,6 +718,43 @@ class TransactionCore():
         self.terra         = terra.create()
 
         # The gas list and tax rate values will be updated when the class is properly created
+        
+    def broadcast(self) -> BlockTxBroadcastResult:
+        """
+        A core broadcast function for all transactions.
+        It will wait until the transaction shows up in the search function before finishing.
+        """
+
+        result:BlockTxBroadcastResult = self.terra.tx.broadcast(self.transaction)
+        self.broadcast_result         = result
+
+        if self.broadcast_result.code == 11:
+            # Send this back for a retry with a higher gas adjustment value
+            return self.broadcast_result
+
+        else:
+            # Wait for this transaction to appear in the blockchain
+            if not self.broadcast_result.is_tx_error():
+                while True:
+                    result:dict = self.terra.tx.search([("tx.hash", self.broadcast_result.txhash)])
+                    self.terra.tx.search
+                    
+                    if len(result['txs']) > 0:
+                        print ('Transaction received')
+                        break
+                        
+                    else:
+                        print ('No such tx yet...')
+
+            # Find the transaction on the network and return the result
+            transaction_confirmed = self.findTransaction()
+
+            if transaction_confirmed == True:
+                print ('This transaction should be visible in your wallet now.')
+            else:
+                print ('The transaction did not appear after many searches. Future transactions might fail due to a lack of expected funds.')
+            
+            return self.broadcast_result
         
     def calculateFee(self, requested_fee:Fee, use_uusd:bool = False) -> Fee:
         """
@@ -713,7 +838,6 @@ class TransactionCore():
             try:
                 if self.gas_price_url is not None:
                     gas_list:json = requests.get(self.gas_price_url).json()
-
                     self.gas_list = gas_list
                 else:
                     print (' 🛑 No gas price URL set at self.gas_price_url')
@@ -725,23 +849,6 @@ class TransactionCore():
 
         return self.gas_list
     
-    def taxRate(self) -> json:
-        """
-        Make a JSON request for the tax rate, and store it against this LCD client instance.
-        """
-
-        if self.tax_rate is None:
-            try:
-                tax_rate:json = requests.get(utility_constants.TAX_RATE_URI).json()
-
-                self.tax_rate = tax_rate
-            except:
-                print (' 🛑 Error getting the tax rate')
-                print (requests.get(self.gas_price_url).content)
-                exit()
-
-        return self.tax_rate
-    
     def readableFee(self) -> str:
         """
         Return a description of the fee for the current transaction.
@@ -749,13 +856,14 @@ class TransactionCore():
         
         fee_coins:Coins = self.fee.amount
 
+        # Build a human-readable fee description:
         fee_string = 'The fee is '
-        first = True
+        first      = True
         fee_coin:Coin
         for fee_coin in fee_coins.to_list():
 
             amount = fee_coin.amount / utility_constants.COIN_DIVISOR
-            denom = utility_constants.FULL_COIN_LOOKUP[fee_coin.denom]
+            denom  = utility_constants.FULL_COIN_LOOKUP[fee_coin.denom]
 
             if first == False:
                 fee_string += ', and ' + str(amount) + ' ' + denom
@@ -765,57 +873,39 @@ class TransactionCore():
             first = False
 
         return fee_string
-
-    def broadcast(self) -> BlockTxBroadcastResult:
+    
+    def taxRate(self) -> json:
         """
-        A core broadcast function for all transactions.
-        It will wait until the transaction shows up in the search function before finishing.
+        Make a JSON request for the tax rate, and store it against this LCD client instance.
         """
 
-        result:BlockTxBroadcastResult = self.terra.tx.broadcast(self.transaction)
-        self.broadcast_result         = result
+        if self.tax_rate is None:
+            try:
+                tax_rate:json = requests.get(utility_constants.TAX_RATE_URI).json()
+                self.tax_rate = tax_rate
+            except:
+                print (' 🛑 Error getting the tax rate')
+                print (requests.get(self.gas_price_url).content)
+                exit()
 
-        if self.broadcast_result.code == 11:
-            # Send this back for a retry with a higher gas adjustment value
-            return self.broadcast_result
-
-        else:
-            # Wait for this transaction to appear in the blockchain
-            if not self.broadcast_result.is_tx_error():
-                while True:
-                    result:dict = self.terra.tx.search([("tx.hash", self.broadcast_result.txhash)])
-                    self.terra.tx.search
-                    
-                    if len(result['txs']) > 0:
-                        print ('Transaction received')
-                        break
-                        
-                    else:
-                        print ('No such tx yet...')
-
-            # Find the transaction on the network and return the result
-            transaction_confirmed = self.findTransaction()
-
-            if transaction_confirmed == True:
-                print ('This transaction should be visible in your wallet now.')
-            else:
-                print ('The transaction did not appear after many searches. Future transactions might fail due to a lack of expected funds.')
-            
-            return self.broadcast_result
+        return self.tax_rate
 
 class DelegationTransaction(TransactionCore):
 
     def __init__(self, *args, **kwargs):
 
+        self.action:str                = ''
+        self.delegator_address:str     = ''
+        self.delegated_uluna:int       = 0
+        self.validator_address_old:str = ''
+        self.validator_address:str     = ''
+
         super(DelegationTransaction, self).__init__(*args, **kwargs)
         
-    def create(self, delegator_address:str, validator_address:str):
+    def create(self):
         """
         Create a delegation object and set it up with the provided details.
         """
-
-        self.delegator_address = delegator_address
-        self.validator_address = validator_address
 
         # Create the wallet based on the calculated key
         current_wallet_key  = MnemonicKey(self.seed)
@@ -827,30 +917,7 @@ class DelegationTransaction(TransactionCore):
 
         return self
     
-    def simulate(self, redelegated_uluna:int) -> bool:
-        """
-        Simulate a delegation so we can get the fee details.
-        The fee details are saved so the actual delegation will work.
-        """
-
-        # Set the fee to be None so it is simulated
-        self.fee      = None
-        self.sequence = self.current_wallet.sequence()
-        self.delegate(redelegated_uluna)
-
-        # Store the transaction
-        tx:Tx = self.transaction
-
-        # Get the stub of the requested fee so we can adjust it
-        requested_fee = tx.auth_info.fee
-
-        # This will be used by the swap function next time we call it
-        self.fee = self.calculateFee(requested_fee)
-
-        return True
-        
-
-    def delegate(self, delegated_uluna:int) -> bool:
+    def delegate(self) -> bool:
         """
         Make a delegation with the information we have so far.
         If fee is None then it will be a simulation.
@@ -858,9 +925,9 @@ class DelegationTransaction(TransactionCore):
 
         try:
             msg = MsgDelegate(
-                delegator_address  = self.delegator_address,
-                validator_address  = self.validator_address,
-                amount             = Coin('uluna', delegated_uluna)
+                delegator_address = self.delegator_address,
+                validator_address = self.validator_address,
+                amount            = Coin('uluna', self.delegated_uluna)
             )
 
             options = CreateTxOptions(
@@ -893,66 +960,25 @@ class DelegationTransaction(TransactionCore):
         except:
             return False
         
-    def undelegate(self, undelegated_uluna:int):
-        """
-        Undelegate funds from the provided validator
-        If fee is None then it will be a simulation.
-        """
-
-        try:
-            msg = MsgUndelegate(
-                delegator_address  = self.delegator_address,
-                validator_address  = self.validator_address,
-                amount             = Coin('uluna', undelegated_uluna)
-            )
-
-            options = CreateTxOptions(
-                fee        = self.fee,
-                gas_prices = self.gas_list,
-                msgs       = [msg],
-                sequence   = self.sequence
-            )
-
-            # This process often generates sequence errors. If we get a response error, then
-            # bump up the sequence number by one and try again.
-            while True:
-                try:
-                    tx:Tx = self.current_wallet.create_and_sign_tx(options)
-                    break
-                except LCDResponseError as err:
-                    self.sequence    = self.sequence + 1
-                    options.sequence = self.sequence
-                except Exception as err:
-                    print (' 🛑 A random error has occurred')
-                    print (err)
-                    break
-
-            # Store the transaction
-            self.transaction = tx
-
-            return True
-        
-        except:
-            return False
-
-    def redelegate(self, redelegated_uluna:int):
+    def redelegate(self):
         """
         Redelegate funds from one validator to another.
         If fee is None then it will be a simulation.
         """
 
         try:
-            msg = MsgUndelegate(
-                validator_dst_address=validator2_address,
-                validator_src_address=validator1_address,
-                delegator_address=test1.key.acc_address,
-                amount=Coin.parse("10uluna")
+
+            msgRedel = MsgBeginRedelegate(
+                validator_dst_address = self.validator_address,
+                validator_src_address = self.validator_address_old,
+                delegator_address     = self.delegator_address,
+                amount                = Coin('uluna', self.delegated_uluna)
             )
 
             options = CreateTxOptions(
                 fee        = self.fee,
                 gas_prices = self.gas_list,
-                msgs       = [msg],
+                msgs       = [msgRedel],
                 sequence   = self.sequence
             )
 
@@ -977,7 +1003,72 @@ class DelegationTransaction(TransactionCore):
         
         except:
             return False 
+    
+    def simulate(self, action) -> bool:
+        """
+        Simulate a delegation so we can get the fee details.
+        The fee details are saved so the actual delegation will work.
+        """
+
+        # Set the fee to be None so it is simulated
+        self.fee      = None
+        self.sequence = self.current_wallet.sequence()
         
+        # This is a provided function. Depending on the original function, we might be delegating or undelegating
+        action()
+
+        # Store the transaction
+        tx:Tx = self.transaction
+
+        # Get the stub of the requested fee so we can adjust it
+        requested_fee = tx.auth_info.fee
+
+        # This will be used by the swap function next time we call it
+        self.fee = self.calculateFee(requested_fee)
+
+        return True
+        
+    def undelegate(self):
+        """
+        Undelegate funds from the provided validator
+        If fee is None then it will be a simulation.
+        """
+
+        try:
+            msg = MsgUndelegate(
+                delegator_address = self.delegator_address,
+                validator_address = self.validator_address,
+                amount            = Coin('uluna', self.delegated_uluna)
+            )
+
+            options = CreateTxOptions(
+                fee        = self.fee,
+                gas_prices = self.gas_list,
+                msgs       = [msg],
+                sequence   = self.sequence
+            )
+
+            # This process often generates sequence errors. If we get a response error, then
+            # bump up the sequence number by one and try again.
+            while True:
+                try:
+                    tx:Tx = self.current_wallet.create_and_sign_tx(options)
+                    break
+                except LCDResponseError as err:
+                    self.sequence    = self.sequence + 1
+                    options.sequence = self.sequence
+                except Exception as err:
+                    print (' 🛑 A random error has occurred')
+                    print (err)
+                    break
+
+            # Store the transaction
+            self.transaction = tx
+
+            return True
+        
+        except:
+           return False
         
 class SendTransaction(TransactionCore):
     def __init__(self, *args, **kwargs):
@@ -1003,6 +1094,50 @@ class SendTransaction(TransactionCore):
         self.tax_rate = self.taxRate()
 
         return self
+    
+    def send(self) -> bool:
+        """
+        Complete a send transaction with the information we have so far.
+        If fee is None then it will be a simulation.
+        """
+
+        try:
+
+            msg = MsgSend(
+                from_address = self.current_wallet.key.acc_address,
+                to_address   = self.recipient_address,
+                amount       = Coins(str(self.uluna_amount) + 'uluna')
+            )
+
+            options = CreateTxOptions(
+                fee        = self.fee,
+                #fee_denoms  = ['uluna', 'uusd', 'uaud' ,'ukrw'], # 
+                gas_prices = self.gas_list,
+                memo = self.memo,
+                msgs       = [msg],
+                sequence   = self.sequence,
+            )
+
+            # This process often generates sequence errors. If we get a response error, then
+            # bump up the sequence number by one and try again.
+            while True:
+                try:
+                    tx:Tx = self.current_wallet.create_and_sign_tx(options)
+                    break
+                except LCDResponseError as err:
+                    self.sequence    = self.sequence + 1
+                    options.sequence = self.sequence
+                except Exception as err:
+                    print (' 🛑 A random error has occurred')
+                    print (err)
+                    break
+
+            # Store the transaction
+            self.transaction = tx
+
+            return True
+        except:
+            return False
     
     def simulate(self, recipient_address:str, uluna_amount:int, memo:str) -> bool:
         """
@@ -1037,58 +1172,13 @@ class SendTransaction(TransactionCore):
         self.tax = uluna_amount * float(self.tax_rate['tax_rate'])
 
         # Build a fee object with 
-        new_coin:Coins        = Coins({Coin(fee_denom, int(fee_amount + self.tax)), Coin('uluna', 200000)})
+        new_coin:Coins       = Coins({Coin(fee_denom, int(fee_amount + self.tax)), Coin('uluna', 200000)})
         requested_fee.amount = new_coin
 
         # This will be used by the swap function next time we call it
         self.fee = requested_fee
         
         return True
-        
-
-    def send(self) -> bool:
-        """
-        Complete a send transaction with the information we have so far.
-        If fee is None then it will be a simulation.
-        """
-
-        try:
-
-            msg = MsgSend(
-                from_address = self.current_wallet.key.acc_address,
-                to_address   = self.recipient_address,
-                amount       = Coins(str(self.uluna_amount) + 'uluna')
-            )
-
-            options = CreateTxOptions(
-                fee        = self.fee,
-                #fee_denoms  = ['uluna', 'uusd', 'uaud' ,'ukrw'], # 
-                gas_prices = self.gas_list,
-                msgs       = [msg],
-                sequence   = self.sequence,
-                memo = self.memo
-            )
-
-            # This process often generates sequence errors. If we get a response error, then
-            # bump up the sequence number by one and try again.
-            while True:
-                try:
-                    tx:Tx = self.current_wallet.create_and_sign_tx(options)
-                    break
-                except LCDResponseError as err:
-                    self.sequence    = self.sequence + 1
-                    options.sequence = self.sequence
-                except Exception as err:
-                    print (' 🛑 A random error has occurred')
-                    print (err)
-                    break
-
-            # Store the transaction
-            self.transaction = tx
-
-            return True
-        except:
-            return False
         
 class SwapTransaction(TransactionCore):
 
@@ -1100,6 +1190,17 @@ class SwapTransaction(TransactionCore):
         self.fee_deductables:float = None
         self.max_spread:float      = 0.01
         self.tax:float             = None
+
+    def beliefPrice(self) -> float:
+        """
+        Figure out the belief price for this swap.
+        """
+
+        result = self.terra.wasm.contract_query(utility_constants.UUSD_TO_ULUNA_SWAP_ADDRESS, {"pool": {}})
+
+        belief_price:float = int(result['assets'][0]['amount']) / int(result['assets'][1]['amount']) 
+
+        return round(belief_price, 18)
         
     def create(self):
         """
@@ -1116,17 +1217,6 @@ class SwapTransaction(TransactionCore):
 
         return self
 
-    def beliefPrice(self) -> float:
-        """
-        Figure out the belief price for this swap.
-        """
-
-        result = self.terra.wasm.contract_query(utility_constants.UUSD_TO_ULUNA_SWAP_ADDRESS, {"pool": {}})
-
-        belief_price:float = int(result['assets'][0]['amount']) / int(result['assets'][1]['amount']) 
-
-        return round(belief_price, 18)
-
     def simulate(self) -> bool:
         """
         Simulate a swap so we can get the fee details.
@@ -1137,6 +1227,10 @@ class SwapTransaction(TransactionCore):
         self.fee             = None
         self.tax             = None
         self.fee_deductables = None
+        self.sequence        = self.current_wallet.sequence()
+
+        # Bump up the gas adjustment - it needs to be higher for swaps it turns out
+        self.terra.gas_adjustment = 3
 
         # Perform the swap as a simulation, with no fee details
         self.swap()
@@ -1180,11 +1274,11 @@ class SwapTransaction(TransactionCore):
         if self.belief_price is not None:
             
             if self.fee is not None:
-                fee_amount = self.fee.amount.to_list()
-                fee_coin:Coin = fee_amount[0]
-                fee_denom:str = fee_coin.denom
+                fee_amount:list = self.fee.amount.to_list()
+                fee_coin:Coin   = fee_amount[0]
+                fee_denom:str   = fee_coin.denom
             else:
-                fee_denom:str = 'uusd'
+                fee_denom:str   = 'uusd'
 
             if fee_denom in self.balances:
                 swap_amount = self.balances['uusd']
@@ -1219,7 +1313,8 @@ class SwapTransaction(TransactionCore):
                     # gas_prices  = {'uluna': self.gas_list['uluna']},
                     fee_denoms = ['uusd'],
                     gas_prices = {'uusd': self.gas_list['uusd']},
-                    msgs       = [tx_msg]
+                    msgs       = [tx_msg],
+                    sequence   = self.sequence,
                 )
                 
                 while True:
@@ -1227,9 +1322,10 @@ class SwapTransaction(TransactionCore):
                         tx:Tx = self.current_wallet.create_and_sign_tx(options)
                         break
                     except LCDResponseError as err:
-                        print (' 🛑 LCD Response Error', err)
-                        exit()
-                        
+                        self.sequence    = self.sequence + 1
+                        options.sequence = self.sequence
+                        print ('boosting sequence number')
+                        print (err)
                     except Exception as err:
                         print (' 🛑 A random error has occurred')
                         print (err)
@@ -1307,9 +1403,9 @@ class WithdrawalTransaction(TransactionCore):
             )
             
             options = CreateTxOptions(
-                fee         = self.fee,
-                gas_prices  = self.gas_list,
-                msgs        = [msg]
+                fee        = self.fee,
+                gas_prices = self.gas_list,
+                msgs       = [msg]
             )
 
             # This process often generates sequence errors. If we get a response error, then

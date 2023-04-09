@@ -5,7 +5,9 @@ from os.path import exists
 from utility_classes import (
     get_user_choice,
     get_user_number,
-    get_user_text
+    get_user_text,
+    isPercentage,
+    Wallet
 )
 
 import utility_constants
@@ -16,22 +18,41 @@ import utility_constants
 
 def main():
 
-    user_password  = getpass('Secret password (do not forget what this is):')
-    wallet_name    = get_user_text('Wallet name: ', 255, False)
-    wallet_address = get_user_text('Lunc address: ', 44, False)
-    wallet_seed    = get_user_text('Seed phrase (this will be encrypted with your secret password):\n', 1024, False)
-    delegations    = get_user_choice('Do you want to delegate funds? (y/n) ', [])
+    user_password = getpass('Secret password (do not forget what this is):')
+    wallet_name   = get_user_text('Wallet name: ', 255, False)
+    is_new_wallet = get_user_choice('You want to create a new wallet? (y/n) ', [])
+    
+    if is_new_wallet == True:
+        new_wallet:Wallet = Wallet().create(wallet_name, '', '', '')
+        wallet_seed, wallet_address = new_wallet.newWallet()
+
+        print (f'Your seed and address for the new wallet "{wallet_name}" are about to be displayed on the screen')
+        wallet_continue = get_user_choice('Do you want to continue? (y/n) ', [])
+        if wallet_continue == False:
+            print (' 🛑 Exiting...')
+            exit()
+
+        print ('\nYour wallet seed is displayed below. Please write this down and keep it somewhere secure.\n')
+        print (wallet_seed)
+        print (f'\nYour wallet address is: {wallet_address}\n')
+        
+    else:
+        wallet_address = get_user_text('Lunc address: ', 44, False)        
+        wallet_seed    = get_user_text('Seed phrase (this will be encrypted with your secret password):\n', 1024, False)
+
+    delegations = get_user_choice('Do you want to delegate funds to validators? (y/n) ', [])
 
     redelegate_amount:str = ''
     threshold:int         = 0
 
     if delegations == True:
-        redelegate_amount = get_user_number('Redelegate amount (eg 100%, 5000): ', {'percentages_allowed': True, 'min_number': 0})
+        redelegate_amount = get_user_number('From the available amount in the wallet, how much do you want to redelegate (eg 100%, 5000 LUNC): ', {'percentages_allowed': True, 'min_number': 0})
         threshold         = get_user_number('What is the minimum amount in LUNC before we withdraw rewards? ', {'min_number': 0})
 
         # Convert the amount and threshold into uluna:
         threshold         = threshold * utility_constants.COIN_DIVISOR
-        redelegate_amount = redelegate_amount * utility_constants.COIN_DIVISOR
+        if isPercentage(redelegate_amount) == False:
+            redelegate_amount = redelegate_amount * utility_constants.COIN_DIVISOR
 
     allow_swaps = get_user_choice('Do you want to allow swaps? (y/n) ', [])
 
@@ -58,10 +79,10 @@ def main():
         for line in lines:
             if line != '---' and line != '...':
                 line = line.strip(' ')
-                if len(line)>0:
+                if len(line) > 0:
                     if line[0] != '#':
                         if line[0:len('- wallet')] == '- wallet':
-                            if len(item)>0:
+                            if len(item) > 0:
 
                                 # defaults in case they're not present:
                                 if 'allow_swaps' not in item:
@@ -69,8 +90,8 @@ def main():
 
                                 data[existing_name] = item
 
-                            item = {}
-                            item['name'] = line[len('- wallet')+1:].strip(' ')
+                            item          = {}
+                            item['name']  = line[len('- wallet')+1:].strip(' ')
                             existing_name = item['name']
 
                         for token in tokens:
@@ -79,7 +100,7 @@ def main():
 
 
         # Add any remaining items into the list        
-        if len(item)>0:
+        if len(item) > 0:
             # defaults in case they're not present:
             if 'allow_swaps' not in item:
                 item['allow_swaps'] = 'True'
@@ -94,7 +115,7 @@ def main():
                 exit()
     
     # Now add the new wallet:
-    item = {}
+    item            = {}
     item['name']    = wallet_name
     item['seed']    = wallet_seed_encrypted
     item['address'] = wallet_address

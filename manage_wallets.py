@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 
-import yaml
-
 from getpass import getpass
 
 from utility_classes import (
@@ -27,12 +25,14 @@ def get_user_multichoice(question:str, user_wallets:dict) -> dict|str:
     label_widths.append(len('Wallet name'))
     label_widths.append(len('LUNC'))
     label_widths.append(len('USTC'))
+    label_widths.append(len('Available'))
 
     for wallet_name in user_wallets:
         wallet:Wallet = user_wallets[wallet_name]
 
-        # Get the delegations for this wallet
+        # Get the delegations and balances for this wallet
         delegations = wallet.getDelegations()
+        balances    = wallet.getBalances()
 
         # Initialise the reward values
         uluna_reward:int = 0
@@ -53,6 +53,9 @@ def get_user_multichoice(question:str, user_wallets:dict) -> dict|str:
         if len(str(ustc_reward)) > label_widths[3]:
             label_widths[3] = len(str(ustc_reward))
 
+        if 'uluna' in balances:
+            label_widths[4] = len(str(wallet.formatUluna(balances['uluna'], False)))
+
     padding_str = ' ' * 100
 
     header_string = ' Number |'
@@ -62,13 +65,18 @@ def get_user_multichoice(question:str, user_wallets:dict) -> dict|str:
     else:
         header_string +=  ' Wallet name '
 
+    if label_widths[4] > len('Available'):
+        header_string += '| Available' + padding_str[0:label_widths[4] - len('Available')] + ' '
+    else:
+        header_string += '| Available '
+
     if label_widths[2] > len('LUNC'):
         header_string += '| LUNC' + padding_str[0:label_widths[2] - len('LUNC')] + ' '
     else:
         header_string += '| LUNC'
 
     if label_widths[3] > len('USTC'):
-        header_string += '| USTC'  + padding_str[0:label_widths[3] - len('USTC')] + ' '
+        header_string += '| USTC' + padding_str[0:label_widths[3] - len('USTC')] + ' '
     else:
         header_string += '| USTC '
 
@@ -85,8 +93,9 @@ def get_user_multichoice(question:str, user_wallets:dict) -> dict|str:
         print (horizontal_spacer)
 
         for wallet_name in user_wallets:
-            wallet:Wallet  = user_wallets[wallet_name]
-            delegations    = wallet.getDelegations()
+            wallet:Wallet = user_wallets[wallet_name]
+            delegations   = wallet.getDelegations()
+            balances      = wallet.getBalances()
 
             count += 1
             wallet_numbers[count] = wallet
@@ -100,8 +109,9 @@ def get_user_multichoice(question:str, user_wallets:dict) -> dict|str:
             
             wallet_name_str = wallet_name + padding_str[0:label_widths[1] - len(wallet_name)]  
 
-            uluna_reward:int = 0
-            ustc_reward:int  = 0
+            uluna_reward:int  = 0
+            ustc_reward:int   = 0
+            uluna_balance:int = 0
 
             for validator in delegations:
                 if 'uluna' in delegations[validator]['rewards']:
@@ -111,9 +121,15 @@ def get_user_multichoice(question:str, user_wallets:dict) -> dict|str:
 
             formatted_val = str(wallet.formatUluna(uluna_reward, False))
             lunc_str      = formatted_val + padding_str[0:(label_widths[2] - (len(str(formatted_val))))]
-            ustc_str      = wallet.formatUluna(ustc_reward, False)
+
+            formatted_val = str(wallet.formatUluna(ustc_reward, False))
+            ustc_str      = formatted_val + padding_str[0:(label_widths[3] - (len(str(formatted_val))))]
             
-            print (f"{count_str}{glyph} | {wallet_name_str} | {lunc_str} | {ustc_str}")
+            if 'uluna' in wallet.balances:
+                formatted_val = str(wallet.formatUluna(wallet.balances['uluna'], False))
+                uluna_balance = formatted_val + padding_str[0:(label_widths[4] - (len(str(formatted_val))))]
+
+            print (f"{count_str}{glyph} | {wallet_name_str} | {uluna_balance} | {lunc_str} | {ustc_str}")
             
         print (horizontal_spacer + '\n')
             
@@ -126,18 +142,18 @@ def get_user_multichoice(question:str, user_wallets:dict) -> dict|str:
             else:
                 wallets_to_use.pop(key)
             
-        if answer == 'c':
+        if answer == utility_constants.USER_ACTION_CLEAR:
             wallets_to_use = {}
         
-        if answer == 'a':
+        if answer == utility_constants.USER_ACTION_ALL:
             wallets_to_use = {}
             for wallet_name in user_wallets:
                 wallets_to_use[wallet_name] = user_wallets[wallet_name]
 
-        if answer == 'x':
+        if answer == utility_constants.USER_ACTION_CONTINUE:
             break
 
-        if answer == 'q':
+        if answer == utility_constants.USER_ACTION_QUIT:
             break
 
     return wallets_to_use, answer
@@ -157,9 +173,17 @@ def main():
     print ('  (SD) Swap & Delegate')
     print ('  (Q)  Quit')
 
-    user_action = get_user_choice('', ['w', 's', 'd', 'wd', 'sd', 'a', 'q'])
+    user_action = get_user_choice('', [
+        utility_constants.USER_ACTION_WITHDRAW,
+        utility_constants.USER_ACTION_SWAP,
+        utility_constants.USER_ACTION_DELEGATE,
+        utility_constants.USER_ACTION_ALL,
+        utility_constants.USER_ACTION_WITHDRAW_DELEGATE,
+        utility_constants.USER_ACTION_SWAP_DELEGATE,
+        utility_constants.USER_ACTION_QUIT
+    ])
 
-    if user_action == 'q':
+    if user_action == utility_constants.USER_ACTION_QUIT:
         print (' 🛑 Exiting...')
         exit()
         
@@ -207,11 +231,11 @@ def main():
 
         user_wallets,answer = get_user_multichoice("Select a wallet number 1 - " + str(len(user_wallets)) + ", or 'A' to add all of them, 'C' to clear the list, 'X' to continue', or 'Q' to quit: ", user_wallets)
 
-        if answer == 'q':
+        if answer == utility_constants.USER_ACTION_QUIT:
             print (' 🛑 Exiting...')
             exit()
     else:
-        print (' 🛑 This password couldn\'t decrypt any wallets. Make sure it is correct, or rebuild the wallet list by running the configure_user_wallet.py script again.')
+        print (" 🛑 This password couldn't decrypt any wallets. Make sure it is correct, or rebuild the wallet list by running the configure_user_wallet.py script again.")
         exit()
 
     # Now start doing stuff
@@ -239,7 +263,7 @@ def main():
                     print (f'Withdrawing {wallet.formatUluna(uluna_reward, False)} rewards')
 
                     # Update the balances so we know what we have to pay the fee with
-                    wallet.getBalances()
+                    wallet.getBalances(True)
 
                     # Set up the withdrawal object
                     withdrawal_tx = wallet.withdrawal().create(delegations[validator]['delegator'], delegations[validator]['validator'])
@@ -264,7 +288,7 @@ def main():
                                     print (f' 🛎️  Gas adjustment value is now {withdrawal_tx.terra.gas_adjustment}')
                                     withdrawal_tx.simulate()
                                     print (withdrawal_tx.readableFee())
-                                    withdrawal_tx.send()
+                                    withdrawal_tx.withdraw()
                                     withdrawal_tx.broadcast()
 
                                     if withdrawal_tx.broadcast_result.code != 11:
@@ -293,7 +317,7 @@ def main():
                     print ('Starting swaps...')
 
                     # Update the balances so we know we have the correct amount
-                    wallet.getBalances()
+                    wallet.getBalances(True)
                     
                     # We are only supporting swaps with uusd (USTC) at the moment
                     if 'uusd' in wallet.balances:
@@ -324,7 +348,7 @@ def main():
                                             print (f' 🛎️  Gas adjustment value is now {swaps_tx.terra.gas_adjustment}')
                                             swaps_tx.simulate()
                                             print (swaps_tx.readableFee())
-                                            swaps_tx.send()
+                                            swaps_tx.swap()
                                             swaps_tx.broadcast()
 
                                             if swaps_tx.broadcast_result.code != 11:
@@ -360,7 +384,7 @@ def main():
                     print ('Starting delegations...')
 
                     # Update the balances after having done withdrawals and swaps
-                    wallet.getBalances()
+                    wallet.getBalances(True)
 
                     if 'uluna' in wallet.balances:     
 
@@ -379,17 +403,23 @@ def main():
                         if delegated_uluna > 0 and delegated_uluna <= wallet.balances['uluna']:
                             print (f'Delegating {wallet.formatUluna(delegated_uluna, True)}')
 
-                            delegation_tx = wallet.delegate().create(delegations[validator]['delegator'], delegations[validator]['validator'])
+                            # Create the delegation object
+                            delegation_tx = wallet.delegate().create()
+
+                            # Assign the details:
+                            delegation_tx.delegator_address = delegations[validator]['delegator']
+                            delegation_tx.validator_address = delegations[validator]['validator']
+                            delegation_tx.delegated_uluna   = delegated_uluna
 
                             # Simulate it
-                            result = delegation_tx.simulate(delegated_uluna)
+                            result = delegation_tx.simulate(delegation_tx.delegate)
 
                             if result == True:
                                     
                                 print (delegation_tx.readableFee())
-
+                                
                                 # Now we know what the fee is, we can do it again and finalise it
-                                result = delegation_tx.delegate(delegated_uluna)
+                                result = delegation_tx.delegate()
                                 
                                 if result == True:
                                     delegation_tx.broadcast()
@@ -399,9 +429,9 @@ def main():
                                             print (' 🛎️  Increasing the gas adjustment fee and trying again')
                                             delegation_tx.terra.gas_adjustment += utility_constants.GAS_ADJUSTMENT_INCREMENT
                                             print (f' 🛎️  Gas adjustment value is now {delegation_tx.terra.gas_adjustment}')
-                                            delegation_tx.simulate(delegated_uluna)
+                                            delegation_tx.simulate(delegation_tx.delegate)
                                             print (delegation_tx.readableFee())
-                                            delegation_tx.send()
+                                            delegation_tx.delegate()
                                             delegation_tx.broadcast()
 
                                             if delegation_tx.broadcast_result.code != 11:
@@ -417,7 +447,7 @@ def main():
                                         print (f' ✅ Delegated amount: {wallet.formatUluna(delegated_uluna, True)}')
                                         print (f' ✅ Tx Hash: {delegation_tx.broadcast_result.txhash}')
                                 else:
-                                    print (' 🛎️  The deleggation could not be completed')
+                                    print (' 🛎️  The delegation could not be completed')
                             else:
                                 print ('🛎️  The delegation could not be completed')
                         else:
