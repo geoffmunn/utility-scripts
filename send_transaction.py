@@ -189,8 +189,11 @@ def main():
 
     if isPercentage(lunc_amount):
         percentage:int = int(str(lunc_amount).strip(' ')[0:-1]) / 100
-        lunc_amount:int = int((wallet.formatUluna(wallet.balances['uluna'], False) - utility_constants.WITHDRAWAL_REMAINDER) * percentage)
+        lunc_amount:float = float((wallet.formatUluna(wallet.balances['uluna'], False) - utility_constants.WITHDRAWAL_REMAINDER) * percentage)
         
+    lunc_amount:float = float(str(lunc_amount).replace('.0', ''))
+    uluna_amount:int  = int(lunc_amount * utility_constants.COIN_DIVISOR)
+    
     # NOTE: I'm pretty sure the memo size is int64, but I've capped it at 255 so python doens't panic
 
     # Now start doing stuff
@@ -198,15 +201,20 @@ def main():
 
     if 'uluna' in wallet.balances:
         # Adjust this so we have the desired amount still remaining
-        uluna_amount = int(lunc_amount) * utility_constants.COIN_DIVISOR
 
         if uluna_amount > 0 and uluna_amount <= (wallet.balances['uluna'] - (utility_constants.WITHDRAWAL_REMAINDER * utility_constants.COIN_DIVISOR)):
             print (f'Sending {wallet.formatUluna(uluna_amount, True)}')
 
+            # Create the send tx object
             send_tx = wallet.send().create()
 
-            # Simulate it
-            result = send_tx.simulate(recipient_address, uluna_amount, memo)
+            # Assign the details:
+            send_tx.recipient_address = recipient_address
+            send_tx.memo              = memo
+            send_tx.uluna_amount      = uluna_amount
+            
+            # Simulate it            
+            result = send_tx.simulate()
 
             if result == True:
                 
@@ -223,7 +231,7 @@ def main():
                             print (' 🛎️  Increasing the gas adjustment fee and trying again')
                             send_tx.terra.gas_adjustment += utility_constants.GAS_ADJUSTMENT_INCREMENT
                             print (f' 🛎️  Gas adjustment value is now {send_tx.terra.gas_adjustment}')
-                            send_tx.simulate(recipient_address, uluna_amount, memo)
+                            send_tx.simulate()
                             print (send_tx.readableFee())
                             send_tx.send()
                             send_tx.broadcast()
