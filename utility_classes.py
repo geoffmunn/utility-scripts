@@ -22,6 +22,7 @@ from terra_sdk.core.coin import Coin
 from terra_sdk.core.coins import Coins
 from terra_sdk.core.distribution.msgs import MsgWithdrawDelegatorReward
 from terra_sdk.core.fee import Fee
+from terra_sdk.core.market.msgs import MsgSwap
 from terra_sdk.core.staking import (
     MsgBeginRedelegate,
     MsgDelegate,
@@ -1139,15 +1140,16 @@ class SendTransaction(TransactionCore):
         except:
             return False
     
-    def simulate(self, recipient_address:str, uluna_amount:int, memo:str) -> bool:
+    #def simulate(self, recipient_address:str, uluna_amount:int, memo:str) -> bool:
+    def simulate(self) -> bool:
         """
         Simulate a delegation so we can get the fee details.
         The fee details are saved so the actual delegation will work.
         """
 
-        self.recipient_address = recipient_address
-        self.memo              = memo
-        self.uluna_amount      = uluna_amount
+        #self.recipient_address = recipient_address
+        #self.memo              = memo
+        #self.uluna_amount      = uluna_amount
 
         # Set the fee to be None so it is simulated
         self.fee      = None
@@ -1169,7 +1171,7 @@ class SendTransaction(TransactionCore):
         fee_denom    = fee_bit.denom
 
         # Calculate the tax portion
-        self.tax = uluna_amount * float(self.tax_rate['tax_rate'])
+        self.tax = self.uluna_amount * float(self.tax_rate['tax_rate'])
 
         # Build a fee object with 
         new_coin:Coins       = Coins({Coin(fee_denom, int(fee_amount + self.tax)), Coin('uluna', 200000)})
@@ -1186,17 +1188,21 @@ class SwapTransaction(TransactionCore):
 
         super(SwapTransaction, self).__init__(*args, **kwargs)
 
-        self.belief_price          = None
-        self.fee_deductables:float = None
-        self.max_spread:float      = 0.01
-        self.tax:float             = None
+        self.belief_price           = None
+        self.fee_deductables:float  = None
+        self.max_spread:float       = 0.01
+        self.tax:float              = None
+
+        self.swap_amount:int        = None
+        self.swap_denom:str         = None
+        self.swap_request_denom:str = None
 
     def beliefPrice(self) -> float:
         """
         Figure out the belief price for this swap.
         """
 
-        result = self.terra.wasm.contract_query(utility_constants.UUSD_TO_ULUNA_SWAP_ADDRESS, {"pool": {}})
+        result = self.terra.wasm.contract_query(utility_constants.TERRASWAP_ULUNA_TO_UUSD_ADDRESS, {"pool": {}})
 
         belief_price:float = int(result['assets'][0]['amount']) / int(result['assets'][1]['amount']) 
 
@@ -1216,6 +1222,124 @@ class SwapTransaction(TransactionCore):
         self.tax_rate = self.taxRate()
 
         return self
+    
+    def marketSimulate(self):
+
+        self.belief_price    = self.beliefPrice()
+        self.fee             = None
+        self.tax             = None
+        self.fee_deductables = None
+        self.sequence        = self.current_wallet.sequence()
+
+        # Bump up the gas adjustment - it needs to be higher for swaps it turns out
+        self.terra.gas_adjustment = utility_constants.GAS_ADJUSTMENT_SWAPS
+
+        # Perform the swap as a simulation, with no fee details
+        self.marketSwap()
+        
+        if self.transaction is not None:
+            tx:Tx = self.transaction
+
+            # Get the stub of the requested fee so we can adjust it
+            requested_fee = tx.auth_info.fee
+
+            # This will be used by the swap function next time we call it
+            self.fee = self.calculateFee(requested_fee)
+
+            print ('requested fee:', requested_fee)
+
+            print ('calculated fee:', self.fee)
+        else:
+            print ('Simulation failed!')
+
+    def marketSwap(self):
+        """
+        ???
+        """
+
+        #if self.belief_price is not None:
+            
+        # if self.fee is not None:
+        #     fee_amount:list = self.fee.amount.to_list()
+        #     fee_coin:Coin   = fee_amount[0]
+        #     fee_denom:str   = fee_coin.denom
+        # else:
+        #     fee_denom:str   = 'uusd'
+
+        # if fee_denom in self.balances:
+        #     swap_amount = self.balances['uusd']
+
+        #     if self.tax is not None:
+        #         if fee_denom == 'uusd':
+        #             swap_amount = swap_amount - self.fee_deductables
+
+        print ('denom:', self.swap_denom)
+        print ('amount:', self.swap_amount)
+        print ('asking for:', self.swap_request_denom)
+
+        tx_msg = MsgSwap(
+            trader = self.current_wallet.key.acc_address,
+            offer_coin = Coin(self.swap_denom, self.swap_amount),
+            #offer_coin = Coin('ukrw', 34058926),
+            ask_denom = self.swap_request_denom
+            #ask_denom = 'uusd'
+        )
+
+        # tx_msg = MsgExecuteContract(
+        #     sender      = self.current_wallet.key.acc_address,
+        #     contract    = utility_constants.ASTROPORT_UUSD_TO_ULUNA_ADDRESS,
+        #     execute_msg = {
+        #         'swap': {
+        #             'belief_price': str(self.belief_price),
+        #             'max_spread': str(self.max_spread),
+        #             'offer_asset': {
+        #                 'amount': str(swap_amount),
+        #                 'info': {
+        #                     'native_token': {
+        #                         'denom': 'uusd'
+        #                     }
+        #                 }
+        #             },
+        #         }
+        #     },
+        #     coins = Coins(str(swap_amount) + 'uusd')            
+        # )
+
+        options = CreateTxOptions(
+            fee        = self.fee,
+            #fee_denoms = ['uusd'],
+            #gas_prices = {'uusd': self.gas_list['uusd']},
+            gas_prices = self.gas_list,
+            msgs       = [tx_msg],
+            sequence   = self.sequence,
+        )
+        
+        tx:Tx = None
+        while True:
+            try:
+                tx:Tx = self.current_wallet.create_and_sign_tx(options)
+                break
+            except LCDResponseError as err:
+                if 'account sequence mismatch' in err.message:
+                    self.sequence    = self.sequence + 1
+                    options.sequence = self.sequence
+                    print ('boosting sequence number')
+                else:
+                    print (err)
+                    break
+            except Exception as err:
+                print (' 🛑 A random error has occurred')
+                print (err)
+                break
+
+        self.transaction = tx
+
+        return True
+        #else:
+        #    return False
+        # else:
+        #     print ('No belief price calculated - did you run the simulation first?')
+        #     return False
 
     def simulate(self) -> bool:
         """
@@ -1230,11 +1354,12 @@ class SwapTransaction(TransactionCore):
         self.sequence        = self.current_wallet.sequence()
 
         # Bump up the gas adjustment - it needs to be higher for swaps it turns out
-        self.terra.gas_adjustment = 3
+        self.terra.gas_adjustment = utility_constants.GAS_ADJUSTMENT_SWAPS
 
         # Perform the swap as a simulation, with no fee details
         self.swap()
         
+        # Get the transaction result
         tx:Tx = self.transaction
 
         # Get the stub of the requested fee so we can adjust it
@@ -1247,8 +1372,7 @@ class SwapTransaction(TransactionCore):
         fee_bit:Coin = Coin.from_str(str(requested_fee.amount))
         fee_amount   = fee_bit.amount
         fee_denom    = fee_bit.denom
-
-        swap_amount = self.balances['uusd']
+        swap_amount  = self.swap_amount
 
         # Calculate the tax portion
         self.tax = swap_amount * float(self.tax_rate['tax_rate'])
@@ -1281,7 +1405,8 @@ class SwapTransaction(TransactionCore):
                 fee_denom:str   = 'uusd'
 
             if fee_denom in self.balances:
-                swap_amount = self.balances['uusd']
+                #swap_amount = self.balances['uusd']
+                swap_amount = self.swap_amount
 
                 if self.tax is not None:
                     if fee_denom == 'uusd':
@@ -1298,7 +1423,7 @@ class SwapTransaction(TransactionCore):
                                 'amount': str(swap_amount),
                                 'info': {
                                     'native_token': {
-                                        'denom': 'uusd'
+                                        'denom': self.swap_denom
                                     }
                                 }
                             },

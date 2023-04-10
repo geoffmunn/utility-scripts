@@ -329,6 +329,10 @@ def main():
                             # Set up the basic swap object
                             swaps_tx = wallet.swap().create()
 
+                            # Populate the basic details.
+                            swaps_tx.swap_amount = swap_amount
+                            swaps_tx.swap_denom  = 'uusd'
+
                             # Simulate it so we can get the fee
                             result = swaps_tx.simulate()
 
