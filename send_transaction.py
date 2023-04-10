@@ -184,13 +184,13 @@ def main():
 
     print (f"The {wallet.name} wallet holds {wallet.formatUluna(wallet.balances['uluna'], True)}")
     print (f"NOTE: You can send the entire value of this wallet by typing '100%' - no minimum amount will be retained.")
-    lunc_amount:str = get_user_number('How much are you sending? ', {'max_number': float(wallet.formatUluna(wallet.balances['uluna'], False)), 'min_number': 0, 'percentages_allowed': True})
+    user_number:str = get_user_number('How much are you sending? ', {'max_number': float(wallet.formatUluna(wallet.balances['uluna'], False)), 'min_number': 0, 'percentages_allowed': True})
     memo:str        = get_user_text('Provide a memo (optional): ', 255, True)
 
     # Convert the provided value into actual numbers:
-    lunc_amount, uluna_amount = wallet.convertPercentage(lunc_amount, False)
+    lunc_amount, uluna_amount = wallet.convertPercentage(user_number, False, wallet.balances['uluna'])
 
-    complete_transaction = get_user_choice(f"You are about to send {lunc_amount} LUNC to {recipient_address} - do you want to continue? (y/n) ", [])
+    complete_transaction = get_user_choice(f"You are about to send {wallet.formatUluna(uluna_amount, True)} to {recipient_address} - do you want to continue? (y/n) ", [])
 
     if complete_transaction == False:
         print (" 🛑 Exiting...")

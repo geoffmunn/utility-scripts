@@ -59,7 +59,7 @@ def isDigit(value):
     except ValueError:
         return False
     
-def isPercentage(value):
+def isPercentage(value:str):
     """
     A helpter function to figure out if a value is a percentage or not.
     """
@@ -69,7 +69,7 @@ def isPercentage(value):
     else:
         return False
     
-def strtobool (val):
+def strtobool(val):
     """
     Convert a string representation of truth to true (1) or false (0).
     True values are 'y', 'yes', 't', 'true', 'on', and '1'; false values
@@ -89,6 +89,7 @@ def strtobool (val):
 def get_user_choice(question:str, allowed_options:list) -> str|bool:
     """
     Get the user selection for a prompt and convert it to a standard value.
+    This is typically a yes/no decision.
     """
 
     result = ''
@@ -290,6 +291,24 @@ class Wallet:
         self.allow_swaps = allow_swaps
         
         return True
+    
+    def convertPercentage(self, lunc_amount:str, keep_minimum:bool, percentage_value:float):
+        """
+        A generic helper function to convert a potential percentage into an actual number.
+        """
+        if isPercentage(lunc_amount):
+            percentage:int = int(str(lunc_amount).strip(' ')[0:-1]) / 100
+            if keep_minimum == True:
+                lunc_amount:float = float((self.formatUluna(percentage_value, False) - utility_constants.WITHDRAWAL_REMAINDER) * percentage)
+                if lunc_amount < 0:
+                    lunc_amount = 0
+            else:
+                lunc_amount:float = float((self.formatUluna(percentage_value, False)) * percentage)
+            
+        lunc_amount:float = float(str(lunc_amount).replace('.0', ''))
+        uluna_amount:int  = int(lunc_amount * utility_constants.COIN_DIVISOR)
+
+        return lunc_amount, uluna_amount
     
     def create(self, name:str = '', address:str = '', seed:str = '', password:str = '') -> Wallet:
         """
