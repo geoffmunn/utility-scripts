@@ -4,9 +4,9 @@
 from getpass import getpass
 
 from utility_classes import (
+    get_user_choice,
     get_user_number,
     get_user_text,
-    isPercentage,
     UserConfig,
     Wallets,
     Wallet
@@ -183,22 +183,24 @@ def main():
     recipient_address:str = input('What is the address you are sending to? ')
 
     print (f"The {wallet.name} wallet holds {wallet.formatUluna(wallet.balances['uluna'], True)}")
-    
+    print (f"NOTE: You can send the entire value of this wallet by typing '100%' - no minimum amount will be retained.")
     lunc_amount:str = get_user_number('How much are you sending? ', {'max_number': float(wallet.formatUluna(wallet.balances['uluna'], False)), 'min_number': 0, 'percentages_allowed': True})
     memo:str        = get_user_text('Provide a memo (optional): ', 255, True)
 
-    if isPercentage(lunc_amount):
-        percentage:int = int(str(lunc_amount).strip(' ')[0:-1]) / 100
-        lunc_amount:float = float((wallet.formatUluna(wallet.balances['uluna'], False) - utility_constants.WITHDRAWAL_REMAINDER) * percentage)
-        
-    lunc_amount:float = float(str(lunc_amount).replace('.0', ''))
-    uluna_amount:int  = int(lunc_amount * utility_constants.COIN_DIVISOR)
-    
+    # Convert the provided value into actual numbers:
+    lunc_amount, uluna_amount = wallet.convertPercentage(lunc_amount, False)
+
+    complete_transaction = get_user_choice(f"You are about to send {lunc_amount} LUNC to {recipient_address} - do you want to continue? (y/n) ", [])
+
+    if complete_transaction == False:
+        print (" 🛑 Exiting...")
+        exit()
+
     # NOTE: I'm pretty sure the memo size is int64, but I've capped it at 255 so python doens't panic
 
     # Now start doing stuff
     print (f'\nAccessing the {wallet.name} wallet...')
-
+    
     if 'uluna' in wallet.balances:
         # Adjust this so we have the desired amount still remaining
 
