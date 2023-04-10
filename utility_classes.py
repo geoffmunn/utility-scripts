@@ -247,7 +247,7 @@ class Wallets:
 
         return self
         
-    def getWallets(self, validate) -> dict:
+    def getWallets(self, validate:bool) -> dict:
         """
         Return the dictionary of wallets.
         If validate = True, then only return validated wallets which are known to have a valid seed.
@@ -335,7 +335,7 @@ class Wallet:
 
         if clear_cache == True:
             self.balances = None
-            
+
         if self.balances is None:
             # Default pagination options
             pagOpt:PaginationOptions = PaginationOptions(limit=50, count_total=True)
