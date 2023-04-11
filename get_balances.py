@@ -64,13 +64,15 @@ def main():
         
         delegations:dict = wallet.getDelegations()
 
+        #print ('delegations:', delegations)
         for validator in delegations:
             
             if validator not in validator_template:
-                validator_template.update({validator: ''})
+                if delegations[validator]['balance_amount'] > 0 or len(delegations[validator]['rewards']) > 0:
+                    validator_template.update({validator: ''})
 
-                # The default width is zero until we find out what the maximum width/value is:
-                label_widths.append(0)
+                    # The default width is zero until we find out what the maximum width/value is:
+                    label_widths.append(0)
 
     # Then, get all the coins we'll be charting (column 1)
 
