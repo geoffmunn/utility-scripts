@@ -57,14 +57,13 @@ def main():
     label_widths.append(len('Delegated'))
 
     # First, create a template of all the validators
-    validator_template:dict     = {'Available': 0, 'Delegated': 0}
+    validator_template:dict = {'Available': 0, 'Delegated': 0}
 
     for wallet_name in user_wallets:
         wallet:Wallet = user_wallets[wallet_name]
         
         delegations:dict = wallet.getDelegations()
 
-        #print ('delegations:', delegations)
         for validator in delegations:
             
             if validator not in validator_template:
