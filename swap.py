@@ -141,6 +141,100 @@ def get_user_singlechoice(question:str, user_wallets:dict) -> dict|str:
     
     return user_wallet, answer
 
+def get_coin_selection(coins:dict, question:str):
+    """
+    Return a selected coin based on the provided list.
+    """
+    label_widths = []
+
+    label_widths.append(len('Number'))
+    label_widths.append(len('Coin'))
+    label_widths.append(len('Balance'))
+
+    wallet:Wallet = Wallet()
+    coin_list = []
+    coin_list.append('')
+
+    for coin in coins:
+        coin_list.append(coin)
+
+        coin_name = utility_constants.FULL_COIN_LOOKUP[coin]
+        if len(str(coin_name)) > label_widths[1]:
+            label_widths[1] = len(str(coin_name))
+
+        coin_val = wallet.formatUluna(coins[coin])
+
+        if len(str(coin_val)) > label_widths[2]:
+            label_widths[2] = len(str(coin_val))
+
+    padding_str = ' ' * 100
+
+    header_string = ' Number |'
+    if label_widths[1] > len('Coin'):
+        header_string += ' Coin' + padding_str[0:label_widths[1] - len('Coin')] + ' |'
+    else:
+        header_string += ' Coin |'
+
+    if label_widths[2] > len('Balance'):
+        header_string += ' Balance ' + padding_str[0:label_widths[2] - len('Balance')] + '|'
+    else:
+        header_string += ' Balance |'
+
+    horizontal_spacer = '-' * len(header_string)
+
+    print (horizontal_spacer)
+    print (header_string)
+    print (horizontal_spacer)
+
+    coin_to_use = None
+
+    while True:
+        count:int = 0
+
+        for coin in coins:
+            count += 1
+            
+            if coin_to_use == coin:
+                glyph = '✅'
+            else:
+                glyph = '  '
+
+            count_str =  f' {count}' + padding_str[0:6 - (len(str(count)) + 2)]
+
+            coin_name = utility_constants.FULL_COIN_LOOKUP[coin]
+            if label_widths[1] > len(coin_name):
+                coin_name_str = coin_name + padding_str[0:label_widths[1] - len(coin_name)]
+            else:
+                coin_name_str = coin_name
+
+            coin_val = wallet.formatUluna(coins[coin])
+            coin_val = ("%.6f" % (coin_val)).rstrip('0').rstrip('.')
+
+            if label_widths[2] > len(str(coin_val)):
+                balance_str = coin_val + padding_str[0:label_widths[2] - len(coin_val)]
+            else:
+                balance_str = coin_val
+
+            print (f"{count_str}{glyph} | {coin_name_str} | {balance_str}")
+    
+
+        answer = input(question).lower()
+        
+        if answer.isdigit() and int(answer) > 0 and int(answer) <= count:
+
+            coin_to_use = coin_list[int(answer)]
+            
+        if answer == 'x':
+            if coin_to_use is not None:
+                break
+            else:
+                print ('\nPlease select a coin first.\n')
+
+        if answer == 'q':
+            break
+
+    return coin_to_use
+
 def main():
     
     # Get the password that decrypts the user wallets
@@ -178,6 +272,10 @@ def main():
         print (" 🛑 This password couldn't decrypt any wallets. Make sure it is correct, or rebuild the wallet list by running the configure_user_wallet.py script again.")
         exit()
 
+    # List all the coins in this wallet, with the amounts available:
+    test = get_coin_selection(wallet.balances, 'What coin do you want to swap? ')
+
+    exit()
     #params = wallet.terra.market.parameters()
     #swap_rate = wallet.terra.market.swap_rate(Coin('ukrw', 34058926), 'uusd')
     
@@ -188,13 +286,14 @@ def main():
 
     wallet.getBalances()
 
-    swaps_tx.swap_amount = wallet.balances['ukrw']
-    swaps_tx.swap_denom = 'ukrw'
-    swaps_tx.swap_request_denom = 'uusd'
-    
+    swaps_tx.swap_amount = wallet.balances['usek']
+    swaps_tx.swap_denom = 'usek'
+    swaps_tx.swap_request_denom = 'uthb'
+
     swaps_tx.marketSimulate()
     result = swaps_tx.marketSwap()
 
+    exit()
     if result == True:
         swaps_tx.broadcast()
     
