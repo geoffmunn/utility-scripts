@@ -4,6 +4,7 @@
 from getpass import getpass
 
 from utility_classes import (
+    get_user_choice,
     get_user_number,
     get_user_text,
     isPercentage,
@@ -125,13 +126,13 @@ def get_user_singlechoice(question:str, user_wallets:dict) -> dict|str:
             else:
                 wallets_to_use.pop(key)
             
-        if answer == 'x':
+        if answer == utility_constants.USER_ACTION_CONTINUE:
             if len(wallets_to_use) > 0:
                 break
             else:
                 print ('\nPlease select a wallet first.\n')
 
-        if answer == 'q':
+        if answer == utility_constants.USER_ACTION_QUIT:
             break
 
     # Get the first (and only) validator from the list
@@ -141,7 +142,7 @@ def get_user_singlechoice(question:str, user_wallets:dict) -> dict|str:
     
     return user_wallet, answer
 
-def get_coin_selection(coins:dict, question:str):
+def get_coin_selection(question:str, coins:dict, estimation_against:str = None, wallet:Wallet = False) -> str | str | float:
     """
     Return a selected coin based on the provided list.
     """
@@ -151,21 +152,44 @@ def get_coin_selection(coins:dict, question:str):
     label_widths.append(len('Coin'))
     label_widths.append(len('Balance'))
 
+    if estimation_against is not None:
+        label_widths.append(len('Estimation'))
+        swaps_tx = wallet.swap().create()
+
     wallet:Wallet = Wallet()
     coin_list = []
+    coin_values = {}
     coin_list.append('')
 
     for coin in coins:
         coin_list.append(coin)
 
-        coin_name = utility_constants.FULL_COIN_LOOKUP[coin]
-        if len(str(coin_name)) > label_widths[1]:
-            label_widths[1] = len(str(coin_name))
+        if coin in utility_constants.FULL_COIN_LOOKUP:
+            coin_name = utility_constants.FULL_COIN_LOOKUP[coin]
+            if len(str(coin_name)) > label_widths[1]:
+                label_widths[1] = len(str(coin_name))
 
-        coin_val = wallet.formatUluna(coins[coin])
+            coin_val = wallet.formatUluna(coins[coin])
 
-        if len(str(coin_val)) > label_widths[2]:
-            label_widths[2] = len(str(coin_val))
+            if len(str(coin_val)) > label_widths[2]:
+                label_widths[2] = len(str(coin_val))
+
+            if estimation_against is not None:
+                swaps_tx.swap_amount = coins[estimation_against]
+                swaps_tx.swap_denom =  estimation_against
+                swaps_tx.swap_request_denom = coin
+
+                if coin != estimation_against:
+                    estimated_result:Coin = swaps_tx.swapRate()
+                else:
+                    estimated_result:Coin = Coin(estimation_against, 1 * utility_constants.COIN_DIVISOR)
+
+                estimated_value:str = float(("%.6f" % (wallet.formatUluna(estimated_result.amount))).rstrip('0').rstrip('.'))
+
+                coin_values[coin] = estimated_value
+                
+                if len(str(estimated_value)) > label_widths[3]:
+                    label_widths[3] = len(str(estimated_value))
 
     padding_str = ' ' * 100
 
@@ -180,16 +204,24 @@ def get_coin_selection(coins:dict, question:str):
     else:
         header_string += ' Balance |'
 
+    if estimation_against is not None:
+        if label_widths[3] > len('Estimation'):
+            header_string += ' Estimation ' + padding_str[0:label_widths[3] - len('Estimation')] + '|'
+        else:
+            header_string += ' Estimation |'
+
     horizontal_spacer = '-' * len(header_string)
 
-    print (horizontal_spacer)
-    print (header_string)
-    print (horizontal_spacer)
-
-    coin_to_use = None
+    coin_to_use:str = None
+    returned_estimation: float = None    
+    answer:str = False
 
     while True:
         count:int = 0
+
+        print (horizontal_spacer)
+        print (header_string)
+        print (horizontal_spacer)
 
         for coin in coins:
             count += 1
@@ -201,39 +233,50 @@ def get_coin_selection(coins:dict, question:str):
 
             count_str =  f' {count}' + padding_str[0:6 - (len(str(count)) + 2)]
 
-            coin_name = utility_constants.FULL_COIN_LOOKUP[coin]
-            if label_widths[1] > len(coin_name):
-                coin_name_str = coin_name + padding_str[0:label_widths[1] - len(coin_name)]
-            else:
-                coin_name_str = coin_name
+            if coin in utility_constants.FULL_COIN_LOOKUP:
+                coin_name = utility_constants.FULL_COIN_LOOKUP[coin]
+                if label_widths[1] > len(coin_name):
+                    coin_name_str = coin_name + padding_str[0:label_widths[1] - len(coin_name)]
+                else:
+                    coin_name_str = coin_name
 
-            coin_val = wallet.formatUluna(coins[coin])
-            coin_val = ("%.6f" % (coin_val)).rstrip('0').rstrip('.')
+                coin_val = wallet.formatUluna(coins[coin])
+                coin_val = ("%.6f" % (coin_val)).rstrip('0').rstrip('.')
 
-            if label_widths[2] > len(str(coin_val)):
-                balance_str = coin_val + padding_str[0:label_widths[2] - len(coin_val)]
-            else:
-                balance_str = coin_val
+                if label_widths[2] > len(str(coin_val)):
+                    balance_str = coin_val + padding_str[0:label_widths[2] - len(coin_val)]
+                else:
+                    balance_str = coin_val
 
-            print (f"{count_str}{glyph} | {coin_name_str} | {balance_str}")
+                if estimation_against is None:
+                    print (f"{count_str}{glyph} | {coin_name_str} | {balance_str}")
+                else:
+                    estimated_str =  float(coin_values[coin])
+                    estimated_str = str(("%.6f" % (estimated_str)).rstrip('0').rstrip('.'))
+                    print (f"{count_str}{glyph} | {coin_name_str} | {balance_str} | {estimated_str}")
     
+        print (horizontal_spacer + '\n')
 
         answer = input(question).lower()
         
         if answer.isdigit() and int(answer) > 0 and int(answer) <= count:
-
             coin_to_use = coin_list[int(answer)]
+            if estimation_against is not None:
+                #print (coin_values)
+                #print (coin_to_use)
+                returned_estimation = coin_values[coin_to_use]
             
-        if answer == 'x':
+        if answer == utility_constants.USER_ACTION_CONTINUE:
             if coin_to_use is not None:
                 break
             else:
                 print ('\nPlease select a coin first.\n')
 
-        if answer == 'q':
+        if answer == utility_constants.USER_ACTION_QUIT:
             break
 
-    return coin_to_use
+    
+    return coin_to_use, answer, returned_estimation
 
 def main():
     
@@ -273,130 +316,66 @@ def main():
         exit()
 
     # List all the coins in this wallet, with the amounts available:
-    test = get_coin_selection(wallet.balances, 'What coin do you want to swap? ')
+    print ('What coin do you want to swap FROM?')
+    coin_from, answer, estimated_amount = get_coin_selection("Select a coin number 1 - " + str(len(wallet.balances)) + ", 'X' to continue', or 'Q' to quit: ", wallet.balances)
 
-    exit()
-    #params = wallet.terra.market.parameters()
-    #swap_rate = wallet.terra.market.swap_rate(Coin('ukrw', 34058926), 'uusd')
-    
-    #print (params)
-    #print (swap_rate)
+    if answer == utility_constants.USER_ACTION_QUIT:
+        print (' 🛑 Exiting...')
+        exit()
 
+    print ('What coin do you want to swap TO?')
+    coin_to, answer, estimated_amount = get_coin_selection("Select a coin number 1 - " + str(len(wallet.balances)) + ", 'X' to continue', or 'Q' to quit: ", wallet.balances, coin_from, wallet)
+
+    available_balance = str(("%.6f" % (wallet.formatUluna(wallet.balances[coin_from]))).rstrip('0').rstrip('.'))
+    estimated_amount =  ("%.6f" % (estimated_amount)).rstrip('0').rstrip('.')
+    print (f'You will be swapping {available_balance} {utility_constants.FULL_COIN_LOOKUP[coin_from]} for approximately {estimated_amount} {utility_constants.FULL_COIN_LOOKUP[coin_to]}')
+    complete_transaction = get_user_choice('Do you want to continue? (y/n) ', [])
+
+    if complete_transaction == False:
+        print (" 🛑 Exiting...")
+        exit()
+
+    # Create the swap object
     swaps_tx = wallet.swap().create()
 
-    wallet.getBalances()
+    # Assign the details:
+    swaps_tx.swap_amount = int(wallet.balances[coin_from])
+    swaps_tx.swap_denom = coin_from
+    swaps_tx.swap_request_denom = coin_to
 
-    swaps_tx.swap_amount = wallet.balances['usek']
-    swaps_tx.swap_denom = 'usek'
-    swaps_tx.swap_request_denom = 'uthb'
+    result = swaps_tx.marketSimulate()
 
-    swaps_tx.marketSimulate()
-    result = swaps_tx.marketSwap()
-
-    exit()
     if result == True:
-        swaps_tx.broadcast()
-    
-        if swaps_tx.broadcast_result.code == 11:
-            while True:
-                print (' 🛎️  Increasing the gas adjustment fee and trying again')
-                swaps_tx.terra.gas_adjustment += utility_constants.GAS_ADJUSTMENT_INCREMENT
-                print (f' 🛎️  Gas adjustment value is now {swaps_tx.terra.gas_adjustment}')
-                swaps_tx.simulate()
-                print (swaps_tx.readableFee())
-                swaps_tx.send()
-                swaps_tx.broadcast()
+        print (swaps_tx.readableFee())
+        result = swaps_tx.marketSwap()
 
-                if swaps_tx.broadcast_result.code != 11:
-                    break
-
-                if swaps_tx.terra.gas_adjustment >= utility_constants.MAX_GAS_ADJUSTMENT:
-                    break
-
-        if swaps_tx.broadcast_result.is_tx_error():
-            print (' 🛎️  The send transaction failed, an error occurred:')
-            print (f' 🛎️  {swaps_tx.broadcast_result.raw_log}')
-        else:
-            print (f' ✅ Sent amount: {wallet.formatUluna(swaps_tx.swap_amount, False)}')
-            print (f' ✅ Tx Hash: {swaps_tx.broadcast_result.txhash}')
-    else:
-        print (' 🛎️  The swap transaction could not be completed')
-    exit()
-    # List all the coins in this wallet and allow a multiselect
-    print (wallet.balances)
-
-    # if 'uluna' not in wallet.balances:
-    #     print (" 🛑 This wallet doesn't have any LUNC available to transfer.")
-    #     exit()
-                       
-    # # If we're sending LUNC then we need a few more details:
-    # recipient_address:str = input('What is the address you are sending to? ')
-
-    # print (f"The {wallet.name} wallet holds {wallet.formatUluna(wallet.balances['uluna'], True)}")
-    
-    # lunc_amount:str = get_user_number('How much are you sending? ', {'max_number': float(wallet.formatUluna(wallet.balances['uluna'], False)), 'min_number': 0, 'percentages_allowed': True})
-    # memo:str        = get_user_text('Provide a memo (optional): ', 255, True)
-
-    # if isPercentage(lunc_amount):
-    #     percentage:int = int(str(lunc_amount).strip(' ')[0:-1]) / 100
-    #     lunc_amount:int = int((wallet.formatUluna(wallet.balances['uluna'], False) - utility_constants.WITHDRAWAL_REMAINDER) * percentage)
+        if result == True:
+            swaps_tx.broadcast()
         
-    # # NOTE: I'm pretty sure the memo size is int64, but I've capped it at 255 so python doens't panic
+            if swaps_tx.broadcast_result.code == 11:
+                while True:
+                    print (' 🛎️  Increasing the gas adjustment fee and trying again')
+                    swaps_tx.terra.gas_adjustment += utility_constants.GAS_ADJUSTMENT_INCREMENT
+                    print (f' 🛎️  Gas adjustment value is now {swaps_tx.terra.gas_adjustment}')
+                    swaps_tx.marketSimulate()
+                    print (swaps_tx.readableFee())
+                    swaps_tx.marketSwap()
+                    swaps_tx.broadcast()
 
-    # # Now start doing stuff
-    # print (f'\nAccessing the {wallet.name} wallet...')
+                    if swaps_tx.broadcast_result.code != 11:
+                        break
 
-    # if 'uluna' in wallet.balances:
-    #     # Adjust this so we have the desired amount still remaining
-    #     uluna_amount = int(lunc_amount) * utility_constants.COIN_DIVISOR
+                    if swaps_tx.terra.gas_adjustment >= utility_constants.MAX_GAS_ADJUSTMENT:
+                        break
 
-    #     if uluna_amount > 0 and uluna_amount <= (wallet.balances['uluna'] - (utility_constants.WITHDRAWAL_REMAINDER * utility_constants.COIN_DIVISOR)):
-    #         print (f'Sending {wallet.formatUluna(uluna_amount, True)}')
-
-    #         send_tx = wallet.send().create()
-
-    #         # Simulate it
-    #         result = send_tx.simulate(recipient_address, uluna_amount, memo)
-
-    #         if result == True:
-                
-    #             print (send_tx.readableFee())
-                    
-    #             # Now we know what the fee is, we can do it again and finalise it
-    #             result = send_tx.send()
-                
-    #             if result == True:
-    #                 send_tx.broadcast()
-                
-    #                 if send_tx.broadcast_result.code == 11:
-    #                     while True:
-    #                         print (' 🛎️  Increasing the gas adjustment fee and trying again')
-    #                         send_tx.terra.gas_adjustment += utility_constants.GAS_ADJUSTMENT_INCREMENT
-    #                         print (f' 🛎️  Gas adjustment value is now {send_tx.terra.gas_adjustment}')
-    #                         send_tx.simulate(recipient_address, uluna_amount, memo)
-    #                         print (send_tx.readableFee())
-    #                         send_tx.send()
-    #                         send_tx.broadcast()
-
-    #                         if send_tx.broadcast_result.code != 11:
-    #                             break
-
-    #                         if send_tx.terra.gas_adjustment >= utility_constants.MAX_GAS_ADJUSTMENT:
-    #                             break
-
-    #                 if send_tx.broadcast_result.is_tx_error():
-    #                     print (' 🛎️  The send transaction failed, an error occurred:')
-    #                     print (f' 🛎️  {send_tx.broadcast_result.raw_log}')
-    #                 else:
-    #                     print (f' ✅ Sent amount: {wallet.formatUluna(uluna_amount, True)}')
-    #                     print (f' ✅ Tx Hash: {send_tx.broadcast_result.txhash}')
-    #             else:
-    #                 print (' 🛎️  The send transaction could not be completed')
-    #         else:
-    #             print (' 🛎️  The send transaction could not be completed')
-                
-    #     else:
-    #         print (' 🛎️  Sending error: Not enough LUNC will be left in the account to cover fees')
+            if swaps_tx.broadcast_result.is_tx_error():
+                print (' 🛎️  The send transaction failed, an error occurred:')
+                print (f' 🛎️  {swaps_tx.broadcast_result.raw_log}')
+            else:
+                print (f' ✅ Sent amount: {wallet.formatUluna(swaps_tx.swap_amount, False)}')
+                print (f' ✅ Tx Hash: {swaps_tx.broadcast_result.txhash}')
+        else:
+            print (' 🛎️  The swap transaction could not be completed')
             
     print (' 💯 Done!\n')
 
