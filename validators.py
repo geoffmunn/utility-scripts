@@ -229,13 +229,13 @@ def get_user_singlechoice(question:str, user_wallets:dict) -> dict|str:
             else:
                 print ('\nPlease select a wallet first.\n')
 
-        if answer == 'q':
+        if answer == utility_constants.USER_ACTION_QUIT:
             break
 
     # Get the first (and only) validator from the list
     for item in wallets_to_use:
         user_wallet = wallets_to_use[item]
-        break;
+        break
     
     return user_wallet, answer
 
