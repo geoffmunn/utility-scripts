@@ -123,13 +123,13 @@ def get_user_singlechoice(question:str, user_wallets:dict) -> dict|str:
             else:
                 wallets_to_use.pop(key)
             
-        if answer == 'x':
+        if answer == utility_constants.USER_ACTION_CONTINUE:
             if len(wallets_to_use) > 0:
                 break
             else:
                 print ('\nPlease select a wallet first.\n')
 
-        if answer == 'q':
+        if answer == utility_constants.USER_ACTION_QUIT:
             break
 
     # Get the first (and only) validator from the list
