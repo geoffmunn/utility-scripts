@@ -147,7 +147,7 @@ def main():
     # Get the user config file contents
     user_config:str = UserConfig().contents()
     if user_config == '':
-        print (' 🛑 The user_config.yml file could not be opened - please run configure_user_wallets.py before running this script')
+        print (' 🛑 The user_config.yml file could not be opened - please run configure_user_wallets.py before running this script.')
         exit()
 
     print ('Decrypting and validating wallets - please wait...')

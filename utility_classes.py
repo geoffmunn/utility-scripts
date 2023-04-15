@@ -225,6 +225,18 @@ class Wallets:
         Create a dictionary of wallets. Each wallet is a Wallet object.
         """
 
+        if yml_file is None:
+            print (' 🛑 No wallets were provided.')
+            exit()
+            
+        if 'wallets' not in yml_file:
+            print (' 🛑 No wallets were provided.')
+            exit()
+
+        if yml_file['wallets'] is None:
+            print (' 🛑 No wallets were provided.')
+            exit()
+
         for wallet in yml_file['wallets']:
 
             delegation_amount:str = ''
