@@ -32,7 +32,7 @@ Current functionality includes:
  
   * python 3.10.9+
   * terra.proto 1.1.0
-  * terra_classic_skd 2.0.6
+  * terra_classic_skd 2.0.7
   * cryptocode
   * yaml
 
