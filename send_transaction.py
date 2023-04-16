@@ -4,9 +4,9 @@
 from getpass import getpass
 
 from utility_classes import (
+    get_user_choice,
     get_user_number,
     get_user_text,
-    isPercentage,
     UserConfig,
     Wallets,
     Wallet
@@ -123,13 +123,13 @@ def get_user_singlechoice(question:str, user_wallets:dict) -> dict|str:
             else:
                 wallets_to_use.pop(key)
             
-        if answer == 'x':
+        if answer == utility_constants.USER_ACTION_CONTINUE:
             if len(wallets_to_use) > 0:
                 break
             else:
                 print ('\nPlease select a wallet first.\n')
 
-        if answer == 'q':
+        if answer == utility_constants.USER_ACTION_QUIT:
             break
 
     # Get the first (and only) validator from the list
@@ -147,7 +147,7 @@ def main():
     # Get the user config file contents
     user_config:str = UserConfig().contents()
     if user_config == '':
-        print (' 🛑 The user_config.yml file could not be opened - please run configure_user_wallets.py before running this script')
+        print (' 🛑 The user_config.yml file could not be opened - please run configure_user_wallets.py before running this script.')
         exit()
 
     print ('Decrypting and validating wallets - please wait...')
@@ -183,30 +183,40 @@ def main():
     recipient_address:str = input('What is the address you are sending to? ')
 
     print (f"The {wallet.name} wallet holds {wallet.formatUluna(wallet.balances['uluna'], True)}")
-    
-    lunc_amount:str = get_user_number('How much are you sending? ', {'max_number': float(wallet.formatUluna(wallet.balances['uluna'], False)), 'min_number': 0, 'percentages_allowed': True})
+    print (f"NOTE: You can send the entire value of this wallet by typing '100%' - no minimum amount will be retained.")
+    user_number:str = get_user_number('How much are you sending? ', {'max_number': float(wallet.formatUluna(wallet.balances['uluna'], False)), 'min_number': 0, 'percentages_allowed': True})
     memo:str        = get_user_text('Provide a memo (optional): ', 255, True)
 
-    if isPercentage(lunc_amount):
-        percentage:int = int(str(lunc_amount).strip(' ')[0:-1]) / 100
-        lunc_amount:int = int((wallet.formatUluna(wallet.balances['uluna'], False) - utility_constants.WITHDRAWAL_REMAINDER) * percentage)
-        
+    # Convert the provided value into actual numbers:
+    lunc_amount, uluna_amount = wallet.convertPercentage(user_number, False, wallet.balances['uluna'])
+
+    complete_transaction = get_user_choice(f"You are about to send {wallet.formatUluna(uluna_amount, True)} to {recipient_address} - do you want to continue? (y/n) ", [])
+
+    if complete_transaction == False:
+        print (" 🛑 Exiting...")
+        exit()
+
     # NOTE: I'm pretty sure the memo size is int64, but I've capped it at 255 so python doens't panic
 
     # Now start doing stuff
     print (f'\nAccessing the {wallet.name} wallet...')
-
+    
     if 'uluna' in wallet.balances:
         # Adjust this so we have the desired amount still remaining
-        uluna_amount = int(lunc_amount) * utility_constants.COIN_DIVISOR
 
         if uluna_amount > 0 and uluna_amount <= (wallet.balances['uluna'] - (utility_constants.WITHDRAWAL_REMAINDER * utility_constants.COIN_DIVISOR)):
             print (f'Sending {wallet.formatUluna(uluna_amount, True)}')
 
+            # Create the send tx object
             send_tx = wallet.send().create()
 
-            # Simulate it
-            result = send_tx.simulate(recipient_address, uluna_amount, memo)
+            # Assign the details:
+            send_tx.recipient_address = recipient_address
+            send_tx.memo              = memo
+            send_tx.uluna_amount      = uluna_amount
+            
+            # Simulate it            
+            result = send_tx.simulate()
 
             if result == True:
                 
@@ -223,7 +233,7 @@ def main():
                             print (' 🛎️  Increasing the gas adjustment fee and trying again')
                             send_tx.terra.gas_adjustment += utility_constants.GAS_ADJUSTMENT_INCREMENT
                             print (f' 🛎️  Gas adjustment value is now {send_tx.terra.gas_adjustment}')
-                            send_tx.simulate(recipient_address, uluna_amount, memo)
+                            send_tx.simulate()
                             print (send_tx.readableFee())
                             send_tx.send()
                             send_tx.broadcast()

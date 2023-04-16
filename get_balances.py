@@ -29,7 +29,7 @@ def main():
     # Get the user config file contents
     user_config:str = UserConfig().contents()
     if user_config == '':
-        print (' 🛑 The user_config.yml file could not be opened - please run configure_user_wallets.py before running this script')
+        print (' 🛑 The user_config.yml file could not be opened - please run configure_user_wallets.py before running this script.')
         exit()
 
     print ('Decrypting and validating wallets - please wait...')
@@ -57,7 +57,7 @@ def main():
     label_widths.append(len('Delegated'))
 
     # First, create a template of all the validators
-    validator_template:dict     = {'Available': 0, 'Delegated': 0}
+    validator_template:dict = {'Available': 0, 'Delegated': 0}
 
     for wallet_name in user_wallets:
         wallet:Wallet = user_wallets[wallet_name]
@@ -67,10 +67,11 @@ def main():
         for validator in delegations:
             
             if validator not in validator_template:
-                validator_template.update({validator: ''})
+                if delegations[validator]['balance_amount'] > 0 or len(delegations[validator]['rewards']) > 0:
+                    validator_template.update({validator: ''})
 
-                # The default width is zero until we find out what the maximum width/value is:
-                label_widths.append(0)
+                    # The default width is zero until we find out what the maximum width/value is:
+                    label_widths.append(0)
 
     # Then, get all the coins we'll be charting (column 1)
 

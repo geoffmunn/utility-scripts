@@ -15,6 +15,7 @@ Current functionality includes:
  * Swapping USTC for LUNC
  * Staking LUNC with validators
  * Sending LUNC to other addresses
+ * Swapping Terra coins to USTC etc
  * Managing validators
    * Delegating to new validators
    * Switching between validators
@@ -31,28 +32,26 @@ Current functionality includes:
  
   * python 3.10.9+
   * terra.proto 1.1.0
-  * terra_skd 2.0.6
+  * terra_classic_skd 2.0.7
   * cryptocode
+  * yaml
 
   These can be installed via pip:
   ```
-  pip install -Iv terra.proto==1.1.0
-  pip install -Iv terra_sdk==2.0.6
+  pip install terra.proto==1.1.0
+  pip install terra_classic_sdk==2.0.7
   pip install cryptocode
+  pip install pyyaml
   ```
 
  ## Installation guide
 
 ### Step 1
- Download the modified terra.py library from here:
- https://github.com/geoffmunn/terra.py
-
- There have been some minor changes from the original library (https://github.com/terra-money/terra.py) to make this Luna Classic compatible.
+ Make sure you have completed the installation steps in the Requirements section.
 
 ### Step 2
- Download the utility scripts and put them inside this folder. There won't be any name collisions so a simple copy and paste will be fine.
-
-https://github.com/geoffmunn/utility-scripts
+ Download the utility scripts:
+ ```git clone https://github.com/geoffmunn/utility-scripts.git```
 
 ## Configuration and usage
 
@@ -65,12 +64,12 @@ Please take a look at the security section below for details on how your seed ph
 You will be prompted for the following details:
 
  - **Wallet name**: A unique identifier for your reference. If you use the same name as an existing entry, it will overwrite the existing values
- - **Do you want to create a new wallet?** Yes or no - if you say 'yes' then a new address and seed phrase will be displayed and used for this wallet.
+ - **Do you want to generate a new wallet address?** Yes or no - if you say 'yes' then a new address and seed phrase will be displayed and used for this wallet.
  - **Terra address**: If you said 'no' to the previous prompt, then you provide the address of the wallet here - it starts with 'terra'.
  - **Wallet seed**: If you said 'no' to creating a new wallet, then you provide the secret seed phrase to generate the wallet here. This is the ONLY time you'll need to provide this - see the security section below.
  - **Do you want to withdraw or delegate anything?**: Optional - if you're staking coins then say 'yes'.
  - **Delegation amount**: You can provide a percentage (usually 100%), or a fixed number (in LUNC). This percentage or number comes from the balance in the wallet at the time, unrelated to the withdrawn amount.
- - **Withdrawal threshold**: The amount in LUNC that must be available as a staking reward before it is withdrawn. If you want to always withdraw everything, enter '0'.
+ - **Withdrawal threshold**: The amount of LUNC that must be available as a staking reward before it is withdrawn. If you want to always withdraw everything, enter '0'.
  - **Allow swaps?**: Yes or no - if you say 'no' then the swaps function will not apply to this wallet.
 
 This script will create a file called ```user_config.yml```.
@@ -80,7 +79,7 @@ If this file is corrupted or you forget the password then you can delete it and 
 
 ### get_balances.py
 
-This will return the balances for each coin type on all of your wallets. You provide the same password as you used in the configuration step, and say yes or no to just getting the LUNC and USTC summaries.
+This will return the balances for each coin type on all of your wallets. You provide the same password as you used in the configuration step, and say 'yes' or 'no' to just getting the LUNC and USTC summaries.
 
 ### manage_wallets.py
 
@@ -104,6 +103,14 @@ Two points to remember:
 
 You can delegate, undelegate, and switch between validators by running the ```validators.py``` script.
 If you undelegate funds, then they will be unavailable for 21 days.
+
+### swaps.py
+
+You can swap the minor Terra coins for any other coin, including USTC and LUNC.
+
+First, provide the same password you used in the configuration step, and then select the coin you want to swap from.
+
+After pressing 'X' to continue, you will can then choose what you want to swap your selection to. You can also see the estimated conversion result.
 
 ### Troubleshooting
 

@@ -20,7 +20,7 @@ def main():
 
     user_password = getpass('Secret password (do not forget what this is):')
     wallet_name   = get_user_text('Wallet name: ', 255, False)
-    is_new_wallet = get_user_choice('You want to create a new wallet? (y/n) ', [])
+    is_new_wallet = get_user_choice('You want to generate a new wallet address? (y/n) ', [])
     
     if is_new_wallet == True:
         new_wallet:Wallet = Wallet().create(wallet_name, '', '', '')
