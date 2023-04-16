@@ -31,17 +31,17 @@ Current functionality includes:
  ## Requirements
  
   * python 3.10.9+
-  * terra.proto 1.1.0
+  * terra.proto 1.0.0
   * terra_classic_skd 2.0.7
   * cryptocode
   * yaml
 
   These can be installed via pip:
   ```
-  pip install terra.proto==1.1.0
-  pip install terra_classic_sdk==2.0.7
-  pip install cryptocode
-  pip install pyyaml
+  python - m pip pip install terra.proto==1.0.0
+  python - m pip pip install terra_classic_sdk
+  python - m pip install cryptocode
+  python - m pip install pyyaml
   ```
 
  ## Installation guide
