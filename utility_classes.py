@@ -8,33 +8,33 @@ import yaml
 
 import utility_constants
 
-from terra_sdk.client.lcd import LCDClient
-from terra_sdk.client.lcd.api.distribution import Rewards
-from terra_sdk.client.lcd.api.tx import (
+from terra_classic_sdk.client.lcd import LCDClient
+from terra_classic_sdk.client.lcd.api.distribution import Rewards
+from terra_classic_sdk.client.lcd.api.tx import (
     CreateTxOptions,
     Tx
 )
-from terra_sdk.client.lcd.params import PaginationOptions
-from terra_sdk.client.lcd.wallet import Wallet
-from terra_sdk.core.bank import MsgSend
-from terra_sdk.core.broadcast import BlockTxBroadcastResult
-from terra_sdk.core.coin import Coin
-from terra_sdk.core.coins import Coins
-from terra_sdk.core.distribution.msgs import MsgWithdrawDelegatorReward
-from terra_sdk.core.fee import Fee
-from terra_sdk.core.market.msgs import MsgSwap
-from terra_sdk.core.staking import (
+from terra_classic_sdk.client.lcd.params import PaginationOptions
+from terra_classic_sdk.client.lcd.wallet import Wallet
+from terra_classic_sdk.core.bank import MsgSend
+from terra_classic_sdk.core.broadcast import BlockTxBroadcastResult
+from terra_classic_sdk.core.coin import Coin
+from terra_classic_sdk.core.coins import Coins
+from terra_classic_sdk.core.distribution.msgs import MsgWithdrawDelegatorReward
+from terra_classic_sdk.core.fee import Fee
+from terra_classic_sdk.core.market.msgs import MsgSwap
+from terra_classic_sdk.core.staking import (
     MsgBeginRedelegate,
     MsgDelegate,
     MsgUndelegate,
     UnbondingDelegation
 )
-from terra_sdk.core.staking.data.delegation import Delegation
-from terra_sdk.core.staking.data.validator import Validator
-from terra_sdk.core.tx import Tx
-from terra_sdk.core.wasm.msgs import MsgExecuteContract
-from terra_sdk.exceptions import LCDResponseError
-from terra_sdk.key.mnemonic import MnemonicKey
+from terra_classic_sdk.core.staking.data.delegation import Delegation
+from terra_classic_sdk.core.staking.data.validator import Validator
+from terra_classic_sdk.core.tx import Tx
+from terra_classic_sdk.core.wasm.msgs import MsgExecuteContract
+from terra_classic_sdk.exceptions import LCDResponseError
+from terra_classic_sdk.key.mnemonic import MnemonicKey
 
 def coin_list(input: Coins, existingList: dict) -> dict:
     """ 
@@ -228,7 +228,7 @@ class Wallets:
         if yml_file is None:
             print (' 🛑 No wallets were provided.')
             exit()
-            
+
         if 'wallets' not in yml_file:
             print (' 🛑 No wallets were provided.')
             exit()

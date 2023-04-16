@@ -15,7 +15,7 @@ from utility_classes import (
 
 import utility_constants
 
-from terra_sdk.core.coin import Coin
+from terra_classic_sdk.core.coin import Coin
 
 def get_user_singlechoice(question:str, user_wallets:dict) -> dict|str:
     """

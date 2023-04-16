@@ -124,7 +124,7 @@ Sometimes it seems to timeout and nothing will happen for many minutes. In these
 
 Seems to be a problem with the LCD - try again later and it should work.
 
-**terra_sdk.exceptions.LCDResponseError: Status 502 - Bad Gateway**
+**terra_classic_sdk.exceptions.LCDResponseError: Status 502 - Bad Gateway**
 
 Network connectivity issues with the LCD endpoint. Try again later.
 
