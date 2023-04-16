@@ -248,66 +248,67 @@ def main():
         delegations = wallet.getDelegations()
         for validator in delegations:
 
-            print ('\n------------------------------------')
-            print (f"The {delegations[validator]['validator_name']} validator has a {delegations[validator]['commission']}% commission.")
+            if 'uluna' in delegations[validator]['rewards']:
+                print ('\n------------------------------------')
+                print (f"The {delegations[validator]['validator_name']} validator has a {delegations[validator]['commission']}% commission.")
 
-            if user_action in [utility_constants.USER_ACTION_WITHDRAW, utility_constants.USER_ACTION_WITHDRAW_DELEGATE, utility_constants.USER_ACTION_ALL]:
+                if user_action in [utility_constants.USER_ACTION_WITHDRAW, utility_constants.USER_ACTION_WITHDRAW_DELEGATE, utility_constants.USER_ACTION_ALL]:
 
-                print ('Starting withdrawals...')
+                    print ('Starting withdrawals...')
 
-                uluna_reward:int = delegations[validator]['rewards']['uluna']
+                    uluna_reward:int = delegations[validator]['rewards']['uluna']
 
-                # Only withdraw the staking rewards if the rewards exceed the threshold (if any)
-                if uluna_reward > wallet.delegations['threshold']:
+                    # Only withdraw the staking rewards if the rewards exceed the threshold (if any)
+                    if uluna_reward > wallet.delegations['threshold']:
 
-                    print (f'Withdrawing {wallet.formatUluna(uluna_reward, False)} rewards')
+                        print (f'Withdrawing {wallet.formatUluna(uluna_reward, False)} rewards')
 
-                    # Update the balances so we know what we have to pay the fee with
-                    wallet.getBalances(True)
+                        # Update the balances so we know what we have to pay the fee with
+                        wallet.getBalances(True)
 
-                    # Set up the withdrawal object
-                    withdrawal_tx = wallet.withdrawal().create(delegations[validator]['delegator'], delegations[validator]['validator'])
+                        # Set up the withdrawal object
+                        withdrawal_tx = wallet.withdrawal().create(delegations[validator]['delegator'], delegations[validator]['validator'])
 
-                    # Simulate it
-                    result = withdrawal_tx.simulate()
-
-                    if result == True:
-
-                        print (withdrawal_tx.readableFee())
-
-                        # Now we know what the fee is, we can do it again and finalise it
-                        result = withdrawal_tx.withdraw()
+                        # Simulate it
+                        result = withdrawal_tx.simulate()
 
                         if result == True:
-                            withdrawal_tx.broadcast()
-                        
-                            if withdrawal_tx.broadcast_result.code == 11:
-                                while True:
-                                    print (' 🛎️  Increasing the gas adjustment fee and trying again')
-                                    withdrawal_tx.terra.gas_adjustment += utility_constants.GAS_ADJUSTMENT_INCREMENT
-                                    print (f' 🛎️  Gas adjustment value is now {withdrawal_tx.terra.gas_adjustment}')
-                                    withdrawal_tx.simulate()
-                                    print (withdrawal_tx.readableFee())
-                                    withdrawal_tx.withdraw()
-                                    withdrawal_tx.broadcast()
 
-                                    if withdrawal_tx.broadcast_result.code != 11:
-                                        break
+                            print (withdrawal_tx.readableFee())
 
-                                    if withdrawal_tx.terra.gas_adjustment >= utility_constants.MAX_GAS_ADJUSTMENT:
-                                        break
-                                    
-                            if withdrawal_tx.broadcast_result.is_tx_error():
-                                print (' 🛎️  The withdrawal failed, an error occurred:')
-                                print (f' 🛎️  {withdrawal_tx.broadcast_result.raw_log}')
-                        
-                            else:
-                                print (f' ✅ Withdrawn amount: {wallet.formatUluna(uluna_reward, True)}')
-                                print (f' ✅ Tx Hash: {withdrawal_tx.broadcast_result.txhash}')
+                            # Now we know what the fee is, we can do it again and finalise it
+                            result = withdrawal_tx.withdraw()
+
+                            if result == True:
+                                withdrawal_tx.broadcast()
+                            
+                                if withdrawal_tx.broadcast_result.code == 11:
+                                    while True:
+                                        print (' 🛎️  Increasing the gas adjustment fee and trying again')
+                                        withdrawal_tx.terra.gas_adjustment += utility_constants.GAS_ADJUSTMENT_INCREMENT
+                                        print (f' 🛎️  Gas adjustment value is now {withdrawal_tx.terra.gas_adjustment}')
+                                        withdrawal_tx.simulate()
+                                        print (withdrawal_tx.readableFee())
+                                        withdrawal_tx.withdraw()
+                                        withdrawal_tx.broadcast()
+
+                                        if withdrawal_tx.broadcast_result.code != 11:
+                                            break
+
+                                        if withdrawal_tx.terra.gas_adjustment >= utility_constants.MAX_GAS_ADJUSTMENT:
+                                            break
+                                        
+                                if withdrawal_tx.broadcast_result.is_tx_error():
+                                    print (' 🛎️  The withdrawal failed, an error occurred:')
+                                    print (f' 🛎️  {withdrawal_tx.broadcast_result.raw_log}')
+                            
+                                else:
+                                    print (f' ✅ Withdrawn amount: {wallet.formatUluna(uluna_reward, True)}')
+                                    print (f' ✅ Tx Hash: {withdrawal_tx.broadcast_result.txhash}')
+                        else:
+                            print (' 🛎️  The withdrawal could not be completed')
                     else:
-                        print (' 🛎️  The withdrawal could not be completed')
-                else:
-                    print (' 🛎️  The amount of LUNC in this wallet does not exceed the withdrawal threshold')
+                        print (' 🛎️  The amount of LUNC in this wallet does not exceed the withdrawal threshold')
 
             # Swap any uusd coins for uluna
             if user_action in [utility_constants.USER_ACTION_SWAP, utility_constants.USER_ACTION_SWAP_DELEGATE, utility_constants.USER_ACTION_ALL]:
