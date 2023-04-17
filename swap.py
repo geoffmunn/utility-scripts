@@ -317,18 +317,21 @@ def main():
 
     # List all the coins in this wallet, with the amounts available:
     print ('What coin do you want to swap FROM?')
-    coin_from, answer, estimated_amount = get_coin_selection("Select a coin number 1 - " + str(len(wallet.balances)) + ", 'X' to continue', or 'Q' to quit: ", wallet.balances)
+    coin_from, answer, null_value = get_coin_selection("Select a coin number 1 - " + str(len(wallet.balances)) + ", 'X' to continue', or 'Q' to quit: ", wallet.balances)
 
     if answer == utility_constants.USER_ACTION_QUIT:
         print (' 🛑 Exiting...')
         exit()
 
+    available_balance = float(("%.6f" % (wallet.formatUluna(wallet.balances[coin_from]))).rstrip('0').rstrip('.'))
+    print (f'This coin has a maximum of {available_balance} {utility_constants.FULL_COIN_LOOKUP[coin_from]} available.')
+    swap_amount = get_user_number('How much do you want to swap? ', {'max_number': available_balance, 'min_number': 0, 'percentages_allowed': True})
+
     print ('What coin do you want to swap TO?')
     coin_to, answer, estimated_amount = get_coin_selection("Select a coin number 1 - " + str(len(wallet.balances)) + ", 'X' to continue', or 'Q' to quit: ", wallet.balances, coin_from, wallet)
 
-    available_balance = str(("%.6f" % (wallet.formatUluna(wallet.balances[coin_from]))).rstrip('0').rstrip('.'))
     estimated_amount =  ("%.6f" % (estimated_amount)).rstrip('0').rstrip('.')
-    print (f'You will be swapping {available_balance} {utility_constants.FULL_COIN_LOOKUP[coin_from]} for approximately {estimated_amount} {utility_constants.FULL_COIN_LOOKUP[coin_to]}')
+    print (f'You will be swapping {swap_amount} {utility_constants.FULL_COIN_LOOKUP[coin_from]} for approximately {estimated_amount} {utility_constants.FULL_COIN_LOOKUP[coin_to]}')
     complete_transaction = get_user_choice('Do you want to continue? (y/n) ', [])
 
     if complete_transaction == False:
@@ -339,14 +342,14 @@ def main():
     swaps_tx = wallet.swap().create()
 
     # Assign the details:
-    swaps_tx.swap_amount = int(wallet.balances[coin_from])
+    swaps_tx.swap_amount = int(swap_amount * utility_constants.COIN_DIVISOR)
     swaps_tx.swap_denom = coin_from
     swaps_tx.swap_request_denom = coin_to
 
     result = swaps_tx.marketSimulate()
-
     if result == True:
         print (swaps_tx.readableFee())
+        exit()
         result = swaps_tx.marketSwap()
 
         if result == True:
