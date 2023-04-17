@@ -104,7 +104,7 @@ Two points to remember:
 You can delegate, undelegate, and switch between validators by running the ```validators.py``` script.
 If you undelegate funds, then they will be unavailable for 21 days.
 
-### swaps.py
+### swap.py
 
 You can swap the minor Terra coins for any other coin, including USTC and LUNC.
 
