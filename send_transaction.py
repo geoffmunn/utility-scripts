@@ -96,14 +96,14 @@ def get_user_singlechoice(question:str, user_wallets:dict) -> dict|str:
             wallet_name_str = wallet_name + padding_str[0:label_widths[1] - len(wallet_name)]
 
             if 'uluna' in wallet.balances:
-                lunc_str = ("%.6f" % (wallet.formatUluna(wallet.balances['uluna'], False))).rstrip('0').rstrip('.')
+                lunc_str =wallet.formatUluna(wallet.balances['uluna'], False)
             else: 
                 lunc_str = ''
 
             lunc_str = lunc_str + padding_str[0:label_widths[2] - len(lunc_str)]
             
             if 'uusd' in wallet.balances:
-                ustc_str = ("%.6f" % (wallet.formatUluna(wallet.balances['uusd'], False))).rstrip('0').rstrip('.')
+                ustc_str = wallet.formatUluna(wallet.balances['uusd'], False)
             else:
                 ustc_str = ' '
             
@@ -184,12 +184,10 @@ def main():
 
     print (f"The {wallet.name} wallet holds {wallet.formatUluna(wallet.balances['uluna'], True)}")
     print (f"NOTE: You can send the entire value of this wallet by typing '100%' - no minimum amount will be retained.")
-    user_number:str = get_user_number('How much are you sending? ', {'max_number': float(wallet.formatUluna(wallet.balances['uluna'], False)), 'min_number': 0, 'percentages_allowed': True})
-    memo:str        = get_user_text('Provide a memo (optional): ', 255, True)
+    uluna_amount:int = get_user_number('How much are you sending? ', {'max_number': float(wallet.formatUluna(wallet.balances['uluna'], False)), 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': True, 'keep_minimum': False})
+    memo:str         = get_user_text('Provide a memo (optional): ', 255, True)
 
     # Convert the provided value into actual numbers:
-    lunc_amount, uluna_amount = wallet.convertPercentage(user_number, False, wallet.balances['uluna'])
-
     complete_transaction = get_user_choice(f"You are about to send {wallet.formatUluna(uluna_amount, True)} to {recipient_address} - do you want to continue? (y/n) ", [])
 
     if complete_transaction == False:
@@ -201,63 +199,58 @@ def main():
     # Now start doing stuff
     print (f'\nAccessing the {wallet.name} wallet...')
     
+    print ('sending uluna:', uluna_amount)
     if 'uluna' in wallet.balances:
-        # Adjust this so we have the desired amount still remaining
+        print (f'Sending {wallet.formatUluna(uluna_amount, True)}')
 
-        if uluna_amount > 0 and uluna_amount <= (wallet.balances['uluna'] - (utility_constants.WITHDRAWAL_REMAINDER * utility_constants.COIN_DIVISOR)):
-            print (f'Sending {wallet.formatUluna(uluna_amount, True)}')
+        # Create the send tx object
+        send_tx = wallet.send().create()
 
-            # Create the send tx object
-            send_tx = wallet.send().create()
+        # Assign the details:
+        send_tx.recipient_address = recipient_address
+        send_tx.memo              = memo
+        send_tx.uluna_amount      = int(uluna_amount)
+        
+        # Simulate it            
+        result = send_tx.simulate()
 
-            # Assign the details:
-            send_tx.recipient_address = recipient_address
-            send_tx.memo              = memo
-            send_tx.uluna_amount      = uluna_amount
+        if result == True:
             
-            # Simulate it            
-            result = send_tx.simulate()
+            print (send_tx.readableFee())
 
+            # Now we know what the fee is, we can do it again and finalise it
+            result = send_tx.send()
+            
             if result == True:
-                
-                print (send_tx.readableFee())
-                    
-                # Now we know what the fee is, we can do it again and finalise it
-                result = send_tx.send()
-                
-                if result == True:
-                    send_tx.broadcast()
-                
-                    if send_tx.broadcast_result.code == 11:
-                        while True:
-                            print (' 🛎️  Increasing the gas adjustment fee and trying again')
-                            send_tx.terra.gas_adjustment += utility_constants.GAS_ADJUSTMENT_INCREMENT
-                            print (f' 🛎️  Gas adjustment value is now {send_tx.terra.gas_adjustment}')
-                            send_tx.simulate()
-                            print (send_tx.readableFee())
-                            send_tx.send()
-                            send_tx.broadcast()
+                send_tx.broadcast()
+            
+                if send_tx.broadcast_result.code == 11:
+                    while True:
+                        print (' 🛎️  Increasing the gas adjustment fee and trying again')
+                        send_tx.terra.gas_adjustment += utility_constants.GAS_ADJUSTMENT_INCREMENT
+                        print (f' 🛎️  Gas adjustment value is now {send_tx.terra.gas_adjustment}')
+                        send_tx.simulate()
+                        print (send_tx.readableFee())
+                        send_tx.send()
+                        send_tx.broadcast()
 
-                            if send_tx.broadcast_result.code != 11:
-                                break
+                        if send_tx.broadcast_result.code != 11:
+                            break
 
-                            if send_tx.terra.gas_adjustment >= utility_constants.MAX_GAS_ADJUSTMENT:
-                                break
+                        if send_tx.terra.gas_adjustment >= utility_constants.MAX_GAS_ADJUSTMENT:
+                            break
 
-                    if send_tx.broadcast_result.is_tx_error():
-                        print (' 🛎️  The send transaction failed, an error occurred:')
-                        print (f' 🛎️  {send_tx.broadcast_result.raw_log}')
-                    else:
-                        print (f' ✅ Sent amount: {wallet.formatUluna(uluna_amount, True)}')
-                        print (f' ✅ Tx Hash: {send_tx.broadcast_result.txhash}')
+                if send_tx.broadcast_result.is_tx_error():
+                    print (' 🛎️  The send transaction failed, an error occurred:')
+                    print (f' 🛎️  {send_tx.broadcast_result.raw_log}')
                 else:
-                    print (' 🛎️  The send transaction could not be completed')
+                    print (f' ✅ Sent amount: {wallet.formatUluna(uluna_amount, True)}')
+                    print (f' ✅ Tx Hash: {send_tx.broadcast_result.txhash}')
             else:
                 print (' 🛎️  The send transaction could not be completed')
-                
         else:
-            print (' 🛎️  Sending error: Not enough LUNC will be left in the account to cover fees')
-            
+            print (' 🛎️  The send transaction could not be completed')
+        
     print (' 💯 Done!\n')
 
 if __name__ == "__main__":

@@ -47,7 +47,7 @@ def main():
 
     if delegations == True:
         redelegate_amount = get_user_number('From the available amount in the wallet, how much do you want to redelegate (eg 100%, 5000 LUNC): ', {'percentages_allowed': True, 'min_number': 0})
-        threshold         = get_user_number('What is the minimum amount in LUNC before we withdraw rewards? ', {'min_number': 0})
+        threshold         = get_user_number('What is the minimum amount in LUNC before we withdraw rewards? ', {'min_number': 0, 'min_equal_to': True})
 
         # Convert the amount and threshold into uluna:
         threshold         = threshold * utility_constants.COIN_DIVISOR
@@ -123,8 +123,15 @@ def main():
     if delegations == True:
         item['delegations'] = ''
         if threshold > 0:
-            item['threshold'] = threshold
-        item['redelegate'] = redelegate_amount
+            if isPercentage(threshold):
+                item['threshold'] = threshold
+            else:
+                item['threshold'] = int(threshold)
+
+        if isPercentage(redelegate_amount):
+            item['redelegate'] = redelegate_amount
+        else:
+            item['redelegate'] = int(redelegate_amount)
 
     item['allow_swaps'] = allow_swaps
 
