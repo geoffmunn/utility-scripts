@@ -28,6 +28,7 @@ def main():
 
         print (f'Your seed and address for the new wallet "{wallet_name}" are about to be displayed on the screen')
         wallet_continue = get_user_choice('Do you want to continue? (y/n) ', [])
+        
         if wallet_continue == False:
             print (' 🛑 Exiting...')
             exit()
