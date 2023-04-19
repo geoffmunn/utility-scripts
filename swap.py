@@ -99,14 +99,16 @@ def get_user_singlechoice(question:str, user_wallets:dict) -> dict|str:
             wallet_name_str = wallet_name + padding_str[0:label_widths[1] - len(wallet_name)]
 
             if 'uluna' in wallet.balances:
-                lunc_str = ("%.6f" % (wallet.formatUluna(wallet.balances['uluna'], False))).rstrip('0').rstrip('.')
+                #lunc_str = ("%.6f" % (wallet.formatUluna(wallet.balances['uluna'], False))).rstrip('0').rstrip('.')
+                lunc_str = wallet.formatUluna(wallet.balances['uluna'], False)
             else: 
                 lunc_str = ''
 
             lunc_str = lunc_str + padding_str[0:label_widths[2] - len(lunc_str)]
             
             if 'uusd' in wallet.balances:
-                ustc_str = ("%.6f" % (wallet.formatUluna(wallet.balances['uusd'], False))).rstrip('0').rstrip('.')
+                #ustc_str = ("%.6f" % (wallet.formatUluna(wallet.balances['uusd'], False))).rstrip('0').rstrip('.')
+                ustc_str = wallet.formatUluna(wallet.balances['uusd'], False)
             else:
                 ustc_str = ' '
             
@@ -142,7 +144,7 @@ def get_user_singlechoice(question:str, user_wallets:dict) -> dict|str:
     
     return user_wallet, answer
 
-def get_coin_selection(question:str, coins:dict, estimation_against:str = None, wallet:Wallet = False) -> str | str | float:
+def get_coin_selection(question:str, coins:dict, estimation_against:dict = None, wallet:Wallet = False) -> str | str | float:
     """
     Return a selected coin based on the provided list.
     """
@@ -151,6 +153,8 @@ def get_coin_selection(question:str, coins:dict, estimation_against:str = None, 
     label_widths.append(len('Number'))
     label_widths.append(len('Coin'))
     label_widths.append(len('Balance'))
+
+    print ('estimation against:', estimation_against)
 
     if estimation_against is not None:
         label_widths.append(len('Estimation'))
@@ -175,16 +179,17 @@ def get_coin_selection(question:str, coins:dict, estimation_against:str = None, 
                 label_widths[2] = len(str(coin_val))
 
             if estimation_against is not None:
-                swaps_tx.swap_amount = coins[estimation_against]
-                swaps_tx.swap_denom =  estimation_against
+                swaps_tx.swap_amount = int(estimation_against['amount'])
+                swaps_tx.swap_denom =  estimation_against['denom']
+
                 swaps_tx.swap_request_denom = coin
 
-                if coin != estimation_against:
+                if coin != estimation_against['denom']:
                     estimated_result:Coin = swaps_tx.swapRate()
                 else:
-                    estimated_result:Coin = Coin(estimation_against, 1 * utility_constants.COIN_DIVISOR)
+                    estimated_result:Coin = Coin(estimation_against['denom'], 1 * utility_constants.COIN_DIVISOR)
 
-                estimated_value:str = float(("%.6f" % (wallet.formatUluna(estimated_result.amount))).rstrip('0').rstrip('.'))
+                estimated_value:str = wallet.formatUluna(estimated_result.amount)
 
                 coin_values[coin] = estimated_value
                 
@@ -241,7 +246,6 @@ def get_coin_selection(question:str, coins:dict, estimation_against:str = None, 
                     coin_name_str = coin_name
 
                 coin_val = wallet.formatUluna(coins[coin])
-                coin_val = ("%.6f" % (coin_val)).rstrip('0').rstrip('.')
 
                 if label_widths[2] > len(str(coin_val)):
                     balance_str = coin_val + padding_str[0:label_widths[2] - len(coin_val)]
@@ -262,8 +266,6 @@ def get_coin_selection(question:str, coins:dict, estimation_against:str = None, 
         if answer.isdigit() and int(answer) > 0 and int(answer) <= count:
             coin_to_use = coin_list[int(answer)]
             if estimation_against is not None:
-                #print (coin_values)
-                #print (coin_to_use)
                 returned_estimation = coin_values[coin_to_use]
             
         if answer == utility_constants.USER_ACTION_CONTINUE:
@@ -323,15 +325,18 @@ def main():
         print (' 🛑 Exiting...')
         exit()
 
-    available_balance = float(("%.6f" % (wallet.formatUluna(wallet.balances[coin_from]))).rstrip('0').rstrip('.'))
+    available_balance:float = float(wallet.formatUluna(wallet.balances[coin_from]))
     print (f'This coin has a maximum of {available_balance} {utility_constants.FULL_COIN_LOOKUP[coin_from]} available.')
-    swap_amount = get_user_number('How much do you want to swap? ', {'max_number': available_balance, 'min_number': 0, 'percentages_allowed': True})
+    swap_uluna = get_user_number('How much do you want to swap? ', {'max_number': available_balance, 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': True, 'keep_minimum': False})
 
     print ('What coin do you want to swap TO?')
-    coin_to, answer, estimated_amount = get_coin_selection("Select a coin number 1 - " + str(len(wallet.balances)) + ", 'X' to continue', or 'Q' to quit: ", wallet.balances, coin_from, wallet)
+    coin_to, answer, estimated_amount = get_coin_selection("Select a coin number 1 - " + str(len(wallet.balances)) + ", 'X' to continue', or 'Q' to quit: ", wallet.balances, {'denom':coin_from, 'amount':swap_uluna}, wallet)
 
-    estimated_amount =  ("%.6f" % (estimated_amount)).rstrip('0').rstrip('.')
-    print (f'You will be swapping {swap_amount} {utility_constants.FULL_COIN_LOOKUP[coin_from]} for approximately {estimated_amount} {utility_constants.FULL_COIN_LOOKUP[coin_to]}')
+    if answer == utility_constants.USER_ACTION_QUIT:
+        print (' 🛑 Exiting...')
+        exit()
+
+    print (f'You will be swapping {wallet.formatUluna(swap_uluna, False)} {utility_constants.FULL_COIN_LOOKUP[coin_from]} for approximately {estimated_amount} {utility_constants.FULL_COIN_LOOKUP[coin_to]}')
     complete_transaction = get_user_choice('Do you want to continue? (y/n) ', [])
 
     if complete_transaction == False:
@@ -342,7 +347,7 @@ def main():
     swaps_tx = wallet.swap().create()
 
     # Assign the details:
-    swaps_tx.swap_amount = int(swap_amount * utility_constants.COIN_DIVISOR)
+    swaps_tx.swap_amount = int(swap_uluna)
     swaps_tx.swap_denom = coin_from
     swaps_tx.swap_request_denom = coin_to
 

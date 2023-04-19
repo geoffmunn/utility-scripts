@@ -174,14 +174,14 @@ def get_user_singlechoice(question:str, user_wallets:dict) -> dict|str:
             wallet_name_str = wallet_name + padding_str[0:label_widths[1] - len(wallet_name)]
 
             if 'uluna' in wallet.balances:
-                lunc_str = ("%.6f" % (wallet.formatUluna(wallet.balances['uluna'], False))).rstrip('0').rstrip('.')
+                lunc_str = wallet.formatUluna(wallet.balances['uluna'], False)
             else: 
                 lunc_str = ''
 
             lunc_str = lunc_str + padding_str[0:label_widths[2] - len(lunc_str)]
             
             if 'uusd' in wallet.balances:
-                ustc_str = ("%.6f" % (wallet.formatUluna(wallet.balances['uusd'], False))).rstrip('0').rstrip('.')
+                ustc_str = wallet.formatUluna(wallet.balances['uusd'], False)
             else:
                 ustc_str = ' '
 
@@ -441,10 +441,8 @@ def main():
 
         print (f"The {wallet.name} wallet holds {wallet.formatUluna(wallet.balances['uluna'], True)}")
         print (f"NOTE: A minimum amount of {utility_constants.WITHDRAWAL_REMAINDER} LUNC will be retained for future transactions.")
-        user_number:str = get_user_number('How much are you delegating? ', {'max_number': float(wallet.formatUluna(wallet.balances['uluna'])), 'min_number': 0, 'percentages_allowed': True})
-        
-        delegated_lunc, delegated_uluna = wallet.convertPercentage(user_number, True, wallet.balances['uluna'])
-        
+        delegated_uluna:float = get_user_number('How much are you delegating? ', {'max_number': float(wallet.formatUluna(wallet.balances['uluna'])), 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': True, 'keep_minimum': True})
+                
         if delegated_uluna == 0:
             print (' 🛑 Delegated amount is zero, exiting...')
             exit()
@@ -526,10 +524,8 @@ def main():
 
         print (f"The {wallet.name} wallet has {wallet.formatUluna(available_undelegation_uluna, True)} available to be undelegated.")
         print (f"NOTE: You can send the entire value of this delegation by typing '100%' - no minimum amount will be retained.")
-        user_number:str = get_user_number('How much are you undelegating? ', {'max_number': float(wallet.formatUluna(available_undelegation_uluna, False)), 'min_number': 0, 'percentages_allowed': True})
+        undelegated_uluna:str = get_user_number('How much are you undelegating? ', {'max_number': float(wallet.formatUluna(available_undelegation_uluna, False)), 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': True, 'keep_minimum': False})
         
-        undelegated_lunc, undelegated_uluna = wallet.convertPercentage(user_number, False, available_undelegation_uluna)
-
         print (f"You are about to undelegate {wallet.formatUluna(undelegated_uluna, True)} from {user_validator['moniker']}.")
         print (' 🛎️  Undelegated funds will not be available for 21 days.')
         complete_transaction = get_user_choice('Do you want to continue? (y/n) ', [])
@@ -613,17 +609,8 @@ def main():
         total_delegated_uluna = delegations[from_validator['moniker']]['balance_amount']
         print (f"The {from_validator['moniker']} wallet holds {wallet.formatUluna(total_delegated_uluna, True)}")
         print (f"NOTE: You can switch the entire value of this delegation by typing '100%' - no minimum amount will be retained.")
-        user_number:str = get_user_number('How much are you switching? ', {'max_number': float(wallet.formatUluna(total_delegated_uluna, False)), 'min_number': 0, 'percentages_allowed': True})
-
-        # if isPercentage(switched_lunc):
-        #     percentage:int      = int(str(switched_lunc).strip(' ')[0:-1]) / 100
-        #     switched_lunc:float = float((wallet.formatUluna(total_delegated_uluna, False)) * percentage)
+        switched_uluna:str = get_user_number('How much are you switching? ', {'max_number': float(wallet.formatUluna(total_delegated_uluna, False)), 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': True, 'keep_minimum': False})
         
-        # switched_lunc:float = float(str(switched_lunc).replace('.0', ''))
-        # switched_uluna:int  = int(switched_lunc * utility_constants.COIN_DIVISOR)
-
-        switched_lunc, switched_uluna = wallet.convertPercentage(user_number, False, total_delegated_uluna)
-
         print (f"You are about to switch {wallet.formatUluna(switched_uluna, True)} from {from_validator['moniker']} and move it to {to_validator['moniker']}.")
         complete_transaction = get_user_choice('Do you want to continue? (y/n) ', [])
 
@@ -648,6 +635,7 @@ def main():
         if result == True:
                 
             print (delegation_tx.readableFee())
+
             # Now we know what the fee is, we can do it again and finalise it
             result = delegation_tx.redelegate()
 
