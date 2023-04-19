@@ -147,21 +147,38 @@ def get_user_number(question:str, params:dict) -> float|str:
                 if 'percentages_allowed' in params and is_percentage == True:
                     if int(answer) > params['min_number'] and int(answer) <= 100:
                         break
-                elif 'max_number' in params and (float(answer) > params['min_number'] and float(answer) <= params['max_number']):
-                    break
+                elif 'max_number' in params:
+                    if 'min_equal_to' in params and (float(answer) >= params['min_number'] and float(answer) <= params['max_number']):
+                        break
+                    elif (float(answer) > params['min_number'] and float(answer) <= params['max_number']):
+                        break
                 elif 'max_number' in params and float(answer) > params['max_number']:
                     print (f" 🛎️  The amount must be less than {params['max_number']}")
-                elif 'min_number' in params and float(answer) <= params['min_number']:
-                    print (f" 🛎️  The amount must be greater than {params['min_number']}")
+                elif 'min_number' in params:
+                    
+                    if 'min_equal_to' in params:
+                        if float(answer) < params['min_number']:
+                            print (f" 🛎️  The amount must be greater than (or equal to) {params['min_number']}")
+                        else:
+                            break
+                    else:
+                        if float(answer) <= params['min_number']:
+                            print (f" 🛎️  The amount must be greater than {params['min_number']}")
+                        else:
+                            break
                 else:
                     # This is just a regular number that we'll accept
                     if is_percentage == False:
                         break
 
     if 'percentages_allowed' in params and is_percentage == True:
-        answer = answer + '%'
+        if 'convert_percentages' in params and params['convert_percentages'] == True:
+            wallet:Wallet = Wallet()
+            answer = float(wallet.convertPercentage(answer, params['keep_minimum'], params['max_number']))
+        else:
+            answer = answer + '%'
     else:
-        answer = float(answer)
+        answer = float(float(answer) * utility_constants.COIN_DIVISOR)
 
     return answer
 
@@ -208,17 +225,6 @@ class Wallets:
         wallet_item.validated = wallet_item.validateAddress()
     
         self.wallets[wallet['wallet']] = wallet_item
-
-    # async def async_create(self, yml_file:dict, user_password:str):
-        
-    #     asyncio.gather(*(self.getWallet(wallet, user_password) for wallet in yml_file['wallets']))
-
-        
-
-    # def ac(self, yml_file:dict, user_password:str):
-    #     asyncio.run(self.async_create(yml_file, user_password))
-
-    #     return self
 
     def create(self, yml_file:dict, user_password:str):
         """
@@ -304,23 +310,24 @@ class Wallet:
         
         return True
     
-    def convertPercentage(self, lunc_amount:str, keep_minimum:bool, percentage_value:float):
+    def convertPercentage(self, percentage:float, keep_minimum:bool, target_amount:float):
         """
         A generic helper function to convert a potential percentage into an actual number.
         """
-        if isPercentage(lunc_amount):
-            percentage:int = int(str(lunc_amount).strip(' ')[0:-1]) / 100
-            if keep_minimum == True:
-                lunc_amount:float = float((self.formatUluna(percentage_value, False) - utility_constants.WITHDRAWAL_REMAINDER) * percentage)
-                if lunc_amount < 0:
-                    lunc_amount = 0
-            else:
-                lunc_amount:float = float((self.formatUluna(percentage_value, False)) * percentage)
+
+        #if isPercentage(lunc_amount):
+        percentage:float = float(percentage) / 100
+        if keep_minimum == True:
+            lunc_amount:float = float((target_amount- utility_constants.WITHDRAWAL_REMAINDER) * percentage)
+            if lunc_amount < 0:
+                lunc_amount = 0
+        else:
+            lunc_amount:float = float(target_amount) * percentage
             
         lunc_amount:float = float(str(lunc_amount).replace('.0', ''))
         uluna_amount:int  = int(lunc_amount * utility_constants.COIN_DIVISOR)
 
-        return lunc_amount, uluna_amount
+        return uluna_amount
     
     def create(self, name:str = '', address:str = '', seed:str = '', password:str = '') -> Wallet:
         """
@@ -354,6 +361,8 @@ class Wallet:
         """
 
         lunc:float = round(float(uluna / utility_constants.COIN_DIVISOR), 6)
+
+        lunc = ("%.6f" % (lunc)).rstrip('0').rstrip('.')
 
         if add_suffix:
             lunc = str(lunc) + ' LUNC'
@@ -956,6 +965,8 @@ class DelegationTransaction(TransactionCore):
         """
 
         try:
+            tx:Tx = None
+
             msg = MsgDelegate(
                 delegator_address = self.delegator_address,
                 validator_address = self.validator_address,
@@ -977,8 +988,13 @@ class DelegationTransaction(TransactionCore):
                     tx:Tx = self.current_wallet.create_and_sign_tx(options)
                     break
                 except LCDResponseError as err:
-                    self.sequence    = self.sequence + 1
-                    options.sequence = self.sequence
+                    if 'account sequence mismatch' in err.message:
+                        self.sequence    = self.sequence + 1
+                        options.sequence = self.sequence
+                        print ('Boosting sequence number')
+                    else:
+                        print (err)
+                        break
                 except Exception as err:
                     print (' 🛑 A random error has occurred')
                     print (err)
@@ -999,6 +1015,7 @@ class DelegationTransaction(TransactionCore):
         """
 
         try:
+            tx:Tx = None
 
             msgRedel = MsgBeginRedelegate(
                 validator_dst_address = self.validator_address,
@@ -1021,8 +1038,13 @@ class DelegationTransaction(TransactionCore):
                     tx:Tx = self.current_wallet.create_and_sign_tx(options)
                     break
                 except LCDResponseError as err:
-                    self.sequence    = self.sequence + 1
-                    options.sequence = self.sequence
+                    if 'account sequence mismatch' in err.message:
+                        self.sequence    = self.sequence + 1
+                        options.sequence = self.sequence
+                        print ('Boosting sequence number')
+                    else:
+                        print (err)
+                        break
                 except Exception as err:
                     print (' 🛑 A random error has occurred')
                     print (err)
@@ -1052,13 +1074,16 @@ class DelegationTransaction(TransactionCore):
         # Store the transaction
         tx:Tx = self.transaction
 
-        # Get the stub of the requested fee so we can adjust it
-        requested_fee = tx.auth_info.fee
+        if tx is not None:
+            # Get the stub of the requested fee so we can adjust it
+            requested_fee = tx.auth_info.fee
 
-        # This will be used by the swap function next time we call it
-        self.fee = self.calculateFee(requested_fee)
+            # This will be used by the swap function next time we call it
+            self.fee = self.calculateFee(requested_fee)
 
-        return True
+            return True
+        else:
+            return False
         
     def undelegate(self):
         """
@@ -1067,6 +1092,8 @@ class DelegationTransaction(TransactionCore):
         """
 
         try:
+            tx:Tx = None
+
             msg = MsgUndelegate(
                 delegator_address = self.delegator_address,
                 validator_address = self.validator_address,
@@ -1087,8 +1114,13 @@ class DelegationTransaction(TransactionCore):
                     tx:Tx = self.current_wallet.create_and_sign_tx(options)
                     break
                 except LCDResponseError as err:
-                    self.sequence    = self.sequence + 1
-                    options.sequence = self.sequence
+                    if 'account sequence mismatch' in err.message:
+                        self.sequence    = self.sequence + 1
+                        options.sequence = self.sequence
+                        print ('Boosting sequence number')
+                    else:
+                        print (err)
+                        break
                 except Exception as err:
                     print (' 🛑 A random error has occurred')
                     print (err)
@@ -1134,6 +1166,7 @@ class SendTransaction(TransactionCore):
         """
 
         try:
+            tx:Tx = None
 
             msg = MsgSend(
                 from_address = self.current_wallet.key.acc_address,
@@ -1143,7 +1176,6 @@ class SendTransaction(TransactionCore):
 
             options = CreateTxOptions(
                 fee        = self.fee,
-                #fee_denoms  = ['uluna', 'uusd', 'uaud' ,'ukrw'], # 
                 gas_prices = self.gas_list,
                 memo = self.memo,
                 msgs       = [msg],
@@ -1157,8 +1189,13 @@ class SendTransaction(TransactionCore):
                     tx:Tx = self.current_wallet.create_and_sign_tx(options)
                     break
                 except LCDResponseError as err:
-                    self.sequence    = self.sequence + 1
-                    options.sequence = self.sequence
+                    if 'account sequence mismatch' in err.message:
+                        self.sequence    = self.sequence + 1
+                        options.sequence = self.sequence
+                        print ('Boosting sequence number')
+                    else:
+                        print (err)
+                        break
                 except Exception as err:
                     print (' 🛑 A random error has occurred')
                     print (err)
@@ -1169,18 +1206,13 @@ class SendTransaction(TransactionCore):
 
             return True
         except:
-            return False
+           return False
     
-    #def simulate(self, recipient_address:str, uluna_amount:int, memo:str) -> bool:
     def simulate(self) -> bool:
         """
         Simulate a delegation so we can get the fee details.
         The fee details are saved so the actual delegation will work.
         """
-
-        #self.recipient_address = recipient_address
-        #self.memo              = memo
-        #self.uluna_amount      = uluna_amount
 
         # Set the fee to be None so it is simulated
         self.fee      = None
@@ -1190,28 +1222,31 @@ class SendTransaction(TransactionCore):
         # Store the transaction
         tx:Tx = self.transaction
 
-        # Get the stub of the requested fee so we can adjust it
-        requested_fee = tx.auth_info.fee
+        if tx is not None:
+            # Get the stub of the requested fee so we can adjust it
+            requested_fee = tx.auth_info.fee
 
-        # This will be used by the swap function next time we call it
-        self.fee = self.calculateFee(requested_fee)
+            # This will be used by the swap function next time we call it
+            self.fee = self.calculateFee(requested_fee)
 
-        # Figure out the fee structure
-        fee_bit:Coin = Coin.from_str(str(requested_fee.amount))
-        fee_amount   = fee_bit.amount
-        fee_denom    = fee_bit.denom
+            # Figure out the fee structure
+            fee_bit:Coin = Coin.from_str(str(requested_fee.amount))
+            fee_amount   = fee_bit.amount
+            fee_denom    = fee_bit.denom
 
-        # Calculate the tax portion
-        self.tax = self.uluna_amount * float(self.tax_rate['tax_rate'])
+            # Calculate the tax portion
+            self.tax = self.uluna_amount * float(self.tax_rate['tax_rate'])
 
-        # Build a fee object with 
-        new_coin:Coins       = Coins({Coin(fee_denom, int(fee_amount + self.tax)), Coin('uluna', 200000)})
-        requested_fee.amount = new_coin
+            # Build a fee object with 
+            new_coin:Coins       = Coins({Coin(fee_denom, int(fee_amount + self.tax)), Coin('uluna', 200000)})
+            requested_fee.amount = new_coin
 
-        # This will be used by the swap function next time we call it
-        self.fee = requested_fee
+            # This will be used by the swap function next time we call it
+            self.fee = requested_fee
         
-        return True
+            return True
+        else:
+            return False
         
 class SwapTransaction(TransactionCore):
 
@@ -1275,13 +1310,16 @@ class SwapTransaction(TransactionCore):
         # Get the transaction result
         tx:Tx = self.transaction
 
-        # Get the stub of the requested fee so we can adjust it
-        requested_fee = tx.auth_info.fee
+        if tx is not None:
+            # Get the stub of the requested fee so we can adjust it
+            requested_fee = tx.auth_info.fee
 
-        # This will be used by the swap function next time we call it
-        self.fee = self.calculateFee(requested_fee)
+            # This will be used by the swap function next time we call it
+            self.fee = self.calculateFee(requested_fee)
 
-        return True
+            return True
+        else:
+            return False
 
     def marketSwap(self):
         """
@@ -1289,40 +1327,44 @@ class SwapTransaction(TransactionCore):
         If fee is None then it will be a simulation.
         """
 
-        tx_msg = MsgSwap(
-            trader = self.current_wallet.key.acc_address,
-            offer_coin = Coin(self.swap_denom, self.swap_amount),
-            ask_denom = self.swap_request_denom
-        )
+        try:
+            tx:Tx = None
 
-        options = CreateTxOptions(
-            fee        = self.fee,
-            gas_prices = self.gas_list,
-            msgs       = [tx_msg],
-            sequence   = self.sequence,
-        )
-        
-        tx:Tx = None
-        while True:
-            try:
-                tx:Tx = self.current_wallet.create_and_sign_tx(options)
-                break
-            except LCDResponseError as err:
-                if 'account sequence mismatch' in err.message:
-                    self.sequence    = self.sequence + 1
-                    options.sequence = self.sequence
-                    print ('boosting sequence number')
-                else:
+            tx_msg = MsgSwap(
+                trader = self.current_wallet.key.acc_address,
+                offer_coin = Coin(self.swap_denom, self.swap_amount),
+                ask_denom = self.swap_request_denom
+            )
+
+            options = CreateTxOptions(
+                fee        = self.fee,
+                gas_prices = self.gas_list,
+                msgs       = [tx_msg],
+                sequence   = self.sequence,
+            )
+            
+            while True:
+                try:
+                    tx:Tx = self.current_wallet.create_and_sign_tx(options)
+                    break
+                except LCDResponseError as err:
+                    if 'account sequence mismatch' in err.message:
+                        self.sequence    = self.sequence + 1
+                        options.sequence = self.sequence
+                        print ('Boosting sequence number')
+                    else:
+                        print (err)
+                        break
+                except Exception as err:
+                    print (' 🛑 A random error has occurred')
                     print (err)
                     break
-            except Exception as err:
-                print (' 🛑 A random error has occurred')
-                print (err)
-                break
 
-        self.transaction = tx
+            self.transaction = tx
 
-        return True
+            return True
+        except:
+            return False
 
     def simulate(self) -> bool:
         """
@@ -1345,32 +1387,36 @@ class SwapTransaction(TransactionCore):
         # Get the transaction result
         tx:Tx = self.transaction
 
-        # Get the stub of the requested fee so we can adjust it
-        requested_fee = tx.auth_info.fee
+        if tx is not None:
+            # Get the stub of the requested fee so we can adjust it
+            requested_fee = tx.auth_info.fee
 
-        # This will be used by the swap function next time we call it
-        self.fee = self.calculateFee(requested_fee)
+            # This will be used by the swap function next time we call it
+            self.fee = self.calculateFee(requested_fee)
 
-        # Figure out the fee structure
-        fee_bit:Coin = Coin.from_str(str(requested_fee.amount))
-        fee_amount   = fee_bit.amount
-        fee_denom    = fee_bit.denom
-        swap_amount  = self.swap_amount
+            # Figure out the fee structure
+            fee_bit:Coin = Coin.from_str(str(requested_fee.amount))
+            fee_amount   = fee_bit.amount
+            fee_denom    = fee_bit.denom
+            swap_amount  = self.swap_amount
 
-        # Calculate the tax portion
-        self.tax = swap_amount * float(self.tax_rate['tax_rate'])
+            # Calculate the tax portion
+            self.tax = swap_amount * float(self.tax_rate['tax_rate'])
 
-        # Build a fee object with 
-        new_coin:Coin        = Coin(fee_denom, int(fee_amount + self.tax))
-        requested_fee.amount = Coins({new_coin})
+            # Build a fee object with 
+            new_coin:Coin        = Coin(fee_denom, int(fee_amount + self.tax))
+            requested_fee.amount = Coins({new_coin})
 
-        # This will be used by the swap function next time we call it
-        self.fee = requested_fee
-        
-        # Store this so we can deduct it off the total amount to swap
-        self.fee_deductables = int(fee_amount + self.tax)
+            # This will be used by the swap function next time we call it
+            self.fee = requested_fee
+            
+            # Store this so we can deduct it off the total amount to swap
+            self.fee_deductables = int(fee_amount + self.tax)
 
-        return True
+            return True
+        else:
+            return False
+    
     
     def swap(self) -> bool:
         """
@@ -1430,10 +1476,13 @@ class SwapTransaction(TransactionCore):
                         tx:Tx = self.current_wallet.create_and_sign_tx(options)
                         break
                     except LCDResponseError as err:
-                        self.sequence    = self.sequence + 1
-                        options.sequence = self.sequence
-                        print ('boosting sequence number')
-                        print (err)
+                        if 'account sequence mismatch' in err.message:
+                            self.sequence    = self.sequence + 1
+                            options.sequence = self.sequence
+                            print ('Boosting sequence number')
+                        else:
+                            print (err)
+                            break
                     except Exception as err:
                         print (' 🛑 A random error has occurred')
                         print (err)
@@ -1455,11 +1504,6 @@ class SwapTransaction(TransactionCore):
         """
 
         swap_details:Coin = self.terra.market.swap_rate(Coin(self.swap_denom, self.swap_amount), self.swap_request_denom)
-
-        #print (swap_details)
-        #swap_coin:Coin = Coin.from_str(swap_details)
-        #swap_coin:Coin = Coin.from_str('131546uaud')
-        #print ('swap details:', swap_coin)
 
         return swap_details
     
@@ -1504,13 +1548,16 @@ class WithdrawalTransaction(TransactionCore):
         # Store the transaction
         tx:Tx = self.transaction
 
-        # Get the stub of the requested fee so we can adjust it
-        requested_fee = tx.auth_info.fee
+        if tx is not None:
+            # Get the stub of the requested fee so we can adjust it
+            requested_fee = tx.auth_info.fee
 
-        # This will be used by the swap function next time we call it
-        self.fee = self.calculateFee(requested_fee)
+            # This will be used by the swap function next time we call it
+            self.fee = self.calculateFee(requested_fee)
 
-        return True
+            return True
+        else:
+            return False
         
 
     def withdraw(self) -> bool:
@@ -1520,6 +1567,8 @@ class WithdrawalTransaction(TransactionCore):
         """
 
         try:
+            tx:Tx = None
+
             msg = MsgWithdrawDelegatorReward(
                 delegator_address = self.delegator_address,
                 validator_address = self.validator_address
@@ -1538,8 +1587,13 @@ class WithdrawalTransaction(TransactionCore):
                     tx:Tx = self.current_wallet.create_and_sign_tx(options)
                     break
                 except LCDResponseError as err:
-                    self.sequence    = self.sequence + 1
-                    options.sequence = self.sequence
+                    if 'account sequence mismatch' in err.message:
+                        self.sequence    = self.sequence + 1
+                        options.sequence = self.sequence
+                        print ('Boosting sequence number')
+                    else:
+                        print (err)
+                        break
                 except Exception as err:
                     print (' 🛑 A random error has occurred')
                     print (err)
