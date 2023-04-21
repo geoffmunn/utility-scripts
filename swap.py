@@ -154,8 +154,6 @@ def get_coin_selection(question:str, coins:dict, estimation_against:dict = None,
     label_widths.append(len('Coin'))
     label_widths.append(len('Balance'))
 
-    print ('estimation against:', estimation_against)
-
     if estimation_against is not None:
         label_widths.append(len('Estimation'))
         swaps_tx = wallet.swap().create()
