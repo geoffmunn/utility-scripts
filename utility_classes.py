@@ -9,6 +9,7 @@ import yaml
 import utility_constants
 
 from terra_classic_sdk.client.lcd import LCDClient
+#from terra_classic_sdk.client.lcd.api.auth import AuthAPI
 from terra_classic_sdk.client.lcd.api.distribution import Rewards
 from terra_classic_sdk.client.lcd.api.tx import (
     CreateTxOptions,
@@ -222,7 +223,7 @@ class Wallets:
         if 'allow_swaps' in wallet:
             wallet_item.allow_swaps = bool(wallet['allow_swaps'])
 
-        wallet_item.validated = wallet_item.validateAddress()
+        wallet_item.validated = wallet_item.validateWallet()
     
         self.wallets[wallet['wallet']] = wallet_item
 
@@ -261,7 +262,7 @@ class Wallets:
             if 'allow_swaps' in wallet:
                 wallet_item.allow_swaps = bool(wallet['allow_swaps'])
 
-            wallet_item.validated = wallet_item.validateAddress()
+            wallet_item.validated = wallet_item.validateWallet()
 
             self.wallets[wallet['wallet']] = wallet_item
 
@@ -464,7 +465,24 @@ class Wallet:
 
        return True
     
-    def validateAddress(self) -> bool:
+    # def validateAddress(self, address:str) -> bool:
+    #     """
+    #     Check that the provided address actually resolves to a terra wallet.
+    #     """
+
+    #     try:
+    #         result = self.terra.auth.account_info(address)
+
+    #         print (result)
+    #         return True
+    #     except LCDResponseError as err:
+    #         if 'decoding bech32 failed' in err.message:
+    #             return False
+    #         else:
+    #             print (err.message)
+    #             return False
+    
+    def validateWallet(self) -> bool:
         """
         Check that the password does actually resolve against any wallets
         
