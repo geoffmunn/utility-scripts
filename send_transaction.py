@@ -12,7 +12,12 @@ from utility_classes import (
     Wallet
 )
 
-import utility_constants
+from utility_constants import (
+    GAS_ADJUSTMENT_INCREMENT,
+    MAX_GAS_ADJUSTMENT,
+    USER_ACTION_CONTINUE,
+    USER_ACTION_QUIT
+)
 
 def get_user_recipient(question:str, wallet:Wallet):
     """
@@ -22,7 +27,7 @@ def get_user_recipient(question:str, wallet:Wallet):
     while True:
         recipient_address = input(question)
     
-        if recipient_address == utility_constants.USER_ACTION_QUIT:
+        if recipient_address == USER_ACTION_QUIT:
             break
 
         is_valid = wallet.validateAddress(recipient_address)
@@ -144,13 +149,13 @@ def get_user_singlechoice(question:str, user_wallets:dict) -> dict|str:
             else:
                 wallets_to_use.pop(key)
             
-        if answer == utility_constants.USER_ACTION_CONTINUE:
+        if answer == USER_ACTION_CONTINUE:
             if len(wallets_to_use) > 0:
                 break
             else:
                 print ('\nPlease select a wallet first.\n')
 
-        if answer == utility_constants.USER_ACTION_QUIT:
+        if answer == USER_ACTION_QUIT:
             break
 
     # Get the first (and only) validator from the list
@@ -189,7 +194,7 @@ def main():
 
         wallet, answer = get_user_singlechoice("Select a wallet number 1 - " + str(len(user_wallets)) + ", 'X' to continue', or 'Q' to quit: ", user_wallets)
 
-        if answer == utility_constants.USER_ACTION_QUIT:
+        if answer == USER_ACTION_QUIT:
             print (' 🛑 Exiting...')
             exit()
     else:
@@ -204,7 +209,7 @@ def main():
 
     recipient_address = get_user_recipient("What is the address you are sending to? (or type 'Q' to quit) ", wallet)
 
-    if recipient_address == utility_constants.USER_ACTION_QUIT:
+    if recipient_address == USER_ACTION_QUIT:
         print (' 🛑 Exiting...')
         exit()
         
@@ -253,7 +258,7 @@ def main():
                 if send_tx.broadcast_result.code == 11:
                     while True:
                         print (' 🛎️  Increasing the gas adjustment fee and trying again')
-                        send_tx.terra.gas_adjustment += utility_constants.GAS_ADJUSTMENT_INCREMENT
+                        send_tx.terra.gas_adjustment += GAS_ADJUSTMENT_INCREMENT
                         print (f' 🛎️  Gas adjustment value is now {send_tx.terra.gas_adjustment}')
                         send_tx.simulate()
                         print (send_tx.readableFee())
@@ -263,7 +268,7 @@ def main():
                         if send_tx.broadcast_result.code != 11:
                             break
 
-                        if send_tx.terra.gas_adjustment >= utility_constants.MAX_GAS_ADJUSTMENT:
+                        if send_tx.terra.gas_adjustment >= MAX_GAS_ADJUSTMENT:
                             break
 
                 if send_tx.broadcast_result.is_tx_error():

@@ -6,14 +6,19 @@ from getpass import getpass
 from utility_classes import (
     get_user_choice,
     get_user_number,
-    get_user_text,
-    isPercentage,
     UserConfig,
     Wallets,
     Wallet
 )
 
-import utility_constants
+from utility_constants import (
+    COIN_DIVISOR,
+    GAS_ADJUSTMENT_INCREMENT,
+    FULL_COIN_LOOKUP,
+    MAX_GAS_ADJUSTMENT,
+    USER_ACTION_CONTINUE,
+    USER_ACTION_QUIT,
+)
 
 from terra_classic_sdk.core.coin import Coin
 
@@ -128,13 +133,13 @@ def get_user_singlechoice(question:str, user_wallets:dict) -> dict|str:
             else:
                 wallets_to_use.pop(key)
             
-        if answer == utility_constants.USER_ACTION_CONTINUE:
+        if answer == USER_ACTION_CONTINUE:
             if len(wallets_to_use) > 0:
                 break
             else:
                 print ('\nPlease select a wallet first.\n')
 
-        if answer == utility_constants.USER_ACTION_QUIT:
+        if answer == USER_ACTION_QUIT:
             break
 
     # Get the first (and only) validator from the list
@@ -166,8 +171,8 @@ def get_coin_selection(question:str, coins:dict, estimation_against:dict = None,
     for coin in coins:
         coin_list.append(coin)
 
-        if coin in utility_constants.FULL_COIN_LOOKUP:
-            coin_name = utility_constants.FULL_COIN_LOOKUP[coin]
+        if coin in FULL_COIN_LOOKUP:
+            coin_name = FULL_COIN_LOOKUP[coin]
             if len(str(coin_name)) > label_widths[1]:
                 label_widths[1] = len(str(coin_name))
 
@@ -185,7 +190,7 @@ def get_coin_selection(question:str, coins:dict, estimation_against:dict = None,
                 if coin != estimation_against['denom']:
                     estimated_result:Coin = swaps_tx.swapRate()
                 else:
-                    estimated_result:Coin = Coin(estimation_against['denom'], 1 * utility_constants.COIN_DIVISOR)
+                    estimated_result:Coin = Coin(estimation_against['denom'], 1 * COIN_DIVISOR)
 
                 estimated_value:str = wallet.formatUluna(estimated_result.amount)
 
@@ -236,8 +241,8 @@ def get_coin_selection(question:str, coins:dict, estimation_against:dict = None,
 
             count_str =  f' {count}' + padding_str[0:6 - (len(str(count)) + 2)]
 
-            if coin in utility_constants.FULL_COIN_LOOKUP:
-                coin_name = utility_constants.FULL_COIN_LOOKUP[coin]
+            if coin in FULL_COIN_LOOKUP:
+                coin_name = FULL_COIN_LOOKUP[coin]
                 if label_widths[1] > len(coin_name):
                     coin_name_str = coin_name + padding_str[0:label_widths[1] - len(coin_name)]
                 else:
@@ -266,13 +271,13 @@ def get_coin_selection(question:str, coins:dict, estimation_against:dict = None,
             if estimation_against is not None:
                 returned_estimation = coin_values[coin_to_use]
             
-        if answer == utility_constants.USER_ACTION_CONTINUE:
+        if answer == USER_ACTION_CONTINUE:
             if coin_to_use is not None:
                 break
             else:
                 print ('\nPlease select a coin first.\n')
 
-        if answer == utility_constants.USER_ACTION_QUIT:
+        if answer == USER_ACTION_QUIT:
             break
 
     
@@ -308,7 +313,7 @@ def main():
 
         wallet, answer = get_user_singlechoice("Select a wallet number 1 - " + str(len(user_wallets)) + ", 'X' to continue', or 'Q' to quit: ", user_wallets)
 
-        if answer == utility_constants.USER_ACTION_QUIT:
+        if answer == USER_ACTION_QUIT:
             print (' 🛑 Exiting...')
             exit()
     else:
@@ -319,22 +324,22 @@ def main():
     print ('What coin do you want to swap FROM?')
     coin_from, answer, null_value = get_coin_selection("Select a coin number 1 - " + str(len(wallet.balances)) + ", 'X' to continue', or 'Q' to quit: ", wallet.balances)
 
-    if answer == utility_constants.USER_ACTION_QUIT:
+    if answer == USER_ACTION_QUIT:
         print (' 🛑 Exiting...')
         exit()
 
     available_balance:float = float(wallet.formatUluna(wallet.balances[coin_from]))
-    print (f'This coin has a maximum of {available_balance} {utility_constants.FULL_COIN_LOOKUP[coin_from]} available.')
+    print (f'This coin has a maximum of {available_balance} {FULL_COIN_LOOKUP[coin_from]} available.')
     swap_uluna = get_user_number('How much do you want to swap? ', {'max_number': available_balance, 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': True, 'keep_minimum': False})
 
     print ('What coin do you want to swap TO?')
     coin_to, answer, estimated_amount = get_coin_selection("Select a coin number 1 - " + str(len(wallet.balances)) + ", 'X' to continue', or 'Q' to quit: ", wallet.balances, {'denom':coin_from, 'amount':swap_uluna}, wallet)
 
-    if answer == utility_constants.USER_ACTION_QUIT:
+    if answer == USER_ACTION_QUIT:
         print (' 🛑 Exiting...')
         exit()
 
-    print (f'You will be swapping {wallet.formatUluna(swap_uluna, False)} {utility_constants.FULL_COIN_LOOKUP[coin_from]} for approximately {estimated_amount} {utility_constants.FULL_COIN_LOOKUP[coin_to]}')
+    print (f'You will be swapping {wallet.formatUluna(swap_uluna, False)} {FULL_COIN_LOOKUP[coin_from]} for approximately {estimated_amount} {FULL_COIN_LOOKUP[coin_to]}')
     complete_transaction = get_user_choice('Do you want to continue? (y/n) ', [])
 
     if complete_transaction == False:
@@ -352,7 +357,7 @@ def main():
     result = swaps_tx.marketSimulate()
     if result == True:
         print (swaps_tx.readableFee())
-        exit()
+        
         result = swaps_tx.marketSwap()
 
         if result == True:
@@ -361,7 +366,7 @@ def main():
             if swaps_tx.broadcast_result.code == 11:
                 while True:
                     print (' 🛎️  Increasing the gas adjustment fee and trying again')
-                    swaps_tx.terra.gas_adjustment += utility_constants.GAS_ADJUSTMENT_INCREMENT
+                    swaps_tx.terra.gas_adjustment += GAS_ADJUSTMENT_INCREMENT
                     print (f' 🛎️  Gas adjustment value is now {swaps_tx.terra.gas_adjustment}')
                     swaps_tx.marketSimulate()
                     print (swaps_tx.readableFee())
@@ -371,7 +376,7 @@ def main():
                     if swaps_tx.broadcast_result.code != 11:
                         break
 
-                    if swaps_tx.terra.gas_adjustment >= utility_constants.MAX_GAS_ADJUSTMENT:
+                    if swaps_tx.terra.gas_adjustment >= MAX_GAS_ADJUSTMENT:
                         break
 
             if swaps_tx.broadcast_result.is_tx_error():
