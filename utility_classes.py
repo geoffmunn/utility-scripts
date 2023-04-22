@@ -1022,7 +1022,7 @@ class DelegationTransaction(TransactionCore):
                     if 'account sequence mismatch' in err.message:
                         self.sequence    = self.sequence + 1
                         options.sequence = self.sequence
-                        print ('Boosting sequence number')
+                        print (' 🛎️  Boosting sequence number')
                     else:
                         print (err)
                         break
@@ -1072,7 +1072,7 @@ class DelegationTransaction(TransactionCore):
                     if 'account sequence mismatch' in err.message:
                         self.sequence    = self.sequence + 1
                         options.sequence = self.sequence
-                        print ('Boosting sequence number')
+                        print (' 🛎️  Boosting sequence number')
                     else:
                         print (err)
                         break
@@ -1148,7 +1148,7 @@ class DelegationTransaction(TransactionCore):
                     if 'account sequence mismatch' in err.message:
                         self.sequence    = self.sequence + 1
                         options.sequence = self.sequence
-                        print ('Boosting sequence number')
+                        print (' 🛎️  Boosting sequence number')
                     else:
                         print (err)
                         break
@@ -1223,7 +1223,7 @@ class SendTransaction(TransactionCore):
                     if 'account sequence mismatch' in err.message:
                         self.sequence    = self.sequence + 1
                         options.sequence = self.sequence
-                        print ('Boosting sequence number')
+                        print (' 🛎️  Boosting sequence number')
                     else:
                         print (err)
                         break
@@ -1269,7 +1269,11 @@ class SendTransaction(TransactionCore):
             self.tax = self.uluna_amount * float(self.tax_rate['tax_rate'])
 
             # Build a fee object with 
-            new_coin:Coins       = Coins({Coin(fee_denom, int(fee_amount + self.tax)), Coin('uluna', 200000)})
+            if fee_denom == 'uluna':
+                new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount + self.tax))})
+            else:
+                new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount)), Coin('uluna', int(self.tax))})
+
             requested_fee.amount = new_coin
 
             # This will be used by the swap function next time we call it
@@ -1382,7 +1386,7 @@ class SwapTransaction(TransactionCore):
                     if 'account sequence mismatch' in err.message:
                         self.sequence    = self.sequence + 1
                         options.sequence = self.sequence
-                        print ('Boosting sequence number')
+                        print (' 🛎️  Boosting sequence number')
                     else:
                         print (err)
                         break
@@ -1465,7 +1469,6 @@ class SwapTransaction(TransactionCore):
                 fee_denom:str   = 'uusd'
 
             if fee_denom in self.balances:
-                #swap_amount = self.balances['uusd']
                 swap_amount = self.swap_amount
 
                 if self.tax is not None:
@@ -1474,7 +1477,7 @@ class SwapTransaction(TransactionCore):
 
                 tx_msg = MsgExecuteContract(
                     sender      = self.current_wallet.key.acc_address,
-                    contract    = ASTROPORT_UUSD_TO_ULUNA_ADDRESS,
+                    contract    = TERRASWAP_ULUNA_TO_UUSD_ADDRESS,
                     execute_msg = {
                         'swap': {
                             'belief_price': str(self.belief_price),
@@ -1489,13 +1492,11 @@ class SwapTransaction(TransactionCore):
                             },
                         }
                     },
-                    coins = Coins(str(swap_amount) + 'uusd')            
+                    coins = Coins(str(swap_amount) + 'uluna')            
                 )
 
                 options = CreateTxOptions(
                     fee        = self.fee,
-                    # fee_denoms  = ['uluna'],
-                    # gas_prices  = {'uluna': self.gas_list['uluna']},
                     fee_denoms = ['uusd'],
                     gas_prices = {'uusd': self.gas_list['uusd']},
                     msgs       = [tx_msg],
@@ -1510,7 +1511,7 @@ class SwapTransaction(TransactionCore):
                         if 'account sequence mismatch' in err.message:
                             self.sequence    = self.sequence + 1
                             options.sequence = self.sequence
-                            print ('Boosting sequence number')
+                            print (' 🛎️  Boosting sequence number')
                         else:
                             print (err)
                             break
@@ -1527,6 +1528,83 @@ class SwapTransaction(TransactionCore):
         else:
             print ('No belief price calculated - did you run the simulation first?')
             return False
+        
+    # def swap(self) -> bool:
+    #     """
+    #     Make a swap with the information we have so far.
+    #     If fee is None then it will be a simulation.
+    #     """
+
+    #     if self.belief_price is not None:
+            
+    #         if self.fee is not None:
+    #             fee_amount:list = self.fee.amount.to_list()
+    #             fee_coin:Coin   = fee_amount[0]
+    #             fee_denom:str   = fee_coin.denom
+    #         else:
+    #             fee_denom:str   = 'uusd'
+
+    #         if fee_denom in self.balances:
+    #             #swap_amount = self.balances['uusd']
+    #             swap_amount = self.swap_amount
+
+    #             if self.tax is not None:
+    #                 if fee_denom == 'uusd':
+    #                     swap_amount = swap_amount - self.fee_deductables
+
+    #             tx_msg = MsgExecuteContract(
+    #                 sender      = self.current_wallet.key.acc_address,
+    #                 contract    = ASTROPORT_UUSD_TO_ULUNA_ADDRESS,
+    #                 execute_msg = {
+    #                     'swap': {
+    #                         'belief_price': str(self.belief_price),
+    #                         'max_spread': str(self.max_spread),
+    #                         'offer_asset': {
+    #                             'amount': str(swap_amount),
+    #                             'info': {
+    #                                 'native_token': {
+    #                                     'denom': self.swap_denom
+    #                                 }
+    #                             }
+    #                         },
+    #                     }
+    #                 },
+    #                 coins = Coins(str(swap_amount) + 'uusd')            
+    #             )
+
+    #             options = CreateTxOptions(
+    #                 fee        = self.fee,
+    #                 fee_denoms = ['uusd'],
+    #                 gas_prices = {'uusd': self.gas_list['uusd']},
+    #                 msgs       = [tx_msg],
+    #                 sequence   = self.sequence,
+    #             )
+                
+    #             while True:
+    #                 try:
+    #                     tx:Tx = self.current_wallet.create_and_sign_tx(options)
+    #                     break
+    #                 except LCDResponseError as err:
+    #                     if 'account sequence mismatch' in err.message:
+    #                         self.sequence    = self.sequence + 1
+    #                         options.sequence = self.sequence
+    #                         print (' 🛎️  Boosting sequence number')
+    #                     else:
+    #                         print (err)
+    #                         break
+    #                 except Exception as err:
+    #                     print (' 🛑 A random error has occurred')
+    #                     print (err)
+    #                     break
+
+    #             self.transaction = tx
+
+    #             return True
+    #         else:
+    #             return False
+    #     else:
+    #         print ('No belief price calculated - did you run the simulation first?')
+    #         return False
         
     def swapRate(self) -> Coin:
         """
@@ -1621,7 +1699,7 @@ class WithdrawalTransaction(TransactionCore):
                     if 'account sequence mismatch' in err.message:
                         self.sequence    = self.sequence + 1
                         options.sequence = self.sequence
-                        print ('Boosting sequence number')
+                        print (' 🛎️  Boosting sequence number')
                     else:
                         print (err)
                         break
