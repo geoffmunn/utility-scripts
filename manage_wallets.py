@@ -11,7 +11,22 @@ from utility_classes import (
     Wallet
 )
 
-import utility_constants
+from utility_constants import (
+    COIN_DIVISOR,
+    GAS_ADJUSTMENT_INCREMENT,
+    MAX_GAS_ADJUSTMENT,
+    USER_ACTION_ALL,
+    USER_ACTION_CONTINUE,
+    USER_ACTION_CLEAR,
+    USER_ACTION_DELEGATE,
+    USER_ACTION_QUIT,
+    USER_ACTION_SWAP,
+    USER_ACTION_SWAP_DELEGATE,
+    USER_ACTION_WITHDRAW,
+    USER_ACTION_WITHDRAW_DELEGATE,
+    WITHDRAWAL_REMAINDER,
+        
+)
 
 def get_user_multichoice(question:str, user_wallets:dict) -> dict|str:
     """
@@ -142,18 +157,18 @@ def get_user_multichoice(question:str, user_wallets:dict) -> dict|str:
             else:
                 wallets_to_use.pop(key)
             
-        if answer == utility_constants.USER_ACTION_CLEAR:
+        if answer == USER_ACTION_CLEAR:
             wallets_to_use = {}
         
-        if answer == utility_constants.USER_ACTION_ALL:
+        if answer == USER_ACTION_ALL:
             wallets_to_use = {}
             for wallet_name in user_wallets:
                 wallets_to_use[wallet_name] = user_wallets[wallet_name]
 
-        if answer == utility_constants.USER_ACTION_CONTINUE:
+        if answer == USER_ACTION_CONTINUE:
             break
 
-        if answer == utility_constants.USER_ACTION_QUIT:
+        if answer == USER_ACTION_QUIT:
             break
 
     return wallets_to_use, answer
@@ -174,16 +189,16 @@ def main():
     print ('  (Q)  Quit')
 
     user_action = get_user_choice('', [
-        utility_constants.USER_ACTION_WITHDRAW,
-        utility_constants.USER_ACTION_SWAP,
-        utility_constants.USER_ACTION_DELEGATE,
-        utility_constants.USER_ACTION_ALL,
-        utility_constants.USER_ACTION_WITHDRAW_DELEGATE,
-        utility_constants.USER_ACTION_SWAP_DELEGATE,
-        utility_constants.USER_ACTION_QUIT
+        USER_ACTION_WITHDRAW,
+        USER_ACTION_SWAP,
+        USER_ACTION_DELEGATE,
+        USER_ACTION_ALL,
+        USER_ACTION_WITHDRAW_DELEGATE,
+        USER_ACTION_SWAP_DELEGATE,
+        USER_ACTION_QUIT
     ])
 
-    if user_action == utility_constants.USER_ACTION_QUIT:
+    if user_action == USER_ACTION_QUIT:
         print (' 🛑 Exiting...')
         exit()
         
@@ -205,21 +220,19 @@ def main():
     for wallet_name in user_wallets:
         wallet:Wallet = user_wallets[wallet_name]
         delegations = wallet.getDelegations()
-        # for validator in delegations:
-        #     uluna_reward:int = delegations[validator]['rewards']['uluna']
-
+        
     action_string = ''
-    if user_action == utility_constants.USER_ACTION_WITHDRAW:
+    if user_action == USER_ACTION_WITHDRAW:
         action_string = 'withdraw rewards'
-    if user_action == utility_constants.USER_ACTION_SWAP:
+    if user_action == USER_ACTION_SWAP:
         action_string = 'swap USTC for LUNC'
-    if user_action == utility_constants.USER_ACTION_DELEGATE:
+    if user_action == USER_ACTION_DELEGATE:
         action_string = 'delegate all available funds'
-    if user_action == utility_constants.USER_ACTION_WITHDRAW_DELEGATE:
+    if user_action == USER_ACTION_WITHDRAW_DELEGATE:
         action_string = 'withdraw rewards and delegate everything'
-    if user_action == utility_constants.USER_ACTION_SWAP_DELEGATE:
+    if user_action == USER_ACTION_SWAP_DELEGATE:
         action_string = 'swap USTC for LUNC and delegate everything'
-    if user_action == utility_constants.USER_ACTION_ALL:
+    if user_action == USER_ACTION_ALL:
         action_string = 'withdraw rewards, swap USTC for LUNC, and then delegate everything'
 
     if action_string == '':
@@ -231,7 +244,7 @@ def main():
 
         user_wallets,answer = get_user_multichoice("Select a wallet number 1 - " + str(len(user_wallets)) + ", or 'A' to add all of them, 'C' to clear the list, 'X' to continue', or 'Q' to quit: ", user_wallets)
 
-        if answer == utility_constants.USER_ACTION_QUIT:
+        if answer == USER_ACTION_QUIT:
             print (' 🛑 Exiting...')
             exit()
     else:
@@ -252,7 +265,7 @@ def main():
                 print ('\n------------------------------------')
                 print (f"The {delegations[validator]['validator_name']} validator has a {delegations[validator]['commission']}% commission.")
 
-                if user_action in [utility_constants.USER_ACTION_WITHDRAW, utility_constants.USER_ACTION_WITHDRAW_DELEGATE, utility_constants.USER_ACTION_ALL]:
+                if user_action in [USER_ACTION_WITHDRAW, USER_ACTION_WITHDRAW_DELEGATE, USER_ACTION_ALL]:
 
                     print ('Starting withdrawals...')
 
@@ -285,7 +298,7 @@ def main():
                                 if withdrawal_tx.broadcast_result.code == 11:
                                     while True:
                                         print (' 🛎️  Increasing the gas adjustment fee and trying again')
-                                        withdrawal_tx.terra.gas_adjustment += utility_constants.GAS_ADJUSTMENT_INCREMENT
+                                        withdrawal_tx.terra.gas_adjustment += GAS_ADJUSTMENT_INCREMENT
                                         print (f' 🛎️  Gas adjustment value is now {withdrawal_tx.terra.gas_adjustment}')
                                         withdrawal_tx.simulate()
                                         print (withdrawal_tx.readableFee())
@@ -295,7 +308,7 @@ def main():
                                         if withdrawal_tx.broadcast_result.code != 11:
                                             break
 
-                                        if withdrawal_tx.terra.gas_adjustment >= utility_constants.MAX_GAS_ADJUSTMENT:
+                                        if withdrawal_tx.terra.gas_adjustment >= MAX_GAS_ADJUSTMENT:
                                             break
                                         
                                 if withdrawal_tx.broadcast_result.is_tx_error():
@@ -311,7 +324,7 @@ def main():
                         print (' 🛎️  The amount of LUNC in this wallet does not exceed the withdrawal threshold')
 
             # Swap any uusd coins for uluna
-            if user_action in [utility_constants.USER_ACTION_SWAP, utility_constants.USER_ACTION_SWAP_DELEGATE, utility_constants.USER_ACTION_ALL]:
+            if user_action in [USER_ACTION_SWAP, USER_ACTION_SWAP_DELEGATE, USER_ACTION_ALL]:
 
                 if wallet.allow_swaps == True:
                     print ('\n------------------------------------')
@@ -349,7 +362,7 @@ def main():
                                     if swaps_tx.broadcast_result.code == 11:
                                         while True:
                                             print (' 🛎️  Increasing the gas adjustment fee and trying again')
-                                            swaps_tx.terra.gas_adjustment += utility_constants.GAS_ADJUSTMENT_INCREMENT
+                                            swaps_tx.terra.gas_adjustment += GAS_ADJUSTMENT_INCREMENT
                                             print (f' 🛎️  Gas adjustment value is now {swaps_tx.terra.gas_adjustment}')
                                             swaps_tx.simulate()
                                             print (swaps_tx.readableFee())
@@ -359,7 +372,7 @@ def main():
                                             if swaps_tx.broadcast_result.code != 11:
                                                 break
 
-                                            if swaps_tx.terra.gas_adjustment >= utility_constants.MAX_GAS_ADJUSTMENT:
+                                            if swaps_tx.terra.gas_adjustment >= MAX_GAS_ADJUSTMENT:
                                                 break
                                             
                                     if swaps_tx.broadcast_result.is_tx_error():
@@ -380,7 +393,7 @@ def main():
                     print ('Swaps not allowed on this wallet')
 
             # Redelegate anything we might have
-            if user_action in [utility_constants.USER_ACTION_DELEGATE, utility_constants.USER_ACTION_WITHDRAW_DELEGATE, utility_constants.USER_ACTION_SWAP_DELEGATE, utility_constants.USER_ACTION_ALL]:
+            if user_action in [USER_ACTION_DELEGATE, USER_ACTION_WITHDRAW_DELEGATE, USER_ACTION_SWAP_DELEGATE, USER_ACTION_ALL]:
                 
                 # Only delegate if the wallet is configured for delegations
                 if 'delegate' in wallet.delegations:       
@@ -403,7 +416,7 @@ def main():
                             delegated_uluna:int = int(str(wallet.delegations['delegate']).strip(' '))
 
                         # Adjust this so we have the desired amount still remaining
-                        delegated_uluna = int(delegated_uluna - ((utility_constants.WITHDRAWAL_REMAINDER) * utility_constants.COIN_DIVISOR))
+                        delegated_uluna = int(delegated_uluna - ((WITHDRAWAL_REMAINDER) * COIN_DIVISOR))
 
                         if delegated_uluna > 0 and delegated_uluna <= wallet.balances['uluna']:
                             print (f'Delegating {wallet.formatUluna(delegated_uluna, True)}')
@@ -432,7 +445,7 @@ def main():
                                     if delegation_tx.broadcast_result.code == 11:
                                         while True:
                                             print (' 🛎️  Increasing the gas adjustment fee and trying again')
-                                            delegation_tx.terra.gas_adjustment += utility_constants.GAS_ADJUSTMENT_INCREMENT
+                                            delegation_tx.terra.gas_adjustment += GAS_ADJUSTMENT_INCREMENT
                                             print (f' 🛎️  Gas adjustment value is now {delegation_tx.terra.gas_adjustment}')
                                             delegation_tx.simulate(delegation_tx.delegate)
                                             print (delegation_tx.readableFee())
@@ -442,7 +455,7 @@ def main():
                                             if delegation_tx.broadcast_result.code != 11:
                                                 break
 
-                                            if delegation_tx.terra.gas_adjustment >= utility_constants.MAX_GAS_ADJUSTMENT:
+                                            if delegation_tx.terra.gas_adjustment >= MAX_GAS_ADJUSTMENT:
                                                 break
                                         
                                     if delegation_tx.broadcast_result.is_tx_error():
