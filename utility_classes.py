@@ -6,10 +6,22 @@ import json
 import cryptocode
 import yaml
 
-import utility_constants
+from utility_constants import (
+    ASTROPORT_UUSD_TO_ULUNA_ADDRESS,
+    COIN_DIVISOR,
+    CONFIG_FILE_NAME,
+    FULL_COIN_LOOKUP,
+    GAS_ADJUSTMENT,
+    GAS_ADJUSTMENT_SWAPS,
+    GAS_PRICE_URI,
+    SEARCH_RETRY_COUNT,
+    TAX_RATE_URI,
+    TERRASWAP_ULUNA_TO_UUSD_ADDRESS,
+    WITHDRAWAL_REMAINDER,
+    
+)
 
 from terra_classic_sdk.client.lcd import LCDClient
-#from terra_classic_sdk.client.lcd.api.auth import AuthAPI
 from terra_classic_sdk.client.lcd.api.distribution import Rewards
 from terra_classic_sdk.client.lcd.api.tx import (
     CreateTxOptions,
@@ -179,7 +191,7 @@ def get_user_number(question:str, params:dict) -> float|str:
         else:
             answer = answer + '%'
     else:
-        answer = float(float(answer) * utility_constants.COIN_DIVISOR)
+        answer = float(float(answer) * COIN_DIVISOR)
 
     return answer
 
@@ -189,7 +201,7 @@ class UserConfig:
         self.file_exists:bool
 
         try:
-            with open(utility_constants.CONFIG_FILE_NAME, 'r') as file:
+            with open(CONFIG_FILE_NAME, 'r') as file:
                 self.user_config = yaml.safe_load(file)
                 self.file_exists = True
         except:
@@ -319,14 +331,14 @@ class Wallet:
         #if isPercentage(lunc_amount):
         percentage:float = float(percentage) / 100
         if keep_minimum == True:
-            lunc_amount:float = float((target_amount- utility_constants.WITHDRAWAL_REMAINDER) * percentage)
+            lunc_amount:float = float((target_amount - WITHDRAWAL_REMAINDER) * percentage)
             if lunc_amount < 0:
                 lunc_amount = 0
         else:
             lunc_amount:float = float(target_amount) * percentage
             
         lunc_amount:float = float(str(lunc_amount).replace('.0', ''))
-        uluna_amount:int  = int(lunc_amount * utility_constants.COIN_DIVISOR)
+        uluna_amount:int  = int(lunc_amount * COIN_DIVISOR)
 
         return uluna_amount
     
@@ -361,7 +373,7 @@ class Wallet:
         A generic helper function to convert uluna amounts to LUNC.
         """
 
-        lunc:float = round(float(uluna / utility_constants.COIN_DIVISOR), 6)
+        lunc:float = round(float(uluna / COIN_DIVISOR), 6)
 
         lunc = ("%.6f" % (lunc)).rstrip('0').rstrip('.')
 
@@ -518,7 +530,7 @@ class Wallet:
 class TerraInstance:
     def __init__(self):
         self.chain_id       = 'columbus-5'
-        self.gas_adjustment = utility_constants.GAS_ADJUSTMENT
+        self.gas_adjustment = GAS_ADJUSTMENT
         #self.gas_list       = None
         #self.gas_price_url  = gas_price_url
         #self.tax_rate      = None
@@ -773,7 +785,7 @@ class TransactionCore():
         self.transaction:Tx                          = None
         
         # Initialise the basic variables:
-        self.gas_price_url = utility_constants.GAS_PRICE_URI
+        self.gas_price_url = GAS_PRICE_URI
         terra              = TerraInstance()
         self.terra         = terra.create()
 
@@ -881,7 +893,7 @@ class TransactionCore():
 
             retry_count += 1
 
-            if retry_count <= utility_constants.SEARCH_RETRY_COUNT:
+            if retry_count <= SEARCH_RETRY_COUNT:
                 print ('Tx hash not found, giving it another go')
                 time.sleep(1)
             else:
@@ -922,8 +934,8 @@ class TransactionCore():
         fee_coin:Coin
         for fee_coin in fee_coins.to_list():
 
-            amount = fee_coin.amount / utility_constants.COIN_DIVISOR
-            denom  = utility_constants.FULL_COIN_LOOKUP[fee_coin.denom]
+            amount = fee_coin.amount / COIN_DIVISOR
+            denom  = FULL_COIN_LOOKUP[fee_coin.denom]
 
             if first == False:
                 fee_string += ', and ' + str(amount) + ' ' + denom
@@ -941,7 +953,7 @@ class TransactionCore():
 
         if self.tax_rate is None:
             try:
-                tax_rate:json = requests.get(utility_constants.TAX_RATE_URI).json()
+                tax_rate:json = requests.get(TAX_RATE_URI).json()
                 self.tax_rate = tax_rate
             except:
                 print (' 🛑 Error getting the tax rate')
@@ -1287,7 +1299,7 @@ class SwapTransaction(TransactionCore):
         Figure out the belief price for this swap.
         """
 
-        result = self.terra.wasm.contract_query(utility_constants.TERRASWAP_ULUNA_TO_UUSD_ADDRESS, {"pool": {}})
+        result = self.terra.wasm.contract_query(TERRASWAP_ULUNA_TO_UUSD_ADDRESS, {"pool": {}})
 
         belief_price:float = int(result['assets'][0]['amount']) / int(result['assets'][1]['amount']) 
 
@@ -1321,7 +1333,7 @@ class SwapTransaction(TransactionCore):
         self.sequence        = self.current_wallet.sequence()
 
         # Bump up the gas adjustment - it needs to be higher for swaps it turns out
-        self.terra.gas_adjustment = utility_constants.GAS_ADJUSTMENT_SWAPS
+        self.terra.gas_adjustment = GAS_ADJUSTMENT_SWAPS
 
         #Perform the swap as a simulation, with no fee details
         self.marketSwap()
@@ -1398,7 +1410,7 @@ class SwapTransaction(TransactionCore):
         self.sequence        = self.current_wallet.sequence()
 
         # Bump up the gas adjustment - it needs to be higher for swaps it turns out
-        self.terra.gas_adjustment = utility_constants.GAS_ADJUSTMENT_SWAPS
+        self.terra.gas_adjustment = GAS_ADJUSTMENT_SWAPS
 
         # Perform the swap as a simulation, with no fee details
         self.swap()
@@ -1462,7 +1474,7 @@ class SwapTransaction(TransactionCore):
 
                 tx_msg = MsgExecuteContract(
                     sender      = self.current_wallet.key.acc_address,
-                    contract    = utility_constants.ASTROPORT_UUSD_TO_ULUNA_ADDRESS,
+                    contract    = ASTROPORT_UUSD_TO_ULUNA_ADDRESS,
                     execute_msg = {
                         'swap': {
                             'belief_price': str(self.belief_price),
