@@ -6,16 +6,29 @@ from getpass import getpass
 from utility_classes import (
     get_user_choice,
     get_user_number,
-    isPercentage,
     UserConfig,
     Validators,
     Wallets,
     Wallet
 )
 
-from datetime import timedelta, datetime, timezone
+from datetime import datetime, timezone
 
-import utility_constants
+#import utility_constants
+from utility_constants import (
+    GAS_ADJUSTMENT_INCREMENT,
+    MAX_GAS_ADJUSTMENT,
+    MAX_VALIDATOR_COUNT,
+    USER_ACTION_ALL,
+    USER_ACTION_CLEAR,
+    USER_ACTION_CONTINUE,
+    USER_ACTION_QUIT,
+    USER_ACTION_VALIDATOR_DELEGATE,
+    USER_ACTION_VALIDATOR_LIST_UNDELEGATIONS,
+    USER_ACTION_VALIDATOR_UNDELEGATE,
+    USER_ACTION_VALIDATOR_SWITCH,
+    WITHDRAWAL_REMAINDER
+)
 
 def get_user_multichoice(question:str, user_wallets:dict) -> dict|str:
     """
@@ -49,18 +62,18 @@ def get_user_multichoice(question:str, user_wallets:dict) -> dict|str:
             else:
                 wallets_to_use.pop(key)
             
-        if answer == utility_constants.USER_ACTION_CLEAR:
+        if answer == USER_ACTION_CLEAR:
             wallets_to_use = {}
         
-        if answer == utility_constants.USER_ACTION_ALL:
+        if answer == USER_ACTION_ALL:
             wallets_to_use = {}
             for wallet_name in user_wallets:
                 wallets_to_use[wallet_name] = user_wallets[wallet_name]
 
-        if answer == utility_constants.USER_ACTION_CONTINUE:
+        if answer == USER_ACTION_CONTINUE:
             break
 
-        if answer == utility_constants.USER_ACTION_QUIT:
+        if answer == USER_ACTION_QUIT:
             break
 
     return wallets_to_use, answer
@@ -223,13 +236,13 @@ def get_user_singlechoice(question:str, user_wallets:dict) -> dict|str:
             else:
                 wallets_to_use.pop(key)
             
-        if answer == utility_constants.USER_ACTION_CONTINUE:
+        if answer == USER_ACTION_CONTINUE:
             if len(wallets_to_use) > 0:
                 break
             else:
                 print ('\nPlease select a wallet first.\n')
 
-        if answer == utility_constants.USER_ACTION_QUIT:
+        if answer == USER_ACTION_QUIT:
             break
 
     # Get the first (and only) validator from the list
@@ -323,7 +336,7 @@ def get_validator_singlechoice(question:str, validators:dict, filter_list:list, 
 
                 print (f"{count_str}{glyph} | {commission_str} |{voting_power_str} |{delegated} |{validator_name_str}")
 
-                if count == utility_constants.MAX_VALIDATOR_COUNT:
+                if count == MAX_VALIDATOR_COUNT:
                     break
             
         print (horizontal_spacer + '\n')
@@ -346,7 +359,7 @@ def get_validator_singlechoice(question:str, validators:dict, filter_list:list, 
             else:
                 print ('\nPlease select a validator first.\n')
 
-        if answer == utility_constants.USER_ACTION_QUIT:
+        if answer == USER_ACTION_QUIT:
             break
 
     # Get the first (and only) validator from the list
@@ -389,7 +402,7 @@ def main():
 
         wallet, answer = get_user_singlechoice("Select a wallet number 1 - " + str(len(user_wallets)) + ", 'X' to continue', or 'Q' to quit: ", user_wallets)
 
-        if answer == utility_constants.USER_ACTION_QUIT:
+        if answer == USER_ACTION_QUIT:
             print (' 🛑 Exiting...')
             exit()
     else:
@@ -405,14 +418,14 @@ def main():
     print ('  (Q)  Quit')
     
     user_action = get_user_choice('', [
-        utility_constants.USER_ACTION_VALIDATOR_DELEGATE,
-        utility_constants.USER_ACTION_VALIDATOR_LIST_UNDELEGATIONS,
-        utility_constants.USER_ACTION_VALIDATOR_UNDELEGATE,
-        utility_constants.USER_ACTION_VALIDATOR_SWITCH,
-        utility_constants.USER_ACTION_QUIT
+        USER_ACTION_VALIDATOR_DELEGATE,
+        USER_ACTION_VALIDATOR_LIST_UNDELEGATIONS,
+        USER_ACTION_VALIDATOR_UNDELEGATE,
+        USER_ACTION_VALIDATOR_SWITCH,
+        USER_ACTION_QUIT
     ])
 
-    if user_action == utility_constants.USER_ACTION_QUIT:
+    if user_action == USER_ACTION_QUIT:
         print (' 🛑 Exiting...')
         exit()
 
@@ -429,18 +442,18 @@ def main():
 
     delegations = wallet.getDelegations()
 
-    if user_action == utility_constants.USER_ACTION_VALIDATOR_DELEGATE:
+    if user_action == USER_ACTION_VALIDATOR_DELEGATE:
 
         print (f'Select a validator to delegate to:')
 
         user_validator, answer = get_validator_singlechoice("Select a validator number 1 - " + str(len(sorted_validators)) + ", 'X' to continue', or 'Q' to quit: ", sorted_validators, [], delegations)
 
-        if answer == utility_constants.USER_ACTION_QUIT:
+        if answer == USER_ACTION_QUIT:
             print (' 🛑 Exiting...')
             exit()
 
         print (f"The {wallet.name} wallet holds {wallet.formatUluna(wallet.balances['uluna'], True)}")
-        print (f"NOTE: A minimum amount of {utility_constants.WITHDRAWAL_REMAINDER} LUNC will be retained for future transactions.")
+        print (f"NOTE: A minimum amount of {WITHDRAWAL_REMAINDER} LUNC will be retained for future transactions.")
         delegated_uluna:float = get_user_number('How much are you delegating? ', {'max_number': float(wallet.formatUluna(wallet.balances['uluna'])), 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': True, 'keep_minimum': True})
                 
         if delegated_uluna == 0:
@@ -480,7 +493,7 @@ def main():
                 if delegation_tx.broadcast_result.code == 11:
                     while True:
                         print (' 🛎️  Increasing the gas adjustment fee and trying again')
-                        delegation_tx.terra.gas_adjustment += utility_constants.GAS_ADJUSTMENT_INCREMENT
+                        delegation_tx.terra.gas_adjustment += GAS_ADJUSTMENT_INCREMENT
                         print (f' 🛎️  Gas adjustment value is now {delegation_tx.terra.gas_adjustment}')
                         delegation_tx.simulate(delegation_tx.delegate)
                         print (delegation_tx.readableFee())
@@ -490,7 +503,7 @@ def main():
                         if delegation_tx.broadcast_result.code != 11:
                             break
 
-                        if delegation_tx.terra.gas_adjustment >= utility_constants.MAX_GAS_ADJUSTMENT:
+                        if delegation_tx.terra.gas_adjustment >= MAX_GAS_ADJUSTMENT:
                             break
                     
                 if delegation_tx.broadcast_result.is_tx_error():
@@ -504,7 +517,7 @@ def main():
         else:
             print ('🛎️  The delegation could not be completed')
 
-    if user_action == utility_constants.USER_ACTION_VALIDATOR_UNDELEGATE:
+    if user_action == USER_ACTION_VALIDATOR_UNDELEGATE:
         print (f'Select a validator to undelegate from:')
 
         # Get the validators currently being used
@@ -516,7 +529,7 @@ def main():
 
         user_validator, answer = get_validator_singlechoice("Select a validator number 1 - " + str(len(filter_list)) + ", 'X' to continue', or 'Q' to quit: ", sorted_validators, filter_list, delegations)
 
-        if answer == utility_constants.USER_ACTION_QUIT:
+        if answer == USER_ACTION_QUIT:
             print (' 🛑 Exiting...')
             exit()
 
@@ -560,7 +573,7 @@ def main():
                 if undelegation_tx.broadcast_result.code == 11:
                     while True:
                         print (' 🛎️  Increasing the gas adjustment fee and trying again')
-                        undelegation_tx.terra.gas_adjustment += utility_constants.GAS_ADJUSTMENT_INCREMENT
+                        undelegation_tx.terra.gas_adjustment += GAS_ADJUSTMENT_INCREMENT
                         print (f' 🛎️  Gas adjustment value is now {undelegation_tx.terra.gas_adjustment}')
                         undelegation_tx.simulate(undelegation_tx.undelegate)
                         print (undelegation_tx.readableFee())
@@ -570,7 +583,7 @@ def main():
                         if undelegation_tx.broadcast_result.code != 11:
                             break
 
-                        if undelegation_tx.terra.gas_adjustment >= utility_constants.MAX_GAS_ADJUSTMENT:
+                        if undelegation_tx.terra.gas_adjustment >= MAX_GAS_ADJUSTMENT:
                             break
 
                 if undelegation_tx.broadcast_result.is_tx_error():
@@ -584,7 +597,7 @@ def main():
         else:
             print ('🛎️  The undelegation could not be completed')
         
-    if user_action == utility_constants.USER_ACTION_VALIDATOR_SWITCH:
+    if user_action == USER_ACTION_VALIDATOR_SWITCH:
         # Get the validators currently being used
         
         filter_list:list = []
@@ -595,14 +608,14 @@ def main():
         print (f'Select a validator to delegate switch FROM:')
         from_validator, answer = get_validator_singlechoice("Select a validator number 1 - " + str(len(filter_list)) + ", 'X' to continue', or 'Q' to quit: ", sorted_validators, filter_list, delegations)
 
-        if answer == utility_constants.USER_ACTION_QUIT:
+        if answer == USER_ACTION_QUIT:
             print (' 🛑 Exiting...')
             exit()
 
         print (f'Select a validator to delegate switch TO:')
         to_validator, answer = get_validator_singlechoice("Select a validator number 1 - " + str(len(sorted_validators)) + ", 'X' to continue', or 'Q' to quit: ", sorted_validators, [], delegations)
 
-        if answer == utility_constants.USER_ACTION_QUIT:
+        if answer == USER_ACTION_QUIT:
             print (' 🛑 Exiting...')
             exit()
         
@@ -645,7 +658,7 @@ def main():
                 if delegation_tx.broadcast_result.code == 11:
                     while True:
                         print (' 🛎️  Increasing the gas adjustment fee and trying again')
-                        delegation_tx.terra.gas_adjustment += utility_constants.GAS_ADJUSTMENT_INCREMENT
+                        delegation_tx.terra.gas_adjustment += GAS_ADJUSTMENT_INCREMENT
                         print (f' 🛎️  Gas adjustment value is now {delegation_tx.terra.gas_adjustment}')
                         delegation_tx.simulate(delegation_tx.redelegate)
                         print (delegation_tx.readableFee())
@@ -655,7 +668,7 @@ def main():
                         if delegation_tx.broadcast_result.code != 11:
                             break
 
-                        if delegation_tx.terra.gas_adjustment >= utility_constants.MAX_GAS_ADJUSTMENT:
+                        if delegation_tx.terra.gas_adjustment >= MAX_GAS_ADJUSTMENT:
                             break
                     
                 if delegation_tx.broadcast_result.is_tx_error():
@@ -669,7 +682,7 @@ def main():
         else:
             print ('🛎️  The delegation could not be completed')
     
-    if user_action == utility_constants.USER_ACTION_VALIDATOR_LIST_UNDELEGATIONS:
+    if user_action == USER_ACTION_VALIDATOR_LIST_UNDELEGATIONS:
         
         validators = Validators()
         validators.create()
