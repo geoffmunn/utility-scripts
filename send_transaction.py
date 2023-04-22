@@ -230,13 +230,12 @@ def main():
     # Now start doing stuff
     print (f'\nAccessing the {wallet.name} wallet...')
     
-    print ('sending uluna:', uluna_amount)
     if 'uluna' in wallet.balances:
         print (f'Sending {wallet.formatUluna(uluna_amount, True)}')
 
         # Create the send tx object
         send_tx = wallet.send().create()
-
+        
         # Assign the details:
         send_tx.recipient_address = recipient_address
         send_tx.memo              = memo
