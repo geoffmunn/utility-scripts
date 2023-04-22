@@ -50,21 +50,21 @@ def get_user_multichoice(question:str, user_wallets:dict) -> dict|str:
         balances    = wallet.getBalances()
 
         # Initialise the reward values
-        uluna_reward:int = 0
+        ulunc_reward:int = 0
         ustc_reward:int  = 0
 
         for validator in delegations:
             if 'uluna' in delegations[validator]['rewards']:
-                uluna_reward += int(wallet.formatUluna(delegations[validator]['rewards']['uluna'], False))
+                ulunc_reward += float(wallet.formatUluna(delegations[validator]['rewards']['uluna'], False))
                                     
             if 'uusd' in delegations[validator]['rewards']:
-                ustc_reward += int(wallet.formatUluna(delegations[validator]['rewards']['uusd'], False))
+                ustc_reward += float(wallet.formatUluna(delegations[validator]['rewards']['uusd'], False))
 
         if len(wallet_name) > label_widths[1]:
             label_widths[1] = len(wallet_name)
 
-        if len(str(uluna_reward)) > label_widths[2]:
-            label_widths[2] = len(str(uluna_reward))
+        if len(str(ulunc_reward)) > label_widths[2]:
+            label_widths[2] = len(str(ulunc_reward))
 
         if len(str(ustc_reward)) > label_widths[3]:
             label_widths[3] = len(str(ustc_reward))
