@@ -10,7 +10,10 @@ from utility_classes import (
     Wallet
 )
 
-import utility_constants
+from utility_constants import (
+    COIN_DIVISOR,
+    CONFIG_FILE_NAME
+)
 
 # @TODO
 #   - confirm password?
@@ -51,9 +54,9 @@ def main():
         threshold         = get_user_number('What is the minimum amount in LUNC before we withdraw rewards? ', {'min_number': 0, 'min_equal_to': True})
 
         # Convert the amount and threshold into uluna:
-        threshold         = threshold * utility_constants.COIN_DIVISOR
+        threshold         = threshold * COIN_DIVISOR
         if isPercentage(redelegate_amount) == False:
-            redelegate_amount = redelegate_amount * utility_constants.COIN_DIVISOR
+            redelegate_amount = redelegate_amount * COIN_DIVISOR
 
     allow_swaps = get_user_choice('Do you want to allow swaps? (y/n) ', [])
 
@@ -61,11 +64,11 @@ def main():
     wallet_seed_encrypted = cryptocode.encrypt(wallet_seed, user_password)
 
     # Get the user configuration details from the default location
-    file_exists = exists(utility_constants.CONFIG_FILE_NAME)
+    file_exists = exists(CONFIG_FILE_NAME)
     data:list = {}
 
     if file_exists:
-        with open(utility_constants.CONFIG_FILE_NAME, 'r') as file:
+        with open(CONFIG_FILE_NAME, 'r') as file:
             output = file.read()
 
         # Turn the existing user file into a list
@@ -155,7 +158,7 @@ def main():
     output += '\n...'
     
     # Write the entire contents to a new version of the file
-    file = open(utility_constants.CONFIG_FILE_NAME, 'w')
+    file = open(CONFIG_FILE_NAME, 'w')
     file.write(output )
     file.close()
 
