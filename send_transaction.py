@@ -14,6 +14,27 @@ from utility_classes import (
 
 import utility_constants
 
+def get_user_recipient(question:str, wallet:Wallet):
+    """
+    Get the recipient address that we are sending to.
+    """
+
+    while True:
+        recipient_address = input(question)
+    
+        if recipient_address == utility_constants.USER_ACTION_QUIT:
+            break
+
+        is_valid = wallet.validateAddress(recipient_address)
+
+        if is_valid == True:
+            break
+
+        print (' 🛎️  This is an invalid address - please check and try again.')
+
+    return recipient_address
+
+
 def get_user_singlechoice(question:str, user_wallets:dict) -> dict|str:
     """
     Get a single user selection from a list.
@@ -180,8 +201,13 @@ def main():
         exit()
                        
     # If we're sending LUNC then we need a few more details:
-    recipient_address:str = input('What is the address you are sending to? ')
 
+    recipient_address = get_user_recipient("What is the address you are sending to? (or type 'Q' to quit) ", wallet)
+
+    if recipient_address == utility_constants.USER_ACTION_QUIT:
+        print (' 🛑 Exiting...')
+        exit()
+        
     print (f"The {wallet.name} wallet holds {wallet.formatUluna(wallet.balances['uluna'], True)}")
     print (f"NOTE: You can send the entire value of this wallet by typing '100%' - no minimum amount will be retained.")
     uluna_amount:int = get_user_number('How much are you sending? ', {'max_number': float(wallet.formatUluna(wallet.balances['uluna'], False)), 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': True, 'keep_minimum': False})

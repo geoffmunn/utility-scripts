@@ -465,22 +465,23 @@ class Wallet:
 
        return True
     
-    # def validateAddress(self, address:str) -> bool:
-    #     """
-    #     Check that the provided address actually resolves to a terra wallet.
-    #     """
+    def validateAddress(self, address:str) -> bool:
+        """
+        Check that the provided address actually resolves to a terra wallet.
+        """
 
-    #     try:
-    #         result = self.terra.auth.account_info(address)
+        try:
+            result = self.terra.auth.account_info(address)
 
-    #         print (result)
-    #         return True
-    #     except LCDResponseError as err:
-    #         if 'decoding bech32 failed' in err.message:
-    #             return False
-    #         else:
-    #             print (err.message)
-    #             return False
+            # No need to do anything - if it doesn't return an error then it's valid
+            return True
+        
+        except LCDResponseError as err:
+            if 'decoding bech32 failed' in err.message:
+                return False
+            else:
+                print (err.message)
+                return False
     
     def validateWallet(self) -> bool:
         """
