@@ -12,7 +12,11 @@ from utility_classes import (
     Wallet
 )
 
-import utility_constants
+from utility_constants import (
+    COIN_DIVISOR,
+    BASIC_COIN_LOOKUP,
+    FULL_COIN_LOOKUP
+)
 
 def main():
     
@@ -22,9 +26,9 @@ def main():
     just_main_coins:bool = get_user_choice('Show just LUNC and USTC? (y/n) ', [])
 
     if just_main_coins == True:
-        coin_lookup = utility_constants.BASIC_COIN_LOOKUP
+        coin_lookup = BASIC_COIN_LOOKUP
     else:
-        coin_lookup = utility_constants.FULL_COIN_LOOKUP
+        coin_lookup = FULL_COIN_LOOKUP
 
     # Get the user config file contents
     user_config:str = UserConfig().contents()
@@ -84,7 +88,7 @@ def main():
             label_widths[1] = len(wallet_name)
 
         for denom in wallet.balances:            
-            raw_amount = float(wallet.balances[denom]) / utility_constants.COIN_DIVISOR
+            raw_amount = float(wallet.balances[denom]) / COIN_DIVISOR
             amount     = ("%.6f" % (raw_amount)).rstrip('0').rstrip('.')
 
             if float(amount) > 0:
@@ -120,10 +124,10 @@ def main():
             for denom in delegations[validator]['rewards']:
 
                 if denom == 'uluna':
-                    raw_amount = delegations[validator]['balance_amount'] / utility_constants.COIN_DIVISOR
+                    raw_amount = delegations[validator]['balance_amount'] / COIN_DIVISOR
                     delegated_amount += float(("%.6f" % (raw_amount)).rstrip('0').rstrip('.'))
 
-                raw_amount = float(delegations[validator]['rewards'][denom]) / utility_constants.COIN_DIVISOR
+                raw_amount = float(delegations[validator]['rewards'][denom]) / COIN_DIVISOR
                 amount = ("%.6f" % (raw_amount)).rstrip('0').rstrip('.')
 
                 if denom in coin_lookup:
