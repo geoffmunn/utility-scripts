@@ -622,7 +622,7 @@ def main():
         total_delegated_uluna = delegations[from_validator['moniker']]['balance_amount']
         print (f"The {from_validator['moniker']} wallet holds {wallet.formatUluna(total_delegated_uluna, True)}")
         print (f"NOTE: You can switch the entire value of this delegation by typing '100%' - no minimum amount will be retained.")
-        switched_uluna:str = get_user_number('How much are you switching? ', {'max_number': float(wallet.formatUluna(total_delegated_uluna, False)), 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': True, 'keep_minimum': False})
+        switched_uluna:float = get_user_number('How much are you switching? ', {'max_number': float(wallet.formatUluna(total_delegated_uluna, False)), 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': True, 'keep_minimum': False})
         
         print (f"You are about to switch {wallet.formatUluna(switched_uluna, True)} from {from_validator['moniker']} and move it to {to_validator['moniker']}.")
         complete_transaction = get_user_choice('Do you want to continue? (y/n) ', [])
@@ -640,7 +640,7 @@ def main():
         delegation_tx.delegator_address     = wallet.address
         delegation_tx.validator_address     = to_validator['operator_address']
         delegation_tx.validator_address_old = from_validator['operator_address']
-        delegation_tx.delegated_uluna       = switched_uluna
+        delegation_tx.delegated_uluna       = int(switched_uluna)
 
         # Simulate it
         result = delegation_tx.simulate(delegation_tx.redelegate)
