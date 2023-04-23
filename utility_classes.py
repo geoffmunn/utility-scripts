@@ -7,7 +7,6 @@ import cryptocode
 import yaml
 
 from utility_constants import (
-    ASTROPORT_UUSD_TO_ULUNA_ADDRESS,
     COIN_DIVISOR,
     CONFIG_FILE_NAME,
     FULL_COIN_LOOKUP,
@@ -16,7 +15,6 @@ from utility_constants import (
     GAS_PRICE_URI,
     SEARCH_RETRY_COUNT,
     TAX_RATE_URI,
-    TERRASWAP_ULUNA_TO_UUSD_ADDRESS,
     WITHDRAWAL_REMAINDER,
     
 )
@@ -1290,10 +1288,10 @@ class SwapTransaction(TransactionCore):
         super(SwapTransaction, self).__init__(*args, **kwargs)
 
         self.belief_price           = None
+        self.contract               = None
         self.fee_deductables:float  = None
         self.max_spread:float       = 0.01
         self.tax:float              = None
-
         self.swap_amount:int        = None
         self.swap_denom:str         = None
         self.swap_request_denom:str = None
@@ -1303,10 +1301,19 @@ class SwapTransaction(TransactionCore):
         Figure out the belief price for this swap.
         """
 
-        result = self.terra.wasm.contract_query(TERRASWAP_ULUNA_TO_UUSD_ADDRESS, {"pool": {}})
+        result = self.terra.wasm.contract_query(self.contract, {"pool": {}})
 
-        belief_price:float = int(result['assets'][0]['amount']) / int(result['assets'][1]['amount']) 
+        #print ('belief result:', result)
+        #result = self.terra.wasm.contract_query(ASTROPORT_UUSD_TO_ULUNA_ADDRESS, {"pool": {}})
 
+        parts:dict = {}
+        parts[result['assets'][0]['info']['native_token']['denom']] = int(result['assets'][0]['amount'])
+        parts[result['assets'][1]['info']['native_token']['denom']] = int(result['assets'][1]['amount'])
+
+        #print (parts)
+        
+        #belief_price:float = int(result['assets'][0]['amount']) / int(result['assets'][1]['amount']) 
+        belief_price:float = parts['uluna'] / parts['uusd']
         return round(belief_price, 18)
         
     def create(self):
@@ -1475,9 +1482,16 @@ class SwapTransaction(TransactionCore):
                     if fee_denom == 'uusd':
                         swap_amount = swap_amount - self.fee_deductables
 
+                #print ('swap amount:', swap_amount)
+                #print ('swap from denom:', self.swap_denom)
+                #print ('belief price:', self.belief_price)
+                #print ('swap to denom:', self.swap_request_denom)
+                #print ('max spread:', self.max_spread)
+                #self.max_spread = 0.01
                 tx_msg = MsgExecuteContract(
                     sender      = self.current_wallet.key.acc_address,
-                    contract    = TERRASWAP_ULUNA_TO_UUSD_ADDRESS,
+                    #contract    = ASTROPORT_UUSD_TO_ULUNA_ADDRESS,
+                    contract    = self.contract,
                     execute_msg = {
                         'swap': {
                             'belief_price': str(self.belief_price),
@@ -1492,17 +1506,21 @@ class SwapTransaction(TransactionCore):
                             },
                         }
                     },
-                    coins = Coins(str(swap_amount) + 'uluna')            
+                    coins = Coins(str(swap_amount) + self.swap_denom)
                 )
 
+                #print ('msg:', tx_msg)
                 options = CreateTxOptions(
                     fee        = self.fee,
                     fee_denoms = ['uusd'],
                     gas_prices = {'uusd': self.gas_list['uusd']},
+                    #fee_denoms = ['uluna'],
+                    #gas_prices = {'uluna': self.gas_list['uluna']},
                     msgs       = [tx_msg],
                     sequence   = self.sequence,
                 )
                 
+                tx:Tx = None
                 while True:
                     try:
                         tx:Tx = self.current_wallet.create_and_sign_tx(options)
