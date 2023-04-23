@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 # User settings - can be changed if required
+TESTMODE = False
 WITHDRAWAL_REMAINDER = 250   # This is the amount of Lunc we want to keep after withdrawal and before delegating. You should never delegate the entire balance.
 SEARCH_RETRY_COUNT   = 30    # This is the number of times we will check for a transaction to appear in the chain before deciding it didn't work.
 
@@ -16,17 +17,17 @@ MAX_GAS_ADJUSTMENT       = 4
 
 # Swap contracts can be found here
 # https://assets.terra.money/cw20/pairs.dex.json
-TERRASWAP_UUSD_TO_ULUNA_ADDRESS = 'terra1l7vy20x940je7lskm6x9s839vjsmekz9k9mv7g'
+#TERRASWAP_UUSD_TO_ULUNA_ADDRESS = 'terra1l7vy20x940je7lskm6x9s839vjsmekz9k9mv7g'
 ASTROPORT_UUSD_TO_ULUNA_ADDRESS = 'terra1m6ywlgn6wrjuagcmmezzz2a029gtldhey5k552'
-TERRASWAP_UKRW_TO_ULUNA_ADDRESS = 'terra1erfdlgdtt9e05z0j92wkndwav4t75xzyapntkv'
+#TERRASWAP_UKRW_TO_ULUNA_ADDRESS = 'terra1erfdlgdtt9e05z0j92wkndwav4t75xzyapntkv'
 TERRASWAP_ULUNA_TO_UUSD_ADDRESS = 'terra1l7vy20x940je7lskm6x9s839vjsmekz9k9mv7g'
-ASTROPORT_UUSD_TO_MINA_ADDRESS  = 'terra134m8n2epp0n40qr08qsvvrzycn2zq4zcpmue48'
-TERRASWAP_UKRT_TO_LUNC_ADDRESS  = 'terra1erfdlgdtt9e05z0j92wkndwav4t75xzyapntkv'
+#ASTROPORT_UUSD_TO_MINA_ADDRESS  = 'terra134m8n2epp0n40qr08qsvvrzycn2zq4zcpmue48'
+#TERRASWAP_UKRT_TO_LUNC_ADDRESS  = 'terra1erfdlgdtt9e05z0j92wkndwav4t75xzyapntkv'
 
 # GRT TO UUSD transaction example:
 #https://finder.terrarebels.net/classic/tx/6316DD186EFB35BBC7940B5B9D252977721D7C99D23DCF554A8AF70A8C3FB57A
 
-# Do not change these
+# Do not change these:
 
 # Standard actions:
 USER_ACTION_CLEAR             = 'c'
