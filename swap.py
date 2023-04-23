@@ -354,39 +354,59 @@ def main():
     swaps_tx.swap_denom = coin_from
     swaps_tx.swap_request_denom = coin_to
 
-    result = swaps_tx.marketSimulate()
-    if result == True:
-        print (swaps_tx.readableFee())
-        
-        result = swaps_tx.marketSwap()
+    use_market_swap:bool = True
+
+    if coin_from == 'uluna' and coin_to == 'uusd':
+        use_market_swap = False
+
+    if use_market_swap == True:
+        result = swaps_tx.marketSimulate()
+        if result == True:
+            print (swaps_tx.readableFee())
+            
+            result = swaps_tx.marketSwap()
+    else:
+        result = swaps_tx.simulate()
 
         if result == True:
-            swaps_tx.broadcast()
-        
-            if swaps_tx.broadcast_result.code == 11:
-                while True:
-                    print (' 🛎️  Increasing the gas adjustment fee and trying again')
-                    swaps_tx.terra.gas_adjustment += GAS_ADJUSTMENT_INCREMENT
-                    print (f' 🛎️  Gas adjustment value is now {swaps_tx.terra.gas_adjustment}')
+            print (swaps_tx.readableFee())
+
+            result = swaps_tx.swap()
+
+    if result == True:
+        swaps_tx.broadcast()
+    
+        if swaps_tx.broadcast_result.code == 11:
+            while True:
+                print (' 🛎️  Increasing the gas adjustment fee and trying again')
+                swaps_tx.terra.gas_adjustment += GAS_ADJUSTMENT_INCREMENT
+                print (f' 🛎️  Gas adjustment value is now {swaps_tx.terra.gas_adjustment}')
+
+                if use_market_swap == True:
                     swaps_tx.marketSimulate()
                     print (swaps_tx.readableFee())
                     swaps_tx.marketSwap()
-                    swaps_tx.broadcast()
+                else:
+                    swaps_tx.simulate()
+                    print (swaps_tx.readableFee())
+                    swaps_tx.swap()
+                    
+                swaps_tx.broadcast()
 
-                    if swaps_tx.broadcast_result.code != 11:
-                        break
+                if swaps_tx.broadcast_result.code != 11:
+                    break
 
-                    if swaps_tx.terra.gas_adjustment >= MAX_GAS_ADJUSTMENT:
-                        break
+                if swaps_tx.terra.gas_adjustment >= MAX_GAS_ADJUSTMENT:
+                    break
 
-            if swaps_tx.broadcast_result.is_tx_error():
-                print (' 🛎️  The send transaction failed, an error occurred:')
-                print (f' 🛎️  {swaps_tx.broadcast_result.raw_log}')
-            else:
-                print (f' ✅ Sent amount: {wallet.formatUluna(swaps_tx.swap_amount, False)}')
-                print (f' ✅ Tx Hash: {swaps_tx.broadcast_result.txhash}')
+        if swaps_tx.broadcast_result.is_tx_error():
+            print (' 🛎️  The send transaction failed, an error occurred:')
+            print (f' 🛎️  {swaps_tx.broadcast_result.raw_log}')
         else:
-            print (' 🛎️  The swap transaction could not be completed')
+            print (f' ✅ Sent amount: {wallet.formatUluna(swaps_tx.swap_amount, False)}')
+            print (f' ✅ Tx Hash: {swaps_tx.broadcast_result.txhash}')
+    else:
+        print (' 🛎️  The swap transaction could not be completed')
             
     print (' 💯 Done!\n')
 
