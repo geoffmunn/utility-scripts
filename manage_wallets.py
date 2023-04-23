@@ -12,6 +12,7 @@ from utility_classes import (
 )
 
 from utility_constants import (
+    ASTROPORT_UUSD_TO_ULUNA_ADDRESS,
     COIN_DIVISOR,
     GAS_ADJUSTMENT_INCREMENT,
     MAX_GAS_ADJUSTMENT,
@@ -24,8 +25,7 @@ from utility_constants import (
     USER_ACTION_SWAP_DELEGATE,
     USER_ACTION_WITHDRAW,
     USER_ACTION_WITHDRAW_DELEGATE,
-    WITHDRAWAL_REMAINDER,
-        
+    WITHDRAWAL_REMAINDER
 )
 
 def get_user_multichoice(question:str, user_wallets:dict) -> dict|str:
@@ -70,7 +70,9 @@ def get_user_multichoice(question:str, user_wallets:dict) -> dict|str:
             label_widths[3] = len(str(ustc_reward))
 
         if 'uluna' in balances:
-            label_widths[4] = len(str(wallet.formatUluna(balances['uluna'], False)))
+            formatted_val = str(wallet.formatUluna(balances['uluna'], False))
+            if len(formatted_val) > label_widths[4]:
+                label_widths[4] = len(formatted_val)
 
     padding_str = ' ' * 100
 
@@ -136,14 +138,21 @@ def get_user_multichoice(question:str, user_wallets:dict) -> dict|str:
                     ustc_reward += delegations[validator]['rewards']['uusd']
 
             formatted_val = str(wallet.formatUluna(uluna_reward, False))
-            lunc_str      = formatted_val + padding_str[0:(label_widths[2] - (len(str(formatted_val))))]
+            lunc_str      = formatted_val
+            
+            if label_widths[2] - len(str(formatted_val)) > 0:
+                lunc_str += padding_str[0:(label_widths[2] - (len(str(formatted_val))))]
 
             formatted_val = str(wallet.formatUluna(ustc_reward, False))
-            ustc_str      = formatted_val + padding_str[0:(label_widths[3] - (len(str(formatted_val))))]
+            ustc_str      = formatted_val
+            if label_widths[3] - len(str(formatted_val)) > 0:
+                ustc_str += padding_str[0:(label_widths[3] - (len(str(formatted_val))))]
             
             if 'uluna' in wallet.balances:
                 formatted_val = str(wallet.formatUluna(wallet.balances['uluna'], False))
-                uluna_balance = formatted_val + padding_str[0:(label_widths[4] - (len(str(formatted_val))))]
+                uluna_balance = formatted_val
+                if label_widths[4] - len(str(formatted_val)) > 0:
+                    uluna_balance += padding_str[0:(label_widths[4] - (len(str(formatted_val))))]
 
             print (f"{count_str}{glyph} | {wallet_name_str} | {uluna_balance} | {lunc_str} | {ustc_str}")
             
@@ -347,6 +356,7 @@ def main():
                             # Populate the basic details.
                             swaps_tx.swap_amount = swap_amount
                             swaps_tx.swap_denom  = 'uusd'
+                            swaps_tx.contract    = ASTROPORT_UUSD_TO_ULUNA_ADDRESS
 
                             # Simulate it so we can get the fee
                             result = swaps_tx.simulate()
