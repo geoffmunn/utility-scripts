@@ -12,12 +12,14 @@ from utility_classes import (
 )
 
 from utility_constants import (
+    ASTROPORT_UUSD_TO_ULUNA_ADDRESS,
     COIN_DIVISOR,
     GAS_ADJUSTMENT_INCREMENT,
     FULL_COIN_LOOKUP,
     MAX_GAS_ADJUSTMENT,
+    TERRASWAP_ULUNA_TO_UUSD_ADDRESS,
     USER_ACTION_CONTINUE,
-    USER_ACTION_QUIT,
+    USER_ACTION_QUIT
 )
 
 from terra_classic_sdk.core.coin import Coin
@@ -353,11 +355,13 @@ def main():
     swaps_tx.swap_amount = int(swap_uluna)
     swaps_tx.swap_denom = coin_from
     swaps_tx.swap_request_denom = coin_to
+    swaps_tx.contract = ASTROPORT_UUSD_TO_ULUNA_ADDRESS
 
     use_market_swap:bool = True
 
     if coin_from == 'uluna' and coin_to == 'uusd':
         use_market_swap = False
+        swaps_tx.contract = TERRASWAP_ULUNA_TO_UUSD_ADDRESS
 
     if use_market_swap == True:
         result = swaps_tx.marketSimulate()
@@ -390,7 +394,7 @@ def main():
                     swaps_tx.simulate()
                     print (swaps_tx.readableFee())
                     swaps_tx.swap()
-                    
+
                 swaps_tx.broadcast()
 
                 if swaps_tx.broadcast_result.code != 11:
