@@ -4,6 +4,7 @@
 from getpass import getpass
 
 from utility_classes import (
+    get_coin_selection,
     get_user_choice,
     get_user_number,
     get_user_text,
@@ -13,7 +14,9 @@ from utility_classes import (
 )
 
 from utility_constants import (
+    FULL_COIN_LOOKUP,
     GAS_ADJUSTMENT_INCREMENT,
+    GAS_ADJUSTMENT_SEND,
     MAX_GAS_ADJUSTMENT,
     USER_ACTION_CONTINUE,
     USER_ACTION_QUIT
@@ -53,6 +56,10 @@ def get_user_singlechoice(question:str, user_wallets:dict) -> dict|str:
     label_widths.append(len('LUNC'))
     label_widths.append(len('USTC'))
 
+    for item in FULL_COIN_LOOKUP:
+        if item not in ['uluna', 'uusd']:
+            label_widths.append(len(FULL_COIN_LOOKUP[item]))
+
     for wallet_name in user_wallets:
         if len(wallet_name) > label_widths[1]:
             label_widths[1] = len(wallet_name)
@@ -72,6 +79,19 @@ def get_user_singlechoice(question:str, user_wallets:dict) -> dict|str:
 
         if len(str(ustc_val)) > label_widths[3]:
             label_widths[3] = len(str(ustc_val))
+
+        count = 1
+        for item in FULL_COIN_LOOKUP:
+            if item not in ['uluna', 'uusd']:
+                if item in user_wallets[wallet_name].balances:
+                    item_val = user_wallets[wallet_name].formatUluna(user_wallets[wallet_name].balances[item])
+
+                    if len(str(item_val)) > label_widths[3 + count]:
+                        label_widths[3 + count] = len(str(item_val))
+
+                    count += 1
+                
+                    
 
     padding_str = ' ' * 100
 
@@ -204,42 +224,51 @@ def main():
     if 'uluna' not in wallet.balances:
         print (" 🛑 This wallet doesn't have any LUNC available to transfer.")
         exit()
-                       
-    # If we're sending LUNC then we need a few more details:
 
+    denom, answer, null_value = get_coin_selection('What coint do you want to send? ', wallet.balances)
+
+    if answer == USER_ACTION_QUIT:
+        print (' 🛑 Exiting...')
+        exit()
+
+    print (f"The {wallet.name} wallet holds {wallet.formatUluna(wallet.balances[denom])} {FULL_COIN_LOOKUP[denom]}")
+    print (f"NOTE: You can send the entire value of this wallet by typing '100%' - no minimum amount will be retained.")
+    uluna_amount:int  = get_user_number('How much are you sending? ', {'max_number': float(wallet.formatUluna(wallet.balances[denom], False)), 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': True, 'keep_minimum': False})
     recipient_address = get_user_recipient("What is the address you are sending to? (or type 'Q' to quit) ", wallet)
-
+    
     if recipient_address == USER_ACTION_QUIT:
         print (' 🛑 Exiting...')
         exit()
-        
-    print (f"The {wallet.name} wallet holds {wallet.formatUluna(wallet.balances['uluna'], True)}")
-    print (f"NOTE: You can send the entire value of this wallet by typing '100%' - no minimum amount will be retained.")
-    uluna_amount:int = get_user_number('How much are you sending? ', {'max_number': float(wallet.formatUluna(wallet.balances['uluna'], False)), 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': True, 'keep_minimum': False})
-    memo:str         = get_user_text('Provide a memo (optional): ', 255, True)
+
+    # NOTE: I'm pretty sure the memo size is int64, but I've capped it at 255 so python doens't panic
+    memo:str = get_user_text('Provide a memo (optional): ', 255, True)
 
     # Convert the provided value into actual numbers:
-    complete_transaction = get_user_choice(f"You are about to send {wallet.formatUluna(uluna_amount, True)} to {recipient_address} - do you want to continue? (y/n) ", [])
+    complete_transaction = get_user_choice(f"You are about to send {wallet.formatUluna(uluna_amount)} {FULL_COIN_LOOKUP[denom]} to {recipient_address} - do you want to continue? (y/n) ", [])
 
     if complete_transaction == False:
         print (" 🛑 Exiting...")
         exit()
 
-    # NOTE: I'm pretty sure the memo size is int64, but I've capped it at 255 so python doens't panic
-
     # Now start doing stuff
     print (f'\nAccessing the {wallet.name} wallet...')
     
     if 'uluna' in wallet.balances:
-        print (f'Sending {wallet.formatUluna(uluna_amount, True)}')
+        print (f'Sending {wallet.formatUluna(uluna_amount)} {FULL_COIN_LOOKUP[denom]}')
 
         # Create the send tx object
         send_tx = wallet.send().create()
+
+        send_tx.terra.gas_adjustment = GAS_ADJUSTMENT_SEND
+
+        #print ('uluna amount:', uluna_amount)
+        #print ('balance:', wallet.formatUluna(wallet.balances[denom]))
         
         # Assign the details:
         send_tx.recipient_address = recipient_address
         send_tx.memo              = memo
-        send_tx.uluna_amount      = int(uluna_amount)
+        send_tx.amount            = int(uluna_amount)
+        send_tx.denom             = denom
         
         # Simulate it            
         result = send_tx.simulate()
@@ -251,6 +280,8 @@ def main():
             # Now we know what the fee is, we can do it again and finalise it
             result = send_tx.send()
             
+            # print ('exiting...')
+            # exit()
             if result == True:
                 send_tx.broadcast()
             
@@ -274,7 +305,7 @@ def main():
                     print (' 🛎️  The send transaction failed, an error occurred:')
                     print (f' 🛎️  {send_tx.broadcast_result.raw_log}')
                 else:
-                    print (f' ✅ Sent amount: {wallet.formatUluna(uluna_amount, True)}')
+                    print (f' ✅ Sent amount: {wallet.formatUluna(uluna_amount)} {FULL_COIN_LOOKUP[denom]}')
                     print (f' ✅ Tx Hash: {send_tx.broadcast_result.txhash}')
             else:
                 print (' 🛎️  The send transaction could not be completed')
