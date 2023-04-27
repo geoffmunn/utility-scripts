@@ -100,10 +100,11 @@ def strtobool(val):
         #raise ValueError("invalid truth value %r" % (val,))
         return -1
     
-def get_coin_selection(question:str, coins:dict, estimation_against:dict = None, wallet:Wallet = False) -> str | str | float:
+def get_coin_selection(question:str, coins:dict, only_active_coins:bool = True, estimation_against:dict = None, wallet:Wallet = False) -> str | str | float:
     """
     Return a selected coin based on the provided list.
     """
+
     label_widths = []
 
     label_widths.append(len('Number'))
@@ -119,18 +120,24 @@ def get_coin_selection(question:str, coins:dict, estimation_against:dict = None,
     coin_values = {}
     coin_list.append('')
 
-    for coin in coins:
-        coin_list.append(coin)
+    for coin in FULL_COIN_LOOKUP:
 
-        if coin in FULL_COIN_LOOKUP:
-            coin_name = FULL_COIN_LOOKUP[coin]
-            if len(str(coin_name)) > label_widths[1]:
-                label_widths[1] = len(str(coin_name))
+        if coin in coins:
+            coin_list.append(coin)
+        elif only_active_coins == False:
+            coin_list.append(coin)
 
-            coin_val = wallet.formatUluna(coins[coin])
+        coin_name = FULL_COIN_LOOKUP[coin]
+        if len(str(coin_name)) > label_widths[1]:
+            label_widths[1] = len(str(coin_name))
 
-            if len(str(coin_val)) > label_widths[2]:
-                label_widths[2] = len(str(coin_val))
+        if coin in coins or only_active_coins == False:
+
+            if coin in coins:
+                coin_val = wallet.formatUluna(coins[coin])
+
+                if len(str(coin_val)) > label_widths[2]:
+                    label_widths[2] = len(str(coin_val))
 
             if estimation_against is not None:
                 swaps_tx.swap_amount = int(estimation_against['amount'])
@@ -182,8 +189,13 @@ def get_coin_selection(question:str, coins:dict, estimation_against:dict = None,
         print (header_string)
         print (horizontal_spacer)
 
-        for coin in coins:
-            count += 1
+        for coin in FULL_COIN_LOOKUP:
+
+            if only_active_coins == True:
+                if coin in coins:
+                    count += 1
+            else:
+                count += 1
             
             if coin_to_use == coin:
                 glyph = '✅'
@@ -191,26 +203,34 @@ def get_coin_selection(question:str, coins:dict, estimation_against:dict = None,
                 glyph = '  '
 
             count_str =  f' {count}' + padding_str[0:6 - (len(str(count)) + 2)]
+           
+            coin_name = FULL_COIN_LOOKUP[coin]
+            if label_widths[1] > len(coin_name):
+                coin_name_str = coin_name + padding_str[0:label_widths[1] - len(coin_name)]
+            else:
+                coin_name_str = coin_name
 
-            if coin in FULL_COIN_LOOKUP:
-                coin_name = FULL_COIN_LOOKUP[coin]
-                if label_widths[1] > len(coin_name):
-                    coin_name_str = coin_name + padding_str[0:label_widths[1] - len(coin_name)]
-                else:
-                    coin_name_str = coin_name
-
+            if coin in coins:
                 coin_val = wallet.formatUluna(coins[coin])
 
                 if label_widths[2] > len(str(coin_val)):
                     balance_str = coin_val + padding_str[0:label_widths[2] - len(coin_val)]
                 else:
                     balance_str = coin_val
+            else:
+                coin_val = ''
+                balance_str = coin_val + padding_str[0:label_widths[2] - len(coin_val)]
 
+            if coin in coins or only_active_coins == False:
                 if estimation_against is None:
                     print (f"{count_str}{glyph} | {coin_name_str} | {balance_str}")
                 else:
-                    estimated_str =  float(coin_values[coin])
-                    estimated_str = str(("%.6f" % (estimated_str)).rstrip('0').rstrip('.'))
+                    if coin in coin_values:
+                        estimated_str =  float(coin_values[coin])
+                        estimated_str = str(("%.6f" % (estimated_str)).rstrip('0').rstrip('.'))
+                    else:
+                        estimated_str = ''
+
                     print (f"{count_str}{glyph} | {coin_name_str} | {balance_str} | {estimated_str}")
     
         print (horizontal_spacer + '\n')
@@ -622,14 +642,16 @@ class Wallet:
             result = self.terra.auth.account_info(address)
 
             # No need to do anything - if it doesn't return an error then it's valid
-            return True
+            return True, False
         
         except LCDResponseError as err:
             if 'decoding bech32 failed' in err.message:
-                return False
+                return False, False
+            if f'account {address} not found' in err.message:
+                return False, True
             else:
                 print (err.message)
-                return False
+                return False, False
     
     def validateWallet(self) -> bool:
         """
