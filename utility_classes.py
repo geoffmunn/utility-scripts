@@ -185,7 +185,7 @@ def get_coin_selection(question:str, coins:dict, only_active_coins:bool = True, 
     while True:
         count:int = 0
 
-        print (horizontal_spacer)
+        print ('\n' + horizontal_spacer)
         print (header_string)
         print (horizontal_spacer)
 
@@ -301,11 +301,12 @@ def get_user_number(question:str, params:dict) -> float|str:
     while True:    
         answer = input(question).strip(' ')
 
-        is_percentage = isPercentage(answer)
-
         if answer == '':
             print (f' 🛎️  The value cannot be blank or empty')
         else:
+
+            is_percentage = isPercentage(answer)
+
             if 'percentages_allowed' in params and is_percentage == True:
                 answer = answer[0:-1]
 
@@ -633,26 +634,28 @@ class Wallet:
 
        return True
     
-    def validateAddress(self, address:str) -> bool:
+    def validateAddress(self, address:str) -> bool | bool:
         """
         Check that the provided address actually resolves to a terra wallet.
         """
 
-        try:
-            result = self.terra.auth.account_info(address)
+        if address != '':
+            try:
+                result = self.terra.auth.account_info(address)
 
-            # No need to do anything - if it doesn't return an error then it's valid
-            return True, False
+                # No need to do anything - if it doesn't return an error then it's valid
+                return True, False
+            
+            except LCDResponseError as err:
+                if 'decoding bech32 failed' in err.message:
+                    return False, False
+                if f'account {address} not found' in err.message:
+                    return False, True
+                else:
+                    return False, False
+        else:
+            return False, False
         
-        except LCDResponseError as err:
-            if 'decoding bech32 failed' in err.message:
-                return False, False
-            if f'account {address} not found' in err.message:
-                return False, True
-            else:
-                print (err.message)
-                return False, False
-    
     def validateWallet(self) -> bool:
         """
         Check that the password does actually resolve against any wallets

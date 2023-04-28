@@ -400,7 +400,7 @@ def main():
     if len(user_wallets) > 0:
         print (f'You have these wallets available:')
 
-        wallet, answer = get_user_singlechoice("Select a wallet number 1 - " + str(len(user_wallets)) + ", 'X' to continue', or 'Q' to quit: ", user_wallets)
+        wallet, answer = get_user_singlechoice("Select a wallet number 1 - " + str(len(user_wallets)) + ", 'X' to continue, or 'Q' to quit: ", user_wallets)
 
         if answer == USER_ACTION_QUIT:
             print (' 🛑 Exiting...')
@@ -446,7 +446,7 @@ def main():
 
         print (f'Select a validator to delegate to:')
 
-        user_validator, answer = get_validator_singlechoice("Select a validator number 1 - " + str(len(sorted_validators)) + ", 'X' to continue', or 'Q' to quit: ", sorted_validators, [], delegations)
+        user_validator, answer = get_validator_singlechoice("Select a validator number 1 - " + str(len(sorted_validators)) + ", 'X' to continue, or 'Q' to quit: ", sorted_validators, [], delegations)
 
         if answer == USER_ACTION_QUIT:
             print (' 🛑 Exiting...')
@@ -527,7 +527,7 @@ def main():
         for validator in delegations:
             filter_list.append(validator)
 
-        user_validator, answer = get_validator_singlechoice("Select a validator number 1 - " + str(len(filter_list)) + ", 'X' to continue', or 'Q' to quit: ", sorted_validators, filter_list, delegations)
+        user_validator, answer = get_validator_singlechoice("Select a validator number 1 - " + str(len(filter_list)) + ", 'X' to continue, or 'Q' to quit: ", sorted_validators, filter_list, delegations)
 
         if answer == USER_ACTION_QUIT:
             print (' 🛑 Exiting...')
@@ -606,14 +606,14 @@ def main():
             filter_list.append(validator)
 
         print (f'Select a validator to delegate switch FROM:')
-        from_validator, answer = get_validator_singlechoice("Select a validator number 1 - " + str(len(filter_list)) + ", 'X' to continue', or 'Q' to quit: ", sorted_validators, filter_list, delegations)
+        from_validator, answer = get_validator_singlechoice("Select a validator number 1 - " + str(len(filter_list)) + ", 'X' to continue, or 'Q' to quit: ", sorted_validators, filter_list, delegations)
 
         if answer == USER_ACTION_QUIT:
             print (' 🛑 Exiting...')
             exit()
 
         print (f'Select a validator to delegate switch TO:')
-        to_validator, answer = get_validator_singlechoice("Select a validator number 1 - " + str(len(sorted_validators)) + ", 'X' to continue', or 'Q' to quit: ", sorted_validators, [], delegations)
+        to_validator, answer = get_validator_singlechoice("Select a validator number 1 - " + str(len(sorted_validators)) + ", 'X' to continue, or 'Q' to quit: ", sorted_validators, [], delegations)
 
         if answer == USER_ACTION_QUIT:
             print (' 🛑 Exiting...')
