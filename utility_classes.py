@@ -1180,6 +1180,7 @@ class DelegationTransaction(TransactionCore):
             options = CreateTxOptions(
                 fee        = self.fee,
                 #fee_denoms  = ['uluna', 'uusd', 'uaud' ,'ukrw'], # 
+                gas        = 'auto',
                 gas_prices = self.gas_list,
                 msgs       = [msg],
                 sequence   = self.sequence
@@ -1230,6 +1231,7 @@ class DelegationTransaction(TransactionCore):
 
             options = CreateTxOptions(
                 fee        = self.fee,
+                gas        = 'auto',
                 gas_prices = self.gas_list,
                 msgs       = [msgRedel],
                 sequence   = self.sequence
@@ -1306,6 +1308,7 @@ class DelegationTransaction(TransactionCore):
 
             options = CreateTxOptions(
                 fee        = self.fee,
+                gas        = 'auto',
                 gas_prices = self.gas_list,
                 msgs       = [msg],
                 sequence   = self.sequence
@@ -1397,6 +1400,7 @@ class SendTransaction(TransactionCore):
 
             options = CreateTxOptions(
                 fee        = self.fee,
+                gas        = 'auto',
                 gas_prices = self.gas_list,
                 memo       = self.memo,
                 msgs       = [msg],
@@ -1594,6 +1598,7 @@ class SwapTransaction(TransactionCore):
 
             options = CreateTxOptions(
                 fee        = self.fee,
+                gas        = 'auto',
                 gas_prices = self.gas_list,
                 msgs       = [tx_msg],
                 sequence   = self.sequence,
@@ -1724,6 +1729,7 @@ class SwapTransaction(TransactionCore):
                     #gas_prices = {'uusd': self.gas_list['uusd']},
                     #fee_denoms = ['uluna'],
                     #gas_prices = {'uluna': self.gas_list['uluna']},
+                    gas        = 'auto',
                     gas_prices = self.gas_list,
                     msgs       = [tx_msg],
                     sequence   = self.sequence,
@@ -1917,6 +1923,7 @@ class WithdrawalTransaction(TransactionCore):
             
             options = CreateTxOptions(
                 fee        = self.fee,
+                gas        = 'auto',
                 gas_prices = self.gas_list,
                 msgs       = [msg]
             )
