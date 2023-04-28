@@ -96,8 +96,6 @@ def get_user_singlechoice(question:str, user_wallets:dict) -> dict|str:
 
                     count += 1
                 
-                    
-
     padding_str = ' ' * 100
 
     header_string = ' Number |'
@@ -127,7 +125,7 @@ def get_user_singlechoice(question:str, user_wallets:dict) -> dict|str:
         count = 0
         wallet_numbers = {}
 
-        print (horizontal_spacer)
+        print ('\n' + horizontal_spacer)
         print (header_string)
         print (horizontal_spacer)
 
@@ -215,9 +213,9 @@ def main():
         wallet.getBalances()
 
     if len(user_wallets) > 0:
-        print (f'You can send LUNC on the following wallets:')
+        print (f'You can send LUNC, USTC, and minor coins on the following wallets:')
 
-        wallet, answer = get_user_singlechoice("Select a wallet number 1 - " + str(len(user_wallets)) + ", 'X' to continue', or 'Q' to quit: ", user_wallets)
+        wallet, answer = get_user_singlechoice(f"Select a wallet number 1 - {str(len(user_wallets))}, 'X' to continue, or 'Q' to quit: ", user_wallets)
 
         if answer == USER_ACTION_QUIT:
             print (' 🛑 Exiting...')
@@ -230,7 +228,7 @@ def main():
         print (" 🛑 This wallet doesn't have any LUNC available to transfer.")
         exit()
 
-    denom, answer, null_value = get_coin_selection('What coint do you want to send? ', wallet.balances)
+    denom, answer, null_value = get_coin_selection(f"Select a coin number 1 - {str(len(FULL_COIN_LOOKUP))}, 'X' to continue, or 'Q' to quit: ", wallet.balances)
 
     if answer == USER_ACTION_QUIT:
         print (' 🛑 Exiting...')
@@ -266,9 +264,6 @@ def main():
 
         send_tx.terra.gas_adjustment = GAS_ADJUSTMENT_SEND
 
-        #print ('uluna amount:', uluna_amount)
-        #print ('balance:', wallet.formatUluna(wallet.balances[denom]))
-        
         # Assign the details:
         send_tx.recipient_address = recipient_address
         send_tx.memo              = memo
