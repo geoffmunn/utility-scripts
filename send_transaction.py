@@ -33,7 +33,12 @@ def get_user_recipient(question:str, wallet:Wallet):
         if recipient_address == USER_ACTION_QUIT:
             break
 
-        is_valid = wallet.validateAddress(recipient_address)
+        is_valid, is_empty = wallet.validateAddress(recipient_address)
+
+        if is_valid == False and is_empty == True:
+            continue_action = get_user_choice('This wallet seems to be emptyr - do you want to continue? (y/n) ', [])
+            if continue_action == True:
+                break
 
         if is_valid == True:
             break
@@ -280,8 +285,6 @@ def main():
             # Now we know what the fee is, we can do it again and finalise it
             result = send_tx.send()
             
-            # print ('exiting...')
-            # exit()
             if result == True:
                 send_tx.broadcast()
             
