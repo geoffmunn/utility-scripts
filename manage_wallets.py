@@ -196,9 +196,9 @@ def main():
     print ('  (A)  All of the above')
     print ('  (WD) Withdraw & Delegate')
     print ('  (SD) Swap & Delegate')
-    print ('  (Q)  Quit')
+    print ('  (Q)  Quit\n')
 
-    user_action = get_user_choice('', [
+    user_action = get_user_choice('Pick an option: ', [
         USER_ACTION_WITHDRAW,
         USER_ACTION_SWAP,
         USER_ACTION_DELEGATE,

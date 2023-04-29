@@ -415,9 +415,9 @@ def main():
     print ('  (U)  Undelegate all coins from a validator')
     print ('  (S)  Switch validators')
     print ('  (L)  List undelegations in progress')
-    print ('  (Q)  Quit')
+    print ('  (Q)  Quit\n')
     
-    user_action = get_user_choice('', [
+    user_action = get_user_choice('Pick an option: ', [
         USER_ACTION_VALIDATOR_DELEGATE,
         USER_ACTION_VALIDATOR_LIST_UNDELEGATIONS,
         USER_ACTION_VALIDATOR_UNDELEGATE,
