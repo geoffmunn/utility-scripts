@@ -251,7 +251,7 @@ def main():
 
     # Now start doing stuff
     print (f'\nAccessing the {wallet.name} wallet...')
-    
+
     if 'uluna' in wallet.balances:
         print (f'Sending {wallet.formatUluna(uluna_amount)} {FULL_COIN_LOOKUP[denom]}')
 
