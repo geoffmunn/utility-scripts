@@ -182,6 +182,8 @@ def get_coin_selection(question:str, coins:dict, only_active_coins:bool = True, 
     returned_estimation: float = None    
     answer:str = False
 
+    coin_index = {}
+
     while True:
         count:int = 0
 
@@ -194,7 +196,9 @@ def get_coin_selection(question:str, coins:dict, only_active_coins:bool = True, 
             if only_active_coins == True:
                 if coin in coins:
                     count += 1
+                    coin_index[FULL_COIN_LOOKUP[coin].lower()] = count
             else:
+                coin_index[FULL_COIN_LOOKUP[coin].lower()] = count
                 count += 1
             
             if coin_to_use == coin:
@@ -237,6 +241,10 @@ def get_coin_selection(question:str, coins:dict, only_active_coins:bool = True, 
 
         answer = input(question).lower()
         
+        # Check if a coin name was provided:
+        if answer in coin_index:
+            answer = str(coin_index[answer])
+
         if answer.isdigit() and int(answer) > 0 and int(answer) <= count:
             coin_to_use = coin_list[int(answer)]
             if estimation_against is not None:
