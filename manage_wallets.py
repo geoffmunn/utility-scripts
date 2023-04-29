@@ -261,6 +261,15 @@ def main():
         print (" 🛑 This password couldn't decrypt any wallets. Make sure it is correct, or rebuild the wallet list by running the configure_user_wallet.py script again.")
         exit()
 
+    print (f'\nYou are about to {action_string} on the following wallets:\n')
+    for wallet_name in user_wallets:
+        print (f' * {wallet_name}')
+
+    user_action = get_user_choice('\nDo you want to continue? (y/n) ', [])
+    if user_action == False:
+        print (' 🛑 Exiting...')
+        exit()
+
     # Now start doing stuff
     for wallet_name in user_wallets:
         wallet:Wallet = user_wallets[wallet_name]
