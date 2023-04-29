@@ -315,6 +315,9 @@ def main():
                                         withdrawal_tx.withdraw()
                                         withdrawal_tx.broadcast()
 
+                                        if withdrawal_tx.broadcast_result is None:
+                                            break
+
                                         if withdrawal_tx.broadcast_result.code != 11:
                                             break
 
@@ -379,6 +382,9 @@ def main():
                                             print (swaps_tx.readableFee())
                                             swaps_tx.swap()
                                             swaps_tx.broadcast()
+
+                                            if swaps_tx.broadcast_result is None:
+                                                break
 
                                             if swaps_tx.broadcast_result.code != 11:
                                                 break
@@ -462,6 +468,9 @@ def main():
                                             print (delegation_tx.readableFee())
                                             delegation_tx.delegate()
                                             delegation_tx.broadcast()
+
+                                            if delegation_tx.broadcast_result is None:
+                                                break
 
                                             if delegation_tx.broadcast_result.code != 11:
                                                 break
