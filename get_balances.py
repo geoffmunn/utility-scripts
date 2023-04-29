@@ -78,7 +78,6 @@ def main():
                     label_widths.append(0)
 
     # Then, get all the coins we'll be charting (column 1)
-
     for wallet_name in user_wallets:
         wallet:Wallet = user_wallets[wallet_name]
         wallet.getBalances()
@@ -191,9 +190,12 @@ def main():
         val_count += 1
 
     horizontal_spacer = '-' * len(header_string)
-    
+
+    # Sort the balance coins into alphabetical order    
+    sorted_coins = dict(sorted(balance_coins.items()))
+
     body_string = ''
-    for coin_type in balance_coins:
+    for coin_type in sorted_coins:
 
         current_coin =  ' ' + coin_type + padding_str[0:label_widths[0]-len(coin_type)] + ' |'
         body_string += current_coin
