@@ -958,39 +958,50 @@ class TransactionCore():
         It will wait until the transaction shows up in the search function before finishing.
         """
 
-        result:BlockTxBroadcastResult = self.terra.tx.broadcast(self.transaction)
+        try:
+            result:BlockTxBroadcastResult = self.terra.tx.broadcast(self.transaction)    
+        except Exception as err:
+            print (' 🛑 A broadcast error occurred.')
+            print (err)
+            result:BlockTxBroadcastResult = None
+
         self.broadcast_result         = result
 
-        if self.broadcast_result.code == 11:
-            # Send this back for a retry with a higher gas adjustment value
-            return self.broadcast_result
+        if result is not None:
+            if self.broadcast_result.code == 11:
+                # Send this back for a retry with a higher gas adjustment value
+                return self.broadcast_result
 
-        else:
-            # Wait for this transaction to appear in the blockchain
-            if not self.broadcast_result.is_tx_error():
-                while True:
-                    result:dict = self.terra.tx.search([("tx.hash", self.broadcast_result.txhash)])
-                    self.terra.tx.search
-                    
-                    if len(result['txs']) > 0:
-                        print ('Transaction received')
-                        break
-                        
-                    else:
-                        print ('No such tx yet...')
-
-            # Find the transaction on the network and return the result
-            if 'code' in result and result.code == 5:
-                print (' 🛑 A transaction error occurred.')
             else:
-                transaction_confirmed = self.findTransaction()
+                # Wait for this transaction to appear in the blockchain
+                if not self.broadcast_result.is_tx_error():
+                    while True:
+                        result:dict = self.terra.tx.search([("tx.hash", self.broadcast_result.txhash)])
+                        self.terra.tx.search
+                        
+                        if len(result['txs']) > 0:
+                            print ('Transaction received')
+                            break
+                            
+                        else:
+                            print ('No such tx yet...')
 
-                if transaction_confirmed == True:
-                    print ('This transaction should be visible in your wallet now.')
-                else:
-                    print ('The transaction did not appear after many searches. Future transactions might fail due to a lack of expected funds.')
-                
-            return self.broadcast_result
+                # Find the transaction on the network and return the result
+                try:
+                    if 'code' in result and result.code == 5:
+                        print (' 🛑 A transaction error occurred.')
+            
+                    else:
+                        transaction_confirmed = self.findTransaction()
+
+                        if transaction_confirmed == True:
+                            print ('This transaction should be visible in your wallet now.')
+                        else:
+                            print ('The transaction did not appear after many searches. Future transactions might fail due to a lack of expected funds.')
+                except Exception as err:
+                    print (err)
+
+        return self.broadcast_result
             
     def calculateFee(self, requested_fee:Fee, specific_denom:str = '') -> Fee:
         """
