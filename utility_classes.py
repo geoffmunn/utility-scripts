@@ -978,38 +978,38 @@ class TransactionCore():
         if result is not None:
             print ("IF YOU GET AN ERROR, CHECK WHAT THE RESULT BELOW SAYS:")
             print (self.broadcast_result)
-            if self.broadcast_result.code == 11:
-                # Send this back for a retry with a higher gas adjustment value
-                return self.broadcast_result
+            # if self.broadcast_result.code == 11:
+            #     # Send this back for a retry with a higher gas adjustment value
+            #     return self.broadcast_result
 
-            else:
-                # Wait for this transaction to appear in the blockchain
-                if not self.broadcast_result.is_tx_error():
-                    while True:
-                        result:dict = self.terra.tx.search([("tx.hash", self.broadcast_result.txhash)])
-                        self.terra.tx.search
+            # else:
+            # Wait for this transaction to appear in the blockchain
+            if not self.broadcast_result.is_tx_error():
+                while True:
+                    result:dict = self.terra.tx.search([("tx.hash", self.broadcast_result.txhash)])
+                    self.terra.tx.search
+                    
+                    if len(result['txs']) > 0:
+                        print ('Transaction received')
+                        break
                         
-                        if len(result['txs']) > 0:
-                            print ('Transaction received')
-                            break
-                            
-                        else:
-                            print ('No such tx yet...')
-
-                # Find the transaction on the network and return the result
-                try:
-                    if 'code' in result and result.code == 5:
-                        print (' 🛑 A transaction error occurred.')
-            
                     else:
-                        transaction_confirmed = self.findTransaction()
+                        print ('No such tx yet...')
 
-                        if transaction_confirmed == True:
-                            print ('This transaction should be visible in your wallet now.')
-                        else:
-                            print ('The transaction did not appear after many searches. Future transactions might fail due to a lack of expected funds.')
-                except Exception as err:
-                    print (err)
+            # Find the transaction on the network and return the result
+            try:
+                if 'code' in result and result.code == 5:
+                    print (' 🛑 A transaction error occurred.')
+        
+                else:
+                    transaction_confirmed = self.findTransaction()
+
+                    if transaction_confirmed == True:
+                        print ('This transaction should be visible in your wallet now.')
+                    else:
+                        print ('The transaction did not appear after many searches. Future transactions might fail due to a lack of expected funds.')
+            except Exception as err:
+                print (err)
 
         return self.broadcast_result
             
@@ -1217,6 +1217,8 @@ class DelegationTransaction(TransactionCore):
                     tx:Tx = self.current_wallet.create_and_sign_tx(options)
                     break
                 except LCDResponseError as err:
+                    # This is code 32:
+                    #BlockTxBroadcastResult(height=0, txhash='xxx', raw_log='account sequence mismatch, expected 336, got 335: incorrect account sequence', gas_wanted=540431, gas_used=41957, logs=None, code=32, codespace='sdk', info=None, data=None, timestamp=None)
                     if 'account sequence mismatch' in err.message:
                         self.sequence    = self.sequence + 1
                         options.sequence = self.sequence
@@ -1956,7 +1958,7 @@ class WithdrawalTransaction(TransactionCore):
             # bump up the sequence number by one and try again.
             while True:
                 try:
-                    tx:Tx = self.current_wallet.create_and_sign_tx(options)
+                    tfx:Tx = self.current_wallet.create_and_sign_tx(options)
                     break
                 except LCDResponseError as err:
                     if 'account sequence mismatch' in err.message:
@@ -1964,6 +1966,7 @@ class WithdrawalTransaction(TransactionCore):
                         options.sequence = self.sequence
                         print (' 🛎️  Boosting sequence number')
                     else:
+                        print ('withdraw error:')
                         print (err)
                         break
                 except Exception as err:
