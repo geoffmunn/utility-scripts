@@ -973,7 +973,7 @@ class TransactionCore():
             print (err)
             result:BlockTxBroadcastResult = None
 
-        self.broadcast_result         = result
+        self.broadcast_result = result
 
         if result is not None:
             print ("IF YOU GET AN ERROR, CHECK WHAT THE RESULT BELOW SAYS:")
@@ -1958,7 +1958,7 @@ class WithdrawalTransaction(TransactionCore):
             # bump up the sequence number by one and try again.
             while True:
                 try:
-                    tfx:Tx = self.current_wallet.create_and_sign_tx(options)
+                    tx:Tx = self.current_wallet.create_and_sign_tx(options)
                     break
                 except LCDResponseError as err:
                     if 'account sequence mismatch' in err.message:
