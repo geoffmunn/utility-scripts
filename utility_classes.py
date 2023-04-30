@@ -1092,6 +1092,7 @@ class TransactionCore():
             if len(result['txs']) > 0 and int(result['pagination']['total']) > 0:
                 if result['txs'][0].code == 0:
                     print ('Found the hash!')
+                    print (result)
                     transaction_found = True
                     break
 
