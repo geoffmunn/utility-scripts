@@ -327,8 +327,19 @@ def main():
                                         if withdrawal_tx.broadcast_result is None:
                                             break
 
-                                        if withdrawal_tx.broadcast_result.code != 11:
+                                        #if withdrawal_tx.broadcast_result.code != 11:
+                                        if withdrawal_tx.broadcast_result.code == 0:
                                             break
+
+                                        # if withdrawal_tx.broadcast_result.code == 32:
+                                        #     withdrawal_tx.sequence = withdrawal_tx.sequence + 1
+                                        #     #self.sequence    = self.sequence + 1
+                                        #     #options.sequence = self.sequence
+                                        #     withdrawal_tx.
+                                        #     print (' 🛎️  Boosting sequence number')
+                                        # else:
+                                        #     print (err)
+                                        #     break
 
                                         if withdrawal_tx.terra.gas_adjustment >= MAX_GAS_ADJUSTMENT:
                                             break
