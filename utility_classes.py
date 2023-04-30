@@ -552,6 +552,7 @@ class Wallet:
         Get the balances associated with this wallet.
         """
 
+        print ('balances before:', self.balances)
         if clear_cache == True:
             self.balances = None
 
@@ -577,6 +578,7 @@ class Wallet:
 
             self.balances = balances
 
+        print ('balances after:', self.balances)
         return self.balances
     
     def getDelegations(self):
