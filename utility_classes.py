@@ -988,7 +988,7 @@ class TransactionCore():
                 print ('code attribute did not work')
             
             # BlockTxBroadcastResult(height=12571996, txhash='xxx', raw_log='out of gas in location: WritePerByte; gasWanted: 491622, gasUsed: 497182: out of gas', gas_wanted=491622, gas_used=497182, logs=None, code=11, codespace='sdk', info=None, data=None, timestamp=None)
-            if code is not None:
+            if code is not None and code != 0:
                 # Send this back for a retry with a higher gas adjustment value
                 return self.broadcast_result
             else:
