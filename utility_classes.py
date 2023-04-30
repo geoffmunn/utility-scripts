@@ -552,7 +552,6 @@ class Wallet:
         Get the balances associated with this wallet.
         """
 
-        print ('balances before:', self.balances)
         if clear_cache == True:
             self.balances = None
 
@@ -578,7 +577,6 @@ class Wallet:
 
             self.balances = balances
 
-        print ('balances after:', self.balances)
         return self.balances
     
     def getDelegations(self):
@@ -981,18 +979,16 @@ class TransactionCore():
             print ("IF YOU GET AN ERROR, CHECK WHAT THE RESULT BELOW SAYS:")
             print (self.broadcast_result)
 
+            code:int = None
+
             try:
                 print ('code attribute is ', self.broadcast_result.code)
+                code = self.broadcast_result.code
             except:
                 print ('code attribute did not work')
-
-            try:
-                print ('code array is', self.broadcast_result['code'])
-            except:
-                print ('code array did not work')
-
+            
             # BlockTxBroadcastResult(height=12571996, txhash='xxx', raw_log='out of gas in location: WritePerByte; gasWanted: 491622, gasUsed: 497182: out of gas', gas_wanted=491622, gas_used=497182, logs=None, code=11, codespace='sdk', info=None, data=None, timestamp=None)
-            if 'code' in self.broadcast_result:
+            if code is not None:
                 # Send this back for a retry with a higher gas adjustment value
                 return self.broadcast_result
             else:
