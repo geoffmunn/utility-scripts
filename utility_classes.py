@@ -980,38 +980,39 @@ class TransactionCore():
         if result is not None:
             print ("IF YOU GET AN ERROR, CHECK WHAT THE RESULT BELOW SAYS:")
             print (self.broadcast_result)
-            # if self.broadcast_result.code == 11:
-            #     # Send this back for a retry with a higher gas adjustment value
-            #     return self.broadcast_result
 
-            # else:
-            # Wait for this transaction to appear in the blockchain
-            if not self.broadcast_result.is_tx_error():
-                while True:
-                    result:dict = self.terra.tx.search([("tx.hash", self.broadcast_result.txhash)])
-                    self.terra.tx.search
-                    
-                    if len(result['txs']) > 0:
-                        print ('Transaction received')
-                        break
+            # BlockTxBroadcastResult(height=12571996, txhash='xxx', raw_log='out of gas in location: WritePerByte; gasWanted: 491622, gasUsed: 497182: out of gas', gas_wanted=491622, gas_used=497182, logs=None, code=11, codespace='sdk', info=None, data=None, timestamp=None)
+            if 'out of gas in location' in self.broadcast_result:
+                # Send this back for a retry with a higher gas adjustment value
+                return self.broadcast_result
+            else:
+                # Wait for this transaction to appear in the blockchain
+                if not self.broadcast_result.is_tx_error():
+                    while True:
+                        result:dict = self.terra.tx.search([("tx.hash", self.broadcast_result.txhash)])
+                        self.terra.tx.search
                         
-                    else:
-                        print ('No such tx yet...')
+                        if len(result['txs']) > 0:
+                            print ('Transaction received')
+                            break
+                            
+                        else:
+                            print ('No such tx yet...')
 
-            # Find the transaction on the network and return the result
-            try:
-                if 'code' in result and result.code == 5:
-                    print (' 🛑 A transaction error occurred.')
-        
-                else:
-                    transaction_confirmed = self.findTransaction()
-
-                    if transaction_confirmed == True:
-                        print ('This transaction should be visible in your wallet now.')
+                # Find the transaction on the network and return the result
+                try:
+                    if 'code' in result and result.code == 5:
+                        print (' 🛑 A transaction error occurred.')
+            
                     else:
-                        print ('The transaction did not appear after many searches. Future transactions might fail due to a lack of expected funds.')
-            except Exception as err:
-                print (err)
+                        transaction_confirmed = self.findTransaction()
+
+                        if transaction_confirmed == True:
+                            print ('This transaction should be visible in your wallet now.')
+                        else:
+                            print ('The transaction did not appear after many searches. Future transactions might fail due to a lack of expected funds.')
+                except Exception as err:
+                    print (err)
 
         return self.broadcast_result
             
