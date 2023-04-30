@@ -976,6 +976,8 @@ class TransactionCore():
         self.broadcast_result         = result
 
         if result is not None:
+            print ("IF YOU GET AN ERROR, CHECK WHAT THE RESULT BELOW SAYS:")
+            print (self.broadcast_result)
             if self.broadcast_result.code == 11:
                 # Send this back for a retry with a higher gas adjustment value
                 return self.broadcast_result
