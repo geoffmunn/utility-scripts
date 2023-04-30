@@ -284,8 +284,6 @@ def main():
                 print ('\n------------------------------------')
                 print (f"The {delegations[validator]['validator_name']} validator has a {delegations[validator]['commission']}% commission.")
 
-                print (user_action)
-
                 if user_action in [USER_ACTION_WITHDRAW, USER_ACTION_WITHDRAW_DELEGATE, USER_ACTION_ALL]:
 
                     print ('Starting withdrawals...')
