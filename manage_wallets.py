@@ -265,8 +265,8 @@ def main():
     for wallet_name in user_wallets:
         print (f' * {wallet_name}')
 
-    user_action = get_user_choice('\nDo you want to continue? (y/n) ', [])
-    if user_action == False:
+    continue_action = get_user_choice('\nDo you want to continue? (y/n) ', [])
+    if continue_action == False:
         print (' 🛑 Exiting...')
         exit()
 
@@ -283,6 +283,8 @@ def main():
             if 'uluna' in delegations[validator]['rewards']:
                 print ('\n------------------------------------')
                 print (f"The {delegations[validator]['validator_name']} validator has a {delegations[validator]['commission']}% commission.")
+
+                print (user_action)
 
                 if user_action in [USER_ACTION_WITHDRAW, USER_ACTION_WITHDRAW_DELEGATE, USER_ACTION_ALL]:
 
