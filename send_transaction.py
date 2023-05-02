@@ -5,6 +5,7 @@ from getpass import getpass
 
 from utility_classes import (
     get_coin_selection,
+    get_fees_from_error,
     get_user_choice,
     get_user_number,
     get_user_text,
@@ -188,8 +189,16 @@ def get_user_singlechoice(question:str, user_wallets:dict) -> dict|str:
     
     return user_wallet, answer
 
+from terra_classic_sdk.core.coins import Coins
+from terra_classic_sdk.core.coins import Coin
+from terra_classic_sdk.core.fee import Fee
+
 def main():
     
+    #fee, tax = get_fees_from_error('insufficient fees; got: "93930uidr,4811427uluna", required: "179439uaud,179439ucad,132219uchf,925527ucny,849974udkk,118052ueur,103886ugbp,1104966uhkd,2058918253uidr,10275236uinr,15460074ujpy,160550550ukrw,5350111uluna,404748881umnt,566649umyr,1180519unok,7177554uphp,99106usdr,1180519usek,188883usgd,4363198uthb,3777660utwd,141663uusd" = "179439uaud,179439ucad,132219uchf,925527ucny,849974udkk,118052ueur,103886ugbp,1104966uhkd,2058824700uidr,10275236uinr,15460074ujpy,160550550ukrw,5350111uluna,404748881umnt,566649umyr,1180519unok,7177554uphp,99106usdr,1180519usek,188883usgd,4363198uthb,3777660utwd,141663uusd"(gas) +"93553uidr"(stability): insufficient fee', 'uluna')
+    #parts = required.split('=')
+    #print (parts)
+
     # Get the password that decrypts the user wallets
     decrypt_password:str = getpass() # the secret password that encrypts the seed phrase
 
@@ -268,7 +277,7 @@ def main():
         
         # Simulate it            
         result = send_tx.simulate()
-
+        
         if result == True:
             
             print (send_tx.readableFee())
@@ -279,21 +288,107 @@ def main():
             if result == True:
                 send_tx.broadcast()
             
-                if send_tx.broadcast_result.code == 11:
+                print ('send tx broadcast:', send_tx.broadcast_result)
+
+                # if send_tx.broadcast_result.code == 11:
+                #     gas_used:int = int(send_tx.broadcast_result.gas_used)
+                #     gas_wanted:int = send_tx.broadcast_result.gas_wanted
+
+                #     print ('gas wanted:', gas_wanted)
+                #     print ('gas used:', gas_used)
+
+                #     gas_used = int(gas_used * 1.1)
+
+                #     print ('new gas limit:', send_tx.gas_limit)
+                #     send_tx.gas_limit = gas_used
+                #     send_tx.simulate()
+                #     print (send_tx.readableFee())
+                #     send_tx.send()
+                #     send_tx.broadcast()
+
+                # if send_tx.broadcast_result.code == 11:
+                #     while True:
+
+                #         gas_used:int = int(send_tx.broadcast_result.gas_used)
+                #         gas_wanted:int = send_tx.broadcast_result.gas_wanted
+
+                #         print ('gas wanted:', gas_wanted)
+                #         print ('gas used:', gas_used)
+
+                #         print (' 🛎️  Increasing the gas adjustment fee and trying again')
+                #         #if send_tx.gas_limit == 'auto' or int(send_tx.gas_limit) < int(gas_used):
+                #         send_tx.gas_limit = str(gas_used)
+
+                #         send_tx.terra.gas_adjustment += GAS_ADJUSTMENT_INCREMENT
+                #         #print (f' 🛎️  Gas adjustment value is now {send_tx.terra.gas_adjustment}')
+                #         send_tx.simulate()
+                #         print (send_tx.readableFee())
+                #         send_tx.send()
+                #         send_tx.broadcast()
+
+                #         if send_tx is None:
+                #             break
+
+                #         # Code 32 = account sequence mismatch
+                #         if send_tx.broadcast_result.code != 11:
+                #             break
+
+                #         if send_tx.terra.gas_adjustment >= MAX_GAS_ADJUSTMENT:
+                #             break
+
+                # if send_tx.broadcast_result.code == 13:
+                #     print ('Insufficient fee')
+
+                #     log:str = send_tx.broadcast_result.raw_log
+
+                #     fee, tax = get_fees_from_error(log, 'uluna')
+
+                #     new_fee:Fee = Fee
+                #     new_fee.gas_limit = send_tx.gas_limit
+                #     new_fee.amount = Coins({fee, tax})
+
+                #     send_tx.fee = new_fee
+                #     send_tx.tax = tax.amount
+                #     send_tx.fee_deductables = tax.amount * 2
+
+                #     new_result = send_tx.send()
+                #     print (new_result)
+
+                #     new_result = send_tx.broadcast()
+                #     print (new_result)
+                    
+
+
+                if send_tx.broadcast_result.code == 32:
                     while True:
-                        print (' 🛎️  Increasing the gas adjustment fee and trying again')
-                        send_tx.terra.gas_adjustment += GAS_ADJUSTMENT_INCREMENT
-                        print (f' 🛎️  Gas adjustment value is now {send_tx.terra.gas_adjustment}')
+                        print ('boosting sequence number')
+
+                        #gas_used:int = int(send_tx.broadcast_result.gas_used)
+                        #gas_wanted:int = send_tx.broadcast_result.gas_wanted
+
+                        # print ('gas wanted:', gas_wanted)
+                        # print ('gas used:', gas_used)
+
+                        # gas_used = int(gas_used * 1.1)
+                        
+                        # send_tx.gas_limit = gas_used
+                        # print ('new gas limit:', send_tx.gas_limit)
+
+                        send_tx.sequence = send_tx.sequence + 1
+                        #send_tx.terra.gas_adjustment += GAS_ADJUSTMENT_INCREMENT
                         send_tx.simulate()
+
                         print (send_tx.readableFee())
                         send_tx.send()
                         send_tx.broadcast()
 
-                        if send_tx.broadcast_result.code != 11:
+                        if send_tx is None:
                             break
 
-                        if send_tx.terra.gas_adjustment >= MAX_GAS_ADJUSTMENT:
+                        # Code 32 = account sequence mismatch
+                        if send_tx.broadcast_result.code != 32:
                             break
+
 
                 if send_tx.broadcast_result.is_tx_error():
                     print (' 🛎️  The send transaction failed, an error occurred:')

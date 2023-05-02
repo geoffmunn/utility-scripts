@@ -361,6 +361,28 @@ def get_user_number(question:str, params:dict) -> float|str:
     #print ('returning answer:', answer)
     return answer
 
+def get_fees_from_error(log:str, target_coin:str):
+
+    #log:str = 'insufficient fees; got: "93930uidr,4811427uluna", required: "179439uaud,179439ucad,132219uchf,925527ucny,849974udkk,118052ueur,103886ugbp,1104966uhkd,2058918253uidr,10275236uinr,15460074ujpy,160550550ukrw,5350111uluna,404748881umnt,566649umyr,1180519unok,7177554uphp,99106usdr,1180519usek,188883usgd,4363198uthb,3777660utwd,141663uusd" = "179439uaud,179439ucad,132219uchf,925527ucny,849974udkk,118052ueur,103886ugbp,1104966uhkd,2058824700uidr,10275236uinr,15460074ujpy,160550550ukrw,5350111uluna,404748881umnt,566649umyr,1180519unok,7177554uphp,99106usdr,1180519usek,188883usgd,4363198uthb,3777660utwd,141663uusd"(gas) +"93553uidr"(stability): insufficient fee'
+    required = log.split('required:')
+
+    parts = required[1].split('=')
+
+    fee_line = parts[1]
+    fee_line = fee_line.replace('(stability): insufficient fee', '').replace('"', '').lstrip(' ') .split('(gas) +')
+
+    fee_coins = Coins.from_str(fee_line[0])
+    result_tax_coin = Coin.from_str(fee_line[1])
+
+    fee_coin:Coin
+    result_fee_coin:Coin
+    for fee_coin in fee_coins:
+        if fee_coin.denom == target_coin:
+            result_fee_coin = fee_coin
+            break
+
+    return result_fee_coin, result_tax_coin
+    
 class UserConfig:
     def __init__(self):
         self.user_config = None
@@ -699,7 +721,7 @@ class Wallet:
 class TerraInstance:
     def __init__(self):
         self.chain_id       = 'columbus-5'
-        self.gas_adjustment = GAS_ADJUSTMENT
+        self.gas_adjustment = float(GAS_ADJUSTMENT)
         #self.gas_list       = None
         #self.gas_price_url  = gas_price_url
         #self.tax_rate      = None
@@ -715,7 +737,7 @@ class TerraInstance:
 
         terra:LCDClient = LCDClient(
             chain_id        = self.chain_id,
-            gas_adjustment  = self.gas_adjustment,
+            gas_adjustment  = float(self.gas_adjustment),
             url             = self.url
         )
 
@@ -1132,7 +1154,7 @@ class TransactionCore():
         """
         
         fee_string:str = ''
-        if self.fee.amount is not None:
+        if self.fee is not None and self.fee.amount is not None:
             fee_coins:Coins = self.fee.amount
 
             # Build a human-readable fee description:
@@ -1176,6 +1198,7 @@ class DelegationTransaction(TransactionCore):
         self.action:str                = ''
         self.delegator_address:str     = ''
         self.delegated_uluna:int       = 0
+        self.sequence:int              = None
         self.validator_address_old:str = ''
         self.validator_address:str     = ''
 
@@ -1308,7 +1331,8 @@ class DelegationTransaction(TransactionCore):
 
         # Set the fee to be None so it is simulated
         self.fee      = None
-        self.sequence = self.current_wallet.sequence()
+        if self.sequence is None:
+            self.sequence = self.current_wallet.sequence()
         
         # This is a provided function. Depending on the original function, we might be delegating or undelegating
         action()
@@ -1384,9 +1408,12 @@ class SendTransaction(TransactionCore):
 
         self.amount:int            = 0
         self.denom:str             = ''
+        self.fee:Fee               = None
         self.fee_deductables:float = None
+        self.gas_limit:str         = 'auto'
         self.memo:str              = ''
         self.recipient_address:str = ''
+        self.sequence:int          = None
         self.tax:float             = None
 
     def create(self):
@@ -1419,7 +1446,7 @@ class SendTransaction(TransactionCore):
         if self.tax is not None:
             if self.fee_deductables is not None:
                 if send_amount + self.tax > self.balances[self.denom]:
-        #            print ('send amount + tax exceeds total amount available')
+                    #print ('send amount + tax exceeds total amount available')
                     
                     send_amount = int(send_amount - self.fee_deductables)
             
@@ -1434,9 +1461,12 @@ class SendTransaction(TransactionCore):
                 amount       = Coins(str(int(send_amount)) + self.denom)
             )
 
+            print ('GAS LIMIT:', self.gas_limit)
+
             options = CreateTxOptions(
                 fee        = self.fee,
-                gas        = 'auto',
+                #gas        = str(self.gas_limit),
+                #gas = str(200000),
                 gas_prices = self.gas_list,
                 memo       = self.memo,
                 msgs       = [msg],
@@ -1449,14 +1479,14 @@ class SendTransaction(TransactionCore):
                 try:
                     tx:Tx = self.current_wallet.create_and_sign_tx(options)
                     break
-                except LCDResponseError as err:
-                    if 'account sequence mismatch' in err.message:
-                        self.sequence    = self.sequence + 1
-                        options.sequence = self.sequence
-                        print (' 🛎️  Boosting sequence number')
-                    else:
-                        print (err)
-                        break
+                #except LCDResponseError as err:
+                #    if 'account sequence mismatch' in err.message:
+                #        self.sequence    = self.sequence + 1
+                #        options.sequence = self.sequence
+                #        print (' 🛎️  Boosting sequence number')
+                #    else:
+                #        print (err)
+                #        break
                 except Exception as err:
                     print (' 🛑 A random error has occurred')
                     print (err)
@@ -1473,14 +1503,17 @@ class SendTransaction(TransactionCore):
         """
         Simulate a delegation so we can get the fee details.
         The fee details are saved so the actual delegation will work.
+
+        Outputs:
+        self.fee - requested_fee object with fee + tax as separate coins (unless both are lunc)
+        self.tax - the tax component
+        self.fee_deductables - the amount we need to deduct off the transferred amount
+
         """
 
-        # Set the fee to be None so it is simulated
-        self.fee             = None
-        self.fee_deductables = None
-        self.sequence        = self.current_wallet.sequence()
-        self.tax             = None
-
+        if self.sequence is None:
+            self.sequence        = self.current_wallet.sequence()
+        
         # Perform the swap as a simulation, with no fee details
         self.send()
 
@@ -1489,13 +1522,24 @@ class SendTransaction(TransactionCore):
 
         if tx is not None:
             # Get the stub of the requested fee so we can adjust it
-            requested_fee = tx.auth_info.fee
+            requested_fee:Fee = tx.auth_info.fee
 
-            #print ('requested fee:', requested_fee)
+            print ('requested fee:', requested_fee)
+
+            # Store the gas limit based on what we've been told
+            self.gas_limit = requested_fee.gas_limit
+
+            print ('apparent gas requirement:', self.gas_limit)
+
+            #self.gas_limit = str(int(requested_fee.gas_limit) * 1.3).rstrip('.0')
+            #print ('apparent gas requirement:', self.gas_limit)
+            #self.send()
+
             # This will be used by the swap function next time we call it
+            # We'll use uluna as the preferred fee currency just to keep things simple
             self.fee = self.calculateFee(requested_fee, 'uluna')
-
-            #print ('calculated fee:', self.fee)
+            
+            print ('calculated fee:', self.fee)
             
             # Figure out the fee structure
             fee_bit:Coin = Coin.from_str(str(requested_fee.amount))
@@ -1505,32 +1549,38 @@ class SendTransaction(TransactionCore):
             # Calculate the tax portion
             self.tax = int(math.ceil(self.amount * float(self.tax_rate['tax_rate'])))
 
-            #print ('tax is', self.tax)
-            # Build a fee object with 
+            print ('tax is', self.tax)
+            print ('fee denom:', fee_denom)
+            print ('self denom:', self.denom)
+
+            # Build a fee object
             if fee_denom == 'uluna' and self.denom == 'uluna':
                 new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount + self.tax))})
             else:
                 new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount)), Coin(self.denom, int(self.tax))})
                 
+            #if self.gas_limit != 'auto':
+            #   requested_fee.gas_limit = int(self.gas_limit)
 
             requested_fee.amount = new_coin
 
             # This will be used by the swap function next time we call it
             self.fee = requested_fee
         
-            #print ('final requested fee:', self.fee)
-            #exit()
-
             # Store this so we can deduct it off the total amount to swap.
             # If the fee denom is the same as what we're paying the tax in, then combine the two
             # Otherwise the deductible is just the tax value
             # This assumes that the tax is always the same denom as the transferred amount.
             if fee_denom == self.denom:
                 self.fee_deductables = int(fee_amount + self.tax)
+            elif fee_denom == 'uluna' and self.denom == 'uusd':
+                self.fee_deductables = int(self.tax)  
             else:
                 self.fee_deductables = int(self.tax * 2)
 
-            #print ('fee deductables:', self.fee_deductables)
+            print ('FINAL requested fee:', requested_fee)
+            print ('fee deductables:', self.fee_deductables)
+
             return True
         else:
             return False
@@ -1598,7 +1648,7 @@ class SwapTransaction(TransactionCore):
         self.sequence        = self.current_wallet.sequence()
 
         # Bump up the gas adjustment - it needs to be higher for swaps it turns out
-        self.terra.gas_adjustment = GAS_ADJUSTMENT_SWAPS
+        self.terra.gas_adjustment = float(GAS_ADJUSTMENT_SWAPS)
 
         #Perform the swap as a simulation, with no fee details
         self.marketSwap()
@@ -1677,7 +1727,7 @@ class SwapTransaction(TransactionCore):
 
         #print (self.belief_price)
         # Bump up the gas adjustment - it needs to be higher for swaps it turns out
-        self.terra.gas_adjustment = GAS_ADJUSTMENT_SWAPS
+        self.terra.gas_adjustment = float(GAS_ADJUSTMENT_SWAPS)
 
         # Perform the swap as a simulation, with no fee details
         self.swap()
