@@ -1446,7 +1446,7 @@ class SendTransaction(TransactionCore):
         if self.tax is not None:
             if self.fee_deductables is not None:
                 if send_amount + self.tax > self.balances[self.denom]:
-                    #print ('send amount + tax exceeds total amount available')
+        #            print ('send amount + tax exceeds total amount available')
                     
                     send_amount = int(send_amount - self.fee_deductables)
             
@@ -1465,7 +1465,7 @@ class SendTransaction(TransactionCore):
 
             options = CreateTxOptions(
                 fee        = self.fee,
-                #gas        = str(self.gas_limit),
+                gas        = str(self.gas_limit),
                 #gas = str(200000),
                 gas_prices = self.gas_list,
                 memo       = self.memo,
@@ -1574,7 +1574,7 @@ class SendTransaction(TransactionCore):
             if fee_denom == self.denom:
                 self.fee_deductables = int(fee_amount + self.tax)
             elif fee_denom == 'uluna' and self.denom == 'uusd':
-                self.fee_deductables = int(self.tax)  
+                self.fee_deductables = int(self.tax)
             else:
                 self.fee_deductables = int(self.tax * 2)
 

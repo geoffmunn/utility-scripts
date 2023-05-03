@@ -275,6 +275,9 @@ def main():
         send_tx.amount            = int(uluna_amount)
         send_tx.denom             = denom
         
+        if denom != 'uluna':
+            send_tx.gas_limit = '200000'
+
         # Simulate it            
         result = send_tx.simulate()
         
@@ -306,35 +309,35 @@ def main():
                 #     send_tx.send()
                 #     send_tx.broadcast()
 
-                # if send_tx.broadcast_result.code == 11:
-                #     while True:
+                if send_tx.broadcast_result.code == 11:
+                    while True:
 
-                #         gas_used:int = int(send_tx.broadcast_result.gas_used)
-                #         gas_wanted:int = send_tx.broadcast_result.gas_wanted
+                        # gas_used:int = int(send_tx.broadcast_result.gas_used)
+                        # gas_wanted:int = send_tx.broadcast_result.gas_wanted
 
-                #         print ('gas wanted:', gas_wanted)
-                #         print ('gas used:', gas_used)
+                        # print ('gas wanted:', gas_wanted)
+                        # print ('gas used:', gas_used)
 
-                #         print (' 🛎️  Increasing the gas adjustment fee and trying again')
-                #         #if send_tx.gas_limit == 'auto' or int(send_tx.gas_limit) < int(gas_used):
-                #         send_tx.gas_limit = str(gas_used)
+                        #print (' 🛎️  Increasing the gas adjustment fee and trying again')
+                        #if send_tx.gas_limit == 'auto' or int(send_tx.gas_limit) < int(gas_used):
+                        #send_tx.gas_limit = str(gas_used)
 
-                #         send_tx.terra.gas_adjustment += GAS_ADJUSTMENT_INCREMENT
-                #         #print (f' 🛎️  Gas adjustment value is now {send_tx.terra.gas_adjustment}')
-                #         send_tx.simulate()
-                #         print (send_tx.readableFee())
-                #         send_tx.send()
-                #         send_tx.broadcast()
+                        send_tx.terra.gas_adjustment += GAS_ADJUSTMENT_INCREMENT
+                        print (f' 🛎️  Gas adjustment value is now {send_tx.terra.gas_adjustment}')
+                        send_tx.simulate()
+                        print (send_tx.readableFee())
+                        send_tx.send()
+                        send_tx.broadcast()
 
-                #         if send_tx is None:
-                #             break
+                        if send_tx is None:
+                            break
 
-                #         # Code 32 = account sequence mismatch
-                #         if send_tx.broadcast_result.code != 11:
-                #             break
+                        # Code 32 = account sequence mismatch
+                        if send_tx.broadcast_result.code != 11:
+                            break
 
-                #         if send_tx.terra.gas_adjustment >= MAX_GAS_ADJUSTMENT:
-                #             break
+                        if send_tx.terra.gas_adjustment >= MAX_GAS_ADJUSTMENT:
+                            break
 
                 # if send_tx.broadcast_result.code == 13:
                 #     print ('Insufficient fee')
