@@ -306,12 +306,23 @@ def get_user_number(question:str, params:dict) -> float|str:
     Get ther user input - must be a number.
     """ 
     
+    empty_allowed:bool = False
+    if 'empty_allowed' in params:
+        empty_allowed = params['empty_allowed']
+
+    convert_to_uluna = True
+    if 'convert_to_uluna' in params:
+        convert_to_uluna = params['convert_to_uluna']
+
     while True:    
         answer = input(question).strip(' ')
 
-        if answer == '':
+        if answer == '' and empty_allowed == False:
             print (f' 🛎️  The value cannot be blank or empty')
         else:
+
+            if answer == '' and empty_allowed == True:
+                break
 
             is_percentage = isPercentage(answer)
 
@@ -347,18 +358,17 @@ def get_user_number(question:str, params:dict) -> float|str:
                     if is_percentage == False:
                         break
 
-    if 'percentages_allowed' in params and is_percentage == True:
-        if 'convert_percentages' in params and params['convert_percentages'] == True:
-            wallet:Wallet = Wallet()
-            #print ('params:', params)
-            answer = float(wallet.convertPercentage(answer, params['keep_minimum'], params['max_number']))
-            #print ('answer:', answer)
+    if answer != '':
+        if 'percentages_allowed' in params and is_percentage == True:
+            if 'convert_percentages' in params and params['convert_percentages'] == True:
+                wallet:Wallet = Wallet()
+                answer = float(wallet.convertPercentage(answer, params['keep_minimum'], params['max_number']))
+            else:
+                answer = answer + '%'
         else:
-            answer = answer + '%'
-    else:
-        answer = float(float(answer) * COIN_DIVISOR)
+            if convert_to_uluna == True:
+                answer = float(float(answer) * COIN_DIVISOR)
 
-    #print ('returning answer:', answer)
     return answer
 
 def get_fees_from_error(log:str, target_coin:str):
