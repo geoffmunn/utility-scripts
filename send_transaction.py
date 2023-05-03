@@ -251,6 +251,13 @@ def main():
     # NOTE: I'm pretty sure the memo size is int64, but I've capped it at 255 so python doens't panic
     memo:str = get_user_text('Provide a memo (optional): ', 255, True)
 
+    # Get the custom gas limit (if necessary)
+    custom_gas = 0
+    if denom != 'uluna':
+        print (' 🛎️  To make this more likely to work, you need to specific a higher than normal gas limit.')
+        print (' 🛎️  200000 is a good number, but you can specify your own. Leave this blank if you want to accept the default.')
+        custom_gas:int = get_user_number('Gas limit: ', {'max_number': wallet.balances['uluna'], 'min_number': 0, 'empty_allowed': True, 'convert_to_uluna': False})
+
     # Convert the provided value into actual numbers:
     complete_transaction = get_user_choice(f"You are about to send {wallet.formatUluna(uluna_amount)} {FULL_COIN_LOOKUP[denom]} to {recipient_address} - do you want to continue? (y/n) ", [])
 
@@ -276,8 +283,15 @@ def main():
         send_tx.denom             = denom
         
         if denom != 'uluna':
-            send_tx.gas_limit = '200000'
+            
+            result = send_tx.simulate()
 
+            if result == True:
+                custom_gas = send_tx.fee.gas_limit * 1.14
+                send_tx.gas_limit = custom_gas
+            else:
+                print (' 🛎️  The send transaction could not be completed')
+            
         # Simulate it            
         result = send_tx.simulate()
         
