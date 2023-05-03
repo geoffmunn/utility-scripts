@@ -1008,16 +1008,16 @@ class TransactionCore():
         self.broadcast_result:BlockTxBroadcastResult = result
 
         if result is not None:
-            print ("IF YOU GET AN ERROR, CHECK WHAT THE RESULT BELOW SAYS:")
-            print (self.broadcast_result)
+            #print ("IF YOU GET AN ERROR, CHECK WHAT THE RESULT BELOW SAYS:")
+            #print (self.broadcast_result)
 
             code:int = None
 
             try:
-                print ('code attribute is ', self.broadcast_result.code)
+                #print ('code attribute is ', self.broadcast_result.code)
                 code = self.broadcast_result.code
             except:
-                print ('code attribute did not work')
+                print ('Error getting the code attribute')
             
             # BlockTxBroadcastResult(height=12571996, txhash='xxx', raw_log='out of gas in location: WritePerByte; gasWanted: 491622, gasUsed: 497182: out of gas', gas_wanted=491622, gas_used=497182, logs=None, code=11, codespace='sdk', info=None, data=None, timestamp=None)
             if code is not None and code != 0:
@@ -1124,7 +1124,7 @@ class TransactionCore():
             if len(result['txs']) > 0 and int(result['pagination']['total']) > 0:
                 if result['txs'][0].code == 0:
                     print ('Found the hash!')
-                    print (result)
+                    #print (result)
                     transaction_found = True
                     break
 
@@ -1471,7 +1471,7 @@ class SendTransaction(TransactionCore):
                 amount       = Coins(str(int(send_amount)) + self.denom)
             )
 
-            print ('GAS LIMIT:', self.gas_limit)
+            #print ('GAS LIMIT:', self.gas_limit)
 
             options = CreateTxOptions(
                 fee        = self.fee,
@@ -1489,14 +1489,14 @@ class SendTransaction(TransactionCore):
                 try:
                     tx:Tx = self.current_wallet.create_and_sign_tx(options)
                     break
-                #except LCDResponseError as err:
-                #    if 'account sequence mismatch' in err.message:
-                #        self.sequence    = self.sequence + 1
-                #        options.sequence = self.sequence
-                #        print (' 🛎️  Boosting sequence number')
-                #    else:
-                #        print (err)
-                #        break
+                except LCDResponseError as err:
+                   if 'account sequence mismatch' in err.message:
+                       self.sequence    = self.sequence + 1
+                       options.sequence = self.sequence
+                       print (' 🛎️  Boosting sequence number')
+                   else:
+                       print (err)
+                       break
                 except Exception as err:
                     print (' 🛑 A random error has occurred')
                     print (err)
@@ -1534,12 +1534,12 @@ class SendTransaction(TransactionCore):
             # Get the stub of the requested fee so we can adjust it
             requested_fee:Fee = tx.auth_info.fee
 
-            print ('requested fee:', requested_fee)
+            #print ('requested fee:', requested_fee)
 
             # Store the gas limit based on what we've been told
             self.gas_limit = requested_fee.gas_limit
 
-            print ('apparent gas requirement:', self.gas_limit)
+            #print ('apparent gas requirement:', self.gas_limit)
 
             #self.gas_limit = str(int(requested_fee.gas_limit) * 1.3).rstrip('.0')
             #print ('apparent gas requirement:', self.gas_limit)
@@ -1549,7 +1549,7 @@ class SendTransaction(TransactionCore):
             # We'll use uluna as the preferred fee currency just to keep things simple
             self.fee = self.calculateFee(requested_fee, 'uluna')
             
-            print ('calculated fee:', self.fee)
+            #print ('calculated fee:', self.fee)
             
             # Figure out the fee structure
             fee_bit:Coin = Coin.from_str(str(requested_fee.amount))
@@ -1559,9 +1559,9 @@ class SendTransaction(TransactionCore):
             # Calculate the tax portion
             self.tax = int(math.ceil(self.amount * float(self.tax_rate['tax_rate'])))
 
-            print ('tax is', self.tax)
-            print ('fee denom:', fee_denom)
-            print ('self denom:', self.denom)
+            #print ('tax is', self.tax)
+            #print ('fee denom:', fee_denom)
+            #print ('self denom:', self.denom)
 
             # Build a fee object
             if fee_denom == 'uluna' and self.denom == 'uluna':
@@ -1588,8 +1588,8 @@ class SendTransaction(TransactionCore):
             else:
                 self.fee_deductables = int(self.tax * 2)
 
-            print ('FINAL requested fee:', requested_fee)
-            print ('fee deductables:', self.fee_deductables)
+            #print ('FINAL requested fee:', requested_fee)
+            #print ('fee deductables:', self.fee_deductables)
 
             return True
         else:
