@@ -195,10 +195,6 @@ from terra_classic_sdk.core.fee import Fee
 
 def main():
     
-    #fee, tax = get_fees_from_error('insufficient fees; got: "93930uidr,4811427uluna", required: "179439uaud,179439ucad,132219uchf,925527ucny,849974udkk,118052ueur,103886ugbp,1104966uhkd,2058918253uidr,10275236uinr,15460074ujpy,160550550ukrw,5350111uluna,404748881umnt,566649umyr,1180519unok,7177554uphp,99106usdr,1180519usek,188883usgd,4363198uthb,3777660utwd,141663uusd" = "179439uaud,179439ucad,132219uchf,925527ucny,849974udkk,118052ueur,103886ugbp,1104966uhkd,2058824700uidr,10275236uinr,15460074ujpy,160550550ukrw,5350111uluna,404748881umnt,566649umyr,1180519unok,7177554uphp,99106usdr,1180519usek,188883usgd,4363198uthb,3777660utwd,141663uusd"(gas) +"93553uidr"(stability): insufficient fee', 'uluna')
-    #parts = required.split('=')
-    #print (parts)
-
     # Get the password that decrypts the user wallets
     decrypt_password:str = getpass() # the secret password that encrypts the seed phrase
 
@@ -305,7 +301,7 @@ def main():
             if result == True:
                 send_tx.broadcast()
             
-                print ('send tx broadcast:', send_tx.broadcast_result)
+                #print ('send tx broadcast:', send_tx.broadcast_result)
 
                 # if send_tx.broadcast_result.code == 11:
                 #     gas_used:int = int(send_tx.broadcast_result.gas_used)
@@ -339,7 +335,7 @@ def main():
                         send_tx.terra.gas_adjustment += GAS_ADJUSTMENT_INCREMENT
                         print (f' 🛎️  Gas adjustment value is now {send_tx.terra.gas_adjustment}')
                         send_tx.simulate()
-                        print (send_tx.readableFee())
+                        #print (send_tx.readableFee())
                         send_tx.send()
                         send_tx.broadcast()
 
@@ -378,7 +374,7 @@ def main():
 
                 if send_tx.broadcast_result.code == 32:
                     while True:
-                        print ('boosting sequence number')
+                        print (' 🛎️  Boosting sequence number and trying again...')
 
                         #gas_used:int = int(send_tx.broadcast_result.gas_used)
                         #gas_wanted:int = send_tx.broadcast_result.gas_wanted
@@ -395,7 +391,7 @@ def main():
                         #send_tx.terra.gas_adjustment += GAS_ADJUSTMENT_INCREMENT
                         send_tx.simulate()
 
-                        print (send_tx.readableFee())
+                        #print (send_tx.readableFee())
                         send_tx.send()
                         send_tx.broadcast()
 
