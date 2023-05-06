@@ -405,6 +405,7 @@ def main():
 
                 if send_tx.broadcast_result.is_tx_error():
                     print (' 🛎️  The send transaction failed, an error occurred:')
+                    print (f' 🛎️  Error code {send_tx.broadcast_result.code}')
                     print (f' 🛎️  {send_tx.broadcast_result.raw_log}')
                 else:
                     print (f' ✅ Sent amount: {wallet.formatUluna(uluna_amount)} {FULL_COIN_LOOKUP[denom]}')
