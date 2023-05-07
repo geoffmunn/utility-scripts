@@ -197,18 +197,16 @@ def get_coin_selection(question:str, coins:dict, only_active_coins:bool = True, 
 
         for coin in FULL_COIN_LOOKUP:
 
-            #if only_active_coins == True:
             if coin in coins:
                 count += 1
                 coin_index[FULL_COIN_LOOKUP[coin].lower()] = count
             else:
                 print (f'{coin} not in coins')
-            #else:
-            #    coin_index[FULL_COIN_LOOKUP[coin].lower()] = count
-            #    count += 1
             
             if coin_to_use == coin:
                 glyph = '✅'
+            elif estimation_against is not None and estimation_against['denom'] == coin:
+                glyph = '⚪'
             else:
                 glyph = '  '
 
@@ -255,10 +253,13 @@ def get_coin_selection(question:str, coins:dict, only_active_coins:bool = True, 
             answer = str(coin_index[answer])
 
         if answer.isdigit() and int(answer) > 0 and int(answer) <= count:
-            coin_to_use = coin_list[int(answer)]
-            if estimation_against is not None:
-                returned_estimation = coin_values[coin_to_use]
-            
+            if estimation_against is not None and estimation_against['denom'] == coin_list[int(answer)]:
+                print ('\nYou can\'t swap to the same coin!')
+            else:
+                coin_to_use = coin_list[int(answer)]
+                if estimation_against is not None:
+                    returned_estimation = coin_values[coin_to_use]
+                
         if answer == USER_ACTION_CONTINUE:
             if coin_to_use is not None:
                 break
