@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: UTF-8 -*-
 
 # User settings - can be changed if required
 TESTMODE = False
@@ -6,13 +7,16 @@ WITHDRAWAL_REMAINDER = 250   # This is the amount of Lunc we want to keep after 
 SEARCH_RETRY_COUNT   = 30    # This is the number of times we will check for a transaction to appear in the chain before deciding it didn't work.
 
 # System settings - these can be changed, but shouldn't be necessary
+#LCD_ENDPOINT             = 'https://lcd.terrarebels.net'
+#LCD_ENDPOINT             = 'https://lcd.terra.dev'
+LCD_ENDPOINT             = 'https://terra-classic-lcd.publicnode.com'
 GAS_PRICE_URI            = 'https://terra-classic-fcd.publicnode.com/v1/txs/gas_prices'
 TAX_RATE_URI             = 'https://terra-classic-lcd.publicnode.com/terra/treasury/v1beta1/tax_rate'
 TOKEN_LIST               = 'https://assets.terrarebels.net/cw20/tokens.json'
 CONFIG_FILE_NAME         = 'user_config.yml'
 GAS_ADJUSTMENT           = 1
 GAS_ADJUSTMENT_SEND      = 3.5
-GAS_ADJUSTMENT_SWAPS     = 3
+GAS_ADJUSTMENT_SWAPS     = 3.5
 GAS_ADJUSTMENT_INCREMENT = 0.1
 MAX_GAS_ADJUSTMENT       = 4
 

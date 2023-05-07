@@ -15,9 +15,11 @@ from utility_classes import (
 from utility_constants import (
     ASTROPORT_UUSD_TO_ULUNA_ADDRESS,
     GAS_ADJUSTMENT_INCREMENT,
+    GAS_ADJUSTMENT_SWAPS,
     FULL_COIN_LOOKUP,
     MAX_GAS_ADJUSTMENT,
     TERRASWAP_ULUNA_TO_UUSD_ADDRESS,
+    #TERRASWAP_UUSD_TO_ULUNA_ADDRESS,
     USER_ACTION_CONTINUE,
     USER_ACTION_QUIT
 )
@@ -185,7 +187,7 @@ def main():
         exit()
 
     # List all the coins in this wallet, with the amounts available:
-    print ('What coin do you want to swap FROM?')
+    print ('\nWhat coin do you want to swap FROM?')
     coin_from, answer, null_value = get_coin_selection("Select a coin number 1 - " + str(len(wallet.balances)) + ", 'X' to continue, or 'Q' to quit: ", wallet.balances)
 
     if answer == USER_ACTION_QUIT:
@@ -196,7 +198,7 @@ def main():
     print (f'This coin has a maximum of {available_balance} {FULL_COIN_LOOKUP[coin_from]} available.')
     swap_uluna = get_user_number('How much do you want to swap? ', {'max_number': available_balance, 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': True, 'keep_minimum': False})
 
-    print ('What coin do you want to swap TO?')
+    print ('\nWhat coin do you want to swap TO?')
     coin_to, answer, estimated_amount = get_coin_selection("Select a coin number 1 - " + str(len(wallet.balances)) + ", 'X' to continue, or 'Q' to quit: ", wallet.balances, False, {'denom':coin_from, 'amount':swap_uluna}, wallet)
 
     if answer == USER_ACTION_QUIT:
@@ -218,16 +220,21 @@ def main():
     swaps_tx.swap_denom = coin_from
     swaps_tx.swap_request_denom = coin_to
     
-
+    # Bump up the gas adjustment - it needs to be higher for swaps it turns out
+    swaps_tx.terra.gas_adjustment = float(GAS_ADJUSTMENT_SWAPS)
+    
     use_market_swap:bool = True
 
     if coin_from == 'uluna' and coin_to == 'uusd':
         use_market_swap = False
         swaps_tx.contract = TERRASWAP_ULUNA_TO_UUSD_ADDRESS
+        #swaps_tx.gas_limit = '150000'
 
     if coin_from == 'uusd' and coin_to == 'uluna':
         use_market_swap = False
         swaps_tx.contract = ASTROPORT_UUSD_TO_ULUNA_ADDRESS
+        #swaps_tx.contract = TERRASWAP_UUSD_TO_ULUNA_ADDRESS
+        #swaps_tx.gas_limit = '165611'
 
     if use_market_swap == True:
         result = swaps_tx.marketSimulate()
@@ -243,6 +250,8 @@ def main():
 
             result = swaps_tx.swap()
 
+    # print ('swaps simlulate finished, exiting...')
+    # exit()
     if result == True:
         swaps_tx.broadcast()
     
@@ -267,6 +276,23 @@ def main():
                     break
 
                 if swaps_tx.terra.gas_adjustment >= MAX_GAS_ADJUSTMENT:
+                    break
+
+        if swaps_tx.broadcast_result.code == 32:
+            while True:
+                print (' 🛎️  Boosting sequence number and trying again...')
+
+                swaps_tx.sequence = swaps_tx.sequence + 1
+                swaps_tx.simulate()
+                print (swaps_tx.readableFee())
+                swaps_tx.swap()
+                swaps_tx.broadcast()
+
+                if swaps_tx is None:
+                    break
+
+                # Code 32 = account sequence mismatch
+                if swaps_tx.broadcast_result.code != 32:
                     break
 
         if swaps_tx.broadcast_result.is_tx_error():

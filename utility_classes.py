@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: UTF-8 -*-
 
 import cryptocode
 import json
@@ -8,18 +9,21 @@ import time
 import yaml
 
 from utility_constants import (
+    ASTROPORT_UUSD_TO_ULUNA_ADDRESS,
     COIN_DIVISOR,
     CONFIG_FILE_NAME,
     FULL_COIN_LOOKUP,
     GAS_ADJUSTMENT,
-    GAS_ADJUSTMENT_SEND,
     GAS_ADJUSTMENT_SWAPS,
     GAS_PRICE_URI,
+    LCD_ENDPOINT,
     SEARCH_RETRY_COUNT,
     TAX_RATE_URI,
+    TERRASWAP_ULUNA_TO_UUSD_ADDRESS,
+    #TERRASWAP_UUSD_TO_ULUNA_ADDRESS,
     USER_ACTION_CONTINUE,
     USER_ACTION_QUIT,
-    WITHDRAWAL_REMAINDER
+    WITHDRAWAL_REMAINDER    
 )
 
 from terra_classic_sdk.client.lcd import LCDClient
@@ -147,11 +151,11 @@ def get_coin_selection(question:str, coins:dict, only_active_coins:bool = True, 
 
                 if coin != estimation_against['denom']:
                     estimated_result:Coin = swaps_tx.swapRate()
+                    estimated_value:str = wallet.formatUluna(estimated_result.amount)
                 else:
                     estimated_result:Coin = Coin(estimation_against['denom'], 1 * COIN_DIVISOR)
-
-                estimated_value:str = wallet.formatUluna(estimated_result.amount)
-
+                    estimated_value = None
+                
                 coin_values[coin] = estimated_value
                 
                 if len(str(estimated_value)) > label_widths[3]:
@@ -183,8 +187,8 @@ def get_coin_selection(question:str, coins:dict, only_active_coins:bool = True, 
     answer:str = False
 
     coin_index = {}
-
     while True:
+
         count:int = 0
 
         print ('\n' + horizontal_spacer)
@@ -193,13 +197,15 @@ def get_coin_selection(question:str, coins:dict, only_active_coins:bool = True, 
 
         for coin in FULL_COIN_LOOKUP:
 
-            if only_active_coins == True:
-                if coin in coins:
-                    count += 1
-                    coin_index[FULL_COIN_LOOKUP[coin].lower()] = count
-            else:
-                coin_index[FULL_COIN_LOOKUP[coin].lower()] = count
+            #if only_active_coins == True:
+            if coin in coins:
                 count += 1
+                coin_index[FULL_COIN_LOOKUP[coin].lower()] = count
+            else:
+                print (f'{coin} not in coins')
+            #else:
+            #    coin_index[FULL_COIN_LOOKUP[coin].lower()] = count
+            #    count += 1
             
             if coin_to_use == coin:
                 glyph = '✅'
@@ -230,8 +236,11 @@ def get_coin_selection(question:str, coins:dict, only_active_coins:bool = True, 
                     print (f"{count_str}{glyph} | {coin_name_str} | {balance_str}")
                 else:
                     if coin in coin_values:
-                        estimated_str =  float(coin_values[coin])
-                        estimated_str = str(("%.6f" % (estimated_str)).rstrip('0').rstrip('.'))
+                        if coin_values[coin] is not None:
+                            estimated_str = float(coin_values[coin])
+                            estimated_str = str(("%.6f" % (estimated_str)).rstrip('0').rstrip('.'))
+                        else:
+                            estimated_str = '--'
                     else:
                         estimated_str = ''
 
@@ -736,9 +745,7 @@ class TerraInstance:
         #self.gas_price_url  = gas_price_url
         #self.tax_rate      = None
         self.terra          = None
-        self.url            = 'https://lcd.terrarebels.net'
-        #self.url            = 'https://lcd.terra.dev'
-        #self.url            =  'https://terra-classic-lcd.publicnode.com'
+        self.url            = LCD_ENDPOINT
         
     def create(self) -> LCDClient:
         """
@@ -1008,18 +1015,13 @@ class TransactionCore():
         self.broadcast_result:BlockTxBroadcastResult = result
 
         if result is not None:
-            #print ("IF YOU GET AN ERROR, CHECK WHAT THE RESULT BELOW SAYS:")
-            #print (self.broadcast_result)
-
             code:int = None
 
             try:
-                #print ('code attribute is ', self.broadcast_result.code)
                 code = self.broadcast_result.code
             except:
                 print ('Error getting the code attribute')
             
-            # BlockTxBroadcastResult(height=12571996, txhash='xxx', raw_log='out of gas in location: WritePerByte; gasWanted: 491622, gasUsed: 497182: out of gas', gas_wanted=491622, gas_used=497182, logs=None, code=11, codespace='sdk', info=None, data=None, timestamp=None)
             if code is not None and code != 0:
                 # Send this back for a retry with a higher gas adjustment value
                 return self.broadcast_result
@@ -1604,6 +1606,7 @@ class SwapTransaction(TransactionCore):
         self.belief_price           = None
         self.contract               = None
         self.fee_deductables:float  = None
+        self.gas_limit:str          = 'auto'
         self.max_spread:float       = 0.01
         self.tax:float              = None
         self.swap_amount:int        = None
@@ -1617,16 +1620,10 @@ class SwapTransaction(TransactionCore):
 
         result = self.terra.wasm.contract_query(self.contract, {"pool": {}})
 
-        #print ('belief result:', result)
-        #result = self.terra.wasm.contract_query(ASTROPORT_UUSD_TO_ULUNA_ADDRESS, {"pool": {}})
-
         parts:dict = {}
         parts[result['assets'][0]['info']['native_token']['denom']] = int(result['assets'][0]['amount'])
         parts[result['assets'][1]['info']['native_token']['denom']] = int(result['assets'][1]['amount'])
 
-        #print (parts)
-        
-        #belief_price:float = int(result['assets'][0]['amount']) / int(result['assets'][1]['amount']) 
         belief_price:float = parts['uluna'] / parts['uusd']
         return round(belief_price, 18)
         
@@ -1651,10 +1648,10 @@ class SwapTransaction(TransactionCore):
         The fee details are saved so the actual market swap will work.
         """
 
-        self.belief_price    = None
-        self.fee             = None
-        self.tax             = None
-        self.fee_deductables = None
+        #self.belief_price    = None
+        #self.fee             = None
+        #self.tax             = None
+        #self.fee_deductables = None
         self.sequence        = self.current_wallet.sequence()
 
         # Bump up the gas adjustment - it needs to be higher for swaps it turns out
@@ -1694,7 +1691,7 @@ class SwapTransaction(TransactionCore):
 
             options = CreateTxOptions(
                 fee        = self.fee,
-                gas        = 'auto',
+                gas        = self.gas_limit,
                 gas_prices = self.gas_list,
                 msgs       = [tx_msg],
                 sequence   = self.sequence,
@@ -1722,60 +1719,601 @@ class SwapTransaction(TransactionCore):
             return True
         except:
             return False
-
+        
     def simulate(self) -> bool:
         """
-        Simulate a swap so we can get the fee details.
-        The fee details are saved so the actual swap will work.
+        Simulate a delegation so we can get the fee details.
+        THIS IS ONLY FOR USTC <-> LUNC SWAPS
+        The fee details are saved so the actual delegation will work.
+
+        Outputs:
+        self.fee - requested_fee object with fee + tax as separate coins (unless both are lunc)
+        self.tax - the tax component
+        self.fee_deductables - the amount we need to deduct off the transferred amount
+
         """
 
-        self.belief_price    = self.beliefPrice()
-        self.fee             = None
-        self.tax             = None
-        self.fee_deductables = None
-        self.sequence        = self.current_wallet.sequence()
-
-        #print (self.belief_price)
-        # Bump up the gas adjustment - it needs to be higher for swaps it turns out
-        self.terra.gas_adjustment = float(GAS_ADJUSTMENT_SWAPS)
-
+        # Send:
+#         ,terra1adfylse87rxmuh95592n99zdne4rudzwxucl35,terra1m6ywlgn6wrjuagcmmezzz2a029gtldhey5k552{"swap":{"belief_price":"0.005405309185445239","max_spread":"0.01","offer_asset":{"amount":"21634971","info":{"native_token":{"denom":"uusd"}}}}}*
+# uusd216349
+        # Result:
+        # {
+        #     "gas_info": {
+        #         "gas_wanted": "0",
+        #         "gas_used": "241592"
+        #     },
+        #     "result": {
+        #         "data": "CigKJi90ZXJyYS53YXNtLnYxYmV0YTEuTXNnRXhlY3V0ZUNvbnRyYWN0",
+        #         "log": "[{\"events\":[{\"type\":\"coin_received\",\"attributes\":[{\"key\":\"receiver\",\"value\":\"terra1m6ywlgn6wrjuagcmmezzz2a029gtldhey5k552\"},{\"key\":\"amount\",\"value\":\"21634971uusd\"},{\"key\":\"receiver\",\"value\":\"terra17xpfvakm2amg962yls6f84z3kell8c5lkaeqfa\"},{\"key\":\"amount\",\"value\":\"7989103uluna\"},{\"key\":\"receiver\",\"value\":\"terra1adfylse87rxmuh95592n99zdne4rudzwxucl35\"},{\"key\":\"amount\",\"value\":\"3994551779uluna\"},{\"key\":\"receiver\",\"value\":\"terra17xpfvakm2amg962yls6f84z3kell8c5lkaeqfa\"},{\"key\":\"amount\",\"value\":\"8012uluna\"},{\"key\":\"receiver\",\"value\":\"terra12u7hcmpltazmmnq0fvyl225usn3fy6qqlp05w0\"},{\"key\":\"amount\",\"value\":\"4006169uluna\"}]},{\"type\":\"coin_spent\",\"attributes\":[{\"key\":\"spender\",\"value\":\"terra1adfylse87rxmuh95592n99zdne4rudzwxucl35\"},{\"key\":\"amount\",\"value\":\"21634971uusd\"},{\"key\":\"spender\",\"value\":\"terra1m6ywlgn6wrjuagcmmezzz2a029gtldhey5k552\"},{\"key\":\"amount\",\"value\":\"7989103uluna\"},{\"key\":\"spender\",\"value\":\"terra1m6ywlgn6wrjuagcmmezzz2a029gtldhey5k552\"},{\"key\":\"amount\",\"value\":\"3994551779uluna\"},{\"key\":\"spender\",\"value\":\"terra1m6ywlgn6wrjuagcmmezzz2a029gtldhey5k552\"},{\"key\":\"amount\",\"value\":\"8012uluna\"},{\"key\":\"spender\",\"value\":\"terra1m6ywlgn6wrjuagcmmezzz2a029gtldhey5k552\"},{\"key\":\"amount\",\"value\":\"4006169uluna\"}]},{\"type\":\"execute_contract\",\"attributes\":[{\"key\":\"sender\",\"value\":\"terra1adfylse87rxmuh95592n99zdne4rudzwxucl35\"},{\"key\":\"contract_address\",\"value\":\"terra1m6ywlgn6wrjuagcmmezzz2a029gtldhey5k552\"}]},{\"type\":\"from_contract\",\"attributes\":[{\"key\":\"contract_address\",\"value\":\"terra1m6ywlgn6wrjuagcmmezzz2a029gtldhey5k552\"},{\"key\":\"action\",\"value\":\"swap\"},{\"key\":\"sender\",\"value\":\"terra1adfylse87rxmuh95592n99zdne4rudzwxucl35\"},{\"key\":\"receiver\",\"value\":\"terra1adfylse87rxmuh95592n99zdne4rudzwxucl35\"},{\"key\":\"offer_asset\",\"value\":\"uusd\"},{\"key\":\"ask_asset\",\"value\":\"uluna\"},{\"key\":\"offer_amount\",\"value\":\"21634971\"},{\"key\":\"return_amount\",\"value\":\"4002540883\"},{\"key\":\"tax_amount\",\"value\":\"7989104\"},{\"key\":\"spread_amount\",\"value\":\"11850\"},{\"key\":\"commission_amount\",\"value\":\"12043753\"},{\"key\":\"maker_fee_amount\",\"value\":\"4014182\"}]},{\"type\":\"message\",\"attributes\":[{\"key\":\"action\",\"value\":\"/terra.wasm.v1beta1.MsgExecuteContract\"},{\"key\":\"module\",\"value\":\"wasm\"},{\"key\":\"sender\",\"value\":\"terra1adfylse87rxmuh95592n99zdne4rudzwxucl35\"},{\"key\":\"sender\",\"value\":\"terra1adfylse87rxmuh95592n99zdne4rudzwxucl35\"},{\"key\":\"sender\",\"value\":\"terra1m6ywlgn6wrjuagcmmezzz2a029gtldhey5k552\"},{\"key\":\"sender\",\"value\":\"terra1m6ywlgn6wrjuagcmmezzz2a029gtldhey5k552\"},{\"key\":\"module\",\"value\":\"bank\"},{\"key\":\"sender\",\"value\":\"terra1m6ywlgn6wrjuagcmmezzz2a029gtldhey5k552\"},{\"key\":\"sender\",\"value\":\"terra1m6ywlgn6wrjuagcmmezzz2a029gtldhey5k552\"},{\"key\":\"module\",\"value\":\"bank\"}]},{\"type\":\"transfer\",\"attributes\":[{\"key\":\"recipient\",\"value\":\"terra1m6ywlgn6wrjuagcmmezzz2a029gtldhey5k552\"},{\"key\":\"sender\",\"value\":\"terra1adfylse87rxmuh95592n99zdne4rudzwxucl35\"},{\"key\":\"amount\",\"value\":\"21634971uusd\"},{\"key\":\"recipient\",\"value\":\"terra17xpfvakm2amg962yls6f84z3kell8c5lkaeqfa\"},{\"key\":\"sender\",\"value\":\"terra1m6ywlgn6wrjuagcmmezzz2a029gtldhey5k552\"},{\"key\":\"amount\",\"value\":\"7989103uluna\"},{\"key\":\"recipient\",\"value\":\"terra1adfylse87rxmuh95592n99zdne4rudzwxucl35\"},{\"key\":\"sender\",\"value\":\"terra1m6ywlgn6wrjuagcmmezzz2a029gtldhey5k552\"},{\"key\":\"amount\",\"value\":\"3994551779uluna\"},{\"key\":\"recipient\",\"value\":\"terra17xpfvakm2amg962yls6f84z3kell8c5lkaeqfa\"},{\"key\":\"sender\",\"value\":\"terra1m6ywlgn6wrjuagcmmezzz2a029gtldhey5k552\"},{\"key\":\"amount\",\"value\":\"8012uluna\"},{\"key\":\"recipient\",\"value\":\"terra12u7hcmpltazmmnq0fvyl225usn3fy6qqlp05w0\"},{\"key\":\"sender\",\"value\":\"terra1m6ywlgn6wrjuagcmmezzz2a029gtldhey5k552\"},{\"key\":\"amount\",\"value\":\"4006169uluna\"}]},{\"type\":\"wasm\",\"attributes\":[{\"key\":\"contract_address\",\"value\":\"terra1m6ywlgn6wrjuagcmmezzz2a029gtldhey5k552\"},{\"key\":\"action\",\"value\":\"swap\"},{\"key\":\"sender\",\"value\":\"terra1adfylse87rxmuh95592n99zdne4rudzwxucl35\"},{\"key\":\"receiver\",\"value\":\"terra1adfylse87rxmuh95592n99zdne4rudzwxucl35\"},{\"key\":\"offer_asset\",\"value\":\"uusd\"},{\"key\":\"ask_asset\",\"value\":\"uluna\"},{\"key\":\"offer_amount\",\"value\":\"21634971\"},{\"key\":\"return_amount\",\"value\":\"4002540883\"},{\"key\":\"tax_amount\",\"value\":\"7989104\"},{\"key\":\"spread_amount\",\"value\":\"11850\"},{\"key\":\"commission_amount\",\"value\":\"12043753\"},{\"key\":\"maker_fee_amount\",\"value\":\"4014182\"}]}]}]",
+        #         "events": [
+        #         {
+        #             "type": "message",
+        #             "attributes": [
+        #             {
+        #                 "key": "YWN0aW9u",
+        #                 "value": "L3RlcnJhLndhc20udjFiZXRhMS5Nc2dFeGVjdXRlQ29udHJhY3Q=",
+        #                 "index": false
+        #             }
+        #             ]
+        #         },
+        #         {
+        #             "type": "execute_contract",
+        #             "attributes": [
+        #             {
+        #                 "key": "c2VuZGVy",
+        #                 "value": "dGVycmExYWRmeWxzZTg3cnhtdWg5NTU5Mm45OXpkbmU0cnVkend4dWNsMzU=",
+        #                 "index": false
+        #             },
+        #             {
+        #                 "key": "Y29udHJhY3RfYWRkcmVzcw==",
+        #                 "value": "dGVycmExbTZ5d2xnbjZ3cmp1YWdjbW1lenp6MmEwMjlndGxkaGV5NWs1NTI=",
+        #                 "index": false
+        #             }
+        #             ]
+        #         },
+        #         {
+        #             "type": "message",
+        #             "attributes": [
+        #             {
+        #                 "key": "bW9kdWxl",
+        #                 "value": "d2FzbQ==",
+        #                 "index": false
+        #             },
+        #             {
+        #                 "key": "c2VuZGVy",
+        #                 "value": "dGVycmExYWRmeWxzZTg3cnhtdWg5NTU5Mm45OXpkbmU0cnVkend4dWNsMzU=",
+        #                 "index": false
+        #             }
+        #             ]
+        #         },
+        #         {
+        #             "type": "coin_spent",
+        #             "attributes": [
+        #             {
+        #                 "key": "c3BlbmRlcg==",
+        #                 "value": "dGVycmExYWRmeWxzZTg3cnhtdWg5NTU5Mm45OXpkbmU0cnVkend4dWNsMzU=",
+        #                 "index": false
+        #             },
+        #             {
+        #                 "key": "YW1vdW50",
+        #                 "value": "MjE2MzQ5NzF1dXNk",
+        #                 "index": false
+        #             }
+        #             ]
+        #         },
+        #         {
+        #             "type": "coin_received",
+        #             "attributes": [
+        #             {
+        #                 "key": "cmVjZWl2ZXI=",
+        #                 "value": "dGVycmExbTZ5d2xnbjZ3cmp1YWdjbW1lenp6MmEwMjlndGxkaGV5NWs1NTI=",
+        #                 "index": false
+        #             },
+        #             {
+        #                 "key": "YW1vdW50",
+        #                 "value": "MjE2MzQ5NzF1dXNk",
+        #                 "index": false
+        #             }
+        #             ]
+        #         },
+        #         {
+        #             "type": "transfer",
+        #             "attributes": [
+        #             {
+        #                 "key": "cmVjaXBpZW50",
+        #                 "value": "dGVycmExbTZ5d2xnbjZ3cmp1YWdjbW1lenp6MmEwMjlndGxkaGV5NWs1NTI=",
+        #                 "index": false
+        #             },
+        #             {
+        #                 "key": "c2VuZGVy",
+        #                 "value": "dGVycmExYWRmeWxzZTg3cnhtdWg5NTU5Mm45OXpkbmU0cnVkend4dWNsMzU=",
+        #                 "index": false
+        #             },
+        #             {
+        #                 "key": "YW1vdW50",
+        #                 "value": "MjE2MzQ5NzF1dXNk",
+        #                 "index": false
+        #             }
+        #             ]
+        #         },
+        #         {
+        #             "type": "message",
+        #             "attributes": [
+        #             {
+        #                 "key": "c2VuZGVy",
+        #                 "value": "dGVycmExYWRmeWxzZTg3cnhtdWg5NTU5Mm45OXpkbmU0cnVkend4dWNsMzU=",
+        #                 "index": false
+        #             }
+        #             ]
+        #         },
+        #         {
+        #             "type": "wasm",
+        #             "attributes": [
+        #             {
+        #                 "key": "Y29udHJhY3RfYWRkcmVzcw==",
+        #                 "value": "dGVycmExbTZ5d2xnbjZ3cmp1YWdjbW1lenp6MmEwMjlndGxkaGV5NWs1NTI=",
+        #                 "index": false
+        #             },
+        #             {
+        #                 "key": "YWN0aW9u",
+        #                 "value": "c3dhcA==",
+        #                 "index": false
+        #             },
+        #             {
+        #                 "key": "c2VuZGVy",
+        #                 "value": "dGVycmExYWRmeWxzZTg3cnhtdWg5NTU5Mm45OXpkbmU0cnVkend4dWNsMzU=",
+        #                 "index": false
+        #             },
+        #             {
+        #                 "key": "cmVjZWl2ZXI=",
+        #                 "value": "dGVycmExYWRmeWxzZTg3cnhtdWg5NTU5Mm45OXpkbmU0cnVkend4dWNsMzU=",
+        #                 "index": false
+        #             },
+        #             {
+        #                 "key": "b2ZmZXJfYXNzZXQ=",
+        #                 "value": "dXVzZA==",
+        #                 "index": false
+        #             },
+        #             {
+        #                 "key": "YXNrX2Fzc2V0",
+        #                 "value": "dWx1bmE=",
+        #                 "index": false
+        #             },
+        #             {
+        #                 "key": "b2ZmZXJfYW1vdW50",
+        #                 "value": "MjE2MzQ5NzE=",
+        #                 "index": false
+        #             },
+        #             {
+        #                 "key": "cmV0dXJuX2Ftb3VudA==",
+        #                 "value": "NDAwMjU0MDg4Mw==",
+        #                 "index": false
+        #             },
+        #             {
+        #                 "key": "dGF4X2Ftb3VudA==",
+        #                 "value": "Nzk4OTEwNA==",
+        #                 "index": false
+        #             },
+        #             {
+        #                 "key": "c3ByZWFkX2Ftb3VudA==",
+        #                 "value": "MTE4NTA=",
+        #                 "index": false
+        #             },
+        #             {
+        #                 "key": "Y29tbWlzc2lvbl9hbW91bnQ=",
+        #                 "value": "MTIwNDM3NTM=",
+        #                 "index": false
+        #             },
+        #             {
+        #                 "key": "bWFrZXJfZmVlX2Ftb3VudA==",
+        #                 "value": "NDAxNDE4Mg==",
+        #                 "index": false
+        #             }
+        #             ]
+        #         },
+        #         {
+        #             "type": "from_contract",
+        #             "attributes": [
+        #             {
+        #                 "key": "Y29udHJhY3RfYWRkcmVzcw==",
+        #                 "value": "dGVycmExbTZ5d2xnbjZ3cmp1YWdjbW1lenp6MmEwMjlndGxkaGV5NWs1NTI=",
+        #                 "index": false
+        #             },
+        #             {
+        #                 "key": "YWN0aW9u",
+        #                 "value": "c3dhcA==",
+        #                 "index": false
+        #             },
+        #             {
+        #                 "key": "c2VuZGVy",
+        #                 "value": "dGVycmExYWRmeWxzZTg3cnhtdWg5NTU5Mm45OXpkbmU0cnVkend4dWNsMzU=",
+        #                 "index": false
+        #             },
+        #             {
+        #                 "key": "cmVjZWl2ZXI=",
+        #                 "value": "dGVycmExYWRmeWxzZTg3cnhtdWg5NTU5Mm45OXpkbmU0cnVkend4dWNsMzU=",
+        #                 "index": false
+        #             },
+        #             {
+        #                 "key": "b2ZmZXJfYXNzZXQ=",
+        #                 "value": "dXVzZA==",
+        #                 "index": false
+        #             },
+        #             {
+        #                 "key": "YXNrX2Fzc2V0",
+        #                 "value": "dWx1bmE=",
+        #                 "index": false
+        #             },
+        #             {
+        #                 "key": "b2ZmZXJfYW1vdW50",
+        #                 "value": "MjE2MzQ5NzE=",
+        #                 "index": false
+        #             },
+        #             {
+        #                 "key": "cmV0dXJuX2Ftb3VudA==",
+        #                 "value": "NDAwMjU0MDg4Mw==",
+        #                 "index": false
+        #             },
+        #             {
+        #                 "key": "dGF4X2Ftb3VudA==",
+        #                 "value": "Nzk4OTEwNA==",
+        #                 "index": false
+        #             },
+        #             {
+        #                 "key": "c3ByZWFkX2Ftb3VudA==",
+        #                 "value": "MTE4NTA=",
+        #                 "index": false
+        #             },
+        #             {
+        #                 "key": "Y29tbWlzc2lvbl9hbW91bnQ=",
+        #                 "value": "MTIwNDM3NTM=",
+        #                 "index": false
+        #             },
+        #             {
+        #                 "key": "bWFrZXJfZmVlX2Ftb3VudA==",
+        #                 "value": "NDAxNDE4Mg==",
+        #                 "index": false
+        #             }
+        #             ]
+        #         },
+        #         {
+        #             "type": "coin_spent",
+        #             "attributes": [
+        #             {
+        #                 "key": "c3BlbmRlcg==",
+        #                 "value": "dGVycmExbTZ5d2xnbjZ3cmp1YWdjbW1lenp6MmEwMjlndGxkaGV5NWs1NTI=",
+        #                 "index": false
+        #             },
+        #             {
+        #                 "key": "YW1vdW50",
+        #                 "value": "Nzk4OTEwM3VsdW5h",
+        #                 "index": false
+        #             }
+        #             ]
+        #         },
+        #         {
+        #             "type": "coin_received",
+        #             "attributes": [
+        #             {
+        #                 "key": "cmVjZWl2ZXI=",
+        #                 "value": "dGVycmExN3hwZnZha20yYW1nOTYyeWxzNmY4NHoza2VsbDhjNWxrYWVxZmE=",
+        #                 "index": false
+        #             },
+        #             {
+        #                 "key": "YW1vdW50",
+        #                 "value": "Nzk4OTEwM3VsdW5h",
+        #                 "index": false
+        #             }
+        #             ]
+        #         },
+        #         {
+        #             "type": "transfer",
+        #             "attributes": [
+        #             {
+        #                 "key": "cmVjaXBpZW50",
+        #                 "value": "dGVycmExN3hwZnZha20yYW1nOTYyeWxzNmY4NHoza2VsbDhjNWxrYWVxZmE=",
+        #                 "index": false
+        #             },
+        #             {
+        #                 "key": "c2VuZGVy",
+        #                 "value": "dGVycmExbTZ5d2xnbjZ3cmp1YWdjbW1lenp6MmEwMjlndGxkaGV5NWs1NTI=",
+        #                 "index": false
+        #             },
+        #             {
+        #                 "key": "YW1vdW50",
+        #                 "value": "Nzk4OTEwM3VsdW5h",
+        #                 "index": false
+        #             }
+        #             ]
+        #         },
+        #         {
+        #             "type": "message",
+        #             "attributes": [
+        #             {
+        #                 "key": "c2VuZGVy",
+        #                 "value": "dGVycmExbTZ5d2xnbjZ3cmp1YWdjbW1lenp6MmEwMjlndGxkaGV5NWs1NTI=",
+        #                 "index": false
+        #             }
+        #             ]
+        #         },
+        #         {
+        #             "type": "coin_spent",
+        #             "attributes": [
+        #             {
+        #                 "key": "c3BlbmRlcg==",
+        #                 "value": "dGVycmExbTZ5d2xnbjZ3cmp1YWdjbW1lenp6MmEwMjlndGxkaGV5NWs1NTI=",
+        #                 "index": false
+        #             },
+        #             {
+        #                 "key": "YW1vdW50",
+        #                 "value": "Mzk5NDU1MTc3OXVsdW5h",
+        #                 "index": false
+        #             }
+        #             ]
+        #         },
+        #         {
+        #             "type": "coin_received",
+        #             "attributes": [
+        #             {
+        #                 "key": "cmVjZWl2ZXI=",
+        #                 "value": "dGVycmExYWRmeWxzZTg3cnhtdWg5NTU5Mm45OXpkbmU0cnVkend4dWNsMzU=",
+        #                 "index": false
+        #             },
+        #             {
+        #                 "key": "YW1vdW50",
+        #                 "value": "Mzk5NDU1MTc3OXVsdW5h",
+        #                 "index": false
+        #             }
+        #             ]
+        #         },
+        #         {
+        #             "type": "transfer",
+        #             "attributes": [
+        #             {
+        #                 "key": "cmVjaXBpZW50",
+        #                 "value": "dGVycmExYWRmeWxzZTg3cnhtdWg5NTU5Mm45OXpkbmU0cnVkend4dWNsMzU=",
+        #                 "index": false
+        #             },
+        #             {
+        #                 "key": "c2VuZGVy",
+        #                 "value": "dGVycmExbTZ5d2xnbjZ3cmp1YWdjbW1lenp6MmEwMjlndGxkaGV5NWs1NTI=",
+        #                 "index": false
+        #             },
+        #             {
+        #                 "key": "YW1vdW50",
+        #                 "value": "Mzk5NDU1MTc3OXVsdW5h",
+        #                 "index": false
+        #             }
+        #             ]
+        #         },
+        #         {
+        #             "type": "message",
+        #             "attributes": [
+        #             {
+        #                 "key": "c2VuZGVy",
+        #                 "value": "dGVycmExbTZ5d2xnbjZ3cmp1YWdjbW1lenp6MmEwMjlndGxkaGV5NWs1NTI=",
+        #                 "index": false
+        #             }
+        #             ]
+        #         },
+        #         {
+        #             "type": "message",
+        #             "attributes": [
+        #             {
+        #                 "key": "bW9kdWxl",
+        #                 "value": "YmFuaw==",
+        #                 "index": false
+        #             }
+        #             ]
+        #         },
+        #         {
+        #             "type": "coin_spent",
+        #             "attributes": [
+        #             {
+        #                 "key": "c3BlbmRlcg==",
+        #                 "value": "dGVycmExbTZ5d2xnbjZ3cmp1YWdjbW1lenp6MmEwMjlndGxkaGV5NWs1NTI=",
+        #                 "index": false
+        #             },
+        #             {
+        #                 "key": "YW1vdW50",
+        #                 "value": "ODAxMnVsdW5h",
+        #                 "index": false
+        #             }
+        #             ]
+        #         },
+        #         {
+        #             "type": "coin_received",
+        #             "attributes": [
+        #             {
+        #                 "key": "cmVjZWl2ZXI=",
+        #                 "value": "dGVycmExN3hwZnZha20yYW1nOTYyeWxzNmY4NHoza2VsbDhjNWxrYWVxZmE=",
+        #                 "index": false
+        #             },
+        #             {
+        #                 "key": "YW1vdW50",
+        #                 "value": "ODAxMnVsdW5h",
+        #                 "index": false
+        #             }
+        #             ]
+        #         },
+        #         {
+        #             "type": "transfer",
+        #             "attributes": [
+        #             {
+        #                 "key": "cmVjaXBpZW50",
+        #                 "value": "dGVycmExN3hwZnZha20yYW1nOTYyeWxzNmY4NHoza2VsbDhjNWxrYWVxZmE=",
+        #                 "index": false
+        #             },
+        #             {
+        #                 "key": "c2VuZGVy",
+        #                 "value": "dGVycmExbTZ5d2xnbjZ3cmp1YWdjbW1lenp6MmEwMjlndGxkaGV5NWs1NTI=",
+        #                 "index": false
+        #             },
+        #             {
+        #                 "key": "YW1vdW50",
+        #                 "value": "ODAxMnVsdW5h",
+        #                 "index": false
+        #             }
+        #             ]
+        #         },
+        #         {
+        #             "type": "message",
+        #             "attributes": [
+        #             {
+        #                 "key": "c2VuZGVy",
+        #                 "value": "dGVycmExbTZ5d2xnbjZ3cmp1YWdjbW1lenp6MmEwMjlndGxkaGV5NWs1NTI=",
+        #                 "index": false
+        #             }
+        #             ]
+        #         },
+        #         {
+        #             "type": "coin_spent",
+        #             "attributes": [
+        #             {
+        #                 "key": "c3BlbmRlcg==",
+        #                 "value": "dGVycmExbTZ5d2xnbjZ3cmp1YWdjbW1lenp6MmEwMjlndGxkaGV5NWs1NTI=",
+        #                 "index": false
+        #             },
+        #             {
+        #                 "key": "YW1vdW50",
+        #                 "value": "NDAwNjE2OXVsdW5h",
+        #                 "index": false
+        #             }
+        #             ]
+        #         },
+        #         {
+        #             "type": "coin_received",
+        #             "attributes": [
+        #             {
+        #                 "key": "cmVjZWl2ZXI=",
+        #                 "value": "dGVycmExMnU3aGNtcGx0YXptbW5xMGZ2eWwyMjV1c24zZnk2cXFscDA1dzA=",
+        #                 "index": false
+        #             },
+        #             {
+        #                 "key": "YW1vdW50",
+        #                 "value": "NDAwNjE2OXVsdW5h",
+        #                 "index": false
+        #             }
+        #             ]
+        #         },
+        #         {
+        #             "type": "transfer",
+        #             "attributes": [
+        #             {
+        #                 "key": "cmVjaXBpZW50",
+        #                 "value": "dGVycmExMnU3aGNtcGx0YXptbW5xMGZ2eWwyMjV1c24zZnk2cXFscDA1dzA=",
+        #                 "index": false
+        #             },
+        #             {
+        #                 "key": "c2VuZGVy",
+        #                 "value": "dGVycmExbTZ5d2xnbjZ3cmp1YWdjbW1lenp6MmEwMjlndGxkaGV5NWs1NTI=",
+        #                 "index": false
+        #             },
+        #             {
+        #                 "key": "YW1vdW50",
+        #                 "value": "NDAwNjE2OXVsdW5h",
+        #                 "index": false
+        #             }
+        #             ]
+        #         },
+        #         {
+        #             "type": "message",
+        #             "attributes": [
+        #             {
+        #                 "key": "c2VuZGVy",
+        #                 "value": "dGVycmExbTZ5d2xnbjZ3cmp1YWdjbW1lenp6MmEwMjlndGxkaGV5NWs1NTI=",
+        #                 "index": false
+        #             }
+        #             ]
+        #         },
+        #         {
+        #             "type": "message",
+        #             "attributes": [
+        #             {
+        #                 "key": "bW9kdWxl",
+        #                 "value": "YmFuaw==",
+        #                 "index": false
+        #             }
+        #             ]
+        #         }
+        #         ]
+        #     }
+        # }
+        self.belief_price = self.beliefPrice()
+    
+        if self.sequence is None:
+            self.sequence = self.current_wallet.sequence()
+        
         # Perform the swap as a simulation, with no fee details
         self.swap()
-        
-        # Get the transaction result
+
+        # Store the transaction
         tx:Tx = self.transaction
 
         if tx is not None:
             # Get the stub of the requested fee so we can adjust it
-            requested_fee = tx.auth_info.fee
+            requested_fee:Fee = tx.auth_info.fee
 
-            print ('requested fee from simulation:', requested_fee)
+            #print ('requested fee:', requested_fee)
+
+            # Store the gas limit based on what we've been told
+            #self.gas_limit = str(requested_fee.gas_limit)
+
+            #print ('apparent gas requirement:', self.gas_limit)
+
+            #self.gas_limit = str(int(requested_fee.gas_limit) * 1.3).rstrip('.0')
+            #print ('apparent gas requirement:', self.gas_limit)
+            #self.send()
+
             # This will be used by the swap function next time we call it
-            self.fee = self.calculateFee(requested_fee)
-
+            # We'll use uluna as the preferred fee currency just to keep things simple
+            self.fee = self.calculateFee(requested_fee, 'uluna')
+            
+            #print ('calculated fee:', self.fee)
+            
             # Figure out the fee structure
             fee_bit:Coin = Coin.from_str(str(requested_fee.amount))
             fee_amount   = fee_bit.amount
             fee_denom    = fee_bit.denom
-            swap_amount  = self.swap_amount
 
             # Calculate the tax portion
-            self.tax = swap_amount * float(self.tax_rate['tax_rate'])
+            self.tax = int(math.ceil(self.swap_amount * float(self.tax_rate['tax_rate'])))
 
-            # Build a fee object with 
-            new_coin:Coin        = Coin(fee_denom, int(fee_amount + self.tax))
-            requested_fee.amount = Coins({new_coin})
+            #print ('tax is', self.tax)
+            #print ('fee denom:', fee_denom)
+            #print ('self denom:', self.denom)
+
+            # Build a fee object
+            if fee_denom == 'uluna' and self.swap_denom == 'uluna':
+                new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount + self.tax))})
+            else:
+                new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount)), Coin(self.swap_denom, int(self.tax))})
+                
+            #if self.gas_limit != 'auto':
+            #   requested_fee.gas_limit = int(self.gas_limit)
+
+            requested_fee.amount = new_coin
 
             # This will be used by the swap function next time we call it
             self.fee = requested_fee
-            
-            # Store this so we can deduct it off the total amount to swap
-            self.fee_deductables = int(fee_amount + self.tax)
+        
+            # Store this so we can deduct it off the total amount to swap.
+            # If the fee denom is the same as what we're paying the tax in, then combine the two
+            # Otherwise the deductible is just the tax value
+            # This assumes that the tax is always the same denom as the transferred amount.
+            if fee_denom == self.swap_denom:
+                self.fee_deductables = int(fee_amount + self.tax)
+            elif fee_denom == 'uluna' and self.swap_denom == 'uusd':
+                self.fee_deductables = int(self.tax)
+            else:
+                self.fee_deductables = int(self.tax * 2)
+
+            print ('FINAL requested fee:', requested_fee)
+            print ('fee deductables:', self.fee_deductables)
 
             return True
         else:
             return False
-    
     
     def swap(self) -> bool:
         """
@@ -1793,11 +2331,13 @@ class SwapTransaction(TransactionCore):
                 fee_denom:str   = 'uusd'
 
             if fee_denom in self.balances:
+                #print ('self.swap_amount:', self.swap_amount)
                 swap_amount = self.swap_amount
 
-                if self.tax is not None:
-                    if self.fee_deductables is not None:
-                        swap_amount = swap_amount - self.fee_deductables
+                #if self.tax is not None:
+                #    if self.fee_deductables is not None:
+                #        print ('fee deductables:', self.fee_deductables)
+                #        swap_amount = swap_amount - self.fee_deductables
 
                 tx_msg = MsgExecuteContract(
                     sender      = self.current_wallet.key.acc_address,
@@ -1821,16 +2361,13 @@ class SwapTransaction(TransactionCore):
 
                 options = CreateTxOptions(
                     fee        = self.fee,
-                    #fee_denoms = ['uusd'],
-                    #gas_prices = {'uusd': self.gas_list['uusd']},
-                    #fee_denoms = ['uluna'],
-                    #gas_prices = {'uluna': self.gas_list['uluna']},
-                    gas        = 'auto',
+                    #gas        = str(self.gas_limit),
                     gas_prices = self.gas_list,
                     msgs       = [tx_msg],
                     sequence   = self.sequence,
                 )
 
+                print ('options:', options)
                 # If we are swapping from lunc to usdt then we need a different fee structure
                 if self.swap_denom == 'uluna' and self.swap_request_denom == 'uusd':
                     options.fee_denoms = ['uluna']
@@ -1840,16 +2377,19 @@ class SwapTransaction(TransactionCore):
                 while True:
                     try:
                         tx:Tx = self.current_wallet.create_and_sign_tx(options)
+
+                        print ('tx:', tx)
                         break
                     except LCDResponseError as err:
-                        if 'account sequence mismatch' in err.message:
-                            self.sequence    = self.sequence + 1
-                            options.sequence = self.sequence
-                            print (' 🛎️  Boosting sequence number')
-                        else:
-                            print (err)
-                            break
+                        # if 'account sequence mismatch' in err.message:
+                        #     self.sequence    = self.sequence + 1
+                        #     options.sequence = self.sequence
+                        #     print (' 🛎️  Boosting sequence number')
+                        # else:
+                        print (err)
+                        break
                     except Exception as err:
+                        
                         print (' 🛑 A random error has occurred')
                         print (err)
                         break
@@ -1870,7 +2410,19 @@ class SwapTransaction(TransactionCore):
         Returns a coin object that we need to decode.
         """
 
-        swap_details:Coin = self.terra.market.swap_rate(Coin(self.swap_denom, self.swap_amount), self.swap_request_denom)
+        if self.swap_denom == 'uusd' and self.swap_request_denom == 'uluna':
+            self.contract = ASTROPORT_UUSD_TO_ULUNA_ADDRESS
+            #self.contract = TERRASWAP_UUSD_TO_ULUNA_ADDRESS
+            swap_price = self.beliefPrice()
+            swap_details:Coin = Coin(self.swap_request_denom, int(self.swap_amount * swap_price))
+        elif self.swap_denom == 'uluna' and self.swap_request_denom == 'uusd':
+            self.contract = TERRASWAP_ULUNA_TO_UUSD_ADDRESS
+            swap_price = self.beliefPrice()
+            swap_details:Coin = Coin(self.swap_request_denom, int(self.swap_amount * swap_price))
+        else:
+        #print (self.swap_denom, ' vs ', self.swap_request_denom)
+            swap_details:Coin = self.terra.market.swap_rate(Coin(self.swap_denom, self.swap_amount), self.swap_request_denom)
+        #print (swap_details)
 
         return swap_details
     
