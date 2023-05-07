@@ -19,7 +19,6 @@ from utility_constants import (
     FULL_COIN_LOOKUP,
     MAX_GAS_ADJUSTMENT,
     TERRASWAP_ULUNA_TO_UUSD_ADDRESS,
-    #TERRASWAP_UUSD_TO_ULUNA_ADDRESS,
     USER_ACTION_CONTINUE,
     USER_ACTION_QUIT
 )
@@ -228,13 +227,10 @@ def main():
     if coin_from == 'uluna' and coin_to == 'uusd':
         use_market_swap = False
         swaps_tx.contract = TERRASWAP_ULUNA_TO_UUSD_ADDRESS
-        #swaps_tx.gas_limit = '150000'
 
     if coin_from == 'uusd' and coin_to == 'uluna':
         use_market_swap = False
         swaps_tx.contract = ASTROPORT_UUSD_TO_ULUNA_ADDRESS
-        #swaps_tx.contract = TERRASWAP_UUSD_TO_ULUNA_ADDRESS
-        #swaps_tx.gas_limit = '165611'
 
     if use_market_swap == True:
         result = swaps_tx.marketSimulate()
@@ -250,8 +246,6 @@ def main():
 
             result = swaps_tx.swap()
 
-    # print ('swaps simlulate finished, exiting...')
-    # exit()
     if result == True:
         swaps_tx.broadcast()
     
