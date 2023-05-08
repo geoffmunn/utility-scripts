@@ -20,7 +20,6 @@ from utility_constants import (
     SEARCH_RETRY_COUNT,
     TAX_RATE_URI,
     TERRASWAP_ULUNA_TO_UUSD_ADDRESS,
-    #TERRASWAP_UUSD_TO_ULUNA_ADDRESS,
     USER_ACTION_CONTINUE,
     USER_ACTION_QUIT,
     WITHDRAWAL_REMAINDER    
@@ -120,8 +119,8 @@ def get_coin_selection(question:str, coins:dict, only_active_coins:bool = True, 
         swaps_tx = wallet.swap().create()
 
     wallet:Wallet = Wallet()
-    coin_list = []
-    coin_values = {}
+    coin_list     = []
+    coin_values   = {}
     coin_list.append('')
 
     for coin in FULL_COIN_LOOKUP:
@@ -145,25 +144,25 @@ def get_coin_selection(question:str, coins:dict, only_active_coins:bool = True, 
 
             if estimation_against is not None:
                 swaps_tx.swap_amount = int(estimation_against['amount'])
-                swaps_tx.swap_denom =  estimation_against['denom']
+                swaps_tx.swap_denom  =  estimation_against['denom']
 
                 swaps_tx.swap_request_denom = coin
 
                 if coin != estimation_against['denom']:
                     estimated_result:Coin = swaps_tx.swapRate()
-                    estimated_value:str = wallet.formatUluna(estimated_result.amount)
+                    estimated_value:str   = wallet.formatUluna(estimated_result.amount)
                 else:
                     estimated_result:Coin = Coin(estimation_against['denom'], 1 * COIN_DIVISOR)
-                    estimated_value = None
+                    estimated_value:str   = None
                 
                 coin_values[coin] = estimated_value
                 
                 if len(str(estimated_value)) > label_widths[3]:
                     label_widths[3] = len(str(estimated_value))
 
-    padding_str = ' ' * 100
-
+    padding_str   = ' ' * 100
     header_string = ' Number |'
+
     if label_widths[1] > len('Coin'):
         header_string += ' Coin' + padding_str[0:label_widths[1] - len('Coin')] + ' |'
     else:
@@ -182,11 +181,11 @@ def get_coin_selection(question:str, coins:dict, only_active_coins:bool = True, 
 
     horizontal_spacer = '-' * len(header_string)
 
-    coin_to_use:str = None
+    coin_to_use:str            = None
     returned_estimation: float = None    
-    answer:str = False
+    answer:str                 = False
+    coin_index:dict            = {}
 
-    coin_index = {}
     while True:
 
         count:int = 0
@@ -226,7 +225,7 @@ def get_coin_selection(question:str, coins:dict, only_active_coins:bool = True, 
                 else:
                     balance_str = coin_val
             else:
-                coin_val = ''
+                coin_val    = ''
                 balance_str = coin_val + padding_str[0:label_widths[2] - len(coin_val)]
 
             if coin in coins or only_active_coins == False:
@@ -382,17 +381,18 @@ def get_user_number(question:str, params:dict) -> float|str:
     return answer
 
 def get_fees_from_error(log:str, target_coin:str):
+    """
+    Take the error string and figure out the actual required fee and tax.
+    """
 
-    #log:str = 'insufficient fees; got: "93930uidr,4811427uluna", required: "179439uaud,179439ucad,132219uchf,925527ucny,849974udkk,118052ueur,103886ugbp,1104966uhkd,2058918253uidr,10275236uinr,15460074ujpy,160550550ukrw,5350111uluna,404748881umnt,566649umyr,1180519unok,7177554uphp,99106usdr,1180519usek,188883usgd,4363198uthb,3777660utwd,141663uusd" = "179439uaud,179439ucad,132219uchf,925527ucny,849974udkk,118052ueur,103886ugbp,1104966uhkd,2058824700uidr,10275236uinr,15460074ujpy,160550550ukrw,5350111uluna,404748881umnt,566649umyr,1180519unok,7177554uphp,99106usdr,1180519usek,188883usgd,4363198uthb,3777660utwd,141663uusd"(gas) +"93553uidr"(stability): insufficient fee'
-    required = log.split('required:')
+    required:list = log.split('required:')
+    parts:list    = required[1].split('=')
+    fee_line:str  = parts[1]
+    fee_line:str  = fee_line.replace('(stability): insufficient fee', '').replace('"', '').lstrip(' ') .split('(gas) +')
 
-    parts = required[1].split('=')
-
-    fee_line = parts[1]
-    fee_line = fee_line.replace('(stability): insufficient fee', '').replace('"', '').lstrip(' ') .split('(gas) +')
-
-    fee_coins = Coins.from_str(fee_line[0])
-    result_tax_coin = Coin.from_str(fee_line[1])
+    # Build the result coins:
+    fee_coins:Coins      = Coins.from_str(fee_line[0])
+    result_tax_coin:Coin = Coin.from_str(fee_line[1])
 
     fee_coin:Coin
     result_fee_coin:Coin
