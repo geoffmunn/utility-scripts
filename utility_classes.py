@@ -1625,7 +1625,11 @@ class SwapTransaction(TransactionCore):
         parts[result['assets'][0]['info']['native_token']['denom']] = int(result['assets'][0]['amount'])
         parts[result['assets'][1]['info']['native_token']['denom']] = int(result['assets'][1]['amount'])
 
-        belief_price:float = parts['uluna'] / parts['uusd']
+        if self.swap_request_denom == 'uusd':
+            belief_price:float = parts['uusd'] / parts['uluna']
+        else:
+            belief_price:float = parts['uluna'] / parts['uusd']
+
         return round(belief_price, 18)
         
     def create(self):
@@ -2413,12 +2417,12 @@ class SwapTransaction(TransactionCore):
 
         if self.swap_denom == 'uusd' and self.swap_request_denom == 'uluna':
             self.contract = ASTROPORT_UUSD_TO_ULUNA_ADDRESS
-            #self.contract = TERRASWAP_UUSD_TO_ULUNA_ADDRESS
             swap_price = self.beliefPrice()
             swap_details:Coin = Coin(self.swap_request_denom, int(self.swap_amount * swap_price))
         elif self.swap_denom == 'uluna' and self.swap_request_denom == 'uusd':
             self.contract = TERRASWAP_ULUNA_TO_UUSD_ADDRESS
             swap_price = self.beliefPrice()
+
             swap_details:Coin = Coin(self.swap_request_denom, int(self.swap_amount * swap_price))
         else:
         #print (self.swap_denom, ' vs ', self.swap_request_denom)
