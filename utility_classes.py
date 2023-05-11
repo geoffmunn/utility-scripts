@@ -260,10 +260,16 @@ def get_coin_selection(question:str, coins:dict, only_active_coins:bool = True, 
             if estimation_against is not None and estimation_against['denom'] == coin_list[int(answer)]:
                 print ('\nYou can\'t swap to the same coin!')
             else:
-                coin_to_use = coin_list[int(answer)]
+            
+                returned_estimation:float = None
+                coin_to_use:str           = coin_list[int(answer)] 
+
                 if estimation_against is not None:
-                    returned_estimation = coin_values[coin_to_use]
+                    returned_estimation = coin_values[coin_to_use]    
                 
+                if estimation_against is not None and returned_estimation is None:
+                    coin_to_use = None
+
         if answer == USER_ACTION_CONTINUE:
             if coin_to_use is not None:
                 break

@@ -221,6 +221,7 @@ def main():
     swaps_tx.terra.gas_adjustment = float(GAS_ADJUSTMENT_SWAPS)
 
     # Set the contract based on what we've picked
+    # As long as the swap_denom and swap_request_denom values are set, the correct contract should be picked
     use_market_swap = swaps_tx.setContract()
 
     if use_market_swap == True:
