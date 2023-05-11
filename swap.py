@@ -13,12 +13,10 @@ from utility_classes import (
 )
 
 from utility_constants import (
-    ASTROPORT_UUSD_TO_ULUNA_ADDRESS,
     GAS_ADJUSTMENT_INCREMENT,
     GAS_ADJUSTMENT_SWAPS,
     FULL_COIN_LOOKUP,
     MAX_GAS_ADJUSTMENT,
-    TERRASWAP_ULUNA_TO_UUSD_ADDRESS,
     USER_ACTION_CONTINUE,
     USER_ACTION_QUIT
 )
@@ -215,22 +213,15 @@ def main():
     swaps_tx = wallet.swap().create()
 
     # Assign the details:
-    swaps_tx.swap_amount = int(swap_uluna)
-    swaps_tx.swap_denom = coin_from
+    swaps_tx.swap_amount        = int(swap_uluna)
+    swaps_tx.swap_denom         = coin_from
     swaps_tx.swap_request_denom = coin_to
     
     # Bump up the gas adjustment - it needs to be higher for swaps it turns out
     swaps_tx.terra.gas_adjustment = float(GAS_ADJUSTMENT_SWAPS)
-    
-    use_market_swap:bool = True
 
-    if coin_from == 'uluna' and coin_to == 'uusd':
-        use_market_swap = False
-        swaps_tx.contract = TERRASWAP_ULUNA_TO_UUSD_ADDRESS
-
-    if coin_from == 'uusd' and coin_to == 'uluna':
-        use_market_swap = False
-        swaps_tx.contract = ASTROPORT_UUSD_TO_ULUNA_ADDRESS
+    # Set the contract based on what we've picked
+    use_market_swap = swaps_tx.setContract()
 
     if use_market_swap == True:
         result = swaps_tx.marketSimulate()
