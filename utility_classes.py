@@ -153,7 +153,7 @@ def get_coin_selection(question:str, coins:dict, only_active_coins:bool = True, 
                 # Change the contract depending on what we're doing
                 swaps_tx.setContract()
 
-                print ('contract:', swaps_tx.contract)
+                #print ('contract:', swaps_tx.contract)
                 if coin != estimation_against['denom']:
                     estimated_result:Coin = swaps_tx.swapRate()
                     estimated_value:str   = wallet.formatUluna(estimated_result.amount)
@@ -1628,6 +1628,7 @@ class SwapTransaction(TransactionCore):
         self.swap_amount:int        = None
         self.swap_denom:str         = None
         self.swap_request_denom:str = None
+        self.use_market_swap:bool   = False
 
     def beliefPrice(self) -> float:
         """
@@ -1636,6 +1637,7 @@ class SwapTransaction(TransactionCore):
 
         belief_price:float = 0
 
+        print ('self.contract:', self.contract)
         if self.contract is not None:
             result = self.terra.wasm.contract_query(self.contract, {"pool": {}})
 
@@ -1648,22 +1650,69 @@ class SwapTransaction(TransactionCore):
             print ('swap denom:', self.swap_denom)
             print ('request denom:', self.swap_request_denom)
 
-            if self.swap_denom == 'uluna' and self.swap_request_denom == 'uusd':
-                belief_price:float = parts['uluna'] / parts['uusd']
-            elif self.swap_denom == 'ukrw':
-                if self.swap_request_denom == 'uluna':
-                    belief_price:float = parts['uluna'] / parts['ukrw']
-                else:
-                    belief_price:float = parts['uusd'] / parts['ukrw']
-            elif self.swap_request_denom == 'ukrw':
-                belief_price:float = parts['ukrw'] / parts['uluna']
-            else:
-                print ('NO BELIEF PRICE SUPPORT')
-                print (result)
-                print ('parts:', parts)
-                print ('swap denom:', self.swap_denom)
-                print ('request denom:', self.swap_request_denom)
-            #    belief_price:float = parts['uluna'] / parts['uusd']
+            contract_swaps:list  = ['uluna', 'uusd', 'ukrw']
+
+            if self.swap_denom in contract_swaps and self.swap_request_denom in contract_swaps:
+                # if self.swap_denom == 'uluna' and self.swap_request_denom == 'uusd':
+                #     belief_price:float = parts['uluna'] / parts['uusd']
+                # elif self.swap_denom == 'uusd' and self.swap_request_denom == 'uluna':
+                #     belief_price:float = parts['uusd'] / parts['uluna']
+                # elif self.swap_denom == 'ukrw':
+                #     if self.swap_request_denom == 'uluna':
+                #         belief_price:float = parts['uluna'] / parts['ukrw']
+                #     else:
+                #         belief_price:float = parts['uusd'] / parts['ukrw']
+                # elif self.swap_request_denom == 'ukrw':
+                #     # only supports uluna -> ukrw
+                #     belief_price:float = parts['ukrw'] / parts['uluna']
+                # else:
+                #     print ('NO BELIEF PRICE SUPPORT')
+                #     print (result)
+                #     print ('parts:', parts)
+                #     print ('swap denom:', self.swap_denom)
+                #     print ('request denom:', self.swap_request_denom)
+                # #    belief_price:float = parts['uluna'] / parts['uusd']
+
+                """
+                uluna -> uusd
+                uluna -> ukrw
+
+                uusd -> minor coin
+                uusd -> uluna
+                uusd -> ukrw
+
+                ukrw -> ulune
+                ukrw -> uusd
+                ukrw -> minor coin
+
+                minor coin -> uusd
+                minor coin -> minor coin
+                minor coin -> ukrw
+
+                ASTROPORT_UUSD_TO_ULUNA_ADDRESS = 'terra1m6ywlgn6wrjuagcmmezzz2a029gtldhey5k552'
+                TERRASWAP_UKRW_TO_ULUNA_ADDRESS = 'terra1erfdlgdtt9e05z0j92wkndwav4t75xzyapntkv'
+                TERRASWAP_UKRW_TO_UUSD_ADDRESS  = 'terra1untf85jwv3kt0puyyc39myxjvplagr3wstgs5s'
+                TERRASWAP_ULUNA_TO_UUSD_ADDRESS = 'terra1l7vy20x940je7lskm6x9s839vjsmekz9k9mv7g'
+                """
+
+                if self.swap_denom == 'uluna':
+                    if self.swap_request_denom == 'uusd':
+                        belief_price:float = parts['uluna'] / parts['uusd']
+                    if self.swap_request_denom == 'ukrw':
+                        belief_price:float = parts['uluna'] / parts['ukrw']
+
+                if self.swap_denom == 'uusd':
+                    if self.swap_request_denom == 'uluna':
+                        belief_price:float = parts['uusd'] / parts['uluna']
+                    #if self.swap_request_denom == 'ukrw':
+                    #    belief_price:float = parts['uusd'] / parts['ukrw']
+
+                if self.swap_denom == 'ukrw':
+                    if self.swap_request_denom == 'uluna':
+                        belief_price:float = parts['uluna'] / parts['ukrw']
+                    #if self.swap_request_denom == 'uusd':
+                    #    belief_price:float = parts['uusd'] / parts['ukrw']
+                
 
         return round(belief_price, 18)
         
@@ -1773,18 +1822,56 @@ class SwapTransaction(TransactionCore):
         contract_swaps:list  = ['uluna', 'uusd', 'ukrw']
 
         if self.swap_denom in contract_swaps and self.swap_request_denom in contract_swaps:
-            if self.swap_denom == 'uluna' and self.swap_request_denom == 'uusd':
-                use_market_swap = False
-                self.contract = TERRASWAP_ULUNA_TO_UUSD_ADDRESS
 
-            if self.swap_denom == 'ukrw' or self.swap_request_denom == 'ukrw':
-                use_market_swap = False
-                self.contract = TERRASWAP_UKRW_TO_ULUNA_ADDRESS
+            """
+            uluna -> uusd
+            uluna -> ukrw
 
-            if self.swap_denom == 'uusd' and self.swap_request_denom == 'uluna':
-                use_market_swap = False
-                self.contract = ASTROPORT_UUSD_TO_ULUNA_ADDRESS
-    
+            uusd -> minor coin
+            uusd -> uluna
+            uusd -> ukrw
+
+            ukrw -> ulune
+            ukrw -> uusd
+            ukrw -> minor coin
+
+            minor coin -> uusd
+            minor coin -> minor coin
+            minor coin -> ukrw
+
+            ASTROPORT_UUSD_TO_ULUNA_ADDRESS = 'terra1m6ywlgn6wrjuagcmmezzz2a029gtldhey5k552'
+            TERRASWAP_UKRW_TO_ULUNA_ADDRESS = 'terra1erfdlgdtt9e05z0j92wkndwav4t75xzyapntkv'
+            TERRASWAP_UKRW_TO_UUSD_ADDRESS  = 'terra1untf85jwv3kt0puyyc39myxjvplagr3wstgs5s'
+            TERRASWAP_ULUNA_TO_UUSD_ADDRESS = 'terra1l7vy20x940je7lskm6x9s839vjsmekz9k9mv7g'
+            """
+
+            use_market_swap = False
+
+            if self.swap_denom == 'uluna':
+                if self.swap_request_denom == 'uusd':
+                    self.contract = TERRASWAP_ULUNA_TO_UUSD_ADDRESS
+                if self.swap_request_denom == 'ukrw':
+                    self.contract = TERRASWAP_UKRW_TO_ULUNA_ADDRESS
+
+            if self.swap_denom == 'uusd':
+                if self.swap_request_denom == 'uluna':
+                    self.contract = ASTROPORT_UUSD_TO_ULUNA_ADDRESS
+                if self.swap_request_denom == 'ukrw':
+                    self.contract = None
+                    use_market_swap = True
+
+            if self.swap_denom == 'ukrw':
+                if self.swap_request_denom == 'uluna':
+                    self.contract = TERRASWAP_UKRW_TO_ULUNA_ADDRESS
+                if self.swap_request_denom == 'uusd':
+                    self.contract = None
+                    use_market_swap = True
+
+
+        print (f'Contract for {self.swap_denom} to {self.swap_request_denom} is {self.contract}')
+
+        self.use_market_swap = use_market_swap
+
         return use_market_swap
       
     def simulate(self) -> bool:
@@ -1802,6 +1889,8 @@ class SwapTransaction(TransactionCore):
 
         self.belief_price = self.beliefPrice()
     
+        print ('belief price:', self.belief_price)
+        exit()
         if self.sequence is None:
             self.sequence = self.current_wallet.sequence()
         
@@ -1975,21 +2064,33 @@ class SwapTransaction(TransactionCore):
         print ('swap denom:', self.swap_denom)
         print ('swap request denom:', self.swap_request_denom)
 
-        if self.swap_denom == 'uusd' and self.swap_request_denom in ['uluna', 'ukrw']:
-            print ('option 1')
-        #if self.swap_denom == 'uusd':
-            swap_price = self.beliefPrice()
-            swap_details:Coin = Coin(self.swap_request_denom, int(self.swap_amount * swap_price))
-        #elif self.swap_denom == 'ukrw' or self.swap_request_denom == 'ukrw':
-        #    #self.contract = TERRASWAP_UKRW_TO_ULUNA_ADDRESS
-        #    print ('getting ukrw belief price')
-        #    swap_price = self.beliefPrice()
-        #    swap_details:Coin = Coin(self.swap_request_denom, int(self.swap_amount * swap_price))
-        elif self.swap_denom == 'uluna' and self.swap_request_denom in ['uusd', 'ukrw']:
-        #elif self.swap_denom == 'uluna':
-            print ('option 2')
-            swap_price = self.beliefPrice()
-            swap_details:Coin = Coin(self.swap_request_denom, int(self.swap_amount * swap_price))
+        if self.use_market_swap == False:
+            if self.swap_denom == 'uusd' and self.swap_request_denom in ['uluna', 'ukrw']:
+                print ('option 1')
+                swap_price = self.beliefPrice()
+                swap_details:Coin = Coin(self.swap_request_denom, int(self.swap_amount / swap_price))
+            elif self.swap_denom == 'uluna' and self.swap_request_denom in ['uusd', 'ukrw']:
+                print ('option 2')
+                swap_price = self.beliefPrice()
+                print ('swap amount:', self.swap_amount)
+                print ('swap price:', swap_price)
+                if self.swap_request_denom == 'uusd':
+                    swap_details:Coin = Coin(self.swap_request_denom, int(self.swap_amount / swap_price))
+                else:
+                    # ukrw
+                    swap_details:Coin = Coin(self.swap_request_denom, int(self.swap_amount * swap_price))
+            elif self.swap_denom == 'ukrw' and self.swap_request_denom in ['uluna', 'uusd']:
+                print ('option 4')
+                swap_price = self.beliefPrice()
+                print ('swap amount:', self.swap_amount)
+                print ('swap price:', swap_price)
+                swap_details:Coin = Coin(self.swap_request_denom, int(self.swap_amount * swap_price))
+
+
+            else:
+                print ('UNSUPPORTED SWAP RATE')
+                print ('swap denom:', self.swap_denom)
+                print ('swap request denom:', self.swap_request_denom)
         else:
             print ('option 3')
             swap_details:Coin = self.terra.market.swap_rate(Coin(self.swap_denom, self.swap_amount), self.swap_request_denom)
