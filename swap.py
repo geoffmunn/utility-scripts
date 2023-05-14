@@ -7,6 +7,8 @@ from utility_classes import (
     get_coin_selection,
     get_user_choice,
     get_user_number,
+    ULUNA,
+    UUSD,
     UserConfig,
     Wallets,
     Wallet
@@ -38,13 +40,13 @@ def get_user_singlechoice(question:str, user_wallets:dict) -> dict|str:
         if len(wallet_name) > label_widths[1]:
             label_widths[1] = len(wallet_name)
 
-        if 'uluna' in user_wallets[wallet_name].balances:
-            uluna_val = user_wallets[wallet_name].formatUluna(user_wallets[wallet_name].balances['uluna'])
+        if ULUNA in user_wallets[wallet_name].balances:
+            uluna_val = user_wallets[wallet_name].formatUluna(user_wallets[wallet_name].balances[ULUNA])
         else:
             uluna_val = ''
             
-        if 'uusd' in user_wallets[wallet_name].balances:
-            ustc_val = user_wallets[wallet_name].formatUluna(user_wallets[wallet_name].balances['uusd'])
+        if UUSD in user_wallets[wallet_name].balances:
+            ustc_val = user_wallets[wallet_name].formatUluna(user_wallets[wallet_name].balances[UUSD])
         else:
             ustc_val = ''
 
@@ -102,15 +104,15 @@ def get_user_singlechoice(question:str, user_wallets:dict) -> dict|str:
             
             wallet_name_str = wallet_name + padding_str[0:label_widths[1] - len(wallet_name)]
 
-            if 'uluna' in wallet.balances:
-                lunc_str = wallet.formatUluna(wallet.balances['uluna'], False)
+            if ULUNA in wallet.balances:
+                lunc_str = wallet.formatUluna(wallet.balances[ULUNA], False)
             else: 
                 lunc_str = ''
 
             lunc_str = lunc_str + padding_str[0:label_widths[2] - len(lunc_str)]
             
-            if 'uusd' in wallet.balances:
-                ustc_str = wallet.formatUluna(wallet.balances['uusd'], False)
+            if UUSD in wallet.balances:
+                ustc_str = wallet.formatUluna(wallet.balances[UUSD], False)
             else:
                 ustc_str = ' '
             
@@ -154,7 +156,7 @@ def main():
     if decrypt_password == '':
         print (' 🛑 Exiting...')
         exit()
-        
+
     # Get the user config file contents
     user_config:str = UserConfig().contents()
     if user_config == '':
