@@ -56,6 +56,13 @@ USER_ACTION_VALIDATOR_SWITCH             = 's'
 COIN_DIVISOR = 1000000
 MAX_VALIDATOR_COUNT = 130
 
+# Coin constants:
+
+ULUNA = 'uluna'
+UKRW  = 'ukrw'
+UUSD  = 'uusd'
+
+# Coin keys and display values:
 FULL_COIN_LOOKUP = {
     'uaud': 'AUT',
     'ucad': 'CAT',
