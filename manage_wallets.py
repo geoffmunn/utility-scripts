@@ -6,6 +6,8 @@ from getpass import getpass
 from utility_classes import (
     get_user_choice,
     isPercentage,
+    ULUNA,
+    UUSD,
     UserConfig,
     Wallets,
     Wallet
@@ -54,11 +56,11 @@ def get_user_multichoice(question:str, user_wallets:dict) -> dict|str:
         ustc_reward:int  = 0
 
         for validator in delegations:
-            if 'uluna' in delegations[validator]['rewards']:
-                ulunc_reward += float(wallet.formatUluna(delegations[validator]['rewards']['uluna'], False))
+            if ULUNA in delegations[validator]['rewards']:
+                ulunc_reward += float(wallet.formatUluna(delegations[validator]['rewards'][ULUNA], False))
                                     
-            if 'uusd' in delegations[validator]['rewards']:
-                ustc_reward += float(wallet.formatUluna(delegations[validator]['rewards']['uusd'], False))
+            if UUSD in delegations[validator]['rewards']:
+                ustc_reward += float(wallet.formatUluna(delegations[validator]['rewards'][UUSD], False))
 
         if len(wallet_name) > label_widths[1]:
             label_widths[1] = len(wallet_name)
@@ -69,8 +71,8 @@ def get_user_multichoice(question:str, user_wallets:dict) -> dict|str:
         if len(str(ustc_reward)) > label_widths[3]:
             label_widths[3] = len(str(ustc_reward))
 
-        if 'uluna' in balances:
-            formatted_val = str(wallet.formatUluna(balances['uluna'], False))
+        if ULUNA in balances:
+            formatted_val = str(wallet.formatUluna(balances[ULUNA], False))
             if len(formatted_val) > label_widths[4]:
                 label_widths[4] = len(formatted_val)
 
@@ -132,23 +134,23 @@ def get_user_multichoice(question:str, user_wallets:dict) -> dict|str:
             ustc_reward:int   = 0
             
             for validator in delegations:
-                if 'uluna' in delegations[validator]['rewards']:
-                    uluna_reward += delegations[validator]['rewards']['uluna']
-                if 'uusd' in delegations[validator]['rewards']:
-                    ustc_reward += delegations[validator]['rewards']['uusd']
+                if ULUNA in delegations[validator]['rewards']:
+                    uluna_reward += delegations[validator]['rewards'][ULUNA]
+                if UUSD in delegations[validator]['rewards']:
+                    ustc_reward += delegations[validator]['rewards'][UUSD]
 
             lunc_str = str(wallet.formatUluna(uluna_reward, False))
             if label_widths[2] - len(str(lunc_str)) > 0:
                 lunc_str += padding_str[0:(label_widths[2] - (len(str(lunc_str))))]
             
-            if 'uluna' in wallet.balances:
-                uluna_balance = str(wallet.formatUluna(wallet.balances['uluna'], False))
+            if ULUNA in wallet.balances:
+                uluna_balance = str(wallet.formatUluna(wallet.balances[ULUNA], False))
                 if label_widths[4] - len(str(uluna_balance)) > 0:
                     uluna_balance += padding_str[0:(label_widths[4] - (len(str(uluna_balance))))]
             else:
                 uluna_balance = padding_str[0:label_widths[4]]
 
-            if 'uusd' in wallet.balances:
+            if UUSD in wallet.balances:
                 ustc_str = str(wallet.formatUluna(ustc_reward, False))
                 if label_widths[3] - len(str(ustc_str)) > 0:
                     ustc_str += padding_str[0:(label_widths[3] - (len(str(ustc_str))))]
@@ -192,7 +194,7 @@ def main():
     if decrypt_password == '':
         print (' 🛑 Exiting...')
         exit()
-        
+
     # Get the desired actions
     print ('\nWhat action do you want to take?\n')
     print ('  (W)  Withdraw rewards')
@@ -285,7 +287,7 @@ def main():
         delegations = wallet.getDelegations()
         for validator in delegations:
 
-            if 'uluna' in delegations[validator]['rewards']:
+            if ULUNA in delegations[validator]['rewards']:
                 print ('\n------------------------------------')
                 print (f"The {delegations[validator]['validator_name']} validator has a {delegations[validator]['commission']}% commission.")
 
@@ -293,7 +295,7 @@ def main():
 
                     print ('Starting withdrawals...')
 
-                    uluna_reward:int = delegations[validator]['rewards']['uluna']
+                    uluna_reward:int = delegations[validator]['rewards'][ULUNA]
 
                     # Only withdraw the staking rewards if the rewards exceed the threshold (if any)
                     if uluna_reward > wallet.delegations['threshold']:
@@ -446,10 +448,10 @@ def main():
                     # Update the balances after having done withdrawals and swaps
                     wallet.getBalances(True)
 
-                    if 'uluna' in wallet.balances:     
+                    if ULUNA in wallet.balances:     
 
                         # Figure out how much to delegate based on the user settings
-                        uluna_balance = int(wallet.balances['uluna'])
+                        uluna_balance = int(wallet.balances[ULUNA])
                         
                         if isPercentage(wallet.delegations['delegate']):
                             percentage:int = int(str(wallet.delegations['delegate']).strip(' ')[0:-1]) / 100
@@ -460,7 +462,7 @@ def main():
                         # Adjust this so we have the desired amount still remaining
                         delegated_uluna = int(delegated_uluna - ((WITHDRAWAL_REMAINDER) * COIN_DIVISOR))
 
-                        if delegated_uluna > 0 and delegated_uluna <= wallet.balances['uluna']:
+                        if delegated_uluna > 0 and delegated_uluna <= wallet.balances[ULUNA]:
                             print (f'Delegating {wallet.formatUluna(delegated_uluna, True)}')
 
                             # Create the delegation object
