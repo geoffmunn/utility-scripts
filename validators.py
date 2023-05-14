@@ -6,6 +6,8 @@ from getpass import getpass
 from utility_classes import (
     get_user_choice,
     get_user_number,
+    ULUNA,
+    UUSD,
     UserConfig,
     Validators,
     Wallets,
@@ -100,13 +102,13 @@ def get_user_singlechoice(question:str, user_wallets:dict) -> dict|str:
         if len(wallet_name) > label_widths[1]:
             label_widths[1] = len(wallet_name)
 
-        if 'uluna' in wallet.balances:
-            uluna_val = wallet.formatUluna(wallet.balances['uluna'])
+        if ULUNA in wallet.balances:
+            uluna_val = wallet.formatUluna(wallet.balances[ULUNA])
         else:
             uluna_val = ''
             
-        if 'uusd' in wallet.balances:
-            ustc_val = wallet.formatUluna(wallet.balances['uusd'])
+        if UUSD in wallet.balances:
+            ustc_val = wallet.formatUluna(wallet.balances[UUSD])
         else:
             ustc_val = ''
 
@@ -186,15 +188,15 @@ def get_user_singlechoice(question:str, user_wallets:dict) -> dict|str:
             
             wallet_name_str = wallet_name + padding_str[0:label_widths[1] - len(wallet_name)]
 
-            if 'uluna' in wallet.balances:
-                lunc_str = wallet.formatUluna(wallet.balances['uluna'], False)
+            if ULUNA in wallet.balances:
+                lunc_str = wallet.formatUluna(wallet.balances[ULUNA], False)
             else: 
                 lunc_str = ''
 
             lunc_str = lunc_str + padding_str[0:label_widths[2] - len(lunc_str)]
             
-            if 'uusd' in wallet.balances:
-                ustc_str = wallet.formatUluna(wallet.balances['uusd'], False)
+            if UUSD in wallet.balances:
+                ustc_str = wallet.formatUluna(wallet.balances[UUSD], False)
             else:
                 ustc_str = ' '
 
@@ -380,7 +382,7 @@ def main():
     if decrypt_password == '':
         print (' 🛑 Exiting...')
         exit()
-        
+
     # Get the user config file contents
     user_config:str = UserConfig().contents()
     if user_config == '':
@@ -456,9 +458,9 @@ def main():
             print (' 🛑 Exiting...')
             exit()
 
-        print (f"The {wallet.name} wallet holds {wallet.formatUluna(wallet.balances['uluna'], True)}")
+        print (f"The {wallet.name} wallet holds {wallet.formatUluna(wallet.balances[ULUNA], True)}")
         print (f"NOTE: A minimum amount of {WITHDRAWAL_REMAINDER} LUNC will be retained for future transactions.")
-        delegated_uluna:float = get_user_number('How much are you delegating? ', {'max_number': float(wallet.formatUluna(wallet.balances['uluna'])), 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': True, 'keep_minimum': True})
+        delegated_uluna:float = get_user_number('How much are you delegating? ', {'max_number': float(wallet.formatUluna(wallet.balances[ULUNA])), 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': True, 'keep_minimum': True})
                 
         if delegated_uluna == 0:
             print (' 🛑 Delegated amount is zero, exiting...')
