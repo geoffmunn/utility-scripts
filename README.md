@@ -31,14 +31,14 @@ Current functionality includes:
  ## Requirements
  
   * python 3.10.9+
-  * terra.proto 1.0.0
-  * terra_classic_skd 2.0.7
+  * terra_proto (Terra Classic version)
+  * terra_classic_sdk
   * cryptocode
   * yaml
 
   These can be installed via pip:
   ```
-  python - m pip pip install terra.proto==1.0.0
+  python - m pip pip install terra-classic-proto
   python - m pip pip install terra_classic_sdk
   python - m pip install cryptocode
   python - m pip install pyyaml
