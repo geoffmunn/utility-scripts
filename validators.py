@@ -410,7 +410,7 @@ def main():
         exit()
 
     # Get the desired actions
-    print ('\nWhat action do you want to take?')
+    print ('\nWhat action do you want to take?\n')
     print ('  (D)  Delegate to a validator')
     print ('  (U)  Undelegate all coins from a validator')
     print ('  (S)  Switch validators')

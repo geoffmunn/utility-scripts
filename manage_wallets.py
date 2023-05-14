@@ -190,7 +190,7 @@ def main():
     decrypt_password:str = getpass() # the secret password that encrypts the seed phrase
 
     # Get the desired actions
-    print ('\nWhat action do you want to take?')
+    print ('\nWhat action do you want to take?\n')
     print ('  (W)  Withdraw rewards')
     print ('  (S)  Swap coins')
     print ('  (D)  Delegate')
@@ -219,7 +219,7 @@ def main():
         print (' 🛑 The user_config.yml file could not be opened - please run configure_user_wallets.py before running this script.')
         exit()
 
-    print ('Decrypting and validating wallets - please wait...')
+    print ('Decrypting and validating wallets - please wait...\n')
 
     # Create the wallet object based on the user config file
     wallet_obj = Wallets().create(user_config, decrypt_password)
