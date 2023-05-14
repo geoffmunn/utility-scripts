@@ -23,6 +23,10 @@ def main():
     # Get the password that decrypts the user wallets
     decrypt_password:str = getpass() # the secret password that encrypts the seed phrase
 
+    if decrypt_password == '':
+        print (' 🛑 Exiting...')
+        exit()
+
     just_main_coins:bool = get_user_choice('Show just LUNC and USTC? (y/n) ', [])
 
     if just_main_coins == True:

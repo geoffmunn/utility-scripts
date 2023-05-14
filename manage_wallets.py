@@ -189,6 +189,10 @@ def main():
     # Get the password that decrypts the user wallets
     decrypt_password:str = getpass() # the secret password that encrypts the seed phrase
 
+    if decrypt_password == '':
+        print (' 🛑 Exiting...')
+        exit()
+        
     # Get the desired actions
     print ('\nWhat action do you want to take?\n')
     print ('  (W)  Withdraw rewards')

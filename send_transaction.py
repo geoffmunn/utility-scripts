@@ -198,6 +198,10 @@ def main():
     # Get the password that decrypts the user wallets
     decrypt_password:str = getpass() # the secret password that encrypts the seed phrase
 
+    if decrypt_password == '':
+        print (' 🛑 Exiting...')
+        exit()
+        
     # Get the user config file contents
     user_config:str = UserConfig().contents()
     if user_config == '':
