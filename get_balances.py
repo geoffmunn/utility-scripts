@@ -15,7 +15,8 @@ from utility_classes import (
 from utility_constants import (
     COIN_DIVISOR,
     BASIC_COIN_LOOKUP,
-    FULL_COIN_LOOKUP
+    FULL_COIN_LOOKUP,
+    ULUNA
 )
 
 def main():
@@ -126,7 +127,7 @@ def main():
             
             for denom in delegations[validator]['rewards']:
 
-                if denom == 'uluna':
+                if denom == ULUNA:
                     raw_amount = delegations[validator]['balance_amount'] / COIN_DIVISOR
                     delegated_amount += float(("%.6f" % (raw_amount)).rstrip('0').rstrip('.'))
 
@@ -147,7 +148,7 @@ def main():
                             
                         cur_vals:dict = copy.deepcopy(balance_coins[coin_denom][wallet_name])
 
-                        if denom == 'uluna':
+                        if denom == ULUNA:
                             cur_vals.update({'Delegated': delegated_amount})
                         else:
                             cur_vals.update({'Delegated': ''})
