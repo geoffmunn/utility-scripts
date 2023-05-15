@@ -31,17 +31,17 @@ Current functionality includes:
  ## Requirements
  
   * python 3.10.9+
-  * terra.proto 1.1.0
-  * terra_classic_skd 2.0.7
+  * terra_proto (Terra Classic version)
+  * terra_classic_sdk
   * cryptocode
   * yaml
 
   These can be installed via pip:
   ```
-  pip install terra.proto==1.1.0
-  pip install terra_classic_sdk==2.0.7
-  pip install cryptocode
-  pip install pyyaml
+  python - m pip pip install terra-classic-proto
+  python - m pip pip install terra_classic_sdk
+  python - m pip install cryptocode
+  python - m pip install pyyaml
   ```
 
  ## Installation guide
@@ -104,7 +104,7 @@ Two points to remember:
 You can delegate, undelegate, and switch between validators by running the ```validators.py``` script.
 If you undelegate funds, then they will be unavailable for 21 days.
 
-### swaps.py
+### swap.py
 
 You can swap the minor Terra coins for any other coin, including USTC and LUNC.
 
@@ -124,7 +124,7 @@ Sometimes it seems to timeout and nothing will happen for many minutes. In these
 
 Seems to be a problem with the LCD - try again later and it should work.
 
-**terra_sdk.exceptions.LCDResponseError: Status 502 - Bad Gateway**
+**terra_classic_sdk.exceptions.LCDResponseError: Status 502 - Bad Gateway**
 
 Network connectivity issues with the LCD endpoint. Try again later.
 

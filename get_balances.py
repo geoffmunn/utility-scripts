@@ -12,19 +12,28 @@ from utility_classes import (
     Wallet
 )
 
-import utility_constants
+from utility_constants import (
+    COIN_DIVISOR,
+    BASIC_COIN_LOOKUP,
+    FULL_COIN_LOOKUP,
+    ULUNA
+)
 
 def main():
     
     # Get the password that decrypts the user wallets
     decrypt_password:str = getpass() # the secret password that encrypts the seed phrase
 
+    if decrypt_password == '':
+        print (' 🛑 Exiting...')
+        exit()
+
     just_main_coins:bool = get_user_choice('Show just LUNC and USTC? (y/n) ', [])
 
     if just_main_coins == True:
-        coin_lookup = utility_constants.BASIC_COIN_LOOKUP
+        coin_lookup = BASIC_COIN_LOOKUP
     else:
-        coin_lookup = utility_constants.FULL_COIN_LOOKUP
+        coin_lookup = FULL_COIN_LOOKUP
 
     # Get the user config file contents
     user_config:str = UserConfig().contents()
@@ -32,7 +41,7 @@ def main():
         print (' 🛑 The user_config.yml file could not be opened - please run configure_user_wallets.py before running this script.')
         exit()
 
-    print ('Decrypting and validating wallets - please wait...')
+    print ('Decrypting and validating wallets - please wait...\n')
 
     # Create the wallet object based on the user config file
     wallet_obj = Wallets().create(user_config, decrypt_password)
@@ -74,7 +83,6 @@ def main():
                     label_widths.append(0)
 
     # Then, get all the coins we'll be charting (column 1)
-
     for wallet_name in user_wallets:
         wallet:Wallet = user_wallets[wallet_name]
         wallet.getBalances()
@@ -84,7 +92,7 @@ def main():
             label_widths[1] = len(wallet_name)
 
         for denom in wallet.balances:            
-            raw_amount = float(wallet.balances[denom]) / utility_constants.COIN_DIVISOR
+            raw_amount = float(wallet.balances[denom]) / COIN_DIVISOR
             amount     = ("%.6f" % (raw_amount)).rstrip('0').rstrip('.')
 
             if float(amount) > 0:
@@ -119,11 +127,11 @@ def main():
             
             for denom in delegations[validator]['rewards']:
 
-                if denom == 'uluna':
-                    raw_amount = delegations[validator]['balance_amount'] / utility_constants.COIN_DIVISOR
+                if denom == ULUNA:
+                    raw_amount = delegations[validator]['balance_amount'] / COIN_DIVISOR
                     delegated_amount += float(("%.6f" % (raw_amount)).rstrip('0').rstrip('.'))
 
-                raw_amount = float(delegations[validator]['rewards'][denom]) / utility_constants.COIN_DIVISOR
+                raw_amount = float(delegations[validator]['rewards'][denom]) / COIN_DIVISOR
                 amount = ("%.6f" % (raw_amount)).rstrip('0').rstrip('.')
 
                 if denom in coin_lookup:
@@ -140,7 +148,7 @@ def main():
                             
                         cur_vals:dict = copy.deepcopy(balance_coins[coin_denom][wallet_name])
 
-                        if denom == 'uluna':
+                        if denom == ULUNA:
                             cur_vals.update({'Delegated': delegated_amount})
                         else:
                             cur_vals.update({'Delegated': ''})
@@ -187,9 +195,12 @@ def main():
         val_count += 1
 
     horizontal_spacer = '-' * len(header_string)
-    
+
+    # Sort the balance coins into alphabetical order    
+    sorted_coins = dict(sorted(balance_coins.items()))
+
     body_string = ''
-    for coin_type in balance_coins:
+    for coin_type in sorted_coins:
 
         current_coin =  ' ' + coin_type + padding_str[0:label_widths[0]-len(coin_type)] + ' |'
         body_string += current_coin
