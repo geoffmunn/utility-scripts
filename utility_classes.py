@@ -484,25 +484,26 @@ class Wallets:
 
         for wallet in yml_file['wallets']:
 
-            delegation_amount:str = ''
-            threshold:int         = 0
+            if 'seed' in wallet:
+                delegation_amount:str = ''
+                threshold:int         = 0
 
-            if 'delegations' in wallet:
-                if 'redelegate' in wallet['delegations']:
-                    delegation_amount = wallet['delegations']['redelegate']
-                    if 'threshold' in wallet['delegations']:
-                        threshold = wallet['delegations']['threshold']
+                if 'delegations' in wallet:
+                    if 'redelegate' in wallet['delegations']:
+                        delegation_amount = wallet['delegations']['redelegate']
+                        if 'threshold' in wallet['delegations']:
+                            threshold = wallet['delegations']['threshold']
 
 
-            wallet_item:Wallet = Wallet().create(wallet['wallet'], wallet['address'], wallet['seed'], user_password)
-            wallet_item.updateDelegation(delegation_amount, threshold)
+                wallet_item:Wallet = Wallet().create(wallet['wallet'], wallet['address'], wallet['seed'], user_password)
+                wallet_item.updateDelegation(delegation_amount, threshold)
 
-            if 'allow_swaps' in wallet:
-                wallet_item.allow_swaps = bool(wallet['allow_swaps'])
+                if 'allow_swaps' in wallet:
+                    wallet_item.allow_swaps = bool(wallet['allow_swaps'])
 
-            wallet_item.validated = wallet_item.validateWallet()
+                wallet_item.validated = wallet_item.validateWallet()
 
-            self.wallets[wallet['wallet']] = wallet_item
+                self.wallets[wallet['wallet']] = wallet_item
 
         return self
         
