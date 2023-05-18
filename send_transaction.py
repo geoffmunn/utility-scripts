@@ -5,9 +5,9 @@ from getpass import getpass
 
 from utility_classes import (
     get_coin_selection,
-    get_fees_from_error,
     get_user_choice,
     get_user_number,
+    get_user_recipient,
     get_user_text,
     UserConfig,
     Wallets,
@@ -24,32 +24,6 @@ from utility_constants import (
     USER_ACTION_CONTINUE,
     USER_ACTION_QUIT
 )
-
-def get_user_recipient(question:str, wallet:Wallet):
-    """
-    Get the recipient address that we are sending to.
-    """
-
-    while True:
-        recipient_address = input(question)
-    
-        if recipient_address == USER_ACTION_QUIT:
-            break
-
-        is_valid, is_empty = wallet.validateAddress(recipient_address)
-
-        if is_valid == False and is_empty == True:
-            continue_action = get_user_choice('This wallet seems to be emptyr - do you want to continue? (y/n) ', [])
-            if continue_action == True:
-                break
-
-        if is_valid == True:
-            break
-
-        print (' 🛎️  This is an invalid address - please check and try again.')
-
-    return recipient_address
-
 
 def get_user_singlechoice(question:str, user_wallets:dict) -> dict|str:
     """

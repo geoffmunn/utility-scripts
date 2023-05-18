@@ -5,8 +5,10 @@ from os.path import exists
 from utility_classes import (
     get_user_choice,
     get_user_number,
+    get_user_recipient,
     get_user_text,
     isPercentage,
+    USER_ACTION_QUIT,
     Wallet
 )
 
@@ -28,8 +30,14 @@ def main():
     entire_wallet = get_user_choice('Are you just adding an entire wallet? (y/n) ', [])
 
     if entire_wallet == False:
+        wallet:Wallet = Wallet().create()
         wallet_name:str           = get_user_text('Wallet name: ', 255, False)
-        wallet_address:str        = get_user_text('Lunc address: ', 44, False)
+        #wallet_address:str        = get_user_text('Lunc address: ', 44, False)
+        wallet_address = get_user_recipient("What is the Luna Classic address? (or type 'Q' to quit) ", wallet)
+        if wallet_address == USER_ACTION_QUIT:
+            print (' 🛑 Exiting...')
+            exit()
+
         wallet_seed_encrypted:str = None
         delegations               = False
         allow_swaps               = None
