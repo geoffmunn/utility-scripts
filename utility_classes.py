@@ -156,7 +156,6 @@ def get_coin_selection(question:str, coins:dict, only_active_coins:bool = True, 
                 # Change the contract depending on what we're doing
                 swaps_tx.setContract()
 
-                #print ('contract:', swaps_tx.contract)
                 if coin != estimation_against['denom']:
                     estimated_result:Coin = swaps_tx.swapRate()
                     estimated_value:str   = wallet.formatUluna(estimated_result.amount)
@@ -311,21 +310,40 @@ def get_user_choice(question:str, allowed_options:list) -> str|bool:
 
     return result
 
-def get_user_recipient(question:str, wallet:Wallet):
+def get_user_recipient(question:str, wallet:Wallet, user_config:dict):
     """
     Get the recipient address that we are sending to.
     """
 
+    #print (user_config)
     while True:
-        recipient_address = input(question)
+        answer:str = input(question)
     
-        if recipient_address == USER_ACTION_QUIT:
+        if answer == USER_ACTION_QUIT:
             break
+
+        # We'll assume it was a terra address to start with (by default)
+        recipient_address = answer
+
+        if isDigit(answer):
+            print ('is digit!')
+
+            if user_config['wallets'][int(answer)] is not None:
+                recipient_address = user_config['wallets'][int(answer)]['address']
+
+        else:
+            # Check if this is a wallet name
+            for user_wallet in user_config['wallets']:
+                if user_wallet['wallet'].lower() == answer.lower():
+                    recipient_address = user_wallet['address']
+                    break
+
+        print ('recipient address:', recipient_address)
 
         is_valid, is_empty = wallet.validateAddress(recipient_address)
 
         if is_valid == False and is_empty == True:
-            continue_action = get_user_choice('This wallet seems to be emptyr - do you want to continue? (y/n) ', [])
+            continue_action = get_user_choice('This wallet seems to be empty - do you want to continue? (y/n) ', [])
             if continue_action == True:
                 break
 
@@ -334,7 +352,7 @@ def get_user_recipient(question:str, wallet:Wallet):
 
         print (' 🛎️  This is an invalid address - please check and try again.')
 
-    return recipient_address
+    return answer
 
 def get_user_text(question:str, max_length:int, allow_blanks:bool) -> str:
     """
@@ -1658,7 +1676,7 @@ class SwapTransaction(TransactionCore):
 
         belief_price:float = 0
 
-        print ('self.contract:', self.contract)
+        #print ('self.contract:', self.contract)
         if self.contract is not None:
             result = self.terra.wasm.contract_query(self.contract, {"pool": {}})
 
@@ -1666,10 +1684,10 @@ class SwapTransaction(TransactionCore):
             parts[result['assets'][0]['info']['native_token']['denom']] = int(result['assets'][0]['amount'])
             parts[result['assets'][1]['info']['native_token']['denom']] = int(result['assets'][1]['amount'])
 
-            print (result)
-            print ('parts:', parts)
-            print ('swap denom:', self.swap_denom)
-            print ('request denom:', self.swap_request_denom)
+            #print (result)
+            #print ('parts:', parts)
+            #print ('swap denom:', self.swap_denom)
+            #print ('request denom:', self.swap_request_denom)
 
             contract_swaps:list  = [ULUNA, UKRW, UUSD]
 
@@ -1687,7 +1705,7 @@ class SwapTransaction(TransactionCore):
 
                 if self.swap_denom == UKRW:
                     if self.swap_request_denom == ULUNA:
-                        belief_price:float = parts[ULUNA] / parts[UKRW]
+                        belief_price:float = parts[UKRW] / parts[ULUNA]
                 
         return round(belief_price, 18)
         
@@ -1798,28 +1816,6 @@ class SwapTransaction(TransactionCore):
 
         if self.swap_denom in contract_swaps and self.swap_request_denom in contract_swaps:
 
-            """
-            uluna -> uusd
-            uluna -> ukrw
-
-            uusd -> minor coin
-            uusd -> uluna
-            uusd -> ukrw
-
-            ukrw -> ulune
-            ukrw -> uusd
-            ukrw -> minor coin
-
-            minor coin -> uusd
-            minor coin -> minor coin
-            minor coin -> ukrw
-
-            ASTROPORT_UUSD_TO_ULUNA_ADDRESS = 'terra1m6ywlgn6wrjuagcmmezzz2a029gtldhey5k552'
-            TERRASWAP_UKRW_TO_ULUNA_ADDRESS = 'terra1erfdlgdtt9e05z0j92wkndwav4t75xzyapntkv'
-            TERRASWAP_UKRW_TO_UUSD_ADDRESS  = 'terra1untf85jwv3kt0puyyc39myxjvplagr3wstgs5s'
-            TERRASWAP_ULUNA_TO_UUSD_ADDRESS = 'terra1l7vy20x940je7lskm6x9s839vjsmekz9k9mv7g'
-            """
-
             use_market_swap = False
 
             if self.swap_denom == ULUNA:
@@ -1843,7 +1839,7 @@ class SwapTransaction(TransactionCore):
                     use_market_swap = True
 
 
-        print (f'Contract for {self.swap_denom} to {self.swap_request_denom} is {self.contract}')
+        #print (f'Contract for {self.swap_denom} to {self.swap_request_denom} is {self.contract}')
 
         self.use_market_swap = use_market_swap
 
@@ -1931,8 +1927,8 @@ class SwapTransaction(TransactionCore):
             else:
                 self.fee_deductables = int(self.tax * 2)
 
-            print ('FINAL requested fee:', requested_fee)
-            print ('fee deductables:', self.fee_deductables)
+            #print ('FINAL requested fee:', requested_fee)
+            #print ('fee deductables:', self.fee_deductables)
 
             return True
         else:
@@ -2034,38 +2030,37 @@ class SwapTransaction(TransactionCore):
         Returns a coin object that we need to decode.
         """
 
-        print ('swap denom:', self.swap_denom)
-        print ('swap request denom:', self.swap_request_denom)
+        #print ('swap denom:', self.swap_denom)
+        #print ('swap request denom:', self.swap_request_denom)
 
         if self.use_market_swap == False:
             if self.swap_denom == UUSD and self.swap_request_denom in [ULUNA, UKRW]:
-                print ('option 1')
+                #print ('option 1')
                 swap_price = self.beliefPrice()
                 swap_details:Coin = Coin(self.swap_request_denom, int(self.swap_amount / swap_price))
             elif self.swap_denom == ULUNA and self.swap_request_denom in [UUSD, UKRW]:
-                print ('option 2')
+                #print ('option 2')
                 swap_price = self.beliefPrice()
-                print ('swap amount:', self.swap_amount)
-                print ('swap price:', swap_price)
+                #print ('swap amount:', self.swap_amount)
+                #print ('swap price:', swap_price)
                 if self.swap_request_denom == UUSD:
                     swap_details:Coin = Coin(self.swap_request_denom, int(self.swap_amount / swap_price))
                 else:
                     # ukrw
-                    swap_details:Coin = Coin(self.swap_request_denom, int(self.swap_amount * swap_price))
+                    swap_details:Coin = Coin(self.swap_request_denom, int(self.swap_amount / swap_price))
             elif self.swap_denom == UKRW and self.swap_request_denom in [ULUNA, UUSD]:
                 print ('option 4')
                 swap_price = self.beliefPrice()
                 print ('swap amount:', self.swap_amount)
                 print ('swap price:', swap_price)
-                swap_details:Coin = Coin(self.swap_request_denom, int(self.swap_amount * swap_price))
-
+                swap_details:Coin = Coin(self.swap_request_denom, int(self.swap_amount / swap_price))
 
             else:
                 print ('UNSUPPORTED SWAP RATE')
                 print ('swap denom:', self.swap_denom)
                 print ('swap request denom:', self.swap_request_denom)
         else:
-            print ('option 3')
+            #print ('option 3')
             swap_details:Coin = self.terra.market.swap_rate(Coin(self.swap_denom, self.swap_amount), self.swap_request_denom)
 
         return swap_details
