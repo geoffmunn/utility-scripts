@@ -165,7 +165,7 @@ def get_user_singlechoice(question:str, user_wallets:dict) -> dict|str:
     
     return user_wallet, answer
 
-def list_addresses(user_config) -> bool:
+def list_addresses(user_config:dict, from_wallet:Wallet) -> bool:
     """
     Show a simple list address from what is found in the user_config file
     """
@@ -193,15 +193,16 @@ def list_addresses(user_config) -> bool:
 
     for wallet in user_config['wallets']:
     
-        count += 1
-        glyph = '  '
+        if wallet['wallet'] != from_wallet.name:
+            count += 1
+            glyph = '  '
 
-        count_str =  f' {count}' + padding_str[0:6 - (len(str(count)) + 2)]
-        
-        wallet_name_str = wallet['wallet'] + padding_str[0:label_widths[1] - len(wallet['wallet'])]
+            count_str =  f' {count}' + padding_str[0:6 - (len(str(count)) + 2)]
+            
+            wallet_name_str = wallet['wallet'] + padding_str[0:label_widths[1] - len(wallet['wallet'])]
 
-        
-        print (f"{count_str}{glyph} | {wallet_name_str}")
+            
+            print (f"{count_str}{glyph} | {wallet_name_str}")
         
     print (horizontal_spacer + '\n')
 
@@ -258,8 +259,10 @@ def main():
     uluna_amount:int  = get_user_number('How much are you sending? ', {'max_number': float(wallet.formatUluna(wallet.balances[denom], False)), 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': True, 'keep_minimum': False})
 
     # Print a list of the addresses in the user_config.yml file:
-    list_addresses(user_config)
+    list_addresses(user_config, wallet)
 
+    print ('You can send to an address in your config file by typing then wallet name or number.')
+    print ('You can also send to a completely new address by entering the terra address.\n')
     recipient_address = get_user_recipient("What is the address you are sending to? (or type 'Q' to quit) ", wallet, user_config)
     
     if recipient_address == USER_ACTION_QUIT:
