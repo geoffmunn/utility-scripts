@@ -165,9 +165,47 @@ def get_user_singlechoice(question:str, user_wallets:dict) -> dict|str:
     
     return user_wallet, answer
 
-from terra_classic_sdk.core.coins import Coins
-from terra_classic_sdk.core.coins import Coin
-from terra_classic_sdk.core.fee import Fee
+def list_addresses(user_config) -> bool:
+    """
+    Show a simple list address from what is found in the user_config file
+    """
+
+    label_widths = []
+    label_widths.append(len('Number'))
+    label_widths.append(len('Wallet name'))
+
+    padding_str = ' ' * 100
+
+    header_string = ' Number |'
+
+    if label_widths[1] > len('Wallet name'):
+        header_string +=  ' Wallet name' + padding_str[0:label_widths[1] - len('Wallet name')] + ' '
+    else:
+        header_string +=  ' Wallet name '
+
+    horizontal_spacer = '-' * len(header_string)
+
+    count = 0
+    
+    print ('\n' + horizontal_spacer)
+    print (header_string)
+    print (horizontal_spacer)
+
+    for wallet in user_config['wallets']:
+    
+        count += 1
+        glyph = '  '
+
+        count_str =  f' {count}' + padding_str[0:6 - (len(str(count)) + 2)]
+        
+        wallet_name_str = wallet['wallet'] + padding_str[0:label_widths[1] - len(wallet['wallet'])]
+
+        
+        print (f"{count_str}{glyph} | {wallet_name_str}")
+        
+    print (horizontal_spacer + '\n')
+
+    return True
 
 def main():
     
@@ -218,7 +256,11 @@ def main():
     print (f"The {wallet.name} wallet holds {wallet.formatUluna(wallet.balances[denom])} {FULL_COIN_LOOKUP[denom]}")
     print (f"NOTE: You can send the entire value of this wallet by typing '100%' - no minimum amount will be retained.")
     uluna_amount:int  = get_user_number('How much are you sending? ', {'max_number': float(wallet.formatUluna(wallet.balances[denom], False)), 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': True, 'keep_minimum': False})
-    recipient_address = get_user_recipient("What is the address you are sending to? (or type 'Q' to quit) ", wallet)
+
+    # Print a list of the addresses in the user_config.yml file:
+    list_addresses(user_config)
+
+    recipient_address = get_user_recipient("What is the address you are sending to? (or type 'Q' to quit) ", wallet, user_config)
     
     if recipient_address == USER_ACTION_QUIT:
         print (' 🛑 Exiting...')
