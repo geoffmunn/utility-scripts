@@ -287,7 +287,7 @@ def get_coin_selection(question:str, coins:dict, only_active_coins:bool = True, 
 
     return coin_to_use, answer, returned_estimation
 
-def get_user_choice(question:str, allowed_options:list) -> str|bool:
+def get_user_choice(question:str, allowed_options:list):
     """
     Get the user selection for a prompt and convert it to a standard value.
     This is typically a yes/no decision.
