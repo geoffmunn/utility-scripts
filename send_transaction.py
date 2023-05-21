@@ -20,9 +20,9 @@ from utility_constants import (
     GAS_ADJUSTMENT_SEND,
     MAX_GAS_ADJUSTMENT,
     ULUNA,
-    UUSD,
     USER_ACTION_CONTINUE,
-    USER_ACTION_QUIT
+    USER_ACTION_QUIT,
+    UUSD
 )
 
 def get_user_singlechoice(question:str, user_wallets:dict) -> dict|str:
@@ -308,8 +308,12 @@ def main():
             result = send_tx.simulate()
 
             if result == True:
-                custom_gas = send_tx.fee.gas_limit * 1.14
-                send_tx.gas_limit = custom_gas
+                #print ('custom gas:', custom_gas)
+                if custom_gas == 0 or custom_gas == '':
+                    custom_gas = send_tx.fee.gas_limit * 1.14
+                    send_tx.gas_limit = custom_gas
+
+                    #print ('gas: ' , send_tx.gas_limit)
             else:
                 print (' 🛎️  The send transaction could not be completed')
             
