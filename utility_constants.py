@@ -15,8 +15,8 @@ TAX_RATE_URI             = 'https://terra-classic-lcd.publicnode.com/terra/treas
 TOKEN_LIST               = 'https://assets.terrarebels.net/cw20/tokens.json'
 CONFIG_FILE_NAME         = 'user_config.yml'
 GAS_ADJUSTMENT           = 1
-GAS_ADJUSTMENT_SEND      = 3.5
-GAS_ADJUSTMENT_SWAPS     = 3.5
+GAS_ADJUSTMENT_SEND      = 3.6
+GAS_ADJUSTMENT_SWAPS     = 3.6
 GAS_ADJUSTMENT_INCREMENT = 0.1
 MAX_GAS_ADJUSTMENT       = 4
 
