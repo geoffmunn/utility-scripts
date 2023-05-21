@@ -2017,10 +2017,10 @@ class SwapTransaction(TransactionCore):
                     # ukrw
                     swap_details:Coin = Coin(self.swap_request_denom, int(self.swap_amount / swap_price))
             elif self.swap_denom == UKRW and self.swap_request_denom in [ULUNA, UUSD]:
-                print ('option 4')
+                #print ('option 4')
                 swap_price = self.beliefPrice()
-                print ('swap amount:', self.swap_amount)
-                print ('swap price:', swap_price)
+                #print ('swap amount:', self.swap_amount)
+                #print ('swap price:', swap_price)
                 swap_details:Coin = Coin(self.swap_request_denom, int(self.swap_amount / swap_price))
 
             else:
