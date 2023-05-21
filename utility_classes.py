@@ -368,7 +368,7 @@ def get_user_text(question:str, max_length:int, allow_blanks:bool) -> str:
 
     return str(answer)
 
-def get_user_number(question:str, params:dict) -> float|str:
+def get_user_number(question:str, params:dict):
     """
     Get ther user input - must be a number.
     """ 
