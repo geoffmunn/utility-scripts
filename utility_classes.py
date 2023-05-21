@@ -634,7 +634,7 @@ class Wallet:
 
         return self.delegateTx
 
-    def formatUluna(self, uluna:float, add_suffix:bool = False) -> float|str:
+    def formatUluna(self, uluna:float, add_suffix:bool = False):
         """
         A generic helper function to convert uluna amounts to LUNC.
         """
@@ -743,7 +743,7 @@ class Wallet:
 
        return True
     
-    def validateAddress(self, address:str) -> bool | bool:
+    def validateAddress(self, address:str) -> bool:
         """
         Check that the provided address actually resolves to a terra wallet.
         """
