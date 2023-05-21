@@ -315,7 +315,6 @@ def get_user_recipient(question:str, wallet:Wallet, user_config:dict):
     Get the recipient address that we are sending to.
     """
 
-    #print (user_config)
     while True:
         answer:str = input(question)
     
@@ -326,8 +325,7 @@ def get_user_recipient(question:str, wallet:Wallet, user_config:dict):
         recipient_address = answer
 
         if isDigit(answer):
-            print ('is digit!')
-
+            # Check if this is a wallet number
             if user_config['wallets'][int(answer)] is not None:
                 recipient_address = user_config['wallets'][int(answer)]['address']
 
@@ -338,8 +336,7 @@ def get_user_recipient(question:str, wallet:Wallet, user_config:dict):
                     recipient_address = user_wallet['address']
                     break
 
-        print ('recipient address:', recipient_address)
-
+        # Figure out if this wallet address is legit
         is_valid, is_empty = wallet.validateAddress(recipient_address)
 
         if is_valid == False and is_empty == True:
@@ -352,7 +349,7 @@ def get_user_recipient(question:str, wallet:Wallet, user_config:dict):
 
         print (' 🛎️  This is an invalid address - please check and try again.')
 
-    return answer
+    return recipient_address
 
 def get_user_text(question:str, max_length:int, allow_blanks:bool) -> str:
     """
@@ -1506,18 +1503,10 @@ class SendTransaction(TransactionCore):
 
         send_amount = int(self.amount)
 
-        #print ('send amount before:', send_amount)
-        #print ('tax:', self.tax)
-        #print ('fee deductiables:', self.fee_deductables)
-        #print ('balance available:', self.balances[self.denom])
         if self.tax is not None:
             if self.fee_deductables is not None:
                 if send_amount + self.tax > self.balances[self.denom]:
-        #            print ('send amount + tax exceeds total amount available')
-                    
                     send_amount = int(send_amount - self.fee_deductables)
-            
-        #print ('send_amount after:', send_amount)
 
         try:
             tx:Tx = None
@@ -1528,12 +1517,11 @@ class SendTransaction(TransactionCore):
                 amount       = Coins(str(int(send_amount)) + self.denom)
             )
 
-            #print ('GAS LIMIT:', self.gas_limit)
+            print ('GAS LIMIT:', self.gas_limit)
 
             options = CreateTxOptions(
                 fee        = self.fee,
                 gas        = str(self.gas_limit),
-                #gas = str(200000),
                 gas_prices = self.gas_list,
                 memo       = self.memo,
                 msgs       = [msg],
@@ -1579,7 +1567,7 @@ class SendTransaction(TransactionCore):
         """
 
         if self.sequence is None:
-            self.sequence        = self.current_wallet.sequence()
+            self.sequence = self.current_wallet.sequence()
         
         # Perform the swap as a simulation, with no fee details
         self.send()
@@ -1591,22 +1579,12 @@ class SendTransaction(TransactionCore):
             # Get the stub of the requested fee so we can adjust it
             requested_fee:Fee = tx.auth_info.fee
 
-            #print ('requested fee:', requested_fee)
-
             # Store the gas limit based on what we've been told
-            self.gas_limit = requested_fee.gas_limit
-
-            #print ('apparent gas requirement:', self.gas_limit)
-
-            #self.gas_limit = str(int(requested_fee.gas_limit) * 1.3).rstrip('.0')
-            #print ('apparent gas requirement:', self.gas_limit)
-            #self.send()
+            #self.gas_limit = requested_fee.gas_limit
 
             # This will be used by the swap function next time we call it
             # We'll use uluna as the preferred fee currency just to keep things simple
             self.fee = self.calculateFee(requested_fee, ULUNA)
-            
-            #print ('calculated fee:', self.fee)
             
             # Figure out the fee structure
             fee_bit:Coin = Coin.from_str(str(requested_fee.amount))
@@ -1616,19 +1594,12 @@ class SendTransaction(TransactionCore):
             # Calculate the tax portion
             self.tax = int(math.ceil(self.amount * float(self.tax_rate['tax_rate'])))
 
-            #print ('tax is', self.tax)
-            #print ('fee denom:', fee_denom)
-            #print ('self denom:', self.denom)
-
             # Build a fee object
             if fee_denom == ULUNA and self.denom == ULUNA:
                 new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount + self.tax))})
             else:
                 new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount)), Coin(self.denom, int(self.tax))})
                 
-            #if self.gas_limit != 'auto':
-            #   requested_fee.gas_limit = int(self.gas_limit)
-
             requested_fee.amount = new_coin
 
             # This will be used by the swap function next time we call it
@@ -1644,9 +1615,6 @@ class SendTransaction(TransactionCore):
                 self.fee_deductables = int(self.tax)
             else:
                 self.fee_deductables = int(self.tax * 2)
-
-            #print ('FINAL requested fee:', requested_fee)
-            #print ('fee deductables:', self.fee_deductables)
 
             return True
         else:
