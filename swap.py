@@ -23,7 +23,7 @@ from utility_constants import (
     USER_ACTION_QUIT
 )
 
-def get_user_singlechoice(question:str, user_wallets:dict) -> dict|str:
+def get_user_singlechoice(question:str, user_wallets:dict):
     """
     Get a single user selection from a list.
     This is a custom function because the options are specific to this list.
