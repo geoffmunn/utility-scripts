@@ -107,7 +107,7 @@ def strtobool(val):
         #raise ValueError("invalid truth value %r" % (val,))
         return -1
     
-def get_coin_selection(question:str, coins:dict, only_active_coins:bool = True, estimation_against:dict = None, wallet:Wallet = False) -> str | str | float:
+def get_coin_selection(question:str, coins:dict, only_active_coins:bool = True, estimation_against:dict = None, wallet:Wallet = False):
     """
     Return a selected coin based on the provided list.
     """
