@@ -267,12 +267,9 @@ def get_coin_selection(question:str, coins:dict, only_active_coins:bool = True, 
                 returned_estimation:float = None
                 coin_to_use:str           = coin_list[int(answer)] 
 
-                print ('coin to use:', coin_to_use)
-
                 if estimation_against is not None:
                     returned_estimation = coin_values[coin_to_use]    
                 
-                print ('returned estimation', returned_estimation)
                 if estimation_against is not None and returned_estimation is None:
                     coin_to_use = None
 
@@ -1180,7 +1177,6 @@ class TransactionCore():
             if len(result['txs']) > 0 and int(result['pagination']['total']) > 0:
                 if result['txs'][0].code == 0:
                     print ('Found the hash!')
-                    #print (result)
                     transaction_found = True
                     break
 
@@ -1517,7 +1513,7 @@ class SendTransaction(TransactionCore):
                 amount       = Coins(str(int(send_amount)) + self.denom)
             )
 
-            print ('GAS LIMIT:', self.gas_limit)
+            #print ('GAS LIMIT:', self.gas_limit)
 
             options = CreateTxOptions(
                 fee        = self.fee,
@@ -1644,18 +1640,12 @@ class SwapTransaction(TransactionCore):
 
         belief_price:float = 0
 
-        #print ('self.contract:', self.contract)
         if self.contract is not None:
             result = self.terra.wasm.contract_query(self.contract, {"pool": {}})
 
             parts:dict = {}
             parts[result['assets'][0]['info']['native_token']['denom']] = int(result['assets'][0]['amount'])
             parts[result['assets'][1]['info']['native_token']['denom']] = int(result['assets'][1]['amount'])
-
-            #print (result)
-            #print ('parts:', parts)
-            #print ('swap denom:', self.swap_denom)
-            #print ('request denom:', self.swap_request_denom)
 
             contract_swaps:list  = [ULUNA, UKRW, UUSD]
 
@@ -1806,9 +1796,6 @@ class SwapTransaction(TransactionCore):
                     self.contract = None
                     use_market_swap = True
 
-
-        #print (f'Contract for {self.swap_denom} to {self.swap_request_denom} is {self.contract}')
-
         self.use_market_swap = use_market_swap
 
         return use_market_swap
@@ -1954,8 +1941,8 @@ class SwapTransaction(TransactionCore):
                     sequence   = self.sequence,
                 )
 
-                print ('options:', options)
-                print ('tx:', tx_msg)
+                #print ('options:', options)
+                #print ('tx:', tx_msg)
                 # If we are swapping from lunc to usdt then we need a different fee structure
                 if self.swap_denom == ULUNA and self.swap_request_denom == UUSD:
                     options.fee_denoms = [ULUNA]
@@ -1966,7 +1953,7 @@ class SwapTransaction(TransactionCore):
                     try:
                         tx:Tx = self.current_wallet.create_and_sign_tx(options)
 
-                        print ('tx:', tx)
+                        #print ('tx:', tx)
                         break
                     except LCDResponseError as err:
                         # if 'account sequence mismatch' in err.message:
