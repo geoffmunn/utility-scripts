@@ -7,9 +7,10 @@ from utility_classes import (
     get_coin_selection,
     get_user_choice,
     get_user_number,
+    UKUJI,
     ULUNA,
-    UUSD,
     UserConfig,
+    UUSD,
     Wallets,
     Wallet
 )
@@ -221,7 +222,6 @@ def main():
     swaps_tx.swap_amount        = int(swap_uluna)
     swaps_tx.swap_denom         = coin_from
     swaps_tx.swap_request_denom = coin_to
-    swaps_tx.swap_request_denom = 'kuji'
     
     # Bump up the gas adjustment - it needs to be higher for swaps it turns out
     swaps_tx.terra.gas_adjustment = float(GAS_ADJUSTMENT_SWAPS)
@@ -230,9 +230,8 @@ def main():
     # As long as the swap_denom and swap_request_denom values are set, the correct contract should be picked
     use_market_swap = swaps_tx.setContract()
 
-    swaps_tx.contract = 'terra1hasy32pvxmgu485x5tujylemqxynsv72lsu7ve'
-    #swaps_tx.contract = 'terra1cyuw2vslzym4j6j2nxujh02qm8ewgz38l84lsz'
-    swaps_tx.max_spread = 0.005
+    if swaps_tx.swap_request_denom == UKUJI:
+        swaps_tx.max_spread = 0.005
 
     use_market_swap = False
     if use_market_swap == True:
@@ -249,8 +248,6 @@ def main():
 
             result = swaps_tx.swap()
 
-    print ('swap test ending...')
-    exit()
     if result == True:
         swaps_tx.broadcast()
     
@@ -298,7 +295,7 @@ def main():
             print (' 🛎️  The send transaction failed, an error occurred:')
             print (f' 🛎️  {swaps_tx.broadcast_result.raw_log}')
         else:
-            print (f' ✅ Sent amount: {wallet.formatUluna(swaps_tx.swap_amount, False)}')
+            print (f' ✅ Swapped amount: {wallet.formatUluna(swaps_tx.swap_amount)} {FULL_COIN_LOOKUP[swaps_tx.swap_denom]}')
             print (f' ✅ Tx Hash: {swaps_tx.broadcast_result.txhash}')
     else:
         print (' 🛎️  The swap transaction could not be completed')
