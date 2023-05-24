@@ -1638,15 +1638,49 @@ class SwapTransaction(TransactionCore):
         Figure out the belief price for this swap.
         """
 
+        info = self.terra.wasm.contract_info('terra1hasy32pvxmgu485x5tujylemqxynsv72lsu7ve')
+        #info = self.terra.wasm.contract_info('terra1cyuw2vslzym4j6j2nxujh02qm8ewgz38l84lsz')
+        print (info)
+        #result = self.terra.wasm.contract_query(self.contract, {"pool": {}})
+        result = self.terra.wasm.contract_query(self.contract, {"pool": {}})
+        
+        print (result)
+    
+        return 0.79494164575
+    
         belief_price:float = 0
 
         if self.contract is not None:
+            info = self.terra.wasm.contract_info('terra1hasy32pvxmgu485x5tujylemqxynsv72lsu7ve')
+            #info = self.terra.wasm.contract_info('terra1cyuw2vslzym4j6j2nxujh02qm8ewgz38l84lsz')
+            print (info)
+            #result = self.terra.wasm.contract_query(self.contract, {"pool": {}})
             result = self.terra.wasm.contract_query(self.contract, {"pool": {}})
-
+            
+            print (result)
             parts:dict = {}
             parts[result['assets'][0]['info']['native_token']['denom']] = int(result['assets'][0]['amount'])
             parts[result['assets'][1]['info']['native_token']['denom']] = int(result['assets'][1]['amount'])
 
+            """
+            {
+                'assets': [
+                    {
+                        'info': {
+                            'token': {
+                                'contract_addr': 'terra1xfsdgcemqwxp4hhnyk4rle6wr22sseq7j07dnn'
+                            }
+                        }, 
+                        'amount': '79494164575'
+                    }, 
+                    {
+                        'info': {
+                            'native_token': {
+                                'denom': 'uusd'
+                            }
+                        }, 
+                        'amount': '13533963017'}], 'total_share': '22150827969'}
+            """
             contract_swaps:list  = [ULUNA, UKRW, UUSD]
 
             if self.swap_denom in contract_swaps and self.swap_request_denom in contract_swaps:
@@ -1770,7 +1804,8 @@ class SwapTransaction(TransactionCore):
         use_market_swap:bool = True
         self.contract        = None
 
-        contract_swaps:list  = [ULUNA, UKRW, UUSD]
+        print ('self.swap denom:', self.swap_denom)
+        contract_swaps:list  = [ULUNA, UKRW, UUSD, 'kuji']
 
         if self.swap_denom in contract_swaps and self.swap_request_denom in contract_swaps:
 
@@ -1941,8 +1976,10 @@ class SwapTransaction(TransactionCore):
                     sequence   = self.sequence,
                 )
 
-                #print ('options:', options)
-                #print ('tx:', tx_msg)
+                print ('options:', options)
+                print ('------------------------')
+                print ('tx:', tx_msg)
+
                 # If we are swapping from lunc to usdt then we need a different fee structure
                 if self.swap_denom == ULUNA and self.swap_request_denom == UUSD:
                     options.fee_denoms = [ULUNA]

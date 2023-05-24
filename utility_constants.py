@@ -14,7 +14,7 @@ GAS_PRICE_URI            = 'https://terra-classic-fcd.publicnode.com/v1/txs/gas_
 TAX_RATE_URI             = 'https://terra-classic-lcd.publicnode.com/terra/treasury/v1beta1/tax_rate'
 TOKEN_LIST               = 'https://assets.terrarebels.net/cw20/tokens.json'
 CONFIG_FILE_NAME         = 'user_config.yml'
-GAS_ADJUSTMENT           = 1
+GAS_ADJUSTMENT           = 1.1
 GAS_ADJUSTMENT_SEND      = 3.6
 GAS_ADJUSTMENT_SWAPS     = 3.6
 GAS_ADJUSTMENT_INCREMENT = 0.1
@@ -28,6 +28,7 @@ TERRASWAP_UKRW_TO_ULUNA_ADDRESS = 'terra1erfdlgdtt9e05z0j92wkndwav4t75xzyapntkv'
 #TERRASWAP_UKRW_TO_UUSD_ADDRESS  = 'terra1untf85jwv3kt0puyyc39myxjvplagr3wstgs5s'
 TERRASWAP_ULUNA_TO_UUSD_ADDRESS = 'terra1l7vy20x940je7lskm6x9s839vjsmekz9k9mv7g'
 #ASTROPORT_UUSD_TO_MINA_ADDRESS  = 'terra134m8n2epp0n40qr08qsvvrzycn2zq4zcpmue48'
+#KUJI_ADDRESS = 'terra1hasy32pvxmgu485x5tujylemqxynsv72lsu7ve'
 
 # GRT TO UUSD transaction example:
 #https://finder.terrarebels.net/classic/tx/6316DD186EFB35BBC7940B5B9D252977721D7C99D23DCF554A8AF70A8C3FB57A
@@ -76,6 +77,7 @@ FULL_COIN_LOOKUP = {
     'uinr': 'INT',
     'ujpy': 'JPT',
     'ukrw': 'KRT',
+    #'kuji': 'KUJI',
     'uluna': 'LUNC',
     'umnt': 'MNT',
     'umyr': 'MYT',
