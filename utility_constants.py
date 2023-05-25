@@ -25,14 +25,12 @@ MAX_GAS_ADJUSTMENT       = 4
 #TERRASWAP_UUSD_TO_ULUNA_ADDRESS = 'terra1l7vy20x940je7lskm6x9s839vjsmekz9k9mv7g'
 #TERRASWAP_UKRW_TO_UUSD_ADDRESS  = 'terra1untf85jwv3kt0puyyc39myxjvplagr3wstgs5s'
 #ASTROPORT_UUSD_TO_MINA_ADDRESS  = 'terra134m8n2epp0n40qr08qsvvrzycn2zq4zcpmue48'
-ASTROPORT_UUSD_TO_ULUNA_ADDRESS = 'terra1m6ywlgn6wrjuagcmmezzz2a029gtldhey5k552'
-TERRASWAP_UKRW_TO_ULUNA_ADDRESS = 'terra1erfdlgdtt9e05z0j92wkndwav4t75xzyapntkv'
-TERRASWAP_ULUNA_TO_UUSD_ADDRESS = 'terra1l7vy20x940je7lskm6x9s839vjsmekz9k9mv7g'
-ASTROPORT_UUSD_TO_KUJI_ADDRESS  = 'terra1hasy32pvxmgu485x5tujylemqxynsv72lsu7ve'
-KIJI_SMART_CONTACT_ADDRESS      = 'terra1xfsdgcemqwxp4hhnyk4rle6wr22sseq7j07dnn'
-
-# GRT TO UUSD transaction example:
-#https://finder.terrarebels.net/classic/tx/6316DD186EFB35BBC7940B5B9D252977721D7C99D23DCF554A8AF70A8C3FB57A
+ASTROPORT_UUSD_TO_UKUJI_ADDRESS  = 'terra1hasy32pvxmgu485x5tujylemqxynsv72lsu7ve'
+ASTROPORT_UUSD_TO_ULUNA_ADDRESS  = 'terra1m6ywlgn6wrjuagcmmezzz2a029gtldhey5k552'
+KUJI_SMART_CONTACT_ADDRESS       = 'terra1xfsdgcemqwxp4hhnyk4rle6wr22sseq7j07dnn'
+TERRASWAP_UKRW_TO_ULUNA_ADDRESS  = 'terra1erfdlgdtt9e05z0j92wkndwav4t75xzyapntkv'
+TERRASWAP_UKUJI_TO_ULUNA_ADDRESS = 'terra19qx5xe6q9ll4w0890ux7lv2p4mf3csd4qvt3ex'
+TERRASWAP_ULUNA_TO_UUSD_ADDRESS  = 'terra1l7vy20x940je7lskm6x9s839vjsmekz9k9mv7g'
 
 # Do not change these:
 

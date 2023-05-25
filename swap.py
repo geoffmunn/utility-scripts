@@ -233,7 +233,6 @@ def main():
     if swaps_tx.swap_request_denom == UKUJI:
         swaps_tx.max_spread = 0.005
 
-    use_market_swap = False
     if use_market_swap == True:
         result = swaps_tx.marketSimulate()
         if result == True:
@@ -248,6 +247,8 @@ def main():
 
             result = swaps_tx.swap()
 
+    print ('swap test finished')
+    exit()
     if result == True:
         swaps_tx.broadcast()
     

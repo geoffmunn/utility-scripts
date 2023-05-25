@@ -9,7 +9,7 @@ import time
 import yaml
 
 from utility_constants import (
-    ASTROPORT_UUSD_TO_KUJI_ADDRESS,
+    ASTROPORT_UUSD_TO_UKUJI_ADDRESS,
     ASTROPORT_UUSD_TO_ULUNA_ADDRESS,
     COIN_DIVISOR,
     CONFIG_FILE_NAME,
@@ -18,10 +18,11 @@ from utility_constants import (
     GAS_ADJUSTMENT_SWAPS,
     GAS_PRICE_URI,
     UKUJI,
-    KIJI_SMART_CONTACT_ADDRESS,
+    KUJI_SMART_CONTACT_ADDRESS,
     LCD_ENDPOINT,
     SEARCH_RETRY_COUNT,
     TAX_RATE_URI,
+    TERRASWAP_UKUJI_TO_ULUNA_ADDRESS,
     TERRASWAP_UKRW_TO_ULUNA_ADDRESS,
     TERRASWAP_ULUNA_TO_UUSD_ADDRESS,
     ULUNA,
@@ -678,7 +679,7 @@ class Wallet:
                     balances[coin.denom] = coin.amount
 
             # Add the extra coins (Kuji etc)
-            coin_balance = self.terra.wasm.contract_query(KIJI_SMART_CONTACT_ADDRESS, {'balance':{'address':self.address}})
+            coin_balance = self.terra.wasm.contract_query(KUJI_SMART_CONTACT_ADDRESS, {'balance':{'address':self.address}})
             balances[UKUJI] = coin_balance['balance']
 
             self.balances = balances
@@ -1801,7 +1802,7 @@ class SwapTransaction(TransactionCore):
 
             if self.swap_denom == UUSD:
                 if self.swap_request_denom == UKUJI:
-                    self.contract = ASTROPORT_UUSD_TO_KUJI_ADDRESS
+                    self.contract = ASTROPORT_UUSD_TO_UKUJI_ADDRESS
 
         self.use_market_swap = use_market_swap
 
@@ -1869,6 +1870,7 @@ class SwapTransaction(TransactionCore):
             else:
                 self.fee_deductables = int(self.tax * 2)
 
+            print ('requested fee:', self.fee)
             return True
         else:
             return False
@@ -1985,7 +1987,10 @@ class SwapTransaction(TransactionCore):
                 print ('swap request denom:', self.swap_request_denom)
                 exit()
         else:
-            swap_details:Coin = self.terra.market.swap_rate(Coin(self.swap_denom, self.swap_amount), self.swap_request_denom)
+            if self.swap_denom != UKUJI and self.swap_request_denom != UKUJI:
+                swap_details:Coin = self.terra.market.swap_rate(Coin(self.swap_denom, self.swap_amount), self.swap_request_denom)
+            else:
+                swap_details:Coin = Coin(self.swap_request_denom, 0)
 
         return swap_details
     
