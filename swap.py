@@ -247,8 +247,6 @@ def main():
 
             result = swaps_tx.swap()
 
-    print ('swap test finished')
-    exit()
     if result == True:
         swaps_tx.broadcast()
     

@@ -1981,6 +1981,8 @@ class SwapTransaction(TransactionCore):
             elif self.swap_denom == UUSD and self.swap_request_denom == UKUJI:
                 swap_price = self.beliefPrice()
                 swap_details:Coin = Coin(self.swap_request_denom, int(self.swap_amount / swap_price))
+            elif self.swap_request_denom == UKUJI:
+                swap_details:Coin = Coin(self.swap_request_denom, 0)
             else:
                 print ('UNSUPPORTED SWAP RATE')
                 print ('swap denom:', self.swap_denom)
