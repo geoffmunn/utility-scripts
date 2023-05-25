@@ -1648,7 +1648,7 @@ class SwapTransaction(TransactionCore):
             if 'native_token' in result['assets'][0]['info']:
                 parts[result['assets'][0]['info']['native_token']['denom']] = int(result['assets'][0]['amount'])
             else:
-                if result['assets'][0]['info']['token']['contract_addr'] == KIJI_SMART_CONTACT_ADDRESS:
+                if result['assets'][0]['info']['token']['contract_addr'] == KUJI_SMART_CONTACT_ADDRESS:
                     parts[UKUJI] = int(result['assets'][0]['amount'])
 
             parts[result['assets'][1]['info']['native_token']['denom']] = int(result['assets'][1]['amount'])
