@@ -1870,7 +1870,6 @@ class SwapTransaction(TransactionCore):
             else:
                 self.fee_deductables = int(self.tax * 2)
 
-            print ('requested fee:', self.fee)
             return True
         else:
             return False
