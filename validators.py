@@ -32,7 +32,7 @@ from utility_constants import (
     WITHDRAWAL_REMAINDER
 )
 
-def get_user_multichoice(question:str, user_wallets:dict) -> dict|str:
+def get_user_multichoice(question:str, user_wallets:dict):
     """
     Get multiple user selections from a list.
     This is a custom function because the options are specific to this list.
