@@ -80,7 +80,7 @@ def get_user_multichoice(question:str, user_wallets:dict):
 
     return wallets_to_use, answer
 
-def get_user_singlechoice(question:str, user_wallets:dict) -> dict|str:
+def get_user_singlechoice(question:str, user_wallets:dict):
     """
     Get a single user selection from a list.
     This is a custom function because the options are specific to this list.
@@ -254,7 +254,7 @@ def get_user_singlechoice(question:str, user_wallets:dict) -> dict|str:
     
     return user_wallet, answer
 
-def get_validator_singlechoice(question:str, validators:dict, filter_list:list, delegations:dict) -> dict|str:
+def get_validator_singlechoice(question:str, validators:dict, filter_list:list, delegations:dict):
     """
     Get a single user selection from a list.
     This is a custom function because the options are specific to this list.
@@ -371,8 +371,8 @@ def get_validator_singlechoice(question:str, validators:dict, filter_list:list, 
 
     return user_validator, answer
 
-def remove_exponent(num):
-    return num.to_integral() if num == num.to_integral() else num.normalize()
+#def remove_exponent(num):
+#    return num.to_integral() if num == num.to_integral() else num.normalize()
 
 def main():
 
