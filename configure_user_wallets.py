@@ -23,17 +23,19 @@ from utility_constants import (
 
 def main():
 
-    print ('\nYou can add either just an address (for sending funds to), or an entire wallet.')
+    print ('\n*********************************************************************************************************')
+    print ('You can add either just an address (for sending funds to), or an entire wallet.')
     print ('Adding an entire wallet will allow you to send, delegate, and swap coins.')
     print ('If you send funds to an address on a frequent basis, you can add just the address for extra convienience.')
+    print ('*********************************************************************************************************\n')
 
     entire_wallet = get_user_choice('Are you just adding an entire wallet? (y/n) ', [])
 
     if entire_wallet == False:
-        wallet:Wallet = Wallet().create()
-        wallet_name:str           = get_user_text('Wallet name: ', 255, False)
-        #wallet_address:str        = get_user_text('Lunc address: ', 44, False)
-        wallet_address = get_user_recipient("What is the Luna Classic address? (or type 'Q' to quit) ", wallet)
+        wallet:Wallet   = Wallet().create()
+        wallet_name:str = get_user_text('Wallet name: ', 255, False)
+        wallet_address  = get_user_recipient("What is the wallet address address? (or type 'Q' to quit) ", wallet, {})
+
         if wallet_address == USER_ACTION_QUIT:
             print (' 🛑 Exiting...')
             exit()
