@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 
+import calendar
+import datetime
 import cryptocode
 import json
 import math
@@ -47,6 +49,8 @@ from terra_classic_sdk.core.coin import Coin
 from terra_classic_sdk.core.coins import Coins
 from terra_classic_sdk.core.distribution.msgs import MsgWithdrawDelegatorReward
 from terra_classic_sdk.core.fee import Fee
+from terra_classic_sdk.core.ibc import Height
+from terra_classic_sdk.core.ibc_transfer import MsgTransfer
 from terra_classic_sdk.core.market.msgs import MsgSwap
 from terra_classic_sdk.core.staking import (
     MsgBeginRedelegate,
@@ -673,14 +677,15 @@ class Wallet:
 
             # Go through the pagination (if any)
             while pagination['next_key'] is not None:
-                pagOpt.key          = pagination["next_key"]
-                result, pagination  = self.terra.bank.balance(address = self.address, params = pagOpt)
+                pagOpt.key         = pagination["next_key"]
+                result, pagination = self.terra.bank.balance(address = self.address, params = pagOpt)
                 for coin in result:
                     balances[coin.denom] = coin.amount
 
             # Add the extra coins (Kuji etc)
             coin_balance = self.terra.wasm.contract_query(KUJI_SMART_CONTACT_ADDRESS, {'balance':{'address':self.address}})
-            balances[UKUJI] = coin_balance['balance']
+            if int(coin_balance['balance']) > 0:
+                balances[UKUJI] = coin_balance['balance']
 
             self.balances = balances
 
@@ -1162,6 +1167,7 @@ class TransactionCore():
         else:
             print ('Not enough funds to pay for delegation!')
 
+        #print ('calculated fee:', requested_fee)
         return requested_fee
 
     def findTransaction(self) -> bool:
@@ -1497,6 +1503,18 @@ class SendTransaction(TransactionCore):
 
         return self
     
+    # def expiryDate(self, extra_minutes: int):
+    #     """
+    #     Take the current date stamp and add some minutes to it.
+    #     The result is in nanoseconds.
+    #     """
+
+    #     future = datetime.datetime.utcnow() + datetime.timedelta(minutes = extra_minutes)
+        
+    #     result = ("%.6f" % (future.timestamp() * 1000000000)).rstrip('0').rstrip('.')
+
+    #     return result
+    
     def send(self) -> bool:
         """
         Complete a send transaction with the information we have so far.
@@ -1525,7 +1543,7 @@ class SendTransaction(TransactionCore):
                 gas_prices = self.gas_list,
                 memo       = self.memo,
                 msgs       = [msg],
-                sequence   = self.sequence,
+                sequence   = self.sequence
             )
 
             # This process often generates sequence errors. If we get a response error, then
@@ -1617,6 +1635,175 @@ class SendTransaction(TransactionCore):
         else:
             return False
         
+    def IBCSimulate(self) -> bool:
+        """
+        Simulate a delegation so we can get the fee details.
+        The fee details are saved so the actual delegation will work.
+
+        Outputs:
+        self.fee - requested_fee object with fee + tax as separate coins (unless both are lunc)
+        self.tax - the tax component
+        self.fee_deductables - the amount we need to deduct off the transferred amount
+
+        """
+
+        if self.sequence is None:
+            self.sequence = self.current_wallet.sequence()
+        
+        # Perform the swap as a simulation, with no fee details
+        self.IBCTransfer()
+
+        print (self.transaction)
+        
+
+        # This will have failed, so we can get the supposed gas fees:
+        #if 'insufficient funds' in self.transaction:
+        if True:
+            #rpc error: code = Unknown desc = failed to execute message; message index: 0: 0ukuji is smaller than 10000000ukuji: insufficient funds [cosmos/cosmos-sdk@v0.45.13/x/bank/keeper/send.go:186] With gas wanted: '0' and gas used: '48057' : unknown request
+            #required_gas = str(self.transaction).split("gas used: '")[1].replace("' : unknown request", '')
+            #print ('REQUIRED GAS:', required_gas)
+
+            #self.gas_limit = int(required_gas)
+            #self.IBCTransfer()
+
+            # Store the transaction.
+            # It should show some fee suggestions now
+            tx:Tx = self.transaction
+            #print (tx)
+            if tx is not None:
+                # Get the stub of the requested fee so we can adjust it
+                requested_fee:Fee = tx.auth_info.fee
+
+
+                print ('requested fee before:', requested_fee)
+                # This will be used by the swap function next time we call it
+                # We'll use uluna as the preferred fee currency just to keep things simple
+                self.fee = self.calculateFee(requested_fee, ULUNA)
+                
+                print ('requested fee after:', self.fee)
+                # Figure out the fee structure
+                #fee_bit:Coin = Coin.from_str(str(requested_fee.amount))
+                #fee_amount   = fee_bit.amount
+                #fee_denom    = fee_bit.denom
+
+                # Calculate the tax portion
+                #self.tax = int(math.ceil(self.amount * float(self.tax_rate['tax_rate'])))
+
+                # Build a fee object
+                #if fee_denom == ULUNA and self.denom == ULUNA:
+                #    new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount + self.tax))})
+                #else:
+                #    new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount)), Coin(self.denom, int(self.tax))})
+                    
+                #requested_fee.amount = new_coin
+
+                # This will be used by the swap function next time we call it
+                #self.fee = requested_fee
+            
+                # Store this so we can deduct it off the total amount to swap.
+                # If the fee denom is the same as what we're paying the tax in, then combine the two
+                # Otherwise the deductible is just the tax value
+                # This assumes that the tax is always the same denom as the transferred amount.
+                #if fee_denom == self.denom:
+                #    self.fee_deductables = int(fee_amount + self.tax)
+                #elif fee_denom == ULUNA and self.denom == UUSD:
+                #    self.fee_deductables = int(self.tax)
+                #else:
+                #    self.fee_deductables = int(self.tax * 2)
+
+                print ('FINAL requested fee:', self.fee)
+
+                return True
+            else:
+                return False
+        else:
+            print (' 🛑 No error information could be found to calculate the gas fee, exiting...')
+            return False
+    
+    def IBCTransfer(self):
+        """
+        Send a transaction via IBC
+        """
+
+        block_height:int = int(self.terra.tendermint.block_info()['block']['header']['height'])
+
+        tx:Tx = None
+
+        msg = MsgTransfer(
+            source_port="transfer",
+            source_channel="channel-71",
+            #token=Coin('ukuji', "10000000"),
+            token=Coin('uluna', "100000000"),
+            
+            sender = self.current_wallet.key.acc_address,
+            #receiver = "kujira1u2vljph6e3jkmpp7529cv8wd3987735vxgaaz9",
+            receiver = "terra1ctraw05y3mvq2hqjkjef7t7ga4zxs7q6sgd2z3",
+
+            timeout_height=Height(revision_number=1, revision_height = block_height),                            
+            #timeout_timestamp = self.expiryDate(5)
+            timeout_timestamp = 0
+        )
+        
+        print ('current fee:', self.fee)
+        print ('current gas:', self.gas_limit)
+
+        options = CreateTxOptions(
+            fee        = self.fee,
+            gas        = self.gas_limit,
+            gas_adjustment = 3,
+            gas_prices = self.gas_list,
+            #memo       = self.memo,
+            msgs       = [msg],
+            #sequence   = self.sequence
+        )
+
+        # This process often generates sequence errors. If we get a response error, then
+        # bump up the sequence number by one and try again.
+        try:
+            tx:Tx = self.current_wallet.create_and_sign_tx(options)
+            # Store the transaction
+            self.transaction = tx
+
+            print ('transfer options:', options)
+            print ('transfer tx:', tx)
+
+        except LCDResponseError as err:
+            # if 'insufficient funds' in err.message:
+            #     print ('INSUFFICIENT FUNDS')
+            #     print (err.message)
+            #     bits
+            #     exit()
+            # else:
+            #     print (err.message)
+            #     #terra_classic_sdk.exceptions.LCDResponseError: Status 500 - rpc error: code = Unknown desc = failed to execute message; message index: 0: 0ukuji is smaller than 10000000ukuji: insufficient funds [cosmos/cosmos-sdk@v0.45.13/x/bank/keeper/send.go:186] With gas wanted: '0' and gas used: '48057' : unknown request
+
+            # If an error occurs, we will return the result back to the originating request
+            print ('error:', err.message)
+            self.transaction = err.message
+
+        # while True:
+        #     try:
+        #         tx:Tx = self.current_wallet.create_and_sign_tx(options)
+        #         break
+        #     except LCDResponseError as err:
+        #         if 'account sequence mismatch' in err.message:
+        #             self.sequence    = self.sequence + 1
+        #             options.sequence = self.sequence
+        #             print (' 🛎️  Boosting sequence number')
+        #         else:
+        #             print (err)
+        #             break
+        #     except Exception as err:
+        #         print (' 🛑 A random error has occurred')
+        #         print (err)
+        #         break
+
+        
+        
+
+        return True
+        
+        
 class SwapTransaction(TransactionCore):
 
     def __init__(self, *args, **kwargs):
@@ -1672,6 +1859,10 @@ class SwapTransaction(TransactionCore):
                 if self.swap_denom == UKRW:
                     if self.swap_request_denom == ULUNA:
                         belief_price:float = parts[UKRW] / parts[ULUNA]
+
+                if self.swap_denom == UKUJI:
+                    if self.swap_request_denom == UUSD:
+                        belief_price:float = parts[UKUJI] / parts[UUSD]
                 
         return round(belief_price, 18)
         
@@ -1689,6 +1880,154 @@ class SwapTransaction(TransactionCore):
         self.tax_rate = self.taxRate()
 
         return self
+    
+    def IBCsimulate(self) -> bool:
+        """
+        Simulate a delegation so we can get the fee details.
+        THIS IS ONLY FOR USTC <-> LUNC SWAPS
+        The fee details are saved so the actual delegation will work.
+
+        Outputs:
+        self.fee - requested_fee object with fee + tax as separate coins (unless both are lunc)
+        self.tax - the tax component
+        self.fee_deductables - the amount we need to deduct off the transferred amount
+
+        """
+
+        self.belief_price = self.beliefPrice()
+    
+        if self.sequence is None:
+            self.sequence = self.current_wallet.sequence()
+        
+        # Perform the swap as a simulation, with no fee details
+        self.swap()
+
+        # Store the transaction
+        tx:Tx = self.transaction
+
+        if tx is not None:
+            # Get the stub of the requested fee so we can adjust it
+            requested_fee:Fee = tx.auth_info.fee
+
+            # This will be used by the swap function next time we call it
+            # We'll use uluna as the preferred fee currency just to keep things simple
+            self.fee = self.calculateFee(requested_fee, ULUNA)
+            
+            # Figure out the fee structure
+            fee_bit:Coin = Coin.from_str(str(requested_fee.amount))
+            fee_amount   = fee_bit.amount
+            fee_denom    = fee_bit.denom
+
+            # Calculate the tax portion
+            self.tax = int(math.ceil(self.swap_amount * float(self.tax_rate['tax_rate'])))
+
+            # Build a fee object
+            if fee_denom == ULUNA and self.swap_denom == ULUNA:
+                new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount + self.tax))})
+            else:
+                new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount)), Coin(self.swap_denom, int(self.tax))})
+
+            requested_fee.amount = new_coin
+
+            # This will be used by the swap function next time we call it
+            self.fee = requested_fee
+        
+            # Store this so we can deduct it off the total amount to swap.
+            # If the fee denom is the same as what we're paying the tax in, then combine the two
+            # Otherwise the deductible is just the tax value
+            # This assumes that the tax is always the same denom as the transferred amount.
+            if fee_denom == self.swap_denom:
+                self.fee_deductables = int(fee_amount + self.tax)
+            elif fee_denom == ULUNA and self.swap_denom == UUSD:
+                self.fee_deductables = int(self.tax)
+            else:
+                self.fee_deductables = int(self.tax * 2)
+
+            return True
+        else:
+            return False
+    
+    def IBCswap(self) -> bool:
+        """
+        Make a swap with the information we have so far.
+        If fee is None then it will be a simulation.
+        """
+
+        if self.belief_price is not None:
+            
+            if self.fee is not None:
+                fee_amount:list = self.fee.amount.to_list()
+                fee_coin:Coin   = fee_amount[0]
+                fee_denom:str   = fee_coin.denom
+            else:
+                fee_denom:str   = UUSD
+
+            if fee_denom in self.balances:
+                swap_amount = self.swap_amount
+
+                if self.tax is not None:
+                    if self.fee_deductables is not None:
+                        swap_amount = swap_amount - self.fee_deductables
+
+                tx_msg = MsgExecuteContract(
+                    sender      = self.current_wallet.key.acc_address,
+                    contract    = self.contract,
+                    execute_msg = {
+                        'swap': {
+                            'belief_price': str(self.belief_price),
+                            'max_spread': str(self.max_spread),
+                            'offer_asset': {
+                                'amount': str(swap_amount),
+                                'info': {
+                                    'native_token': {
+                                        'denom': self.swap_denom
+                                    }
+                                }
+                            },
+                        }
+                    },
+                    coins = Coins(str(swap_amount) + self.swap_denom)
+                )
+
+                options = CreateTxOptions(
+                    fee        = self.fee,
+                    gas_prices = self.gas_list,
+                    msgs       = [tx_msg],
+                    sequence   = self.sequence,
+                )
+
+                # If we are swapping from lunc to usdt then we need a different fee structure
+                if self.swap_denom == ULUNA and self.swap_request_denom == UUSD:
+                    options.fee_denoms = [ULUNA]
+                    options.gas_prices = {ULUNA: self.gas_list[ULUNA]}
+
+                tx:Tx = None
+                while True:
+                    try:
+                        tx:Tx = self.current_wallet.create_and_sign_tx(options)
+                        break
+                    except LCDResponseError as err:
+                        # if 'account sequence mismatch' in err.message:
+                        #     self.sequence    = self.sequence + 1
+                        #     options.sequence = self.sequence
+                        #     print (' 🛎️  Boosting sequence number')
+                        # else:
+                        print (err)
+                        break
+                    except Exception as err:
+                        
+                        print (' 🛑 A random error has occurred')
+                        print (err)
+                        break
+
+                self.transaction = tx
+
+                return True
+            else:
+                return False
+        else:
+            print ('No belief price calculated - did you run the simulation first?')
+            return False
     
     def marketSimulate(self):
         """
@@ -1802,6 +2141,9 @@ class SwapTransaction(TransactionCore):
 
             if self.swap_denom == UUSD:
                 if self.swap_request_denom == UKUJI:
+                    self.contract = ASTROPORT_UUSD_TO_UKUJI_ADDRESS
+            if self.swap_denom == UKUJI:
+                if self.swap_request_denom == UUSD:
                     self.contract = ASTROPORT_UUSD_TO_UKUJI_ADDRESS
 
         self.use_market_swap = use_market_swap
@@ -1982,6 +2324,12 @@ class SwapTransaction(TransactionCore):
                 swap_details:Coin = Coin(self.swap_request_denom, int(self.swap_amount / swap_price))
             elif self.swap_request_denom == UKUJI:
                 swap_details:Coin = Coin(self.swap_request_denom, 0)
+            elif self.swap_denom == UKUJI:
+                if self.swap_request_denom == UUSD:
+                    swap_price = self.beliefPrice()
+                    swap_details:Coin = Coin(self.swap_request_denom, int(self.swap_amount / swap_price))
+                else:
+                    swap_details:Coin = Coin(self.swap_request_denom, 0)
             else:
                 print ('UNSUPPORTED SWAP RATE')
                 print ('swap denom:', self.swap_denom)
