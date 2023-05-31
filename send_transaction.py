@@ -224,9 +224,7 @@ def get_send_to_address(user_wallets:Wallet):
         print ('You can send to an address in your config file by typing the wallet name or number.')
         print ('You can also send to a completely new address by entering the wallet address.\n')
 
-        #recipient_address = get_user_recipient("What is the address you are sending to? (or type 'Q' to quit) ", from_wallet, user_config)
-
-        answer = input("What is the address you are sending to? (or type 'Q' to quit) ").lower()
+        answer = input("What is the address you are sending to? (or type 'X' to continue, or 'Q' to quit) ").lower()
         
         if answer.isdigit() and int(answer) in wallet_numbers:
 
@@ -354,7 +352,7 @@ def main():
 
         if address_prefix != 'terra':
             send_tx.is_ibc_transfer = True
-            
+
         # if address_prefix != 'terra':
         #     #send_tx.terra.gas_adjustment = GAS_ADJUSTMENT_SEND
         #     #send_tx.terra.gas_adjustment = 1.1
