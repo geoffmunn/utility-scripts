@@ -319,6 +319,8 @@ def get_user_choice(question:str, allowed_options:list):
 def get_user_recipient(question:str, wallet:Wallet, user_config:dict):
     """
     Get the recipient address that we are sending to.
+
+    If you don't need to check this against existing wallets, then provide an empty dict object for user_config.
     """
 
     while True:
@@ -337,10 +339,11 @@ def get_user_recipient(question:str, wallet:Wallet, user_config:dict):
 
         else:
             # Check if this is a wallet name
-            for user_wallet in user_config['wallets']:
-                if user_wallet['wallet'].lower() == answer.lower():
-                    recipient_address = user_wallet['address']
-                    break
+            if len(user_config) > 0:
+                for user_wallet in user_config['wallets']:
+                    if user_wallet['wallet'].lower() == answer.lower():
+                        recipient_address = user_wallet['address']
+                        break
 
         # Figure out if this wallet address is legit
         is_valid, is_empty = wallet.validateAddress(recipient_address)
@@ -487,8 +490,9 @@ class UserConfig:
 
 class Wallets:
     def __init__(self):
-        self.file         = None
-        self.wallets:dict = {}
+        self.file           = None
+        self.wallets:dict   = {}
+        self.addresses:dict = {}
 
     def getWallet(self, wallet, user_password):
         delegation_amount:str = ''
@@ -499,7 +503,6 @@ class Wallets:
                 delegation_amount = wallet['delegations']['redelegate']
                 if 'threshold' in wallet['delegations']:
                     threshold = wallet['delegations']['threshold']
-
 
         wallet_item:Wallet = Wallet().create(wallet['wallet'], wallet['address'], wallet['seed'], user_password)
         wallet_item.updateDelegation(delegation_amount, threshold)
@@ -551,7 +554,23 @@ class Wallets:
 
                 self.wallets[wallet['wallet']] = wallet_item
 
+                # Add this to the address list as well
+                self.addresses[wallet['wallet']] = wallet_item
+            else:
+                # It's just an address - add it to the address list
+                if 'address' in wallet:
+                    wallet_item:Wallet = Wallet().create(wallet['wallet'], wallet['address'])
+                    self.addresses[wallet['wallet']] = wallet_item
+
         return self
+    
+    def getAddresses(self) -> dict:
+        """
+        Return the dictionary of addresses.
+        No validation or anything fancy is done here.
+        """
+
+        return self.addresses
         
     def getWallets(self, validate:bool) -> dict:
         """
@@ -691,7 +710,7 @@ class Wallet:
 
         return self.balances
     
-    def getDelegations(self):
+    def getDelegations(self) -> dict:
         """
         Get the delegations associated with this wallet address.
         The results are cached so if the list is refreshed then it is much quicker.
@@ -702,7 +721,21 @@ class Wallet:
 
         return self.delegation_details
     
-    def getUndelegations(self):
+    def getPrefix(self, address:str) -> str:
+        """
+        Get the first x (usually 4) letters of the address so we can figure out what network it is
+        """
+
+        prefix:str = ''
+        for char in address:
+            if isDigit(char) == False:
+                prefix += char
+            else:
+                break
+
+        return prefix.lower()
+    
+    def getUndelegations(self) -> dict:
         """
         Get the undelegations associated with this wallet address.
         The results are cached so if the list is refreshed then it is much quicker.
@@ -757,8 +790,16 @@ class Wallet:
     def validateAddress(self, address:str) -> bool:
         """
         Check that the provided address actually resolves to a terra wallet.
+        This only applies to addresses which look like terra addresses.
         """
 
+        prefix = self.getPrefix(address)
+
+        # If this is an Osmosis address (or something like that) then we'll just accept it
+        if prefix != 'terra':
+            return True, False
+        
+        # We'll run some extra checks on terra addresses
         if address != '':
             try:
                 result = self.terra.auth.account_info(address)
@@ -1660,11 +1701,11 @@ class SendTransaction(TransactionCore):
         #if 'insufficient funds' in self.transaction:
         if True:
             #rpc error: code = Unknown desc = failed to execute message; message index: 0: 0ukuji is smaller than 10000000ukuji: insufficient funds [cosmos/cosmos-sdk@v0.45.13/x/bank/keeper/send.go:186] With gas wanted: '0' and gas used: '48057' : unknown request
-            #required_gas = str(self.transaction).split("gas used: '")[1].replace("' : unknown request", '')
-            #print ('REQUIRED GAS:', required_gas)
+            # required_gas = str(self.transaction).split("gas used: '")[1].replace("' : unknown request", '')
+            # print ('REQUIRED GAS:', required_gas)
 
-            #self.gas_limit = int(required_gas)
-            #self.IBCTransfer()
+            # self.gas_limit = int(required_gas)
+            # self.IBCTransfer()
 
             # Store the transaction.
             # It should show some fee suggestions now
@@ -1731,21 +1772,22 @@ class SendTransaction(TransactionCore):
 
         msg = MsgTransfer(
             source_port="transfer",
-            source_channel="channel-71",
+            #source_channel="channel-71",
             #token=Coin('ukuji', "10000000"),
+            source_channel = "channel-1",
             token=Coin('uluna', "100000000"),
             
             sender = self.current_wallet.key.acc_address,
             #receiver = "kujira1u2vljph6e3jkmpp7529cv8wd3987735vxgaaz9",
-            receiver = "terra1ctraw05y3mvq2hqjkjef7t7ga4zxs7q6sgd2z3",
+            receiver = "osmo1u2vljph6e3jkmpp7529cv8wd3987735vlmv4ea",
 
-            timeout_height=Height(revision_number=1, revision_height = block_height),                            
+            timeout_height=Height(revision_number = 1, revision_height = block_height),                            
             #timeout_timestamp = self.expiryDate(5)
             timeout_timestamp = 0
         )
         
-        print ('current fee:', self.fee)
-        print ('current gas:', self.gas_limit)
+        #print ('current fee:', self.fee)
+        #print ('current gas:', self.gas_limit)
 
         options = CreateTxOptions(
             fee        = self.fee,
