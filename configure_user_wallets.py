@@ -37,7 +37,7 @@ def main():
         wallet_address  = get_user_recipient("What is the wallet address address? (or type 'Q' to quit) ", wallet, {})
 
         if wallet_address == USER_ACTION_QUIT:
-            print (' 🛑 Exiting...')
+            print (' 🛑 Exiting...\n')
             exit()
 
         wallet_seed_encrypted:str = None
@@ -56,7 +56,7 @@ def main():
             wallet_continue = get_user_choice('Do you want to continue? (y/n) ', [])
             
             if wallet_continue == False:
-                print (' 🛑 Exiting...')
+                print (' 🛑 Exiting...\n')
                 exit()
 
             print ('\nYour wallet seed is displayed below. Please write this down and keep it somewhere secure.\n')

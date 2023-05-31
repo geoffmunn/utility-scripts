@@ -155,7 +155,7 @@ def main():
     decrypt_password:str = getpass() # the secret password that encrypts the seed phrase
 
     if decrypt_password == '':
-        print (' 🛑 Exiting...')
+        print (' 🛑 Exiting...\n')
         exit()
 
     # Get the user config file contents
@@ -183,10 +183,10 @@ def main():
         wallet, answer = get_user_singlechoice("Select a wallet number 1 - " + str(len(user_wallets)) + ", 'X' to continue, or 'Q' to quit: ", user_wallets)
 
         if answer == USER_ACTION_QUIT:
-            print (' 🛑 Exiting...')
+            print (' 🛑 Exiting...\n')
             exit()
     else:
-        print (" 🛑 This password couldn't decrypt any wallets. Make sure it is correct, or rebuild the wallet list by running the configure_user_wallet.py script again.")
+        print (" 🛑 This password couldn't decrypt any wallets. Make sure it is correct, or rebuild the wallet list by running the configure_user_wallet.py script again.\n")
         exit()
 
     # List all the coins in this wallet, with the amounts available:
@@ -194,7 +194,7 @@ def main():
     coin_from, answer, null_value = get_coin_selection("Select a coin number 1 - " + str(len(wallet.balances)) + ", 'X' to continue, or 'Q' to quit: ", wallet.balances)
 
     if answer == USER_ACTION_QUIT:
-        print (' 🛑 Exiting...')
+        print (' 🛑 Exiting...\n')
         exit()
 
     available_balance:float = float(wallet.formatUluna(wallet.balances[coin_from]))
@@ -205,14 +205,14 @@ def main():
     coin_to, answer, estimated_amount = get_coin_selection("Select a coin number 1 - " + str(len(wallet.balances)) + ", 'X' to continue, or 'Q' to quit: ", wallet.balances, False, {'denom':coin_from, 'amount':swap_uluna}, wallet)
 
     if answer == USER_ACTION_QUIT:
-        print (' 🛑 Exiting...')
+        print (' 🛑 Exiting...\n')
         exit()
 
     print (f'You will be swapping {wallet.formatUluna(swap_uluna, False)} {FULL_COIN_LOOKUP[coin_from]} for approximately {estimated_amount} {FULL_COIN_LOOKUP[coin_to]}')
     complete_transaction = get_user_choice('Do you want to continue? (y/n) ', [])
 
     if complete_transaction == False:
-        print (" 🛑 Exiting...")
+        print (' 🛑 Exiting...\n')
         exit()
 
     # Create the swap object

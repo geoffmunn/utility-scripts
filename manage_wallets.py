@@ -192,7 +192,7 @@ def main():
     decrypt_password:str = getpass() # the secret password that encrypts the seed phrase
 
     if decrypt_password == '':
-        print (' 🛑 Exiting...')
+        print (' 🛑 Exiting...\n')
         exit()
 
     # Get the desired actions
@@ -216,7 +216,7 @@ def main():
     ])
 
     if user_action == USER_ACTION_QUIT:
-        print (' 🛑 Exiting...')
+        print (' 🛑 Exiting...\n')
         exit()
         
     # Get the user config file contents
@@ -262,10 +262,10 @@ def main():
         user_wallets,answer = get_user_multichoice(f"Select a wallet number 1 - {str(len(user_wallets))}, or 'A' to add all of them, 'C' to clear the list, 'X' to continue, or 'Q' to quit: ", user_wallets)
 
         if answer == USER_ACTION_QUIT:
-            print (' 🛑 Exiting...')
+            print (' 🛑 Exiting...\n')
             exit()
     else:
-        print (" 🛑 This password couldn't decrypt any wallets. Make sure it is correct, or rebuild the wallet list by running the configure_user_wallet.py script again.")
+        print (" 🛑 This password couldn't decrypt any wallets. Make sure it is correct, or rebuild the wallet list by running the configure_user_wallet.py script again.\n")
         exit()
 
     print (f'\nYou are about to {action_string} on the following wallets:\n')
@@ -274,7 +274,7 @@ def main():
 
     continue_action = get_user_choice('\nDo you want to continue? (y/n) ', [])
     if continue_action == False:
-        print (' 🛑 Exiting...')
+        print (' 🛑 Exiting...\n')
         exit()
 
     # Now start doing stuff
