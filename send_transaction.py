@@ -165,15 +165,20 @@ def get_user_singlechoice(question:str, user_wallets:dict) -> dict|str:
     
     return user_wallet, answer
 
-def list_addresses(user_config:dict, from_wallet:Wallet) -> bool:
+def get_send_to_address(user_wallets:Wallet):
     """
     Show a simple list address from what is found in the user_config file
     """
 
     label_widths = []
+
     label_widths.append(len('Number'))
     label_widths.append(len('Wallet name'))
 
+    for wallet_name in user_wallets:
+        if len(wallet_name) > label_widths[1]:
+            label_widths[1] = len(wallet_name)
+                
     padding_str = ' ' * 100
 
     header_string = ' Number |'
@@ -185,28 +190,77 @@ def list_addresses(user_config:dict, from_wallet:Wallet) -> bool:
 
     horizontal_spacer = '-' * len(header_string)
 
-    count = 0
+    wallets_to_use = {}
+    user_wallet    = {}
     
-    print ('\n' + horizontal_spacer)
-    print (header_string)
-    print (horizontal_spacer)
+    while True:
 
-    for wallet in user_config['wallets']:
-    
-        if wallet['wallet'] != from_wallet.name:
+        count = 0
+        wallet_numbers = {}
+
+        print ('\n' + horizontal_spacer)
+        print (header_string)
+        print (horizontal_spacer)
+
+        for wallet_name in user_wallets:
+            wallet:Wallet  = user_wallets[wallet_name]
+
             count += 1
-            glyph = '  '
+            wallet_numbers[count] = wallet
+                
+            if wallet_name in wallets_to_use:
+                glyph = '✅'
+            else:
+                glyph = '  '
 
             count_str =  f' {count}' + padding_str[0:6 - (len(str(count)) + 2)]
             
-            wallet_name_str = wallet['wallet'] + padding_str[0:label_widths[1] - len(wallet['wallet'])]
-
+            wallet_name_str = wallet_name + padding_str[0:label_widths[1] - len(wallet_name)]
             
             print (f"{count_str}{glyph} | {wallet_name_str}")
-        
-    print (horizontal_spacer + '\n')
+            
+        print (horizontal_spacer + '\n')
 
-    return True
+        print ('You can send to an address in your config file by typing the wallet name or number.')
+        print ('You can also send to a completely new address by entering the wallet address.\n')
+
+        #recipient_address = get_user_recipient("What is the address you are sending to? (or type 'Q' to quit) ", from_wallet, user_config)
+
+        answer = input("What is the address you are sending to? (or type 'Q' to quit) ").lower()
+        
+        if answer.isdigit() and int(answer) in wallet_numbers:
+
+            wallets_to_use = {}
+
+            key = wallet_numbers[int(answer)].name
+            if key not in wallets_to_use:
+                wallets_to_use[key] = wallet_numbers[int(answer)]
+            else:
+                wallets_to_use.pop(key)
+        else:
+            # check if this is an address we support:
+            prefix = wallet.getPrefix(answer)
+            if prefix in ['terra', 'osmo']:
+                recipient_address = answer
+                break
+            
+        if answer == USER_ACTION_CONTINUE:
+            if len(wallets_to_use) > 0:
+                break
+            else:
+                print ('\nPlease select a wallet first.\n')
+
+        if answer == USER_ACTION_QUIT:
+            break
+
+    # Get the first (and only) wallet from the list
+    if len(wallets_to_use) > 0:
+        for item in wallets_to_use:
+            user_wallet:Wallet = wallets_to_use[item]
+            recipient_address = user_wallet.address
+            break
+    
+    return recipient_address, answer
 
 def main():
     
@@ -214,7 +268,7 @@ def main():
     decrypt_password:str = getpass() # the secret password that encrypts the seed phrase
 
     if decrypt_password == '':
-        print (' 🛑 Exiting...')
+        print (' 🛑 Exiting...\n')
         exit()
 
     # Get the user config file contents
@@ -230,6 +284,7 @@ def main():
     
     # Get all the wallets
     user_wallets = wallet_obj.getWallets(True)
+    user_addresses = wallet_obj.getAddresses()
 
     # Get the balances on each wallet (for display purposes)
     for wallet_name in user_wallets:
@@ -242,16 +297,16 @@ def main():
         wallet, answer = get_user_singlechoice(f"Select a wallet number 1 - {str(len(user_wallets))}, 'X' to continue, or 'Q' to quit: ", user_wallets)
 
         if answer == USER_ACTION_QUIT:
-            print (' 🛑 Exiting...')
+            print (' 🛑 Exiting...\n')
             exit()
     else:
-        print (" 🛑 This password couldn't decrypt any wallets. Make sure it is correct, or rebuild the wallet list by running the configure_user_wallet.py script again.")
+        print (" 🛑 This password couldn't decrypt any wallets. Make sure it is correct, or rebuild the wallet list by running the configure_user_wallet.py script again.\n")
         exit()
 
     denom, answer, null_value = get_coin_selection(f"Select a coin number 1 - {str(len(FULL_COIN_LOOKUP))} that you want to send, 'X' to continue, or 'Q' to quit: ", wallet.balances)
 
     if answer == USER_ACTION_QUIT:
-        print (' 🛑 Exiting...')
+        print (' 🛑 Exiting...\n')
         exit()
 
     print (f"The {wallet.name} wallet holds {wallet.formatUluna(wallet.balances[denom])} {FULL_COIN_LOOKUP[denom]}")
@@ -259,14 +314,16 @@ def main():
     uluna_amount:int  = get_user_number('How much are you sending? ', {'max_number': float(wallet.formatUluna(wallet.balances[denom], False)), 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': True, 'keep_minimum': False})
 
     # Print a list of the addresses in the user_config.yml file:
-    list_addresses(user_config, wallet)
+    recipient_address, answer = get_send_to_address(user_addresses)
 
-    print ('You can send to an address in your config file by typing then wallet name or number.')
-    print ('You can also send to a completely new address by entering the terra address.\n')
-    recipient_address = get_user_recipient("What is the address you are sending to? (or type 'Q' to quit) ", wallet, user_config)
-    
+    if answer == USER_ACTION_QUIT:
+        print (' 🛑 Exiting...\n')
+        exit()
+
+    address_prefix:str = wallet.getPrefix(recipient_address)
+
     if recipient_address == USER_ACTION_QUIT:
-        print (' 🛑 Exiting...')
+        print (' 🛑 Exiting...\n')
         exit()
 
     # NOTE: I'm pretty sure the memo size is int64, but I've capped it at 255 so python doens't panic
@@ -274,7 +331,7 @@ def main():
 
     # Get the custom gas limit (if necessary)
     custom_gas = 0
-    if denom != ULUNA:
+    if denom != ULUNA and address_prefix == 'terra':
         print (' 🛎️  To make this more likely to work, you need to specific a higher than normal gas limit.')
         print (' 🛎️  200000 is a good number, but you can specify your own. Leave this blank if you want to accept the default.')
         custom_gas:int = get_user_number('Gas limit: ', {'max_number': wallet.balances[ULUNA], 'min_number': 0, 'empty_allowed': True, 'convert_to_uluna': False})
@@ -283,7 +340,7 @@ def main():
     complete_transaction = get_user_choice(f"You are about to send {wallet.formatUluna(uluna_amount)} {FULL_COIN_LOOKUP[denom]} to {recipient_address} - do you want to continue? (y/n) ", [])
 
     if complete_transaction == False:
-        print (" 🛑 Exiting...")
+        print (' 🛑 Exiting...\n')
         exit()
 
     # Now start doing stuff
@@ -295,8 +352,248 @@ def main():
         # Create the send tx object
         send_tx = wallet.send().create()
 
-        send_tx.terra.gas_adjustment = GAS_ADJUSTMENT_SEND
+        if address_prefix != 'terra':
+            send_tx.is_ibc_transfer = True
+            
+        # if address_prefix != 'terra':
+        #     #send_tx.terra.gas_adjustment = GAS_ADJUSTMENT_SEND
+        #     #send_tx.terra.gas_adjustment = 1.1
 
+        #     send_tx.IBCSimulate()
+
+        #     send_tx.IBCTransfer()
+        #     send_tx.broadcast()
+            
+        #     print (send_tx.broadcast_result)
+        #     print ("IBC transfer test finsished")
+        #     exit()
+        # else:
+
+        """
+        Swap LUNC to OSMOSIS:
+        CONFIRMED TO WORK
+        Terra Classic
+        Details
+        Data
+        {
+        "account_number": "3796754",
+        "chain_id": "columbus-5",
+        "fee": {
+            "gas": "210000",
+            "amount": [
+            {
+                "denom": "uluna",
+                "amount": "5948250"
+            }
+            ]
+        },
+        "memo": "",
+        "msgs": [
+            {
+            "type": "cosmos-sdk/MsgTransfer",
+            "value": {
+                "receiver": "osmo1u2vljph6e3jkmpp7529cv8wd3987735vlmv4ea",
+                "sender": "terra1ctraw05y3mvq2hqjkjef7t7ga4zxs7q6sgd2z3",
+                "source_channel": "channel-1",
+                "source_port": "transfer",
+                "timeout_height": {
+                "revision_height": "9859703",
+                "revision_number": "1"
+                },
+                "token": {
+                "amount": "186184785",
+                "denom": "uluna"
+                }
+            }
+            }
+        ],
+        "sequence": "5"
+        }
+
+
+        """
+
+        """
+                
+        Terra Classic
+        Details
+        Data
+        {
+        "txBody": {
+            "messages": [
+            {
+                "sourcePort": "transfer",
+                "sourceChannel": "channel-71",
+                "token": {
+                "denom": "uluna",
+                "amount": "2600000000"
+                },
+                "sender": "terra1ctraw05y3mvq2hqjkjef7t7ga4zxs7q6sgd2z3",
+                "receiver": "kujira1u2vljph6e3jkmpp7529cv8wd3987735vxgaaz9",
+                "timeoutTimestamp": "1685083226957000000",
+                "memo": ""
+            }
+            ],
+            "memo": "",
+            "timeoutHeight": "0",
+            "extensionOptions": [],
+            "nonCriticalExtensionOptions": []
+        },
+        "authInfo": {
+            "signerInfos": [
+            {
+                "publicKey": {
+                "typeUrl": "/cosmos.crypto.secp256k1.PubKey",
+                "value": "CiECv5Mai0DT6kdVsJcwIvPvSBFjj5iU3ve40QtQwY9Kfu4="
+                },
+                "modeInfo": {
+                "single": {
+                    "mode": "SIGN_MODE_DIRECT"
+                }
+                },
+                "sequence": "1"
+            }
+            ],
+            "fee": {
+            "amount": [
+                {
+                "denom": "uluna",
+                "amount": "3215624"
+                }
+            ],
+            "gasLimit": "113526",
+            "payer": "",
+            "granter": ""
+            }
+        },
+        "chainId": "columbus-5",
+        "accountNumber": "3796754"
+        }
+
+        """
+
+        """
+                
+        Terra Classic
+        Details
+        Data
+        {
+        "txBody": {
+            "messages": [
+            {
+                "sourcePort": "transfer",
+                "sourceChannel": "channel-71",
+                "token": {
+                "denom": "uluna",
+                "amount": "2493468906"
+                },
+                "sender": "terra1ctraw05y3mvq2hqjkjef7t7ga4zxs7q6sgd2z3",
+                "receiver": "kujira1u2vljph6e3jkmpp7529cv8wd3987735vxgaaz9",
+                "timeoutTimestamp": "1685087123280000000",
+                "memo": ""
+            }
+            ],
+            "memo": "",
+            "timeoutHeight": "0",
+            "extensionOptions": [],
+            "nonCriticalExtensionOptions": []
+        },
+        "authInfo": {
+            "signerInfos": [
+            {
+                "publicKey": {
+                "typeUrl": "/cosmos.crypto.secp256k1.PubKey",
+                "value": "CiECv5Mai0DT6kdVsJcwIvPvSBFjj5iU3ve40QtQwY9Kfu4="
+                },
+                "modeInfo": {
+                "single": {
+                    "mode": "SIGN_MODE_DIRECT"
+                }
+                },
+                "sequence": "3"
+            }
+            ],
+            "fee": {
+            "amount": [
+                {
+                "denom": "uluna",
+                "amount": "3315470"
+                }
+            ],
+            "gasLimit": "117051",
+            "payer": "",
+            "granter": ""
+            }
+        },
+        "chainId": "columbus-5",
+        "accountNumber": "3796754"
+        }
+
+                
+        """
+
+        """
+                
+        Terra Classic
+        Details
+        Data
+        {
+        "txBody": {
+            "messages": [
+            {
+                "sourcePort": "transfer",
+                "sourceChannel": "channel-71",
+                "token": {
+                "denom": "uluna",
+                "amount": "2490153436"
+                },
+                "sender": "terra1ctraw05y3mvq2hqjkjef7t7ga4zxs7q6sgd2z3",
+                "receiver": "kujira1u2vljph6e3jkmpp7529cv8wd3987735vxgaaz9",
+                "timeoutTimestamp": "1685089358886000000",
+                "memo": ""
+            }
+            ],
+            "memo": "",
+            "timeoutHeight": "0",
+            "extensionOptions": [],
+            "nonCriticalExtensionOptions": []
+        },
+        "authInfo": {
+            "signerInfos": [
+            {
+                "publicKey": {
+                "typeUrl": "/cosmos.crypto.secp256k1.PubKey",
+                "value": "CiECv5Mai0DT6kdVsJcwIvPvSBFjj5iU3ve40QtQwY9Kfu4="
+                },
+                "modeInfo": {
+                "single": {
+                    "mode": "SIGN_MODE_DIRECT"
+                }
+                },
+                "sequence": "4"
+            }
+            ],
+            "fee": {
+            "amount": [
+                {
+                "denom": "uluna",
+                "amount": "3315215"
+                }
+            ],
+            "gasLimit": "117042",
+            "payer": "",
+            "granter": ""
+            }
+        },
+        "chainId": "columbus-5",
+        "accountNumber": "3796754"
+        }
+
+
+        Query failed with (6): rpc error: code = Unknown desc = failed to execute message; message index: 0: dispatch: submessages: Out of pools: execute wasm contract failed [notional-labs/wasmd@v0.30.0-sdk46/x/wasm/keeper/keeper.go:429] With gas wanted: '100000000' and gas used: '243813' : unknown request
+
+
+        """
         # Assign the details:
         send_tx.recipient_address = recipient_address
         send_tx.memo              = memo
@@ -308,12 +605,9 @@ def main():
             result = send_tx.simulate()
 
             if result == True:
-                #print ('custom gas:', custom_gas)
                 if custom_gas == 0 or custom_gas == '':
                     custom_gas = send_tx.fee.gas_limit * 1.14
                     send_tx.gas_limit = custom_gas
-
-                    #print ('gas: ' , send_tx.gas_limit)
             else:
                 print (' 🛎️  The send transaction could not be completed')
             
@@ -443,7 +737,9 @@ def main():
                 print (' 🛎️  The send transaction could not be completed')
         else:
             print (' 🛎️  The send transaction could not be completed')
-        
+    else:
+        print (" 🛑 This wallet has no LUNC - you need a small amount to be present to pay for fees.")
+
     print (' 💯 Done!\n')
 
 if __name__ == "__main__":

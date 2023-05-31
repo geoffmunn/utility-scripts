@@ -1524,6 +1524,7 @@ class SendTransaction(TransactionCore):
         self.fee:Fee               = None
         self.fee_deductables:float = None
         self.gas_limit:str         = 'auto'
+        self.is_ibc_transfer:bool  = False
         self.memo:str              = ''
         self.recipient_address:str = ''
         self.sequence:int          = None
@@ -1572,20 +1573,49 @@ class SendTransaction(TransactionCore):
         try:
             tx:Tx = None
 
-            msg = MsgSend(
-                from_address = self.current_wallet.key.acc_address,
-                to_address   = self.recipient_address,
-                amount       = Coins(str(int(send_amount)) + self.denom)
-            )
+            if self.is_ibc_transfer == False:
+                msg = MsgSend(
+                    from_address = self.current_wallet.key.acc_address,
+                    to_address   = self.recipient_address,
+                    amount       = Coins(str(int(send_amount)) + self.denom)
+                )
 
-            options = CreateTxOptions(
-                fee        = self.fee,
-                gas        = str(self.gas_limit),
-                gas_prices = self.gas_list,
-                memo       = self.memo,
-                msgs       = [msg],
-                sequence   = self.sequence
-            )
+                options = CreateTxOptions(
+                    fee        = self.fee,
+                    gas        = str(self.gas_limit),
+                    gas_prices = self.gas_list,
+                    memo       = self.memo,
+                    msgs       = [msg],
+                    sequence   = self.sequence
+                )
+            else:
+                block_height:int = int(self.terra.tendermint.block_info()['block']['header']['height'])
+
+                msg = MsgTransfer(
+                    source_port    = 'transfer',
+                    #source_channel="channel-71",
+                    #token=Coin('ukuji', "10000000"),
+                    source_channel = 'channel-1',
+                    token          = Coin(self.denom, send_amount),
+                    
+                    sender = self.current_wallet.key.acc_address,
+                    #receiver = "kujira1u2vljph6e3jkmpp7529cv8wd3987735vxgaaz9",
+                    #receiver = "osmo1u2vljph6e3jkmpp7529cv8wd3987735vlmv4ea",
+                    receiver = self.recipient_address,
+
+                    timeout_height=Height(revision_number = 1, revision_height = block_height),                            
+                    timeout_timestamp = 0
+                )
+                
+                options = CreateTxOptions(
+                    fee            = self.fee,
+                    gas            = self.gas_limit,
+                    gas_adjustment = 3,
+                    gas_prices     = self.gas_list,
+                    memo           = self.memo,
+                    msgs           = [msg],
+                    sequence       = self.sequence
+                )
 
             # This process often generates sequence errors. If we get a response error, then
             # bump up the sequence number by one and try again.
@@ -1646,17 +1676,22 @@ class SendTransaction(TransactionCore):
             fee_bit:Coin = Coin.from_str(str(requested_fee.amount))
             fee_amount   = fee_bit.amount
             fee_denom    = fee_bit.denom
-
-            # Calculate the tax portion
-            self.tax = int(math.ceil(self.amount * float(self.tax_rate['tax_rate'])))
-
-            # Build a fee object
-            if fee_denom == ULUNA and self.denom == ULUNA:
-                new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount + self.tax))})
-            else:
-                new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount)), Coin(self.denom, int(self.tax))})
+        
+            if self.is_ibc_transfer == False:
                 
-            requested_fee.amount = new_coin
+                # Calculate the tax portion
+                self.tax = int(math.ceil(self.amount * float(self.tax_rate['tax_rate'])))
+
+                # Build a fee object
+                if fee_denom == ULUNA and self.denom == ULUNA:
+                    new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount + self.tax))})
+                else:
+                    new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount)), Coin(self.denom, int(self.tax))})
+                    
+                requested_fee.amount = new_coin
+            else:
+                # No taxes for IBC transfers
+                self.tax = 0
 
             # This will be used by the swap function next time we call it
             self.fee = requested_fee
@@ -1676,90 +1711,59 @@ class SendTransaction(TransactionCore):
         else:
             return False
         
-    def IBCSimulate(self) -> bool:
-        """
-        Simulate a delegation so we can get the fee details.
-        The fee details are saved so the actual delegation will work.
+    # def IBCSimulate(self) -> bool:
+    #     """
+    #     Simulate a delegation so we can get the fee details.
+    #     The fee details are saved so the actual delegation will work.
 
-        Outputs:
-        self.fee - requested_fee object with fee + tax as separate coins (unless both are lunc)
-        self.tax - the tax component
-        self.fee_deductables - the amount we need to deduct off the transferred amount
+    #     Outputs:
+    #     self.fee - requested_fee object with fee + tax as separate coins (unless both are lunc)
+    #     self.tax - the tax component
+    #     self.fee_deductables - the amount we need to deduct off the transferred amount
 
-        """
+    #     """
 
-        if self.sequence is None:
-            self.sequence = self.current_wallet.sequence()
+    #     if self.sequence is None:
+    #         self.sequence = self.current_wallet.sequence()
         
-        # Perform the swap as a simulation, with no fee details
-        self.IBCTransfer()
+    #     # Perform the swap as a simulation, with no fee details
+    #     self.IBCTransfer()
 
-        print (self.transaction)
+    #     print (self.transaction)
         
 
-        # This will have failed, so we can get the supposed gas fees:
-        #if 'insufficient funds' in self.transaction:
-        if True:
-            #rpc error: code = Unknown desc = failed to execute message; message index: 0: 0ukuji is smaller than 10000000ukuji: insufficient funds [cosmos/cosmos-sdk@v0.45.13/x/bank/keeper/send.go:186] With gas wanted: '0' and gas used: '48057' : unknown request
-            # required_gas = str(self.transaction).split("gas used: '")[1].replace("' : unknown request", '')
-            # print ('REQUIRED GAS:', required_gas)
+    #     # This will have failed, so we can get the supposed gas fees:
+    #     #if 'insufficient funds' in self.transaction:
+    #     if True:
+    #         #rpc error: code = Unknown desc = failed to execute message; message index: 0: 0ukuji is smaller than 10000000ukuji: insufficient funds [cosmos/cosmos-sdk@v0.45.13/x/bank/keeper/send.go:186] With gas wanted: '0' and gas used: '48057' : unknown request
+    #         # required_gas = str(self.transaction).split("gas used: '")[1].replace("' : unknown request", '')
+    #         # print ('REQUIRED GAS:', required_gas)
 
-            # self.gas_limit = int(required_gas)
-            # self.IBCTransfer()
+    #         # self.gas_limit = int(required_gas)
+    #         # self.IBCTransfer()
 
-            # Store the transaction.
-            # It should show some fee suggestions now
-            tx:Tx = self.transaction
-            #print (tx)
-            if tx is not None:
-                # Get the stub of the requested fee so we can adjust it
-                requested_fee:Fee = tx.auth_info.fee
+    #         # Store the transaction.
+    #         # It should show some fee suggestions now
+    #         tx:Tx = self.transaction
+    #         #print (tx)
+    #         if tx is not None:
+    #             # Get the stub of the requested fee so we can adjust it
+    #             requested_fee:Fee = tx.auth_info.fee
 
 
-                print ('requested fee before:', requested_fee)
-                # This will be used by the swap function next time we call it
-                # We'll use uluna as the preferred fee currency just to keep things simple
-                self.fee = self.calculateFee(requested_fee, ULUNA)
+    #             # This will be used by the swap function next time we call it
+    #             # We'll use uluna as the preferred fee currency just to keep things simple
+    #             self.fee = self.calculateFee(requested_fee, ULUNA)
                 
-                print ('requested fee after:', self.fee)
-                # Figure out the fee structure
-                #fee_bit:Coin = Coin.from_str(str(requested_fee.amount))
-                #fee_amount   = fee_bit.amount
-                #fee_denom    = fee_bit.denom
 
-                # Calculate the tax portion
-                #self.tax = int(math.ceil(self.amount * float(self.tax_rate['tax_rate'])))
+    #             print ('FINAL requested fee:', self.fee)
 
-                # Build a fee object
-                #if fee_denom == ULUNA and self.denom == ULUNA:
-                #    new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount + self.tax))})
-                #else:
-                #    new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount)), Coin(self.denom, int(self.tax))})
-                    
-                #requested_fee.amount = new_coin
-
-                # This will be used by the swap function next time we call it
-                #self.fee = requested_fee
-            
-                # Store this so we can deduct it off the total amount to swap.
-                # If the fee denom is the same as what we're paying the tax in, then combine the two
-                # Otherwise the deductible is just the tax value
-                # This assumes that the tax is always the same denom as the transferred amount.
-                #if fee_denom == self.denom:
-                #    self.fee_deductables = int(fee_amount + self.tax)
-                #elif fee_denom == ULUNA and self.denom == UUSD:
-                #    self.fee_deductables = int(self.tax)
-                #else:
-                #    self.fee_deductables = int(self.tax * 2)
-
-                print ('FINAL requested fee:', self.fee)
-
-                return True
-            else:
-                return False
-        else:
-            print (' 🛑 No error information could be found to calculate the gas fee, exiting...')
-            return False
+    #             return True
+    #         else:
+    #             return False
+    #     else:
+    #         print (' 🛑 No error information could be found to calculate the gas fee, exiting...')
+    #         return False
     
     def IBCTransfer(self):
         """
@@ -1786,9 +1790,6 @@ class SendTransaction(TransactionCore):
             timeout_timestamp = 0
         )
         
-        #print ('current fee:', self.fee)
-        #print ('current gas:', self.gas_limit)
-
         options = CreateTxOptions(
             fee        = self.fee,
             gas        = self.gas_limit,
@@ -1856,6 +1857,7 @@ class SwapTransaction(TransactionCore):
         self.contract               = None
         self.fee_deductables:float  = None
         self.gas_limit:str          = 'auto'
+        self.is_ibc_swap:bool   = False
         self.max_spread:float       = 0.01
         self.tax:float              = None
         self.swap_amount:int        = None
