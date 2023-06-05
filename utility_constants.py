@@ -7,6 +7,7 @@ WITHDRAWAL_REMAINDER = 250   # This is the amount of Lunc we want to keep after 
 SEARCH_RETRY_COUNT   = 30    # This is the number of times we will check for a transaction to appear in the chain before deciding it didn't work.
 
 # System settings - these can be changed, but shouldn't be necessary
+DEFAULT_CHAIN_ID         = 'columbus-5'
 #LCD_ENDPOINT             = 'https://lcd.terrarebels.net'
 #LCD_ENDPOINT             = 'https://lcd.terra.dev'
 LCD_ENDPOINT             = 'https://terra-classic-lcd.publicnode.com'
