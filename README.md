@@ -10,16 +10,19 @@ They are intended to be useful for anyone making repeated interactions across mu
 
 Current functionality includes:
 
+ * Address book functionality for commonly used addresses
  * Viewing the balances across all your wallets
  * Withdrawing rewards from validator delegations
  * Swapping USTC for LUNC
  * Staking LUNC with validators
  * Sending LUNC to other addresses
- * Swapping Terra coins to USTC etc
+ * Swapping Terra coins (KRT, MNT, IDT etc) to USTC or LUNC where possible
+ * IBC integration
  * Managing validators
    * Delegating to new validators
    * Switching between validators
    * Undelegating from validators
+   * Viewing undelegations in progress
 
  ## Why should you use these scripts?
 
@@ -63,6 +66,7 @@ Please take a look at the security section below for details on how your seed ph
 
 You will be prompted for the following details:
 
+ - **Are you adding an entire wallet?** If you are just adding an address that you want to send funds to, then say 'No'.
  - **Wallet name**: A unique identifier for your reference. If you use the same name as an existing entry, it will overwrite the existing values
  - **Do you want to generate a new wallet address?** Yes or no - if you say 'yes' then a new address and seed phrase will be displayed and used for this wallet.
  - **Terra address**: If you said 'no' to the previous prompt, then you provide the address of the wallet here - it starts with 'terra'.
@@ -97,7 +101,8 @@ You use ```send_transaction.py``` to send LUNC to another address, from wallets 
 
 Two points to remember:
  - Memos are optional
- - A minimum amount of LUNC is kept in reserve for payment of fees for future operations
+ - You should keep a minimum amount of LUNC in reserve for payment of fees for future operations
+ - Gas fees can be hard to predict if this is not a LUNC -> LUNC transaction. If the transaction fails, then you can specifiy a higher gas fee.
 
  ### validators.py
 

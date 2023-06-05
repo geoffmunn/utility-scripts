@@ -8,24 +8,31 @@ import requests
 import time
 import yaml
 
+import traceback
+
 from utility_constants import (
+    ASTROPORT_UUSD_TO_UKUJI_ADDRESS,
     ASTROPORT_UUSD_TO_ULUNA_ADDRESS,
     COIN_DIVISOR,
     CONFIG_FILE_NAME,
+    DEFAULT_CHAIN_ID,
     FULL_COIN_LOOKUP,
     GAS_ADJUSTMENT,
     GAS_ADJUSTMENT_SWAPS,
     GAS_PRICE_URI,
+    UKUJI,
+    KUJI_SMART_CONTACT_ADDRESS,
     LCD_ENDPOINT,
     SEARCH_RETRY_COUNT,
     TAX_RATE_URI,
+    TERRASWAP_UKUJI_TO_ULUNA_ADDRESS,
     TERRASWAP_UKRW_TO_ULUNA_ADDRESS,
     TERRASWAP_ULUNA_TO_UUSD_ADDRESS,
     ULUNA,
     UKRW,
-    UUSD,
     USER_ACTION_CONTINUE,
     USER_ACTION_QUIT,
+    UUSD,
     WITHDRAWAL_REMAINDER    
 )
 
@@ -43,6 +50,8 @@ from terra_classic_sdk.core.coin import Coin
 from terra_classic_sdk.core.coins import Coins
 from terra_classic_sdk.core.distribution.msgs import MsgWithdrawDelegatorReward
 from terra_classic_sdk.core.fee import Fee
+from terra_classic_sdk.core.ibc import Height
+from terra_classic_sdk.core.ibc_transfer import MsgTransfer
 from terra_classic_sdk.core.market.msgs import MsgSwap
 from terra_classic_sdk.core.staking import (
     MsgBeginRedelegate,
@@ -107,7 +116,7 @@ def strtobool(val):
         #raise ValueError("invalid truth value %r" % (val,))
         return -1
     
-def get_coin_selection(question:str, coins:dict, only_active_coins:bool = True, estimation_against:dict = None, wallet:Wallet = False) -> str | str | float:
+def get_coin_selection(question:str, coins:dict, only_active_coins:bool = True, estimation_against:dict = None, wallet:Wallet = False):
     """
     Return a selected coin based on the provided list.
     """
@@ -156,10 +165,10 @@ def get_coin_selection(question:str, coins:dict, only_active_coins:bool = True, 
                 # Change the contract depending on what we're doing
                 swaps_tx.setContract()
 
-                #print ('contract:', swaps_tx.contract)
                 if coin != estimation_against['denom']:
                     estimated_result:Coin = swaps_tx.swapRate()
                     estimated_value:str   = wallet.formatUluna(estimated_result.amount)
+
                     if estimated_value == '0':
                         estimated_value = None
                 else:
@@ -268,12 +277,9 @@ def get_coin_selection(question:str, coins:dict, only_active_coins:bool = True, 
                 returned_estimation:float = None
                 coin_to_use:str           = coin_list[int(answer)] 
 
-                print ('coin to use:', coin_to_use)
-
                 if estimation_against is not None:
                     returned_estimation = coin_values[coin_to_use]    
                 
-                print ('returned estimation', returned_estimation)
                 if estimation_against is not None and returned_estimation is None:
                     coin_to_use = None
 
@@ -288,7 +294,7 @@ def get_coin_selection(question:str, coins:dict, only_active_coins:bool = True, 
 
     return coin_to_use, answer, returned_estimation
 
-def get_user_choice(question:str, allowed_options:list) -> str|bool:
+def get_user_choice(question:str, allowed_options:list):
     """
     Get the user selection for a prompt and convert it to a standard value.
     This is typically a yes/no decision.
@@ -311,6 +317,50 @@ def get_user_choice(question:str, allowed_options:list) -> str|bool:
 
     return result
 
+def get_user_recipient(question:str, wallet:Wallet, user_config:dict):
+    """
+    Get the recipient address that we are sending to.
+
+    If you don't need to check this against existing wallets, then provide an empty dict object for user_config.
+    """
+
+    while True:
+        answer:str = input(question)
+    
+        if answer == USER_ACTION_QUIT:
+            break
+
+        # We'll assume it was a terra address to start with (by default)
+        recipient_address = answer
+
+        if isDigit(answer):
+            # Check if this is a wallet number
+            if user_config['wallets'][int(answer)] is not None:
+                recipient_address = user_config['wallets'][int(answer)]['address']
+
+        else:
+            # Check if this is a wallet name
+            if len(user_config) > 0:
+                for user_wallet in user_config['wallets']:
+                    if user_wallet['wallet'].lower() == answer.lower():
+                        recipient_address = user_wallet['address']
+                        break
+
+        # Figure out if this wallet address is legit
+        is_valid, is_empty = wallet.validateAddress(recipient_address)
+
+        if is_valid == False and is_empty == True:
+            continue_action = get_user_choice('This wallet seems to be empty - do you want to continue? (y/n) ', [])
+            if continue_action == True:
+                break
+
+        if is_valid == True:
+            break
+
+        print (' 🛎️  This is an invalid address - please check and try again.')
+
+    return recipient_address
+
 def get_user_text(question:str, max_length:int, allow_blanks:bool) -> str:
     """
     Get a text string from the user - must be less than a definied length
@@ -328,7 +378,7 @@ def get_user_text(question:str, max_length:int, allow_blanks:bool) -> str:
 
     return str(answer)
 
-def get_user_number(question:str, params:dict) -> float|str:
+def get_user_number(question:str, params:dict):
     """
     Get ther user input - must be a number.
     """ 
@@ -441,8 +491,9 @@ class UserConfig:
 
 class Wallets:
     def __init__(self):
-        self.file         = None
-        self.wallets:dict = {}
+        self.file           = None
+        self.wallets:dict   = {}
+        self.addresses:dict = {}
 
     def getWallet(self, wallet, user_password):
         delegation_amount:str = ''
@@ -453,7 +504,6 @@ class Wallets:
                 delegation_amount = wallet['delegations']['redelegate']
                 if 'threshold' in wallet['delegations']:
                     threshold = wallet['delegations']['threshold']
-
 
         wallet_item:Wallet = Wallet().create(wallet['wallet'], wallet['address'], wallet['seed'], user_password)
         wallet_item.updateDelegation(delegation_amount, threshold)
@@ -484,27 +534,44 @@ class Wallets:
 
         for wallet in yml_file['wallets']:
 
-            delegation_amount:str = ''
-            threshold:int         = 0
+            if 'seed' in wallet:
+                delegation_amount:str = ''
+                threshold:int         = 0
 
-            if 'delegations' in wallet:
-                if 'redelegate' in wallet['delegations']:
-                    delegation_amount = wallet['delegations']['redelegate']
-                    if 'threshold' in wallet['delegations']:
-                        threshold = wallet['delegations']['threshold']
+                if 'delegations' in wallet:
+                    if 'redelegate' in wallet['delegations']:
+                        delegation_amount = wallet['delegations']['redelegate']
+                        if 'threshold' in wallet['delegations']:
+                            threshold = wallet['delegations']['threshold']
 
 
-            wallet_item:Wallet = Wallet().create(wallet['wallet'], wallet['address'], wallet['seed'], user_password)
-            wallet_item.updateDelegation(delegation_amount, threshold)
+                wallet_item:Wallet = Wallet().create(wallet['wallet'], wallet['address'], wallet['seed'], user_password)
+                wallet_item.updateDelegation(delegation_amount, threshold)
 
-            if 'allow_swaps' in wallet:
-                wallet_item.allow_swaps = bool(wallet['allow_swaps'])
+                if 'allow_swaps' in wallet:
+                    wallet_item.allow_swaps = bool(wallet['allow_swaps'])
 
-            wallet_item.validated = wallet_item.validateWallet()
+                wallet_item.validated = wallet_item.validateWallet()
 
-            self.wallets[wallet['wallet']] = wallet_item
+                self.wallets[wallet['wallet']] = wallet_item
+
+                # Add this to the address list as well
+                self.addresses[wallet['wallet']] = wallet_item
+            else:
+                # It's just an address - add it to the address list
+                if 'address' in wallet:
+                    wallet_item:Wallet = Wallet().create(wallet['wallet'], wallet['address'])
+                    self.addresses[wallet['wallet']] = wallet_item
 
         return self
+    
+    def getAddresses(self) -> dict:
+        """
+        Return the dictionary of addresses.
+        No validation or anything fancy is done here.
+        """
+
+        return self.addresses
         
     def getWallets(self, validate:bool) -> dict:
         """
@@ -593,12 +660,12 @@ class Wallet:
 
         return self.delegateTx
 
-    def formatUluna(self, uluna:float, add_suffix:bool = False) -> float|str:
+    def formatUluna(self, uluna:float, add_suffix:bool = False):
         """
         A generic helper function to convert uluna amounts to LUNC.
         """
 
-        lunc:float = round(float(uluna / COIN_DIVISOR), 6)
+        lunc:float = round(float(int(uluna) / COIN_DIVISOR), 6)
 
         lunc = ("%.6f" % (lunc)).rstrip('0').rstrip('.')
 
@@ -630,16 +697,21 @@ class Wallet:
 
             # Go through the pagination (if any)
             while pagination['next_key'] is not None:
-                pagOpt.key          = pagination["next_key"]
-                result, pagination  = self.terra.bank.balance(address = self.address, params = pagOpt)
+                pagOpt.key         = pagination["next_key"]
+                result, pagination = self.terra.bank.balance(address = self.address, params = pagOpt)
                 for coin in result:
                     balances[coin.denom] = coin.amount
+
+            # Add the extra coins (Kuji etc)
+            coin_balance = self.terra.wasm.contract_query(KUJI_SMART_CONTACT_ADDRESS, {'balance':{'address':self.address}})
+            if int(coin_balance['balance']) > 0:
+                balances[UKUJI] = coin_balance['balance']
 
             self.balances = balances
 
         return self.balances
     
-    def getDelegations(self):
+    def getDelegations(self) -> dict:
         """
         Get the delegations associated with this wallet address.
         The results are cached so if the list is refreshed then it is much quicker.
@@ -650,7 +722,21 @@ class Wallet:
 
         return self.delegation_details
     
-    def getUndelegations(self):
+    def getPrefix(self, address:str) -> str:
+        """
+        Get the first x (usually 4) letters of the address so we can figure out what network it is
+        """
+
+        prefix:str = ''
+        for char in address:
+            if isDigit(char) == False:
+                prefix += char
+            else:
+                break
+
+        return prefix.lower()
+    
+    def getUndelegations(self) -> dict:
         """
         Get the undelegations associated with this wallet address.
         The results are cached so if the list is refreshed then it is much quicker.
@@ -665,8 +751,8 @@ class Wallet:
         """
         Creates a new wallet and returns the seed and address
         """
-        mk = MnemonicKey()
-        
+
+        mk            = MnemonicKey()
         wallet:Wallet = self.terra.wallet(mk)
         
         return mk.mnemonic, wallet.key.acc_address
@@ -702,11 +788,19 @@ class Wallet:
 
        return True
     
-    def validateAddress(self, address:str) -> bool | bool:
+    def validateAddress(self, address:str) -> bool:
         """
         Check that the provided address actually resolves to a terra wallet.
+        This only applies to addresses which look like terra addresses.
         """
 
+        prefix = self.getPrefix(address)
+
+        # If this is an Osmosis address (or something like that) then we'll just accept it
+        if prefix != 'terra':
+            return True, False
+        
+        # We'll run some extra checks on terra addresses
         if address != '':
             try:
                 result = self.terra.auth.account_info(address)
@@ -758,11 +852,8 @@ class Wallet:
     
 class TerraInstance:
     def __init__(self):
-        self.chain_id       = 'columbus-5'
+        self.chain_id       = DEFAULT_CHAIN_ID
         self.gas_adjustment = float(GAS_ADJUSTMENT)
-        #self.gas_list       = None
-        #self.gas_price_url  = gas_price_url
-        #self.tax_rate      = None
         self.terra          = None
         self.url            = LCD_ENDPOINT
         
@@ -772,9 +863,9 @@ class TerraInstance:
         """
 
         terra:LCDClient = LCDClient(
-            chain_id        = self.chain_id,
-            gas_adjustment  = float(self.gas_adjustment),
-            url             = self.url
+            chain_id       = self.chain_id,
+            gas_adjustment = float(self.gas_adjustment),
+            url            = self.url
         )
 
         self.terra = terra
@@ -1013,9 +1104,6 @@ class TransactionCore():
         
         # Initialise the basic variables:
         self.gas_price_url = GAS_PRICE_URI
-        terra              = TerraInstance()
-        self.terra         = terra.create()
-
         # The gas list and tax rate values will be updated when the class is properly created
         
     def broadcast(self) -> BlockTxBroadcastResult:
@@ -1083,14 +1171,14 @@ class TransactionCore():
         If desired, the fee can specifically be uusd.
         """
 
-        other_coin_list:list = []
-        has_uluna:int        = 0
-        has_uusd:int         = 0
-        
-        coin:Coin
+        other_coin_list:list      = []
+        has_uluna:int             = 0
+        has_uusd:int              = 0
+        specific_denom_amount:int = 0
 
+        coin:Coin
         for coin in requested_fee.amount:
-            if coin.denom in self.balances and self.balances[coin.denom] >= coin.amount:
+            if coin.denom in self.balances and int(self.balances[coin.denom]) >= int(coin.amount):
 
                 if coin.denom == UUSD:
                     has_uusd = coin.amount
@@ -1118,6 +1206,7 @@ class TransactionCore():
         else:
             print ('Not enough funds to pay for delegation!')
 
+        #print ('calculated fee:', requested_fee)
         return requested_fee
 
     def findTransaction(self) -> bool:
@@ -1139,7 +1228,6 @@ class TransactionCore():
             if len(result['txs']) > 0 and int(result['pagination']['total']) > 0:
                 if result['txs'][0].code == 0:
                     print ('Found the hash!')
-                    #print (result)
                     transaction_found = True
                     break
 
@@ -1233,6 +1321,9 @@ class DelegationTransaction(TransactionCore):
         """
         Create a delegation object and set it up with the provided details.
         """
+
+        # Create the terra instance
+        self.terra = TerraInstance().create()
 
         # Create the wallet based on the calculated key
         current_wallet_key  = MnemonicKey(self.seed)
@@ -1434,6 +1525,7 @@ class SendTransaction(TransactionCore):
         self.fee:Fee               = None
         self.fee_deductables:float = None
         self.gas_limit:str         = 'auto'
+        self.is_ibc_transfer:bool  = False
         self.memo:str              = ''
         self.recipient_address:str = ''
         self.sequence:int          = None
@@ -1444,6 +1536,9 @@ class SendTransaction(TransactionCore):
         Create a send object and set it up with the provided details.
         """
 
+        # Create the terra instance
+        self.terra = TerraInstance().create()
+
         # Create the wallet based on the calculated key
         current_wallet_key  = MnemonicKey(self.seed)
         self.current_wallet = self.terra.wallet(current_wallet_key)
@@ -1453,6 +1548,7 @@ class SendTransaction(TransactionCore):
         self.tax_rate = self.taxRate()
 
         return self
+
     
     def send(self) -> bool:
         """
@@ -1462,39 +1558,51 @@ class SendTransaction(TransactionCore):
 
         send_amount = int(self.amount)
 
-        #print ('send amount before:', send_amount)
-        #print ('tax:', self.tax)
-        #print ('fee deductiables:', self.fee_deductables)
-        #print ('balance available:', self.balances[self.denom])
         if self.tax is not None:
             if self.fee_deductables is not None:
-                if send_amount + self.tax > self.balances[self.denom]:
-        #            print ('send amount + tax exceeds total amount available')
-                    
+                if int(send_amount + self.tax) > int(self.balances[self.denom]):
                     send_amount = int(send_amount - self.fee_deductables)
-            
-        #print ('send_amount after:', send_amount)
 
         try:
             tx:Tx = None
 
-            msg = MsgSend(
-                from_address = self.current_wallet.key.acc_address,
-                to_address   = self.recipient_address,
-                amount       = Coins(str(int(send_amount)) + self.denom)
-            )
+            if self.is_ibc_transfer == False:
+                msg = MsgSend(
+                    from_address = self.current_wallet.key.acc_address,
+                    to_address   = self.recipient_address,
+                    amount       = Coins(str(int(send_amount)) + self.denom)
+                )
 
-            #print ('GAS LIMIT:', self.gas_limit)
+                options = CreateTxOptions(
+                    fee        = self.fee,
+                    gas        = str(self.gas_limit),
+                    gas_prices = self.gas_list,
+                    memo       = self.memo,
+                    msgs       = [msg],
+                    sequence   = self.sequence
+                )
+            else:
+                block_height:int = int(self.terra.tendermint.block_info()['block']['header']['height'])
 
-            options = CreateTxOptions(
-                fee        = self.fee,
-                gas        = str(self.gas_limit),
-                #gas = str(200000),
-                gas_prices = self.gas_list,
-                memo       = self.memo,
-                msgs       = [msg],
-                sequence   = self.sequence,
-            )
+                msg = MsgTransfer(
+                    source_port    = 'transfer',
+                    source_channel = 'channel-1',
+                    token          = Coin(self.denom, send_amount),
+                    sender = self.current_wallet.key.acc_address,
+                    receiver = self.recipient_address,
+                    timeout_height=Height(revision_number = 1, revision_height = block_height),                            
+                    timeout_timestamp = 0
+                )
+                
+                options = CreateTxOptions(
+                    fee            = self.fee,
+                    gas            = self.gas_limit,
+                    gas_adjustment = 3,
+                    gas_prices     = self.gas_list,
+                    memo           = self.memo,
+                    msgs           = [msg],
+                    sequence       = self.sequence
+                )
 
             # This process often generates sequence errors. If we get a response error, then
             # bump up the sequence number by one and try again.
@@ -1535,7 +1643,7 @@ class SendTransaction(TransactionCore):
         """
 
         if self.sequence is None:
-            self.sequence        = self.current_wallet.sequence()
+            self.sequence = self.current_wallet.sequence()
         
         # Perform the swap as a simulation, with no fee details
         self.send()
@@ -1547,45 +1655,30 @@ class SendTransaction(TransactionCore):
             # Get the stub of the requested fee so we can adjust it
             requested_fee:Fee = tx.auth_info.fee
 
-            #print ('requested fee:', requested_fee)
-
-            # Store the gas limit based on what we've been told
-            self.gas_limit = requested_fee.gas_limit
-
-            #print ('apparent gas requirement:', self.gas_limit)
-
-            #self.gas_limit = str(int(requested_fee.gas_limit) * 1.3).rstrip('.0')
-            #print ('apparent gas requirement:', self.gas_limit)
-            #self.send()
-
             # This will be used by the swap function next time we call it
             # We'll use uluna as the preferred fee currency just to keep things simple
             self.fee = self.calculateFee(requested_fee, ULUNA)
-            
-            #print ('calculated fee:', self.fee)
             
             # Figure out the fee structure
             fee_bit:Coin = Coin.from_str(str(requested_fee.amount))
             fee_amount   = fee_bit.amount
             fee_denom    = fee_bit.denom
-
-            # Calculate the tax portion
-            self.tax = int(math.ceil(self.amount * float(self.tax_rate['tax_rate'])))
-
-            #print ('tax is', self.tax)
-            #print ('fee denom:', fee_denom)
-            #print ('self denom:', self.denom)
-
-            # Build a fee object
-            if fee_denom == ULUNA and self.denom == ULUNA:
-                new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount + self.tax))})
-            else:
-                new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount)), Coin(self.denom, int(self.tax))})
+        
+            if self.is_ibc_transfer == False:
                 
-            #if self.gas_limit != 'auto':
-            #   requested_fee.gas_limit = int(self.gas_limit)
+                # Calculate the tax portion
+                self.tax = int(math.ceil(self.amount * float(self.tax_rate['tax_rate'])))
 
-            requested_fee.amount = new_coin
+                # Build a fee object
+                if fee_denom == ULUNA and self.denom == ULUNA:
+                    new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount + self.tax))})
+                else:
+                    new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount)), Coin(self.denom, int(self.tax))})
+                    
+                requested_fee.amount = new_coin
+            else:
+                # No taxes for IBC transfers
+                self.tax = 0
 
             # This will be used by the swap function next time we call it
             self.fee = requested_fee
@@ -1601,12 +1694,11 @@ class SendTransaction(TransactionCore):
             else:
                 self.fee_deductables = int(self.tax * 2)
 
-            #print ('FINAL requested fee:', requested_fee)
-            #print ('fee deductables:', self.fee_deductables)
-
             return True
         else:
             return False
+        
+        
         
 class SwapTransaction(TransactionCore):
 
@@ -1632,20 +1724,19 @@ class SwapTransaction(TransactionCore):
 
         belief_price:float = 0
 
-        print ('self.contract:', self.contract)
         if self.contract is not None:
             result = self.terra.wasm.contract_query(self.contract, {"pool": {}})
-
+            
             parts:dict = {}
-            parts[result['assets'][0]['info']['native_token']['denom']] = int(result['assets'][0]['amount'])
+            if 'native_token' in result['assets'][0]['info']:
+                parts[result['assets'][0]['info']['native_token']['denom']] = int(result['assets'][0]['amount'])
+            else:
+                if result['assets'][0]['info']['token']['contract_addr'] == KUJI_SMART_CONTACT_ADDRESS:
+                    parts[UKUJI] = int(result['assets'][0]['amount'])
+
             parts[result['assets'][1]['info']['native_token']['denom']] = int(result['assets'][1]['amount'])
 
-            print (result)
-            print ('parts:', parts)
-            print ('swap denom:', self.swap_denom)
-            print ('request denom:', self.swap_request_denom)
-
-            contract_swaps:list  = [ULUNA, UKRW, UUSD]
+            contract_swaps:list  = [ULUNA, UKRW, UUSD, UKUJI]
 
             if self.swap_denom in contract_swaps and self.swap_request_denom in contract_swaps:
 
@@ -1658,10 +1749,16 @@ class SwapTransaction(TransactionCore):
                 if self.swap_denom == UUSD:
                     if self.swap_request_denom == ULUNA:
                         belief_price:float = parts[UUSD] / parts[ULUNA]
+                    if self.swap_request_denom == UKUJI:
+                        belief_price:float = parts[UUSD] / parts[UKUJI]
 
                 if self.swap_denom == UKRW:
                     if self.swap_request_denom == ULUNA:
-                        belief_price:float = parts[ULUNA] / parts[UKRW]
+                        belief_price:float = parts[UKRW] / parts[ULUNA]
+
+                if self.swap_denom == UKUJI:
+                    if self.swap_request_denom == UUSD:
+                        belief_price:float = parts[UKUJI] / parts[UUSD]
                 
         return round(belief_price, 18)
         
@@ -1669,6 +1766,9 @@ class SwapTransaction(TransactionCore):
         """
         Create a swap object and set it up with the provided details.
         """
+
+        # Create the terra instance
+        self.terra = TerraInstance().create()
 
         # Create the wallet based on the calculated key
         current_wallet_key  = MnemonicKey(self.seed)
@@ -1686,11 +1786,7 @@ class SwapTransaction(TransactionCore):
         The fee details are saved so the actual market swap will work.
         """
 
-        #self.belief_price    = None
-        #self.fee             = None
-        #self.tax             = None
-        #self.fee_deductables = None
-        self.sequence        = self.current_wallet.sequence()
+        self.sequence = self.current_wallet.sequence()
 
         # Bump up the gas adjustment - it needs to be higher for swaps it turns out
         self.terra.gas_adjustment = float(GAS_ADJUSTMENT_SWAPS)
@@ -1768,31 +1864,9 @@ class SwapTransaction(TransactionCore):
         use_market_swap:bool = True
         self.contract        = None
 
-        contract_swaps:list  = [ULUNA, UKRW, UUSD]
+        contract_swaps:list  = [ULUNA, UKRW, UUSD, UKUJI]
 
         if self.swap_denom in contract_swaps and self.swap_request_denom in contract_swaps:
-
-            """
-            uluna -> uusd
-            uluna -> ukrw
-
-            uusd -> minor coin
-            uusd -> uluna
-            uusd -> ukrw
-
-            ukrw -> ulune
-            ukrw -> uusd
-            ukrw -> minor coin
-
-            minor coin -> uusd
-            minor coin -> minor coin
-            minor coin -> ukrw
-
-            ASTROPORT_UUSD_TO_ULUNA_ADDRESS = 'terra1m6ywlgn6wrjuagcmmezzz2a029gtldhey5k552'
-            TERRASWAP_UKRW_TO_ULUNA_ADDRESS = 'terra1erfdlgdtt9e05z0j92wkndwav4t75xzyapntkv'
-            TERRASWAP_UKRW_TO_UUSD_ADDRESS  = 'terra1untf85jwv3kt0puyyc39myxjvplagr3wstgs5s'
-            TERRASWAP_ULUNA_TO_UUSD_ADDRESS = 'terra1l7vy20x940je7lskm6x9s839vjsmekz9k9mv7g'
-            """
 
             use_market_swap = False
 
@@ -1816,8 +1890,12 @@ class SwapTransaction(TransactionCore):
                     self.contract = None
                     use_market_swap = True
 
-
-        print (f'Contract for {self.swap_denom} to {self.swap_request_denom} is {self.contract}')
+            if self.swap_denom == UUSD:
+                if self.swap_request_denom == UKUJI:
+                    self.contract = ASTROPORT_UUSD_TO_UKUJI_ADDRESS
+            if self.swap_denom == UKUJI:
+                if self.swap_request_denom == UUSD:
+                    self.contract = ASTROPORT_UUSD_TO_UKUJI_ADDRESS
 
         self.use_market_swap = use_market_swap
 
@@ -1851,22 +1929,9 @@ class SwapTransaction(TransactionCore):
             # Get the stub of the requested fee so we can adjust it
             requested_fee:Fee = tx.auth_info.fee
 
-            #print ('requested fee:', requested_fee)
-
-            # Store the gas limit based on what we've been told
-            #self.gas_limit = str(requested_fee.gas_limit)
-
-            #print ('apparent gas requirement:', self.gas_limit)
-
-            #self.gas_limit = str(int(requested_fee.gas_limit) * 1.3).rstrip('.0')
-            #print ('apparent gas requirement:', self.gas_limit)
-            #self.send()
-
             # This will be used by the swap function next time we call it
             # We'll use uluna as the preferred fee currency just to keep things simple
             self.fee = self.calculateFee(requested_fee, ULUNA)
-            
-            #print ('calculated fee:', self.fee)
             
             # Figure out the fee structure
             fee_bit:Coin = Coin.from_str(str(requested_fee.amount))
@@ -1876,18 +1941,11 @@ class SwapTransaction(TransactionCore):
             # Calculate the tax portion
             self.tax = int(math.ceil(self.swap_amount * float(self.tax_rate['tax_rate'])))
 
-            #print ('tax is', self.tax)
-            #print ('fee denom:', fee_denom)
-            #print ('self denom:', self.denom)
-
             # Build a fee object
             if fee_denom == ULUNA and self.swap_denom == ULUNA:
                 new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount + self.tax))})
             else:
                 new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount)), Coin(self.swap_denom, int(self.tax))})
-                
-            #if self.gas_limit != 'auto':
-            #   requested_fee.gas_limit = int(self.gas_limit)
 
             requested_fee.amount = new_coin
 
@@ -1904,9 +1962,6 @@ class SwapTransaction(TransactionCore):
                 self.fee_deductables = int(self.tax)
             else:
                 self.fee_deductables = int(self.tax * 2)
-
-            print ('FINAL requested fee:', requested_fee)
-            print ('fee deductables:', self.fee_deductables)
 
             return True
         else:
@@ -1928,12 +1983,10 @@ class SwapTransaction(TransactionCore):
                 fee_denom:str   = UUSD
 
             if fee_denom in self.balances:
-                #print ('self.swap_amount:', self.swap_amount)
                 swap_amount = self.swap_amount
 
                 if self.tax is not None:
                     if self.fee_deductables is not None:
-                        #print ('fee deductables:', self.fee_deductables)
                         swap_amount = swap_amount - self.fee_deductables
 
                 tx_msg = MsgExecuteContract(
@@ -1958,14 +2011,11 @@ class SwapTransaction(TransactionCore):
 
                 options = CreateTxOptions(
                     fee        = self.fee,
-                    #gas        = str(self.gas_limit),
                     gas_prices = self.gas_list,
                     msgs       = [tx_msg],
                     sequence   = self.sequence,
                 )
 
-                print ('options:', options)
-                print ('tx:', tx_msg)
                 # If we are swapping from lunc to usdt then we need a different fee structure
                 if self.swap_denom == ULUNA and self.swap_request_denom == UUSD:
                     options.fee_denoms = [ULUNA]
@@ -1975,8 +2025,6 @@ class SwapTransaction(TransactionCore):
                 while True:
                     try:
                         tx:Tx = self.current_wallet.create_and_sign_tx(options)
-
-                        print ('tx:', tx)
                         break
                     except LCDResponseError as err:
                         # if 'account sequence mismatch' in err.message:
@@ -2008,39 +2056,41 @@ class SwapTransaction(TransactionCore):
         Returns a coin object that we need to decode.
         """
 
-        print ('swap denom:', self.swap_denom)
-        print ('swap request denom:', self.swap_request_denom)
-
         if self.use_market_swap == False:
             if self.swap_denom == UUSD and self.swap_request_denom in [ULUNA, UKRW]:
-                print ('option 1')
                 swap_price = self.beliefPrice()
                 swap_details:Coin = Coin(self.swap_request_denom, int(self.swap_amount / swap_price))
             elif self.swap_denom == ULUNA and self.swap_request_denom in [UUSD, UKRW]:
-                print ('option 2')
                 swap_price = self.beliefPrice()
-                print ('swap amount:', self.swap_amount)
-                print ('swap price:', swap_price)
                 if self.swap_request_denom == UUSD:
                     swap_details:Coin = Coin(self.swap_request_denom, int(self.swap_amount / swap_price))
                 else:
                     # ukrw
-                    swap_details:Coin = Coin(self.swap_request_denom, int(self.swap_amount * swap_price))
+                    swap_details:Coin = Coin(self.swap_request_denom, int(self.swap_amount / swap_price))
             elif self.swap_denom == UKRW and self.swap_request_denom in [ULUNA, UUSD]:
-                print ('option 4')
                 swap_price = self.beliefPrice()
-                print ('swap amount:', self.swap_amount)
-                print ('swap price:', swap_price)
-                swap_details:Coin = Coin(self.swap_request_denom, int(self.swap_amount * swap_price))
-
-
+                swap_details:Coin = Coin(self.swap_request_denom, int(self.swap_amount / swap_price))
+            elif self.swap_denom == UUSD and self.swap_request_denom == UKUJI:
+                swap_price = self.beliefPrice()
+                swap_details:Coin = Coin(self.swap_request_denom, int(self.swap_amount / swap_price))
+            elif self.swap_request_denom == UKUJI:
+                swap_details:Coin = Coin(self.swap_request_denom, 0)
+            elif self.swap_denom == UKUJI:
+                if self.swap_request_denom == UUSD:
+                    swap_price = self.beliefPrice()
+                    swap_details:Coin = Coin(self.swap_request_denom, int(self.swap_amount / swap_price))
+                else:
+                    swap_details:Coin = Coin(self.swap_request_denom, 0)
             else:
                 print ('UNSUPPORTED SWAP RATE')
                 print ('swap denom:', self.swap_denom)
                 print ('swap request denom:', self.swap_request_denom)
+                exit()
         else:
-            print ('option 3')
-            swap_details:Coin = self.terra.market.swap_rate(Coin(self.swap_denom, self.swap_amount), self.swap_request_denom)
+            if self.swap_denom != UKUJI and self.swap_request_denom != UKUJI:
+                swap_details:Coin = self.terra.market.swap_rate(Coin(self.swap_denom, self.swap_amount), self.swap_request_denom)
+            else:
+                swap_details:Coin = Coin(self.swap_request_denom, 0)
 
         return swap_details
     
@@ -2058,8 +2108,8 @@ class WithdrawalTransaction(TransactionCore):
         Create a withdrawal object and set it up with the provided details.
         """
 
-        self.delegator_address:str = delegator_address
-        self.validator_address:str = validator_address
+        # Create the terra instance
+        self.terra = TerraInstance().create()
         
         # Create the wallet based on the calculated key
         current_wallet_key  = MnemonicKey(self.seed)
@@ -2068,6 +2118,10 @@ class WithdrawalTransaction(TransactionCore):
         # Get the gas prices and tax rate:
         self.gas_list = self.gasList()
         self.tax_rate = self.taxRate()
+
+        # Store the delegator and validator addresses
+        self.delegator_address:str = delegator_address
+        self.validator_address:str = validator_address
 
         return self
     

@@ -5,9 +5,9 @@ from getpass import getpass
 
 from utility_classes import (
     get_coin_selection,
-    get_fees_from_error,
     get_user_choice,
     get_user_number,
+    get_user_recipient,
     get_user_text,
     UserConfig,
     Wallets,
@@ -20,36 +20,10 @@ from utility_constants import (
     GAS_ADJUSTMENT_SEND,
     MAX_GAS_ADJUSTMENT,
     ULUNA,
-    UUSD,
     USER_ACTION_CONTINUE,
-    USER_ACTION_QUIT
+    USER_ACTION_QUIT,
+    UUSD
 )
-
-def get_user_recipient(question:str, wallet:Wallet):
-    """
-    Get the recipient address that we are sending to.
-    """
-
-    while True:
-        recipient_address = input(question)
-    
-        if recipient_address == USER_ACTION_QUIT:
-            break
-
-        is_valid, is_empty = wallet.validateAddress(recipient_address)
-
-        if is_valid == False and is_empty == True:
-            continue_action = get_user_choice('This wallet seems to be emptyr - do you want to continue? (y/n) ', [])
-            if continue_action == True:
-                break
-
-        if is_valid == True:
-            break
-
-        print (' 🛎️  This is an invalid address - please check and try again.')
-
-    return recipient_address
-
 
 def get_user_singlechoice(question:str, user_wallets:dict) -> dict|str:
     """
@@ -191,9 +165,100 @@ def get_user_singlechoice(question:str, user_wallets:dict) -> dict|str:
     
     return user_wallet, answer
 
-from terra_classic_sdk.core.coins import Coins
-from terra_classic_sdk.core.coins import Coin
-from terra_classic_sdk.core.fee import Fee
+def get_send_to_address(user_wallets:Wallet):
+    """
+    Show a simple list address from what is found in the user_config file
+    """
+
+    label_widths = []
+
+    label_widths.append(len('Number'))
+    label_widths.append(len('Wallet name'))
+
+    for wallet_name in user_wallets:
+        if len(wallet_name) > label_widths[1]:
+            label_widths[1] = len(wallet_name)
+                
+    padding_str = ' ' * 100
+
+    header_string = ' Number |'
+
+    if label_widths[1] > len('Wallet name'):
+        header_string +=  ' Wallet name' + padding_str[0:label_widths[1] - len('Wallet name')] + ' '
+    else:
+        header_string +=  ' Wallet name '
+
+    horizontal_spacer = '-' * len(header_string)
+
+    wallets_to_use = {}
+    user_wallet    = {}
+    
+    while True:
+
+        count = 0
+        wallet_numbers = {}
+
+        print ('\n' + horizontal_spacer)
+        print (header_string)
+        print (horizontal_spacer)
+
+        for wallet_name in user_wallets:
+            wallet:Wallet  = user_wallets[wallet_name]
+
+            count += 1
+            wallet_numbers[count] = wallet
+                
+            if wallet_name in wallets_to_use:
+                glyph = '✅'
+            else:
+                glyph = '  '
+
+            count_str =  f' {count}' + padding_str[0:6 - (len(str(count)) + 2)]
+            
+            wallet_name_str = wallet_name + padding_str[0:label_widths[1] - len(wallet_name)]
+            
+            print (f"{count_str}{glyph} | {wallet_name_str}")
+            
+        print (horizontal_spacer + '\n')
+
+        print ('You can send to an address in your config file by typing the wallet name or number.')
+        print ('You can also send to a completely new address by entering the wallet address.\n')
+
+        answer = input("What is the address you are sending to? (or type 'X' to continue, or 'Q' to quit) ").lower()
+        
+        if answer.isdigit() and int(answer) in wallet_numbers:
+
+            wallets_to_use = {}
+
+            key = wallet_numbers[int(answer)].name
+            if key not in wallets_to_use:
+                wallets_to_use[key] = wallet_numbers[int(answer)]
+            else:
+                wallets_to_use.pop(key)
+        else:
+            # check if this is an address we support:
+            prefix = wallet.getPrefix(answer)
+            if prefix in ['terra', 'osmo']:
+                recipient_address = answer
+                break
+            
+        if answer == USER_ACTION_CONTINUE:
+            if len(wallets_to_use) > 0:
+                break
+            else:
+                print ('\nPlease select a wallet first.\n')
+
+        if answer == USER_ACTION_QUIT:
+            break
+
+    # Get the first (and only) wallet from the list
+    if len(wallets_to_use) > 0:
+        for item in wallets_to_use:
+            user_wallet:Wallet = wallets_to_use[item]
+            recipient_address = user_wallet.address
+            break
+    
+    return recipient_address, answer
 
 def main():
     
@@ -201,7 +266,7 @@ def main():
     decrypt_password:str = getpass() # the secret password that encrypts the seed phrase
 
     if decrypt_password == '':
-        print (' 🛑 Exiting...')
+        print (' 🛑 Exiting...\n')
         exit()
 
     # Get the user config file contents
@@ -217,6 +282,7 @@ def main():
     
     # Get all the wallets
     user_wallets = wallet_obj.getWallets(True)
+    user_addresses = wallet_obj.getAddresses()
 
     # Get the balances on each wallet (for display purposes)
     for wallet_name in user_wallets:
@@ -229,25 +295,33 @@ def main():
         wallet, answer = get_user_singlechoice(f"Select a wallet number 1 - {str(len(user_wallets))}, 'X' to continue, or 'Q' to quit: ", user_wallets)
 
         if answer == USER_ACTION_QUIT:
-            print (' 🛑 Exiting...')
+            print (' 🛑 Exiting...\n')
             exit()
     else:
-        print (" 🛑 This password couldn't decrypt any wallets. Make sure it is correct, or rebuild the wallet list by running the configure_user_wallet.py script again.")
+        print (" 🛑 This password couldn't decrypt any wallets. Make sure it is correct, or rebuild the wallet list by running the configure_user_wallet.py script again.\n")
         exit()
 
     denom, answer, null_value = get_coin_selection(f"Select a coin number 1 - {str(len(FULL_COIN_LOOKUP))} that you want to send, 'X' to continue, or 'Q' to quit: ", wallet.balances)
 
     if answer == USER_ACTION_QUIT:
-        print (' 🛑 Exiting...')
+        print (' 🛑 Exiting...\n')
         exit()
 
     print (f"The {wallet.name} wallet holds {wallet.formatUluna(wallet.balances[denom])} {FULL_COIN_LOOKUP[denom]}")
     print (f"NOTE: You can send the entire value of this wallet by typing '100%' - no minimum amount will be retained.")
     uluna_amount:int  = get_user_number('How much are you sending? ', {'max_number': float(wallet.formatUluna(wallet.balances[denom], False)), 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': True, 'keep_minimum': False})
-    recipient_address = get_user_recipient("What is the address you are sending to? (or type 'Q' to quit) ", wallet)
-    
+
+    # Print a list of the addresses in the user_config.yml file:
+    recipient_address, answer = get_send_to_address(user_addresses)
+
+    if answer == USER_ACTION_QUIT:
+        print (' 🛑 Exiting...\n')
+        exit()
+
+    address_prefix:str = wallet.getPrefix(recipient_address)
+
     if recipient_address == USER_ACTION_QUIT:
-        print (' 🛑 Exiting...')
+        print (' 🛑 Exiting...\n')
         exit()
 
     # NOTE: I'm pretty sure the memo size is int64, but I've capped it at 255 so python doens't panic
@@ -255,7 +329,7 @@ def main():
 
     # Get the custom gas limit (if necessary)
     custom_gas = 0
-    if denom != ULUNA:
+    if denom != ULUNA and address_prefix == 'terra':
         print (' 🛎️  To make this more likely to work, you need to specific a higher than normal gas limit.')
         print (' 🛎️  200000 is a good number, but you can specify your own. Leave this blank if you want to accept the default.')
         custom_gas:int = get_user_number('Gas limit: ', {'max_number': wallet.balances[ULUNA], 'min_number': 0, 'empty_allowed': True, 'convert_to_uluna': False})
@@ -264,7 +338,7 @@ def main():
     complete_transaction = get_user_choice(f"You are about to send {wallet.formatUluna(uluna_amount)} {FULL_COIN_LOOKUP[denom]} to {recipient_address} - do you want to continue? (y/n) ", [])
 
     if complete_transaction == False:
-        print (" 🛑 Exiting...")
+        print (' 🛑 Exiting...\n')
         exit()
 
     # Now start doing stuff
@@ -276,7 +350,9 @@ def main():
         # Create the send tx object
         send_tx = wallet.send().create()
 
-        send_tx.terra.gas_adjustment = GAS_ADJUSTMENT_SEND
+        if address_prefix != 'terra':
+            send_tx.is_ibc_transfer = True
+
 
         # Assign the details:
         send_tx.recipient_address = recipient_address
@@ -289,8 +365,9 @@ def main():
             result = send_tx.simulate()
 
             if result == True:
-                custom_gas = send_tx.fee.gas_limit * 1.14
-                send_tx.gas_limit = custom_gas
+                if custom_gas == 0 or custom_gas == '':
+                    custom_gas = send_tx.fee.gas_limit * 1.14
+                    send_tx.gas_limit = custom_gas
             else:
                 print (' 🛎️  The send transaction could not be completed')
             
@@ -420,7 +497,9 @@ def main():
                 print (' 🛎️  The send transaction could not be completed')
         else:
             print (' 🛎️  The send transaction could not be completed')
-        
+    else:
+        print (" 🛑 This wallet has no LUNC - you need a small amount to be present to pay for fees.")
+
     print (' 💯 Done!\n')
 
 if __name__ == "__main__":

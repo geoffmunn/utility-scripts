@@ -25,7 +25,7 @@ def main():
     decrypt_password:str = getpass() # the secret password that encrypts the seed phrase
 
     if decrypt_password == '':
-        print (' 🛑 Exiting...')
+        print (' 🛑 Exiting...\n')
         exit()
 
     just_main_coins:bool = get_user_choice('Show just LUNC and USTC? (y/n) ', [])
@@ -50,7 +50,7 @@ def main():
     user_wallets = wallet_obj.getWallets(True)
 
     if len(user_wallets) == 0:
-        print (" 🛑 This password couldn't decrypt any wallets. Make sure it is correct, or rebuild the wallet list by running the configure_user_wallet.py script again.")
+        print (" 🛑 This password couldn't decrypt any wallets. Make sure it is correct, or rebuild the wallet list by running the configure_user_wallet.py script again.\n")
         exit()
 
     # Now start doing stuff
@@ -66,7 +66,7 @@ def main():
     label_widths.append(len('Delegated'))
 
     # First, create a template of all the validators
-    validator_template:dict = {'Available': 0, 'Delegated': 0}
+    validator_template:dict = {'Available': '', 'Delegated': ''}
 
     for wallet_name in user_wallets:
         wallet:Wallet = user_wallets[wallet_name]
@@ -76,7 +76,9 @@ def main():
         for validator in delegations:
             
             if validator not in validator_template:
-                if delegations[validator]['balance_amount'] > 0 or len(delegations[validator]['rewards']) > 0:
+                #if int(delegations[validator]['balance_amount']) > 0 or len(delegations[validator]['rewards']) > 0:
+                if len(delegations[validator]['rewards']) > 0:
+
                     validator_template.update({validator: ''})
 
                     # The default width is zero until we find out what the maximum width/value is:
@@ -123,8 +125,9 @@ def main():
 
         delegations = wallet.getDelegations()
         delegated_amount = 0
+
+       
         for validator in delegations:
-            
             for denom in delegations[validator]['rewards']:
 
                 if denom == ULUNA:
@@ -135,7 +138,6 @@ def main():
                 amount = ("%.6f" % (raw_amount)).rstrip('0').rstrip('.')
 
                 if denom in coin_lookup:
-
                     if float(amount) > 0:
 
                         coin_denom = copy.deepcopy(coin_lookup[denom])
@@ -188,9 +190,9 @@ def main():
     val_count = 1
     for validator in validator_template:
         if label_widths[1 + val_count] >= len(validator):
-            header_string += ' ' + validator + ' ' + padding_str[0:label_widths[1 + val_count]-len(validator)] + '|'
+            header_string += ' ' + validator + ' ' + padding_str[0:label_widths[1 + val_count] - len(validator)] + '|'
         else:
-            header_string += ' ' + validator[0:label_widths[1 + val_count]-len(validator)] + ' |' 
+            header_string += ' ' + validator[0:label_widths[1 + val_count] - len(validator)] + ' |' 
 
         val_count += 1
 

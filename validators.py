@@ -32,7 +32,7 @@ from utility_constants import (
     WITHDRAWAL_REMAINDER
 )
 
-def get_user_multichoice(question:str, user_wallets:dict) -> dict|str:
+def get_user_multichoice(question:str, user_wallets:dict):
     """
     Get multiple user selections from a list.
     This is a custom function because the options are specific to this list.
@@ -80,7 +80,7 @@ def get_user_multichoice(question:str, user_wallets:dict) -> dict|str:
 
     return wallets_to_use, answer
 
-def get_user_singlechoice(question:str, user_wallets:dict) -> dict|str:
+def get_user_singlechoice(question:str, user_wallets:dict):
     """
     Get a single user selection from a list.
     This is a custom function because the options are specific to this list.
@@ -254,7 +254,7 @@ def get_user_singlechoice(question:str, user_wallets:dict) -> dict|str:
     
     return user_wallet, answer
 
-def get_validator_singlechoice(question:str, validators:dict, filter_list:list, delegations:dict) -> dict|str:
+def get_validator_singlechoice(question:str, validators:dict, filter_list:list, delegations:dict):
     """
     Get a single user selection from a list.
     This is a custom function because the options are specific to this list.
@@ -371,8 +371,8 @@ def get_validator_singlechoice(question:str, validators:dict, filter_list:list, 
 
     return user_validator, answer
 
-def remove_exponent(num):
-    return num.to_integral() if num == num.to_integral() else num.normalize()
+#def remove_exponent(num):
+#    return num.to_integral() if num == num.to_integral() else num.normalize()
 
 def main():
 
@@ -380,7 +380,7 @@ def main():
     decrypt_password:str = getpass() # the secret password that encrypts the seed phrase
 
     if decrypt_password == '':
-        print (' 🛑 Exiting...')
+        print (' 🛑 Exiting...\n')
         exit()
 
     # Get the user config file contents
@@ -409,10 +409,10 @@ def main():
         wallet, answer = get_user_singlechoice("Select a wallet number 1 - " + str(len(user_wallets)) + ", 'X' to continue, or 'Q' to quit: ", user_wallets)
 
         if answer == USER_ACTION_QUIT:
-            print (' 🛑 Exiting...')
+            print (' 🛑 Exiting...\n')
             exit()
     else:
-        print (" 🛑 This password couldn't decrypt any wallets. Make sure it is correct, or rebuild the wallet list by running the configure_user_wallet.py script again.")
+        print (" 🛑 This password couldn't decrypt any wallets. Make sure it is correct, or rebuild the wallet list by running the configure_user_wallet.py script again.\n")
         exit()
 
     # Get the desired actions
@@ -432,7 +432,7 @@ def main():
     ])
 
     if user_action == USER_ACTION_QUIT:
-        print (' 🛑 Exiting...')
+        print (' 🛑 Exiting...\n')
         exit()
 
     print ('\nGetting available validators - please wait...')
@@ -455,7 +455,7 @@ def main():
         user_validator, answer = get_validator_singlechoice("Select a validator number 1 - " + str(len(sorted_validators)) + ", 'X' to continue, or 'Q' to quit: ", sorted_validators, [], delegations)
 
         if answer == USER_ACTION_QUIT:
-            print (' 🛑 Exiting...')
+            print (' 🛑 Exiting...\n')
             exit()
 
         print (f"The {wallet.name} wallet holds {wallet.formatUluna(wallet.balances[ULUNA], True)}")
@@ -463,14 +463,14 @@ def main():
         delegated_uluna:float = get_user_number('How much are you delegating? ', {'max_number': float(wallet.formatUluna(wallet.balances[ULUNA])), 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': True, 'keep_minimum': True})
                 
         if delegated_uluna == 0:
-            print (' 🛑 Delegated amount is zero, exiting...')
+            print (' 🛑 Delegated amount is zero, exiting...\n')
             exit()
 
         print (f"You are about to delegate {wallet.formatUluna(delegated_uluna, True)} to {user_validator['moniker']}.")
         complete_transaction = get_user_choice('Do you want to continue? (y/n) ', [])
 
         if complete_transaction == False:
-            print (' 🛑 Exiting...')
+            print (' 🛑 Exiting...\n')
             exit()
 
         print (f'Delegating {wallet.formatUluna(delegated_uluna, True)}...')
@@ -536,7 +536,7 @@ def main():
         user_validator, answer = get_validator_singlechoice("Select a validator number 1 - " + str(len(filter_list)) + ", 'X' to continue, or 'Q' to quit: ", sorted_validators, filter_list, delegations)
 
         if answer == USER_ACTION_QUIT:
-            print (' 🛑 Exiting...')
+            print (' 🛑 Exiting...\n')
             exit()
 
         available_undelegation_uluna:int = delegations[user_validator['moniker']]['balance_amount']
@@ -550,7 +550,7 @@ def main():
         complete_transaction = get_user_choice('Do you want to continue? (y/n) ', [])
 
         if complete_transaction == False:
-            print (' 🛑 Exiting...')
+            print (' 🛑 Exiting...\n')
             exit()
 
         print (f'Undelegating {wallet.formatUluna(undelegated_uluna, True)}...')
@@ -615,14 +615,14 @@ def main():
         from_validator, answer = get_validator_singlechoice("Select a validator number 1 - " + str(len(filter_list)) + ", 'X' to continue, or 'Q' to quit: ", sorted_validators, filter_list, delegations)
 
         if answer == USER_ACTION_QUIT:
-            print (' 🛑 Exiting...')
+            print (' 🛑 Exiting...\n')
             exit()
 
         print (f'Select a validator to delegate switch TO:')
         to_validator, answer = get_validator_singlechoice("Select a validator number 1 - " + str(len(sorted_validators)) + ", 'X' to continue, or 'Q' to quit: ", sorted_validators, [], delegations)
 
         if answer == USER_ACTION_QUIT:
-            print (' 🛑 Exiting...')
+            print (' 🛑 Exiting...\n')
             exit()
         
         total_delegated_uluna = delegations[from_validator['moniker']]['balance_amount']
@@ -634,7 +634,7 @@ def main():
         complete_transaction = get_user_choice('Do you want to continue? (y/n) ', [])
 
         if complete_transaction == False:
-            print (' 🛑 Exiting...')
+            print (' 🛑 Exiting...\n')
             exit()
         
         print (f'Redelegating {wallet.formatUluna(switched_uluna, True)}...')

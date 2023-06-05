@@ -7,9 +7,10 @@ from utility_classes import (
     get_coin_selection,
     get_user_choice,
     get_user_number,
+    UKUJI,
     ULUNA,
-    UUSD,
     UserConfig,
+    UUSD,
     Wallets,
     Wallet
 )
@@ -23,7 +24,7 @@ from utility_constants import (
     USER_ACTION_QUIT
 )
 
-def get_user_singlechoice(question:str, user_wallets:dict) -> dict|str:
+def get_user_singlechoice(question:str, user_wallets:dict):
     """
     Get a single user selection from a list.
     This is a custom function because the options are specific to this list.
@@ -154,7 +155,7 @@ def main():
     decrypt_password:str = getpass() # the secret password that encrypts the seed phrase
 
     if decrypt_password == '':
-        print (' 🛑 Exiting...')
+        print (' 🛑 Exiting...\n')
         exit()
 
     # Get the user config file contents
@@ -176,17 +177,16 @@ def main():
         wallet:Wallet = user_wallets[wallet_name]
         wallet.getBalances()
 
-
     if len(user_wallets) > 0:
         print (f'You can make swaps on the following wallets:')
 
         wallet, answer = get_user_singlechoice("Select a wallet number 1 - " + str(len(user_wallets)) + ", 'X' to continue, or 'Q' to quit: ", user_wallets)
 
         if answer == USER_ACTION_QUIT:
-            print (' 🛑 Exiting...')
+            print (' 🛑 Exiting...\n')
             exit()
     else:
-        print (" 🛑 This password couldn't decrypt any wallets. Make sure it is correct, or rebuild the wallet list by running the configure_user_wallet.py script again.")
+        print (" 🛑 This password couldn't decrypt any wallets. Make sure it is correct, or rebuild the wallet list by running the configure_user_wallet.py script again.\n")
         exit()
 
     # List all the coins in this wallet, with the amounts available:
@@ -194,7 +194,7 @@ def main():
     coin_from, answer, null_value = get_coin_selection("Select a coin number 1 - " + str(len(wallet.balances)) + ", 'X' to continue, or 'Q' to quit: ", wallet.balances)
 
     if answer == USER_ACTION_QUIT:
-        print (' 🛑 Exiting...')
+        print (' 🛑 Exiting...\n')
         exit()
 
     available_balance:float = float(wallet.formatUluna(wallet.balances[coin_from]))
@@ -205,14 +205,14 @@ def main():
     coin_to, answer, estimated_amount = get_coin_selection("Select a coin number 1 - " + str(len(wallet.balances)) + ", 'X' to continue, or 'Q' to quit: ", wallet.balances, False, {'denom':coin_from, 'amount':swap_uluna}, wallet)
 
     if answer == USER_ACTION_QUIT:
-        print (' 🛑 Exiting...')
+        print (' 🛑 Exiting...\n')
         exit()
 
     print (f'You will be swapping {wallet.formatUluna(swap_uluna, False)} {FULL_COIN_LOOKUP[coin_from]} for approximately {estimated_amount} {FULL_COIN_LOOKUP[coin_to]}')
     complete_transaction = get_user_choice('Do you want to continue? (y/n) ', [])
 
     if complete_transaction == False:
-        print (" 🛑 Exiting...")
+        print (' 🛑 Exiting...\n')
         exit()
 
     # Create the swap object
@@ -229,6 +229,9 @@ def main():
     # Set the contract based on what we've picked
     # As long as the swap_denom and swap_request_denom values are set, the correct contract should be picked
     use_market_swap = swaps_tx.setContract()
+
+    if swaps_tx.swap_request_denom == UKUJI:
+        swaps_tx.max_spread = 0.005
 
     if use_market_swap == True:
         result = swaps_tx.marketSimulate()
@@ -291,7 +294,7 @@ def main():
             print (' 🛎️  The send transaction failed, an error occurred:')
             print (f' 🛎️  {swaps_tx.broadcast_result.raw_log}')
         else:
-            print (f' ✅ Sent amount: {wallet.formatUluna(swaps_tx.swap_amount, False)}')
+            print (f' ✅ Swapped amount: {wallet.formatUluna(swaps_tx.swap_amount)} {FULL_COIN_LOOKUP[swaps_tx.swap_denom]}')
             print (f' ✅ Tx Hash: {swaps_tx.broadcast_result.txhash}')
     else:
         print (' 🛎️  The swap transaction could not be completed')
