@@ -96,3 +96,12 @@ BASIC_COIN_LOOKUP = {
     'uluna': 'LUNC',
     'uusd': 'UST'
 }
+
+CHAIN_IDS = {
+    'osmo': 'channel-1',
+    #'cosmos': 'channel-2',
+    #'kava': 'channel-24',
+    'kujira': 'channel-71',
+    #'inj': 'channel-17'
+    #'juno': 'channel-20'
+}

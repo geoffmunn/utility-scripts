@@ -25,7 +25,7 @@ from utility_constants import (
     LCD_ENDPOINT,
     SEARCH_RETRY_COUNT,
     TAX_RATE_URI,
-    TERRASWAP_UKUJI_TO_ULUNA_ADDRESS,
+    #TERRASWAP_UKUJI_TO_ULUNA_ADDRESS,
     TERRASWAP_UKRW_TO_ULUNA_ADDRESS,
     TERRASWAP_ULUNA_TO_UUSD_ADDRESS,
     ULUNA,
@@ -1529,6 +1529,7 @@ class SendTransaction(TransactionCore):
         self.memo:str              = ''
         self.recipient_address:str = ''
         self.sequence:int          = None
+        self.source_channel:str    = None
         self.tax:float             = None
 
     def create(self):
@@ -1585,12 +1586,12 @@ class SendTransaction(TransactionCore):
                 block_height:int = int(self.terra.tendermint.block_info()['block']['header']['height'])
 
                 msg = MsgTransfer(
-                    source_port    = 'transfer',
-                    source_channel = 'channel-1',
-                    token          = Coin(self.denom, send_amount),
-                    sender = self.current_wallet.key.acc_address,
-                    receiver = self.recipient_address,
-                    timeout_height=Height(revision_number = 1, revision_height = block_height),                            
+                    source_port       = 'transfer',
+                    source_channel    = self.source_channel,
+                    token             = Coin(self.denom, send_amount),
+                    sender            = self.current_wallet.key.acc_address,
+                    receiver          = self.recipient_address,
+                    timeout_height    = Height(revision_number = 1, revision_height = block_height),                            
                     timeout_timestamp = 0
                 )
                 
@@ -1611,13 +1612,13 @@ class SendTransaction(TransactionCore):
                     tx:Tx = self.current_wallet.create_and_sign_tx(options)
                     break
                 except LCDResponseError as err:
-                   if 'account sequence mismatch' in err.message:
-                       self.sequence    = self.sequence + 1
-                       options.sequence = self.sequence
-                       print (' 🛎️  Boosting sequence number')
-                   else:
-                       print (err)
-                       break
+                    if 'account sequence mismatch' in err.message:
+                        self.sequence    = self.sequence + 1
+                        options.sequence = self.sequence
+                        print (' 🛎️  Boosting sequence number')
+                    else:
+                        print (err)
+                        break
                 except Exception as err:
                     print (' 🛑 A random error has occurred')
                     print (err)
@@ -1627,8 +1628,10 @@ class SendTransaction(TransactionCore):
             self.transaction = tx
 
             return True
-        except:
-           return False
+        except Exception as err:
+            print (' 🛑 A random error has occurred')
+            print (err)
+            return False
     
     def simulate(self) -> bool:
         """

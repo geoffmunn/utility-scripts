@@ -15,6 +15,7 @@ from utility_classes import (
 )
 
 from utility_constants import (
+    CHAIN_IDS,
     FULL_COIN_LOOKUP,
     GAS_ADJUSTMENT_INCREMENT,
     GAS_ADJUSTMENT_SEND,
@@ -352,7 +353,7 @@ def main():
 
         if address_prefix != 'terra':
             send_tx.is_ibc_transfer = True
-
+            send_tx.source_channel = CHAIN_IDS[address_prefix]
 
         # Assign the details:
         send_tx.recipient_address = recipient_address
@@ -381,6 +382,8 @@ def main():
             # Now we know what the fee is, we can do it again and finalise it
             result = send_tx.send()
             
+            print ('kava test finished')
+            exit()
             if result == True:
                 send_tx.broadcast()
             
