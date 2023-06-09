@@ -392,7 +392,8 @@ def main():
     print ('Decrypting and validating wallets - please wait...\n')
 
     # Create the wallet object based on the user config file
-    wallet_obj = Wallets().create(user_config, decrypt_password)
+    wallet_obj       = Wallets().create(user_config, decrypt_password)
+    decrypt_password = None
 
     # Get all the wallets
     user_wallets = wallet_obj.getWallets(True)
