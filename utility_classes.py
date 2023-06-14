@@ -13,16 +13,15 @@ import traceback
 from utility_constants import (
     ASTROPORT_UUSD_TO_UKUJI_ADDRESS,
     ASTROPORT_UUSD_TO_ULUNA_ADDRESS,
+    CHAIN_IDS,
     COIN_DIVISOR,
     CONFIG_FILE_NAME,
-    DEFAULT_CHAIN_ID,
     FULL_COIN_LOOKUP,
     GAS_ADJUSTMENT,
     GAS_ADJUSTMENT_SWAPS,
     GAS_PRICE_URI,
     UKUJI,
     KUJI_SMART_CONTACT_ADDRESS,
-    LCD_ENDPOINT,
     SEARCH_RETRY_COUNT,
     TAX_RATE_URI,
     #TERRASWAP_UKUJI_TO_ULUNA_ADDRESS,
@@ -645,7 +644,9 @@ class Wallet:
         if seed != '' and password != '':
             self.seed = cryptocode.decrypt(seed, password)
 
-        self.terra = TerraInstance().create()
+        prefix = self.getPrefix(self.address)
+
+        self.terra = TerraInstance().create(prefix)
 
         return self
     
@@ -852,23 +853,27 @@ class Wallet:
     
 class TerraInstance:
     def __init__(self):
-        self.chain_id       = DEFAULT_CHAIN_ID
+        #self.chain_id       = DEFAULT_CHAIN_ID
         self.gas_adjustment = float(GAS_ADJUSTMENT)
         self.terra          = None
-        self.url            = LCD_ENDPOINT
+        #self.url            = LCD_ENDPOINT
         
-    def create(self) -> LCDClient:
+    def create(self, prefix:str = 'terra') -> LCDClient:
         """
         Create an LCD client instance and store it in this object.
         """
 
-        terra:LCDClient = LCDClient(
-            chain_id       = self.chain_id,
-            gas_adjustment = float(self.gas_adjustment),
-            url            = self.url
-        )
+        if prefix in CHAIN_IDS:
+            self.chain_id = CHAIN_IDS[prefix]['chain_id']
+            self.url      = CHAIN_IDS[prefix]['lcd_urls'][0]
 
-        self.terra = terra
+            terra:LCDClient = LCDClient(
+                chain_id       = self.chain_id,
+                gas_adjustment = float(self.gas_adjustment),
+                url            = self.url
+            )
+
+            self.terra = terra
 
         return self.terra
 

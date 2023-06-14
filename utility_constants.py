@@ -7,10 +7,10 @@ WITHDRAWAL_REMAINDER = 250   # This is the amount of Lunc we want to keep after 
 SEARCH_RETRY_COUNT   = 30    # This is the number of times we will check for a transaction to appear in the chain before deciding it didn't work.
 
 # System settings - these can be changed, but shouldn't be necessary
-DEFAULT_CHAIN_ID         = 'columbus-5'
+#DEFAULT_CHAIN_ID         = 'columbus-5'
 #LCD_ENDPOINT             = 'https://lcd.terrarebels.net'
 #LCD_ENDPOINT             = 'https://lcd.terra.dev'
-LCD_ENDPOINT             = 'https://terra-classic-lcd.publicnode.com'
+#LCD_ENDPOINT             = 'https://terra-classic-lcd.publicnode.com'
 GAS_PRICE_URI            = 'https://terra-classic-fcd.publicnode.com/v1/txs/gas_prices'
 TAX_RATE_URI             = 'https://terra-classic-lcd.publicnode.com/terra/treasury/v1beta1/tax_rate'
 TOKEN_LIST               = 'https://assets.terrarebels.net/cw20/tokens.json'
@@ -97,11 +97,57 @@ BASIC_COIN_LOOKUP = {
     'uusd': 'UST'
 }
 
+# CHAIN_IDS = {
+#     'osmo': 'channel-1',
+#     #'cosmos': 'channel-2', # Not active
+#     #'emoney': 'channel-5', # Not active
+#     #'sif': 'channel-7' # Not active
+#     #'inj': 'channel-17' # Not active
+#     #'axelar': 'channel-19', # Not active
+#     #'juno': 'channel-20' # Not active
+#     #'kava': 'channel-24', # Not active
+#     #'umee': 'channel-26', # Not active
+#     #'omniflix': 'channel-27', # Not active
+#     #'evmos': 'channel-51', # Not active
+#     #'gravity': 'channel-64' # Not active
+#     'kujira': 'channel-71',
+#     #'somm': 'channel-83', # Not active
+# }
 CHAIN_IDS = {
-    'osmo': 'channel-1',
-    #'cosmos': 'channel-2',
-    #'kava': 'channel-24',
-    'kujira': 'channel-71',
-    #'inj': 'channel-17'
-    #'juno': 'channel-20'
+    'terra': {
+        'name': 'Luna Classic',
+        'chain_id': 'columbus-5',
+        'ibc_channels': ['channel-1'],
+        'lcd_urls': ['https://rest.cosmos.directory/terra'],
+        'denom': 'uluna',
+        'status': 'active'
+    },
+    'osmo': {
+        'name': 'Osmosis',
+        'chain_id': 'osmosis-1',
+        'ibc_channels': ['channel-1'],
+        'lcd_urls': ['https://lcd.osmosis.zone'],
+        'denom': 'uosmo',
+        'status': 'active'
+    },
+    'kujira': {
+        'name': 'Kujira',
+        'chain_id': 'kaiyo-1',
+        'ibc_channels': 'channel-71',
+        'lcd_urls': ['https://rest.cosmos.directory/kujira', 'https://lcd-kujira.mintthemoon.xyz'],
+        'denom': 'ukuji',
+        'status': 'active'
+    }
 }
+#terra = LCDClient(chain_id="kaiyo-1", url="https://lcd-kujira.mintthemoon.xyz")
+#terra = LCDClient(chain_id='kava-9', url="https://api.data.kava.io")
+#terra = LCDClient(chain_id='cosmoshub-2', url="https://cosmoshub-lcd.stakely.io")
+#terra = LCDClient(chain_id='juno-1', url = 'https://juno-lcd.stakely.io')
+#terra=LCDClient(chain_id='emoney-3', url='https://emoney.validator.network/api/')
+#terra=LCDClient(chain_id='sifchain-1', url='https://rest.cosmos.directory/sifchain')
+#terra=LCDClient(chain_id='injective-1', url='https://rest.cosmos.directory/injective')
+#terra=LCDClient(chain_id='axelar-dojo-1', url='https://rest.cosmos.directory/axelar')
+#terra=LCDClient(chain_id='umee-1', url='https://rest.cosmos.directory/umee')
+#terra=LCDClient(chain_id='omniflixhub-1', url='https://rest.cosmos.directory/omniflixhub')
+#terra=LCDClient(chain_id='gravity-bridge-3', url='https://rest.cosmos.directory/gravitybridge')
+#terra=LCDClient(chain_id='sommelier-3', url='https://rest.cosmos.directory/sommelier')
