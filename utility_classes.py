@@ -704,9 +704,9 @@ class Wallet:
                     balances[coin.denom] = coin.amount
 
             # Add the extra coins (Kuji etc)
-            coin_balance = self.terra.wasm.contract_query(KUJI_SMART_CONTACT_ADDRESS, {'balance':{'address':self.address}})
-            if int(coin_balance['balance']) > 0:
-                balances[UKUJI] = coin_balance['balance']
+            #coin_balance = self.terra.wasm.contract_query(KUJI_SMART_CONTACT_ADDRESS, {'balance':{'address':self.address}})
+            #if int(coin_balance['balance']) > 0:
+            #    balances[UKUJI] = coin_balance['balance']
 
             self.balances = balances
 
