@@ -239,6 +239,11 @@ def main():
         if result == True:
             print (swaps_tx.readableFee())
             
+            user_choice = get_user_choice('Do you want to continue? ', [])
+
+            if user_choice == False:
+                exit()
+
             result = swaps_tx.marketSwap()
     else:
         result = swaps_tx.simulate()
@@ -246,33 +251,38 @@ def main():
         if result == True:
             print (swaps_tx.readableFee())
 
+            user_choice = get_user_choice('Do you want to continue? ', [])
+
+            if user_choice == False:
+                exit()
+
             result = swaps_tx.swap()
 
     if result == True:
         swaps_tx.broadcast()
     
-        if swaps_tx.broadcast_result.code == 11:
-            while True:
-                print (' 🛎️  Increasing the gas adjustment fee and trying again')
-                swaps_tx.terra.gas_adjustment += GAS_ADJUSTMENT_INCREMENT
-                print (f' 🛎️  Gas adjustment value is now {swaps_tx.terra.gas_adjustment}')
+        # if swaps_tx.broadcast_result.code == 11:
+        #     while True:
+        #         print (' 🛎️  Increasing the gas adjustment fee and trying again')
+        #         swaps_tx.terra.gas_adjustment += GAS_ADJUSTMENT_INCREMENT
+        #         print (f' 🛎️  Gas adjustment value is now {swaps_tx.terra.gas_adjustment}')
 
-                if use_market_swap == True:
-                    swaps_tx.marketSimulate()
-                    print (swaps_tx.readableFee())
-                    swaps_tx.marketSwap()
-                else:
-                    swaps_tx.simulate()
-                    print (swaps_tx.readableFee())
-                    swaps_tx.swap()
+        #         if use_market_swap == True:
+        #             swaps_tx.marketSimulate()
+        #             print (swaps_tx.readableFee())
+        #             swaps_tx.marketSwap()
+        #         else:
+        #             swaps_tx.simulate()
+        #             print (swaps_tx.readableFee())
+        #             swaps_tx.swap()
 
-                swaps_tx.broadcast()
+        #         swaps_tx.broadcast()
 
-                if swaps_tx.broadcast_result.code != 11:
-                    break
+        #         if swaps_tx.broadcast_result.code != 11:
+        #             break
 
-                if swaps_tx.terra.gas_adjustment >= MAX_GAS_ADJUSTMENT:
-                    break
+        #         if swaps_tx.terra.gas_adjustment >= MAX_GAS_ADJUSTMENT:
+        #             break
 
         if swaps_tx.broadcast_result.code == 32:
             while True:
