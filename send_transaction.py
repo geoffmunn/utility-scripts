@@ -380,6 +380,7 @@ def main():
             
             print (send_tx.readableFee())
 
+
             # Now we know what the fee is, we can do it again and finalise it
             result = send_tx.send()
             
