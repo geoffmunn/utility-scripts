@@ -78,7 +78,7 @@ FULL_COIN_LOOKUP = {
     'uinr': 'INT',
     'ujpy': 'JPT',
     'ukrw': 'KRT',
-    'ukuji': 'KUJI',
+    #'ukuji': 'KUJI',
     'uluna': 'LUNC',
     'umnt': 'MNT',
     'umyr': 'MYT',
