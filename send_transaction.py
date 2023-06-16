@@ -354,7 +354,7 @@ def main():
 
         if address_prefix != 'terra':
             send_tx.is_ibc_transfer = True
-            send_tx.source_channel = CHAIN_IDS[address_prefix]
+            send_tx.source_channel = CHAIN_IDS[address_prefix]['ibc_channels'][0]
 
         # Assign the details:
         send_tx.recipient_address = recipient_address
@@ -380,12 +380,14 @@ def main():
             
             print (send_tx.readableFee())
 
+            user_choice = get_user_choice('Do you want to continue? ', [])
+
+            if user_choice == False:
+                exit()
 
             # Now we know what the fee is, we can do it again and finalise it
             result = send_tx.send()
             
-            print ('kava test finished')
-            exit()
             if result == True:
                 send_tx.broadcast()
             
