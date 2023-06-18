@@ -14,10 +14,11 @@ from utility_classes import (
 )
 
 from utility_constants import (
-    ASTROPORT_UUSD_TO_ULUNA_ADDRESS,
+    #ASTROPORT_UUSD_TO_ULUNA_ADDRESS,
     COIN_DIVISOR,
     GAS_ADJUSTMENT_INCREMENT,
     MAX_GAS_ADJUSTMENT,
+    TERRASWAP_UUSD_TO_ULUNA_ADDRESS,
     USER_ACTION_ALL,
     USER_ACTION_CONTINUE,
     USER_ACTION_CLEAR,
@@ -387,7 +388,8 @@ def main():
                             # Populate the basic details.
                             swaps_tx.swap_amount = swap_amount
                             swaps_tx.swap_denom  = 'uusd'
-                            swaps_tx.contract    = ASTROPORT_UUSD_TO_ULUNA_ADDRESS
+                            #swaps_tx.contract    = ASTROPORT_UUSD_TO_ULUNA_ADDRESS
+                            swaps_tx.contract    = TERRASWAP_UUSD_TO_ULUNA_ADDRESS
 
                             # Simulate it so we can get the fee
                             result = swaps_tx.simulate()
