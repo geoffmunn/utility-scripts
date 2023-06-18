@@ -12,7 +12,7 @@ import traceback
 
 from utility_constants import (
     ASTROPORT_UUSD_TO_UKUJI_ADDRESS,
-    ASTROPORT_UUSD_TO_ULUNA_ADDRESS,
+    #ASTROPORT_UUSD_TO_ULUNA_ADDRESS,
     CHAIN_IDS,
     COIN_DIVISOR,
     CONFIG_FILE_NAME,
@@ -20,6 +20,7 @@ from utility_constants import (
     GAS_ADJUSTMENT,
     GAS_ADJUSTMENT_SWAPS,
     GAS_PRICE_URI,
+    IBC_ADDRESSES,
     UKUJI,
     KUJI_SMART_CONTACT_ADDRESS,
     SEARCH_RETRY_COUNT,
@@ -27,6 +28,7 @@ from utility_constants import (
     #TERRASWAP_UKUJI_TO_ULUNA_ADDRESS,
     TERRASWAP_UKRW_TO_ULUNA_ADDRESS,
     TERRASWAP_ULUNA_TO_UUSD_ADDRESS,
+    TERRASWAP_UUSD_TO_ULUNA_ADDRESS,
     ULUNA,
     UKRW,
     USER_ACTION_CONTINUE,
@@ -498,14 +500,17 @@ class Wallets:
         delegation_amount:str = ''
         threshold:int         = 0
 
+        wallet_item:Wallet = Wallet().create(wallet['wallet'], wallet['address'], wallet['seed'], user_password)
         if 'delegations' in wallet:
             if 'redelegate' in wallet['delegations']:
                 delegation_amount = wallet['delegations']['redelegate']
                 if 'threshold' in wallet['delegations']:
                     threshold = wallet['delegations']['threshold']
 
-        wallet_item:Wallet = Wallet().create(wallet['wallet'], wallet['address'], wallet['seed'], user_password)
-        wallet_item.updateDelegation(delegation_amount, threshold)
+            wallet_item.updateDelegation(delegation_amount, threshold)
+            wallet_item.has_delegations = True
+        else:
+            wallet_item.has_delegations = False
 
         if 'allow_swaps' in wallet:
             wallet_item.allow_swaps = bool(wallet['allow_swaps'])
@@ -537,15 +542,18 @@ class Wallets:
                 delegation_amount:str = ''
                 threshold:int         = 0
 
+                wallet_item:Wallet = Wallet().create(wallet['wallet'], wallet['address'], wallet['seed'], user_password)
+
                 if 'delegations' in wallet:
                     if 'redelegate' in wallet['delegations']:
                         delegation_amount = wallet['delegations']['redelegate']
                         if 'threshold' in wallet['delegations']:
                             threshold = wallet['delegations']['threshold']
 
-
-                wallet_item:Wallet = Wallet().create(wallet['wallet'], wallet['address'], wallet['seed'], user_password)
-                wallet_item.updateDelegation(delegation_amount, threshold)
+                    wallet_item.updateDelegation(delegation_amount, threshold)
+                    wallet_item.has_delegations = True
+                else:
+                    wallet_item.has_delegations = False
 
                 if 'allow_swaps' in wallet:
                     wallet_item.allow_swaps = bool(wallet['allow_swaps'])
@@ -593,10 +601,11 @@ class Wallets:
 class Wallet:
     def __init__(self):
         self.address:str               = ''
-        self.allow_swaps:bool          = True
+        self.allow_swaps:bool          = False
         self.balances:dict             = None
         self.delegateTx                = DelegationTransaction()
         self.delegation_details:dict   = None
+        self.has_delegations:bool      = False
         self.undelegation_details:dict = None
         self.name:str                  = ''
         self.seed:str                  = ''
@@ -660,6 +669,33 @@ class Wallet:
         self.delegateTx.balances = self.balances
 
         return self.delegateTx
+    
+    def denomTrace(self, ibc_address:str):
+
+        if ibc_address[0:4] == 'ibc/':
+            value = ibc_address[4:]
+
+            #print ('value:', value)
+            if value in IBC_ADDRESSES:
+                prefix = IBC_ADDRESSES[value]
+                #print ('prefix:', prefix)
+                #else:
+                #    print (f'{value} is not in the IBC dictionary - please update this')
+                #    exit()
+
+                #print ('getting a trace for ', value)
+
+                trace_result:json = requests.get(f'https://rest.cosmos.directory/{prefix}/ibc/apps/transfer/v1/denom_traces/{value}').json()
+                
+                if 'denom_trace' in trace_result:
+                    #print ('trace result:', trace_result)
+                    return trace_result['denom_trace']
+                else:
+                    return False
+            else:
+                return False
+        else:
+            return False
 
     def formatUluna(self, uluna:float, add_suffix:bool = False):
         """
@@ -694,14 +730,22 @@ class Wallet:
             # Convert the result into a friendly list
             balances:dict = {}
             for coin in result:
-                balances[coin.denom] = coin.amount
+                denom_trace = self.denomTrace(coin.denom)
+                if  denom_trace == False:
+                    balances[coin.denom] = coin.amount
+                else:
+                    balances[denom_trace['base_denom']] = coin.amount
 
             # Go through the pagination (if any)
             while pagination['next_key'] is not None:
                 pagOpt.key         = pagination["next_key"]
                 result, pagination = self.terra.bank.balance(address = self.address, params = pagOpt)
-                for coin in result:
+                
+                denom_trace = self.denomTrace(coin.denom)
+                if  denom_trace == False:
                     balances[coin.denom] = coin.amount
+                else:
+                    balances[denom_trace['base_denom']] = coin.amount
 
             # Add the extra coins (Kuji etc)
             #coin_balance = self.terra.wasm.contract_query(KUJI_SMART_CONTACT_ADDRESS, {'balance':{'address':self.address}})
@@ -717,9 +761,10 @@ class Wallet:
         Get the delegations associated with this wallet address.
         The results are cached so if the list is refreshed then it is much quicker.
         """
-
-        if self.delegation_details is None:
-            self.delegation_details = Delegations().create(self.address)
+        
+        if self.has_delegations == True:
+            if self.delegation_details is None:
+                self.delegation_details = Delegations().create(self.address)
 
         return self.delegation_details
     
@@ -781,13 +826,13 @@ class Wallet:
         return self.swapTx
     
     def updateDelegation(self, amount:str, threshold:int) -> bool:
-       """
-       Update the delegation details with the amount and threshold details.
-       """
+        """
+        Update the delegation details with the amount and threshold details.
+        """
 
-       self.delegations = {'delegate': amount, 'threshold': threshold}
+        self.delegations = {'delegate': amount, 'threshold': threshold}
 
-       return True
+        return True
     
     def validateAddress(self, address:str) -> bool:
         """
@@ -829,10 +874,11 @@ class Wallet:
         """
 
         try:
-            generated_wallet_key     = MnemonicKey(self.seed)
+            prefix                   = self.getPrefix(self.address)
+            generated_wallet_key     = MnemonicKey(mnemonic=self.seed, prefix = prefix)
             generated_wallet         = self.terra.wallet(generated_wallet_key)
             generated_wallet_address = generated_wallet.key.acc_address
-        
+            
             if generated_wallet_address == self.address:
                 return True
             else:
@@ -874,6 +920,8 @@ class TerraInstance:
             )
 
             self.terra = terra
+        #else:
+        #    print ("NOT IN CHAIN IDS")
 
         return self.terra
 
@@ -1886,7 +1934,8 @@ class SwapTransaction(TransactionCore):
 
             if self.swap_denom == UUSD:
                 if self.swap_request_denom == ULUNA:
-                    self.contract = ASTROPORT_UUSD_TO_ULUNA_ADDRESS
+                    #self.contract = ASTROPORT_UUSD_TO_ULUNA_ADDRESS
+                    self.contract = TERRASWAP_UUSD_TO_ULUNA_ADDRESS
                 if self.swap_request_denom == UKRW:
                     self.contract = None
                     use_market_swap = True
@@ -2056,8 +2105,7 @@ class SwapTransaction(TransactionCore):
         else:
             print ('No belief price calculated - did you run the simulation first?')
             return False
-
-        
+  
     def swapRate(self) -> Coin:
         """
         Get the swap rate based on the provided details.
