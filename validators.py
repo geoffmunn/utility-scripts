@@ -121,9 +121,10 @@ def get_user_singlechoice(question:str, user_wallets:dict):
         # Calculate the delegations and undelegations
         delegations = wallet.getDelegations()
 
-        for delegation in delegations:
-            if len(str(wallet.formatUluna(delegations[delegation]['balance_amount'], False))) > label_widths[4]:
-                label_widths[4] = len(str(wallet.formatUluna(delegations[delegation]['balance_amount'], False)))
+        if delegations is not None:
+            for delegation in delegations:
+                if len(str(wallet.formatUluna(delegations[delegation]['balance_amount'], False))) > label_widths[4]:
+                    label_widths[4] = len(str(wallet.formatUluna(delegations[delegation]['balance_amount'], False)))
 
         undelegations = wallet.getUndelegations()
         for undelegation in undelegations:
@@ -210,8 +211,9 @@ def get_user_singlechoice(question:str, user_wallets:dict):
             delegations   = wallet.getDelegations()
             undelegations = wallet.getUndelegations()
             
-            for delegation in delegations:
-                delegations_balance += int(delegations[delegation]['balance_amount'])
+            if delegations is not None:
+                for delegation in delegations:
+                    delegations_balance += int(delegations[delegation]['balance_amount'])
 
             delegations_str = str(wallet.formatUluna(delegations_balance, False))
             delegations_str = delegations_str + padding_str[0:label_widths[4] - len(delegations_str)]

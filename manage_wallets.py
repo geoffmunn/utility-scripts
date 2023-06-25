@@ -56,12 +56,13 @@ def get_user_multichoice(question:str, user_wallets:dict) -> dict|str:
         ulunc_reward:int = 0
         ustc_reward:int  = 0
 
-        for validator in delegations:
-            if ULUNA in delegations[validator]['rewards']:
-                ulunc_reward += float(wallet.formatUluna(delegations[validator]['rewards'][ULUNA], False))
-                                    
-            if UUSD in delegations[validator]['rewards']:
-                ustc_reward += float(wallet.formatUluna(delegations[validator]['rewards'][UUSD], False))
+        if delegations is not None:
+            for validator in delegations:
+                if ULUNA in delegations[validator]['rewards']:
+                    ulunc_reward += float(wallet.formatUluna(delegations[validator]['rewards'][ULUNA], False))
+                                        
+                if UUSD in delegations[validator]['rewards']:
+                    ustc_reward += float(wallet.formatUluna(delegations[validator]['rewards'][UUSD], False))
 
         if len(wallet_name) > label_widths[1]:
             label_widths[1] = len(wallet_name)
@@ -134,11 +135,12 @@ def get_user_multichoice(question:str, user_wallets:dict) -> dict|str:
             uluna_balance:int = 0
             ustc_reward:int   = 0
             
-            for validator in delegations:
-                if ULUNA in delegations[validator]['rewards']:
-                    uluna_reward += delegations[validator]['rewards'][ULUNA]
-                if UUSD in delegations[validator]['rewards']:
-                    ustc_reward += delegations[validator]['rewards'][UUSD]
+            if delegations is not None:
+                for validator in delegations:
+                    if ULUNA in delegations[validator]['rewards']:
+                        uluna_reward += delegations[validator]['rewards'][ULUNA]
+                    if UUSD in delegations[validator]['rewards']:
+                        ustc_reward += delegations[validator]['rewards'][UUSD]
 
             lunc_str = str(wallet.formatUluna(uluna_reward, False))
             if label_widths[2] - len(str(lunc_str)) > 0:
