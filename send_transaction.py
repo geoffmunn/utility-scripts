@@ -352,7 +352,7 @@ def main():
         # Create the send tx object
         send_tx = wallet.send().create()
 
-        if address_prefix != 'terra':
+        if address_prefix != 'terra' or wallet.terra.chain_id != 'columbus-5':
             send_tx.is_ibc_transfer = True
             send_tx.source_channel = CHAIN_IDS[address_prefix]['ibc_channels'][0]
 
