@@ -2165,7 +2165,6 @@ class SwapTransaction(TransactionCore):
                 try:
                     swap_details:Coin = self.terra.market.swap_rate(Coin(self.swap_denom, self.swap_amount), self.swap_request_denom)
                 except Exception as err:
-                    print (err)
                     swap_details:Coin = Coin(self.swap_request_denom, 0)
 
             else:
