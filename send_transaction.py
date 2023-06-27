@@ -191,12 +191,14 @@ def get_send_to_address(user_wallets:Wallet):
 
     horizontal_spacer = '-' * len(header_string)
 
-    wallets_to_use = {}
-    user_wallet    = {}
-    
+    # Create default variables and values
+    wallets_to_use         = {}
+    user_wallet            = {}
+    recipient_address: str = ''
+
     while True:
 
-        count = 0
+        count          = 0
         wallet_numbers = {}
 
         print ('\n' + horizontal_spacer)
@@ -204,7 +206,7 @@ def get_send_to_address(user_wallets:Wallet):
         print (horizontal_spacer)
 
         for wallet_name in user_wallets:
-            wallet:Wallet  = user_wallets[wallet_name]
+            wallet:Wallet = user_wallets[wallet_name]
 
             count += 1
             wallet_numbers[count] = wallet
@@ -256,7 +258,7 @@ def get_send_to_address(user_wallets:Wallet):
     if len(wallets_to_use) > 0:
         for item in wallets_to_use:
             user_wallet:Wallet = wallets_to_use[item]
-            recipient_address = user_wallet.address
+            recipient_address  = user_wallet.address
             break
     
     return recipient_address, answer
