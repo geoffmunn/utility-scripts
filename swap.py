@@ -301,7 +301,7 @@ def main():
                 if swaps_tx.broadcast_result.code != 32:
                     break
 
-        if swaps_tx.broadcast_result.is_tx_error():
+        if swaps_tx is None or swaps_tx.broadcast_result.is_tx_error():
             print (' 🛎️  The send transaction failed, an error occurred:')
             print (f' 🛎️  {swaps_tx.broadcast_result.raw_log}')
         else:
