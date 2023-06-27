@@ -6,6 +6,8 @@ TESTMODE = False
 WITHDRAWAL_REMAINDER = 250   # This is the amount of Lunc we want to keep after withdrawal and before delegating. You should never delegate the entire balance.
 SEARCH_RETRY_COUNT   = 30    # This is the number of times we will check for a transaction to appear in the chain before deciding it didn't work.
 
+# https://finder.terrarebels.net/classic/tx/62E1469304FC43107D3F572961B1865553191FFFAF9DFA8387BE3F6912809AC0
+
 # System settings - these can be changed, but shouldn't be necessary
 #DEFAULT_CHAIN_ID         = 'columbus-5'
 #LCD_ENDPOINT             = 'https://lcd.terrarebels.net'
@@ -23,16 +25,15 @@ MAX_GAS_ADJUSTMENT       = 4
 
 # Swap contracts can be found here
 # https://assets.terra.money/cw20/pairs.dex.json
-#TERRASWAP_UUSD_TO_ULUNA_ADDRESS = 'terra1l7vy20x940je7lskm6x9s839vjsmekz9k9mv7g'
+TERRASWAP_UUSD_TO_ULUNA_ADDRESS = 'terra1l7vy20x940je7lskm6x9s839vjsmekz9k9mv7g'
 #TERRASWAP_UKRW_TO_UUSD_ADDRESS  = 'terra1untf85jwv3kt0puyyc39myxjvplagr3wstgs5s'
 #ASTROPORT_UUSD_TO_MINA_ADDRESS  = 'terra134m8n2epp0n40qr08qsvvrzycn2zq4zcpmue48'
 ASTROPORT_UUSD_TO_UKUJI_ADDRESS  = 'terra1hasy32pvxmgu485x5tujylemqxynsv72lsu7ve'
-ASTROPORT_UUSD_TO_ULUNA_ADDRESS  = 'terra1m6ywlgn6wrjuagcmmezzz2a029gtldhey5k552'
+#ASTROPORT_UUSD_TO_ULUNA_ADDRESS  = 'terra1m6ywlgn6wrjuagcmmezzz2a029gtldhey5k552'
 KUJI_SMART_CONTACT_ADDRESS       = 'terra1xfsdgcemqwxp4hhnyk4rle6wr22sseq7j07dnn'
 TERRASWAP_UKRW_TO_ULUNA_ADDRESS  = 'terra1erfdlgdtt9e05z0j92wkndwav4t75xzyapntkv'
 TERRASWAP_UKUJI_TO_ULUNA_ADDRESS = 'terra19qx5xe6q9ll4w0890ux7lv2p4mf3csd4qvt3ex'
-TERRASWAP_ULUNA_TO_UUSD_ADDRESS  = 'terra1l7vy20x940je7lskm6x9s839vjsmekz9k9mv7g'
-
+TERRASWAP_ULUNA_TO_UUSD_ADDRESS = 'terra1l7vy20x940je7lskm6x9s839vjsmekz9k9mv7g'
 # Do not change these:
 
 # Standard actions:
@@ -78,11 +79,12 @@ FULL_COIN_LOOKUP = {
     'uinr': 'INT',
     'ujpy': 'JPT',
     'ukrw': 'KRT',
-    #'ukuji': 'KUJI',
+    'ukuji': 'KUJI',
     'uluna': 'LUNC',
     'umnt': 'MNT',
     'umyr': 'MYT',
     'unok': 'NOT',
+    'uosmo': 'OSMO',
     'uphp': 'PHT',
     'usdr': 'SDT',
     'usek': 'SET',
@@ -98,27 +100,24 @@ BASIC_COIN_LOOKUP = {
 }
 
 # CHAIN_IDS = {
-#     'osmo': 'channel-1',
 #     #'cosmos': 'channel-2', # Not active
 #     #'emoney': 'channel-5', # Not active
 #     #'sif': 'channel-7' # Not active
 #     #'inj': 'channel-17' # Not active
 #     #'axelar': 'channel-19', # Not active
 #     #'juno': 'channel-20' # Not active
-#     #'kava': 'channel-24', # Not active
 #     #'umee': 'channel-26', # Not active
 #     #'omniflix': 'channel-27', # Not active
 #     #'evmos': 'channel-51', # Not active
 #     #'gravity': 'channel-64' # Not active
-#     'kujira': 'channel-71',
 #     #'somm': 'channel-83', # Not active
 # }
 CHAIN_IDS = {
     'terra': {
         'name': 'Luna Classic',
         'chain_id': 'columbus-5',
-        'ibc_channels': ['channel-1'],
-        'lcd_urls': ['https://rest.cosmos.directory/terra'],
+        'ibc_channels': ['channel-72'],
+        'lcd_urls': ['https://lcd.terrarebels.net', 'https://terra-classic-fcd.publicnode.com', 'https://lcd.terrarebels.net', 'https://rest.cosmos.directory/terra'],
         'denom': 'uluna',
         'status': 'active'
     },
@@ -133,15 +132,39 @@ CHAIN_IDS = {
     'kujira': {
         'name': 'Kujira',
         'chain_id': 'kaiyo-1',
-        'ibc_channels': 'channel-71',
+        'ibc_channels': ['channel-71'],
         'lcd_urls': ['https://rest.cosmos.directory/kujira', 'https://lcd-kujira.mintthemoon.xyz'],
         'denom': 'ukuji',
         'status': 'active'
+    },
+    'kava': {
+        'name': 'Kava',
+        'chain_id': 'kava-9',
+        'ibc_channels': ['channel-24'],
+        'lcd_urls': ['https://rest.cosmos.directory/kava'],
+        'denom': 'ukava',
+        'status': 'inactive'
+    },
+    'cosmos': {
+        'name': 'Cosmos',
+        'chain_id': 'cosmoshub-4',
+        'ibc_channels': ['channel-2', 'channel-41', 'channel-59'],
+        'lcd_urls': ['rest.cosmos.directory/cosmoshub', 'https://cosmoshub-lcd.stakely.io'],
+        'denom': 'uatom',
+        'status': 'inactive'
     }
 }
-#terra = LCDClient(chain_id="kaiyo-1", url="https://lcd-kujira.mintthemoon.xyz")
-#terra = LCDClient(chain_id='kava-9', url="https://api.data.kava.io")
-#terra = LCDClient(chain_id='cosmoshub-2', url="https://cosmoshub-lcd.stakely.io")
+
+IBC_ADDRESSES = {
+    '0471F1C4E7AFD3F07702BEF6DC365268D64570F7C1FDC98EA6098DD6DE59817B': 'kava',
+    'BB6BCDB515050BAE97516111873CCD7BCF1FD0CCB723CC12F3C4F704D6C646CE': 'kujira',
+    '0EF15DF2F02480ADE0BB6E85D9EBB5DAEA2836D3860E9F97F9AADE4F57A31AA0': 'osmosis',
+    '119334C55720942481F458C9C462F5C0CD1F1E7EEAC4679D674AA67221916AEA': 'kujira',
+    'E216E3FE674FF526C41DD2366337585FC07B6CCFEB2E17FD2A82F06DE0EE9772': 'kujira',
+    '27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2': 'atom'
+}
+
+
 #terra = LCDClient(chain_id='juno-1', url = 'https://juno-lcd.stakely.io')
 #terra=LCDClient(chain_id='emoney-3', url='https://emoney.validator.network/api/')
 #terra=LCDClient(chain_id='sifchain-1', url='https://rest.cosmos.directory/sifchain')
