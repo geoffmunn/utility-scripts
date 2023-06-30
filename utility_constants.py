@@ -114,7 +114,8 @@ BASIC_COIN_LOOKUP = {
 # }
 CHAIN_IDS = {
     'terra': {
-        'name': 'Luna Classic',
+        'name': 'terra',
+        'display_name': 'Luna Classic',
         'chain_id': 'columbus-5',
         'ibc_channels': ['channel-72'],
         'lcd_urls': ['https://lcd.terrarebels.net', 'https://terra-classic-fcd.publicnode.com', 'https://lcd.terrarebels.net', 'https://rest.cosmos.directory/terra'],
@@ -122,7 +123,8 @@ CHAIN_IDS = {
         'status': 'active'
     },
     'osmo': {
-        'name': 'Osmosis',
+        'name': 'osmosis',
+        'display_name': 'Osmosis',
         'chain_id': 'osmosis-1',
         'ibc_channels': ['channel-1'],
         'lcd_urls': ['https://lcd.osmosis.zone'],
@@ -130,7 +132,8 @@ CHAIN_IDS = {
         'status': 'active'
     },
     'kujira': {
-        'name': 'Kujira',
+        'name': 'kujira',
+        'display_name': 'Kujira',
         'chain_id': 'kaiyo-1',
         'ibc_channels': ['channel-71'],
         'lcd_urls': ['https://rest.cosmos.directory/kujira', 'https://lcd-kujira.mintthemoon.xyz'],
@@ -138,7 +141,8 @@ CHAIN_IDS = {
         'status': 'active'
     },
     'kava': {
-        'name': 'Kava',
+        'name': 'kava',
+        'display_name': 'Kava',
         'chain_id': 'kava-9',
         'ibc_channels': ['channel-24'],
         'lcd_urls': ['https://rest.cosmos.directory/kava'],
@@ -146,7 +150,8 @@ CHAIN_IDS = {
         'status': 'inactive'
     },
     'cosmos': {
-        'name': 'Cosmos',
+        'name': 'cosmos',
+        'display_name': 'Cosmos',
         'chain_id': 'cosmoshub-4',
         'ibc_channels': ['channel-2', 'channel-41', 'channel-59'],
         'lcd_urls': ['rest.cosmos.directory/cosmoshub', 'https://cosmoshub-lcd.stakely.io'],
@@ -156,12 +161,40 @@ CHAIN_IDS = {
 }
 
 IBC_ADDRESSES = {
-    '0471F1C4E7AFD3F07702BEF6DC365268D64570F7C1FDC98EA6098DD6DE59817B': 'kava',
-    'BB6BCDB515050BAE97516111873CCD7BCF1FD0CCB723CC12F3C4F704D6C646CE': 'kujira',
-    '0EF15DF2F02480ADE0BB6E85D9EBB5DAEA2836D3860E9F97F9AADE4F57A31AA0': 'osmosis',
-    '119334C55720942481F458C9C462F5C0CD1F1E7EEAC4679D674AA67221916AEA': 'kujira',
-    'E216E3FE674FF526C41DD2366337585FC07B6CCFEB2E17FD2A82F06DE0EE9772': 'kujira',
-    '27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2': 'atom'
+    'uluna': {
+        'uosmo': {
+            'address': 'ibc/0471F1C4E7AFD3F07702BEF6DC365268D64570F7C1FDC98EA6098DD6DE59817B',
+            'channel': 1
+        },
+        'uscrt': {
+            'address': 'ibc/EB2CED20AB0466F18BE49285E56B31306D4C60438A022EA995BA65D5E3CF7E09',
+            'channel': 16
+        },
+        'uatom': {
+            'address': 'ibc/18ABA66B791918D51D33415DA173632735D830E2E77E63C91C11D3008CFD5262',
+            'channel': 41
+        },
+        'uusdc': {
+            'address': 'ibc/E1E3674A0E4E1EF9C69646F9AF8D9497173821826074622D831BAB73CCB99A2D',
+            'channel': 19
+        },
+    },
+    'osmo': {
+        'uluna': {
+            'address': 'ibc/0EF15DF2F02480ADE0BB6E85D9EBB5DAEA2836D3860E9F97F9AADE4F57A31AA0',
+            'channel': 72
+        },
+        'ukuji': {
+            'address': 'ibc/BB6BCDB515050BAE97516111873CCD7BCF1FD0CCB723CC12F3C4F704D6C646CE',
+            'channel': 259
+        }
+    },
+    'ukuji': {
+        'uluna': {
+            'address': 'ibc/119334C55720942481F458C9C462F5C0CD1F1E7EEAC4679D674AA67221916AEA',
+            'channel': 71
+        }
+    }
 }
 
 
