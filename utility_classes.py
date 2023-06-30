@@ -671,27 +671,19 @@ class Wallet:
         return self.delegateTx
     
     def denomTrace(self, ibc_address:str):
-
+        """
+        Based on the wallet prefix, get the IBC denom trace details for this IBC address
+        """
         if ibc_address[0:4] == 'ibc/':
             value = ibc_address[4:]
 
-            #print ('value:', value)
-            if value in IBC_ADDRESSES:
-                prefix = IBC_ADDRESSES[value]
-                #print ('prefix:', prefix)
-                #else:
-                #    print (f'{value} is not in the IBC dictionary - please update this')
-                #    exit()
+            prefix = self.getPrefix(self.address)
+            chain_name = CHAIN_IDS[prefix]['name']
 
-                #print ('getting a trace for ', value)
-
-                trace_result:json = requests.get(f'https://rest.cosmos.directory/{prefix}/ibc/apps/transfer/v1/denom_traces/{value}').json()
-                
-                if 'denom_trace' in trace_result:
-                    #print ('trace result:', trace_result)
-                    return trace_result['denom_trace']
-                else:
-                    return False
+            trace_result:json = requests.get(f'https://rest.cosmos.directory/{chain_name}/ibc/apps/transfer/v1/denom_traces/{value}').json()
+            
+            if 'denom_trace' in trace_result:
+                return trace_result['denom_trace']
             else:
                 return False
         else:
