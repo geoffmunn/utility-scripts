@@ -44,8 +44,9 @@ def main():
     print ('Decrypting and validating wallets - please wait...\n')
 
     # Create the wallet object based on the user config file
-    wallet_obj = Wallets().create(user_config, decrypt_password)
-    
+    wallet_obj       = Wallets().create(user_config, decrypt_password)
+    decrypt_password = None
+
     # Get all the wallets
     user_wallets = wallet_obj.getWallets(True)
 
@@ -73,16 +74,17 @@ def main():
         
         delegations:dict = wallet.getDelegations()
 
-        for validator in delegations:
-            
-            if validator not in validator_template:
-                #if int(delegations[validator]['balance_amount']) > 0 or len(delegations[validator]['rewards']) > 0:
-                if len(delegations[validator]['rewards']) > 0:
+        if delegations is not None:
+            for validator in delegations:
+                
+                if validator not in validator_template:
+                    #if int(delegations[validator]['balance_amount']) > 0 or len(delegations[validator]['rewards']) > 0:
+                    if len(delegations[validator]['rewards']) > 0:
 
-                    validator_template.update({validator: ''})
+                        validator_template.update({validator: ''})
 
-                    # The default width is zero until we find out what the maximum width/value is:
-                    label_widths.append(0)
+                        # The default width is zero until we find out what the maximum width/value is:
+                        label_widths.append(0)
 
     # Then, get all the coins we'll be charting (column 1)
     for wallet_name in user_wallets:
@@ -94,7 +96,12 @@ def main():
             label_widths[1] = len(wallet_name)
 
         for denom in wallet.balances:            
+            ibc_denom = wallet.denomTrace(denom)
             raw_amount = float(wallet.balances[denom]) / COIN_DIVISOR
+
+            if ibc_denom != False:     
+                denom = ibc_denom['base_denom']
+
             amount     = ("%.6f" % (raw_amount)).rstrip('0').rstrip('.')
 
             if float(amount) > 0:
@@ -126,54 +133,54 @@ def main():
         delegations = wallet.getDelegations()
         delegated_amount = 0
 
-       
-        for validator in delegations:
-            for denom in delegations[validator]['rewards']:
+        if delegations is not None:
+            for validator in delegations:
+                for denom in delegations[validator]['rewards']:
 
-                if denom == ULUNA:
-                    raw_amount = delegations[validator]['balance_amount'] / COIN_DIVISOR
-                    delegated_amount += float(("%.6f" % (raw_amount)).rstrip('0').rstrip('.'))
+                    if denom == ULUNA:
+                        raw_amount = delegations[validator]['balance_amount'] / COIN_DIVISOR
+                        delegated_amount += float(("%.6f" % (raw_amount)).rstrip('0').rstrip('.'))
 
-                raw_amount = float(delegations[validator]['rewards'][denom]) / COIN_DIVISOR
-                amount = ("%.6f" % (raw_amount)).rstrip('0').rstrip('.')
+                    raw_amount = float(delegations[validator]['rewards'][denom]) / COIN_DIVISOR
+                    amount = ("%.6f" % (raw_amount)).rstrip('0').rstrip('.')
 
-                if denom in coin_lookup:
-                    if float(amount) > 0:
+                    if denom in coin_lookup:
+                        if float(amount) > 0:
 
-                        coin_denom = copy.deepcopy(coin_lookup[denom])
+                            coin_denom = copy.deepcopy(coin_lookup[denom])
 
-                        if coin_denom not in balance_coins:
-                            balance_coins[coin_denom] = {}
+                            if coin_denom not in balance_coins:
+                                balance_coins[coin_denom] = {}
 
-                        if wallet_name not in balance_coins[coin_denom]:
-                            balance_coins[coin_denom].update({wallet_name: validator_template})
+                            if wallet_name not in balance_coins[coin_denom]:
+                                balance_coins[coin_denom].update({wallet_name: validator_template})
+                                
+                            cur_vals:dict = copy.deepcopy(balance_coins[coin_denom][wallet_name])
+
+                            if denom == ULUNA:
+                                cur_vals.update({'Delegated': delegated_amount})
+                            else:
+                                cur_vals.update({'Delegated': ''})
+                                
+                            cur_vals.update({validator: amount})
                             
-                        cur_vals:dict = copy.deepcopy(balance_coins[coin_denom][wallet_name])
+                            cur_wallets:dict = copy.deepcopy(balance_coins[coin_denom])
+                            cur_wallets.update({wallet_name: cur_vals})
 
-                        if denom == ULUNA:
-                            cur_vals.update({'Delegated': delegated_amount})
-                        else:
-                            cur_vals.update({'Delegated': ''})
-                            
-                        cur_vals.update({validator: amount})
-                        
-                        cur_wallets:dict = copy.deepcopy(balance_coins[coin_denom])
-                        cur_wallets.update({wallet_name: cur_vals})
+                            balance_coins.update({coin_denom: cur_wallets})
 
-                        balance_coins.update({coin_denom: cur_wallets})
+                            # Find the validator column that this applies to:
+                            val_count = 0
+                            for val_name in validator_template:
+                                if val_name == validator:
+                                    if len(str(amount)) > label_widths[2 + val_count]:
+                                        label_widths[2 + val_count] = len(str(amount))
+                                    break
+                                val_count += 1
 
-                        # Find the validator column that this applies to:
-                        val_count = 0
-                        for val_name in validator_template:
-                            if val_name == validator:
-                                if len(str(amount)) > label_widths[2 + val_count]:
-                                    label_widths[2 + val_count] = len(str(amount))
-                                break
-                            val_count += 1
-
-                        # Update the delegation column width:
-                        if len(str(delegated_amount)) > label_widths[3]:
-                            label_widths[3] = len(str(delegated_amount))
+                            # Update the delegation column width:
+                            if len(str(delegated_amount)) > label_widths[3]:
+                                label_widths[3] = len(str(delegated_amount))
 
     padding_str = ' ' * 100
 

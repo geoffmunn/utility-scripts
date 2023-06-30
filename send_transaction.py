@@ -15,6 +15,7 @@ from utility_classes import (
 )
 
 from utility_constants import (
+    CHAIN_IDS,
     FULL_COIN_LOOKUP,
     GAS_ADJUSTMENT_INCREMENT,
     GAS_ADJUSTMENT_SEND,
@@ -190,12 +191,14 @@ def get_send_to_address(user_wallets:Wallet):
 
     horizontal_spacer = '-' * len(header_string)
 
-    wallets_to_use = {}
-    user_wallet    = {}
-    
+    # Create default variables and values
+    wallets_to_use         = {}
+    user_wallet            = {}
+    recipient_address: str = ''
+
     while True:
 
-        count = 0
+        count          = 0
         wallet_numbers = {}
 
         print ('\n' + horizontal_spacer)
@@ -203,7 +206,7 @@ def get_send_to_address(user_wallets:Wallet):
         print (horizontal_spacer)
 
         for wallet_name in user_wallets:
-            wallet:Wallet  = user_wallets[wallet_name]
+            wallet:Wallet = user_wallets[wallet_name]
 
             count += 1
             wallet_numbers[count] = wallet
@@ -255,7 +258,7 @@ def get_send_to_address(user_wallets:Wallet):
     if len(wallets_to_use) > 0:
         for item in wallets_to_use:
             user_wallet:Wallet = wallets_to_use[item]
-            recipient_address = user_wallet.address
+            recipient_address  = user_wallet.address
             break
     
     return recipient_address, answer
@@ -278,8 +281,9 @@ def main():
     print ('Decrypting and validating wallets - please wait...\n')
 
     # Create the wallet object based on the user config file
-    wallet_obj = Wallets().create(user_config, decrypt_password)
-    
+    wallet_obj       = Wallets().create(user_config, decrypt_password)
+    decrypt_password = None
+
     # Get all the wallets
     user_wallets = wallet_obj.getWallets(True)
     user_addresses = wallet_obj.getAddresses()
@@ -350,9 +354,9 @@ def main():
         # Create the send tx object
         send_tx = wallet.send().create()
 
-        if address_prefix != 'terra':
+        if address_prefix != 'terra' or wallet.terra.chain_id != 'columbus-5':
             send_tx.is_ibc_transfer = True
-
+            send_tx.source_channel = CHAIN_IDS[address_prefix]['ibc_channels'][0]
 
         # Assign the details:
         send_tx.recipient_address = recipient_address
@@ -377,6 +381,11 @@ def main():
         if result == True:
             
             print (send_tx.readableFee())
+
+            user_choice = get_user_choice('Do you want to continue? ', [])
+
+            if user_choice == False:
+                exit()
 
             # Now we know what the fee is, we can do it again and finalise it
             result = send_tx.send()

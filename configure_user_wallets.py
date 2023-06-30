@@ -29,7 +29,7 @@ def main():
     print ('If you send funds to an address on a frequent basis, you can add just the address for extra convienience.')
     print ('*********************************************************************************************************\n')
 
-    entire_wallet = get_user_choice('Are you just adding an entire wallet? (y/n) ', [])
+    entire_wallet = get_user_choice('Are you adding an entire wallet? (y/n) ', [])
 
     if entire_wallet == False:
         wallet:Wallet   = Wallet().create()
@@ -64,7 +64,7 @@ def main():
             print (f'\nYour wallet address is: {wallet_address}\n')
             
         else:
-            wallet_address = get_user_text('Lunc address: ', 44, False)
+            wallet_address = get_user_text('Wallet address: ', 100, False)
             wallet_seed    = get_user_text('Seed phrase (this will be encrypted with your secret password):\n', 1024, False)
 
         delegations = get_user_choice('Do you want to delegate funds to validators? (y/n) ', [])

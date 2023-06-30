@@ -12,22 +12,23 @@ import traceback
 
 from utility_constants import (
     ASTROPORT_UUSD_TO_UKUJI_ADDRESS,
-    ASTROPORT_UUSD_TO_ULUNA_ADDRESS,
+    #ASTROPORT_UUSD_TO_ULUNA_ADDRESS,
+    CHAIN_IDS,
     COIN_DIVISOR,
     CONFIG_FILE_NAME,
-    DEFAULT_CHAIN_ID,
     FULL_COIN_LOOKUP,
     GAS_ADJUSTMENT,
     GAS_ADJUSTMENT_SWAPS,
     GAS_PRICE_URI,
+    IBC_ADDRESSES,
     UKUJI,
     KUJI_SMART_CONTACT_ADDRESS,
-    LCD_ENDPOINT,
     SEARCH_RETRY_COUNT,
     TAX_RATE_URI,
-    TERRASWAP_UKUJI_TO_ULUNA_ADDRESS,
+    #TERRASWAP_UKUJI_TO_ULUNA_ADDRESS,
     TERRASWAP_UKRW_TO_ULUNA_ADDRESS,
     TERRASWAP_ULUNA_TO_UUSD_ADDRESS,
+    TERRASWAP_UUSD_TO_ULUNA_ADDRESS,
     ULUNA,
     UKRW,
     USER_ACTION_CONTINUE,
@@ -499,14 +500,17 @@ class Wallets:
         delegation_amount:str = ''
         threshold:int         = 0
 
+        wallet_item:Wallet = Wallet().create(wallet['wallet'], wallet['address'], wallet['seed'], user_password)
         if 'delegations' in wallet:
             if 'redelegate' in wallet['delegations']:
                 delegation_amount = wallet['delegations']['redelegate']
                 if 'threshold' in wallet['delegations']:
                     threshold = wallet['delegations']['threshold']
 
-        wallet_item:Wallet = Wallet().create(wallet['wallet'], wallet['address'], wallet['seed'], user_password)
-        wallet_item.updateDelegation(delegation_amount, threshold)
+            wallet_item.updateDelegation(delegation_amount, threshold)
+            wallet_item.has_delegations = True
+        else:
+            wallet_item.has_delegations = False
 
         if 'allow_swaps' in wallet:
             wallet_item.allow_swaps = bool(wallet['allow_swaps'])
@@ -538,15 +542,18 @@ class Wallets:
                 delegation_amount:str = ''
                 threshold:int         = 0
 
+                wallet_item:Wallet = Wallet().create(wallet['wallet'], wallet['address'], wallet['seed'], user_password)
+
                 if 'delegations' in wallet:
                     if 'redelegate' in wallet['delegations']:
                         delegation_amount = wallet['delegations']['redelegate']
                         if 'threshold' in wallet['delegations']:
                             threshold = wallet['delegations']['threshold']
 
-
-                wallet_item:Wallet = Wallet().create(wallet['wallet'], wallet['address'], wallet['seed'], user_password)
-                wallet_item.updateDelegation(delegation_amount, threshold)
+                    wallet_item.updateDelegation(delegation_amount, threshold)
+                    wallet_item.has_delegations = True
+                else:
+                    wallet_item.has_delegations = False
 
                 if 'allow_swaps' in wallet:
                     wallet_item.allow_swaps = bool(wallet['allow_swaps'])
@@ -594,10 +601,11 @@ class Wallets:
 class Wallet:
     def __init__(self):
         self.address:str               = ''
-        self.allow_swaps:bool          = True
+        self.allow_swaps:bool          = False
         self.balances:dict             = None
         self.delegateTx                = DelegationTransaction()
         self.delegation_details:dict   = None
+        self.has_delegations:bool      = False
         self.undelegation_details:dict = None
         self.name:str                  = ''
         self.seed:str                  = ''
@@ -645,7 +653,9 @@ class Wallet:
         if seed != '' and password != '':
             self.seed = cryptocode.decrypt(seed, password)
 
-        self.terra = TerraInstance().create()
+        prefix = self.getPrefix(self.address)
+
+        self.terra = TerraInstance().create(prefix)
 
         return self
     
@@ -659,6 +669,25 @@ class Wallet:
         self.delegateTx.balances = self.balances
 
         return self.delegateTx
+    
+    def denomTrace(self, ibc_address:str):
+        """
+        Based on the wallet prefix, get the IBC denom trace details for this IBC address
+        """
+        if ibc_address[0:4] == 'ibc/':
+            value = ibc_address[4:]
+
+            prefix = self.getPrefix(self.address)
+            chain_name = CHAIN_IDS[prefix]['name']
+
+            trace_result:json = requests.get(f'https://rest.cosmos.directory/{chain_name}/ibc/apps/transfer/v1/denom_traces/{value}').json()
+            
+            if 'denom_trace' in trace_result:
+                return trace_result['denom_trace']
+            else:
+                return False
+        else:
+            return False
 
     def formatUluna(self, uluna:float, add_suffix:bool = False):
         """
@@ -693,19 +722,27 @@ class Wallet:
             # Convert the result into a friendly list
             balances:dict = {}
             for coin in result:
-                balances[coin.denom] = coin.amount
+                denom_trace = self.denomTrace(coin.denom)
+                if  denom_trace == False:
+                    balances[coin.denom] = coin.amount
+                else:
+                    balances[denom_trace['base_denom']] = coin.amount
 
             # Go through the pagination (if any)
             while pagination['next_key'] is not None:
                 pagOpt.key         = pagination["next_key"]
                 result, pagination = self.terra.bank.balance(address = self.address, params = pagOpt)
-                for coin in result:
+                
+                denom_trace = self.denomTrace(coin.denom)
+                if  denom_trace == False:
                     balances[coin.denom] = coin.amount
+                else:
+                    balances[denom_trace['base_denom']] = coin.amount
 
             # Add the extra coins (Kuji etc)
-            coin_balance = self.terra.wasm.contract_query(KUJI_SMART_CONTACT_ADDRESS, {'balance':{'address':self.address}})
-            if int(coin_balance['balance']) > 0:
-                balances[UKUJI] = coin_balance['balance']
+            #coin_balance = self.terra.wasm.contract_query(KUJI_SMART_CONTACT_ADDRESS, {'balance':{'address':self.address}})
+            #if int(coin_balance['balance']) > 0:
+            #    balances[UKUJI] = coin_balance['balance']
 
             self.balances = balances
 
@@ -716,9 +753,10 @@ class Wallet:
         Get the delegations associated with this wallet address.
         The results are cached so if the list is refreshed then it is much quicker.
         """
-
-        if self.delegation_details is None:
-            self.delegation_details = Delegations().create(self.address)
+        
+        if self.has_delegations == True:
+            if self.delegation_details is None:
+                self.delegation_details = Delegations().create(self.address)
 
         return self.delegation_details
     
@@ -780,13 +818,13 @@ class Wallet:
         return self.swapTx
     
     def updateDelegation(self, amount:str, threshold:int) -> bool:
-       """
-       Update the delegation details with the amount and threshold details.
-       """
+        """
+        Update the delegation details with the amount and threshold details.
+        """
 
-       self.delegations = {'delegate': amount, 'threshold': threshold}
+        self.delegations = {'delegate': amount, 'threshold': threshold}
 
-       return True
+        return True
     
     def validateAddress(self, address:str) -> bool:
         """
@@ -828,10 +866,11 @@ class Wallet:
         """
 
         try:
-            generated_wallet_key     = MnemonicKey(self.seed)
+            prefix                   = self.getPrefix(self.address)
+            generated_wallet_key     = MnemonicKey(mnemonic=self.seed, prefix = prefix)
             generated_wallet         = self.terra.wallet(generated_wallet_key)
             generated_wallet_address = generated_wallet.key.acc_address
-        
+            
             if generated_wallet_address == self.address:
                 return True
             else:
@@ -852,23 +891,27 @@ class Wallet:
     
 class TerraInstance:
     def __init__(self):
-        self.chain_id       = DEFAULT_CHAIN_ID
         self.gas_adjustment = float(GAS_ADJUSTMENT)
         self.terra          = None
-        self.url            = LCD_ENDPOINT
         
-    def create(self) -> LCDClient:
+    def create(self, prefix:str = 'terra') -> LCDClient:
         """
         Create an LCD client instance and store it in this object.
         """
+        
+        if prefix in CHAIN_IDS:
+            self.chain_id = CHAIN_IDS[prefix]['chain_id']
+            self.url      = CHAIN_IDS[prefix]['lcd_urls'][0]
 
-        terra:LCDClient = LCDClient(
-            chain_id       = self.chain_id,
-            gas_adjustment = float(self.gas_adjustment),
-            url            = self.url
-        )
+            terra:LCDClient = LCDClient(
+                chain_id       = self.chain_id,
+                gas_adjustment = float(self.gas_adjustment),
+                url            = self.url
+            )
 
-        self.terra = terra
+            self.terra = terra
+        #else:
+        #    print ("NOT IN CHAIN IDS")
 
         return self.terra
 
@@ -1529,6 +1572,7 @@ class SendTransaction(TransactionCore):
         self.memo:str              = ''
         self.recipient_address:str = ''
         self.sequence:int          = None
+        self.source_channel:str    = None
         self.tax:float             = None
 
     def create(self):
@@ -1585,12 +1629,12 @@ class SendTransaction(TransactionCore):
                 block_height:int = int(self.terra.tendermint.block_info()['block']['header']['height'])
 
                 msg = MsgTransfer(
-                    source_port    = 'transfer',
-                    source_channel = 'channel-1',
-                    token          = Coin(self.denom, send_amount),
-                    sender = self.current_wallet.key.acc_address,
-                    receiver = self.recipient_address,
-                    timeout_height=Height(revision_number = 1, revision_height = block_height),                            
+                    source_port       = 'transfer',
+                    source_channel    = self.source_channel,
+                    token             = Coin(self.denom, send_amount),
+                    sender            = self.current_wallet.key.acc_address,
+                    receiver          = self.recipient_address,
+                    timeout_height    = Height(revision_number = 1, revision_height = block_height),                            
                     timeout_timestamp = 0
                 )
                 
@@ -1611,13 +1655,13 @@ class SendTransaction(TransactionCore):
                     tx:Tx = self.current_wallet.create_and_sign_tx(options)
                     break
                 except LCDResponseError as err:
-                   if 'account sequence mismatch' in err.message:
-                       self.sequence    = self.sequence + 1
-                       options.sequence = self.sequence
-                       print (' 🛎️  Boosting sequence number')
-                   else:
-                       print (err)
-                       break
+                    if 'account sequence mismatch' in err.message:
+                        self.sequence    = self.sequence + 1
+                        options.sequence = self.sequence
+                        print (' 🛎️  Boosting sequence number')
+                    else:
+                        print (err)
+                        break
                 except Exception as err:
                     print (' 🛑 A random error has occurred')
                     print (err)
@@ -1627,8 +1671,10 @@ class SendTransaction(TransactionCore):
             self.transaction = tx
 
             return True
-        except:
-           return False
+        except Exception as err:
+            print (' 🛑 A random error has occurred')
+            print (err)
+            return False
     
     def simulate(self) -> bool:
         """
@@ -1725,41 +1771,46 @@ class SwapTransaction(TransactionCore):
         belief_price:float = 0
 
         if self.contract is not None:
-            result = self.terra.wasm.contract_query(self.contract, {"pool": {}})
-            
-            parts:dict = {}
-            if 'native_token' in result['assets'][0]['info']:
-                parts[result['assets'][0]['info']['native_token']['denom']] = int(result['assets'][0]['amount'])
-            else:
-                if result['assets'][0]['info']['token']['contract_addr'] == KUJI_SMART_CONTACT_ADDRESS:
-                    parts[UKUJI] = int(result['assets'][0]['amount'])
-
-            parts[result['assets'][1]['info']['native_token']['denom']] = int(result['assets'][1]['amount'])
-
-            contract_swaps:list  = [ULUNA, UKRW, UUSD, UKUJI]
-
-            if self.swap_denom in contract_swaps and self.swap_request_denom in contract_swaps:
-
-                if self.swap_denom == ULUNA:
-                    if self.swap_request_denom == UUSD:
-                        belief_price:float = parts[ULUNA] / parts[UUSD]
-                    if self.swap_request_denom == UKRW:
-                        belief_price:float = parts[ULUNA] / parts[UKRW]
-
-                if self.swap_denom == UUSD:
-                    if self.swap_request_denom == ULUNA:
-                        belief_price:float = parts[UUSD] / parts[ULUNA]
-                    if self.swap_request_denom == UKUJI:
-                        belief_price:float = parts[UUSD] / parts[UKUJI]
-
-                if self.swap_denom == UKRW:
-                    if self.swap_request_denom == ULUNA:
-                        belief_price:float = parts[UKRW] / parts[ULUNA]
-
-                if self.swap_denom == UKUJI:
-                    if self.swap_request_denom == UUSD:
-                        belief_price:float = parts[UKUJI] / parts[UUSD]
+            try:
+                result = self.terra.wasm.contract_query(self.contract, {"pool": {}})
                 
+                parts:dict = {}
+                if 'native_token' in result['assets'][0]['info']:
+                    parts[result['assets'][0]['info']['native_token']['denom']] = int(result['assets'][0]['amount'])
+                else:
+                    if result['assets'][0]['info']['token']['contract_addr'] == KUJI_SMART_CONTACT_ADDRESS:
+                        parts[UKUJI] = int(result['assets'][0]['amount'])
+
+                parts[result['assets'][1]['info']['native_token']['denom']] = int(result['assets'][1]['amount'])
+
+                contract_swaps:list  = [ULUNA, UKRW, UUSD, UKUJI]
+
+                if self.swap_denom in contract_swaps and self.swap_request_denom in contract_swaps:
+
+                    if self.swap_denom == ULUNA:
+                        if self.swap_request_denom == UUSD:
+                            belief_price:float = parts[ULUNA] / parts[UUSD]
+                        if self.swap_request_denom == UKRW:
+                            belief_price:float = parts[ULUNA] / parts[UKRW]
+
+                    if self.swap_denom == UUSD:
+                        if self.swap_request_denom == ULUNA:
+                            belief_price:float = parts[UUSD] / parts[ULUNA]
+                        if self.swap_request_denom == UKUJI:
+                            belief_price:float = parts[UUSD] / parts[UKUJI]
+
+                    if self.swap_denom == UKRW:
+                        if self.swap_request_denom == ULUNA:
+                            belief_price:float = parts[UKRW] / parts[ULUNA]
+
+                    if self.swap_denom == UKUJI:
+                        if self.swap_request_denom == UUSD:
+                            belief_price:float = parts[UKUJI] / parts[UUSD]
+            except Exception as err:
+                print (' 🛑 A connection error has occurred')
+                print (err)
+                return None
+           
         return round(belief_price, 18)
         
     def create(self):
@@ -1878,7 +1929,8 @@ class SwapTransaction(TransactionCore):
 
             if self.swap_denom == UUSD:
                 if self.swap_request_denom == ULUNA:
-                    self.contract = ASTROPORT_UUSD_TO_ULUNA_ADDRESS
+                    #self.contract = ASTROPORT_UUSD_TO_ULUNA_ADDRESS
+                    self.contract = TERRASWAP_UUSD_TO_ULUNA_ADDRESS
                 if self.swap_request_denom == UKRW:
                     self.contract = None
                     use_market_swap = True
@@ -2011,7 +2063,9 @@ class SwapTransaction(TransactionCore):
 
                 options = CreateTxOptions(
                     fee        = self.fee,
+                    gas        = 1000000,
                     gas_prices = self.gas_list,
+                    gas_adjustment = 3.6,
                     msgs       = [tx_msg],
                     sequence   = self.sequence,
                 )
@@ -2048,8 +2102,7 @@ class SwapTransaction(TransactionCore):
         else:
             print ('No belief price calculated - did you run the simulation first?')
             return False
-
-        
+  
     def swapRate(self) -> Coin:
         """
         Get the swap rate based on the provided details.
@@ -2059,26 +2112,39 @@ class SwapTransaction(TransactionCore):
         if self.use_market_swap == False:
             if self.swap_denom == UUSD and self.swap_request_denom in [ULUNA, UKRW]:
                 swap_price = self.beliefPrice()
-                swap_details:Coin = Coin(self.swap_request_denom, int(self.swap_amount / swap_price))
-            elif self.swap_denom == ULUNA and self.swap_request_denom in [UUSD, UKRW]:
-                swap_price = self.beliefPrice()
-                if self.swap_request_denom == UUSD:
+                if swap_price is not None:
                     swap_details:Coin = Coin(self.swap_request_denom, int(self.swap_amount / swap_price))
                 else:
-                    # ukrw
-                    swap_details:Coin = Coin(self.swap_request_denom, int(self.swap_amount / swap_price))
+                    swap_details:Coin = Coin(self.swap_request_denom, int(0))
+            elif self.swap_denom == ULUNA and self.swap_request_denom in [UUSD, UKRW]:
+                swap_price = self.beliefPrice()
+                if swap_price is not None:
+                    if self.swap_request_denom == UUSD:
+                        swap_details:Coin = Coin(self.swap_request_denom, int(self.swap_amount / swap_price))
+                    else:
+                        # ukrw
+                        swap_details:Coin = Coin(self.swap_request_denom, int(self.swap_amount / swap_price))
+                else:
+                    swap_details:Coin = Coin(self.swap_request_denom, int(0))
             elif self.swap_denom == UKRW and self.swap_request_denom in [ULUNA, UUSD]:
                 swap_price = self.beliefPrice()
-                swap_details:Coin = Coin(self.swap_request_denom, int(self.swap_amount / swap_price))
+                if swap_price is not None:
+                    swap_details:Coin = Coin(self.swap_request_denom, int(self.swap_amount / swap_price))
             elif self.swap_denom == UUSD and self.swap_request_denom == UKUJI:
                 swap_price = self.beliefPrice()
-                swap_details:Coin = Coin(self.swap_request_denom, int(self.swap_amount / swap_price))
+                if swap_price is not None:
+                    swap_details:Coin = Coin(self.swap_request_denom, int(self.swap_amount / swap_price))
+                else:
+                    swap_details:Coin = Coin(self.swap_request_denom, int(0))
             elif self.swap_request_denom == UKUJI:
                 swap_details:Coin = Coin(self.swap_request_denom, 0)
             elif self.swap_denom == UKUJI:
                 if self.swap_request_denom == UUSD:
                     swap_price = self.beliefPrice()
-                    swap_details:Coin = Coin(self.swap_request_denom, int(self.swap_amount / swap_price))
+                    if swap_price is not None:
+                        swap_details:Coin = Coin(self.swap_request_denom, int(self.swap_amount / swap_price))
+                    else:
+                        swap_details:Coin = Coin(self.swap_request_denom, int(0))
                 else:
                     swap_details:Coin = Coin(self.swap_request_denom, 0)
             else:
@@ -2088,7 +2154,11 @@ class SwapTransaction(TransactionCore):
                 exit()
         else:
             if self.swap_denom != UKUJI and self.swap_request_denom != UKUJI:
-                swap_details:Coin = self.terra.market.swap_rate(Coin(self.swap_denom, self.swap_amount), self.swap_request_denom)
+                try:
+                    swap_details:Coin = self.terra.market.swap_rate(Coin(self.swap_denom, self.swap_amount), self.swap_request_denom)
+                except Exception as err:
+                    swap_details:Coin = Coin(self.swap_request_denom, 0)
+
             else:
                 swap_details:Coin = Coin(self.swap_request_denom, 0)
 

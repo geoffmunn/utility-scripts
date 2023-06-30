@@ -14,10 +14,11 @@ from utility_classes import (
 )
 
 from utility_constants import (
-    ASTROPORT_UUSD_TO_ULUNA_ADDRESS,
+    #ASTROPORT_UUSD_TO_ULUNA_ADDRESS,
     COIN_DIVISOR,
     GAS_ADJUSTMENT_INCREMENT,
     MAX_GAS_ADJUSTMENT,
+    TERRASWAP_UUSD_TO_ULUNA_ADDRESS,
     USER_ACTION_ALL,
     USER_ACTION_CONTINUE,
     USER_ACTION_CLEAR,
@@ -55,12 +56,13 @@ def get_user_multichoice(question:str, user_wallets:dict) -> dict|str:
         ulunc_reward:int = 0
         ustc_reward:int  = 0
 
-        for validator in delegations:
-            if ULUNA in delegations[validator]['rewards']:
-                ulunc_reward += float(wallet.formatUluna(delegations[validator]['rewards'][ULUNA], False))
-                                    
-            if UUSD in delegations[validator]['rewards']:
-                ustc_reward += float(wallet.formatUluna(delegations[validator]['rewards'][UUSD], False))
+        if delegations is not None:
+            for validator in delegations:
+                if ULUNA in delegations[validator]['rewards']:
+                    ulunc_reward += float(wallet.formatUluna(delegations[validator]['rewards'][ULUNA], False))
+                                        
+                if UUSD in delegations[validator]['rewards']:
+                    ustc_reward += float(wallet.formatUluna(delegations[validator]['rewards'][UUSD], False))
 
         if len(wallet_name) > label_widths[1]:
             label_widths[1] = len(wallet_name)
@@ -133,11 +135,12 @@ def get_user_multichoice(question:str, user_wallets:dict) -> dict|str:
             uluna_balance:int = 0
             ustc_reward:int   = 0
             
-            for validator in delegations:
-                if ULUNA in delegations[validator]['rewards']:
-                    uluna_reward += delegations[validator]['rewards'][ULUNA]
-                if UUSD in delegations[validator]['rewards']:
-                    ustc_reward += delegations[validator]['rewards'][UUSD]
+            if delegations is not None:
+                for validator in delegations:
+                    if ULUNA in delegations[validator]['rewards']:
+                        uluna_reward += delegations[validator]['rewards'][ULUNA]
+                    if UUSD in delegations[validator]['rewards']:
+                        ustc_reward += delegations[validator]['rewards'][UUSD]
 
             lunc_str = str(wallet.formatUluna(uluna_reward, False))
             if label_widths[2] - len(str(lunc_str)) > 0:
@@ -228,7 +231,8 @@ def main():
     print ('Decrypting and validating wallets - please wait...\n')
 
     # Create the wallet object based on the user config file
-    wallet_obj = Wallets().create(user_config, decrypt_password)
+    wallet_obj       = Wallets().create(user_config, decrypt_password)
+    decrypt_password = None
     
     # Get all the wallets
     user_wallets = wallet_obj.getWallets(True)
@@ -386,7 +390,8 @@ def main():
                             # Populate the basic details.
                             swaps_tx.swap_amount = swap_amount
                             swaps_tx.swap_denom  = 'uusd'
-                            swaps_tx.contract    = ASTROPORT_UUSD_TO_ULUNA_ADDRESS
+                            #swaps_tx.contract    = ASTROPORT_UUSD_TO_ULUNA_ADDRESS
+                            swaps_tx.contract    = TERRASWAP_UUSD_TO_ULUNA_ADDRESS
 
                             # Simulate it so we can get the fee
                             result = swaps_tx.simulate()
