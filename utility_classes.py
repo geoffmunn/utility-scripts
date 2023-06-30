@@ -680,11 +680,15 @@ class Wallet:
             prefix = self.getPrefix(self.address)
             chain_name = CHAIN_IDS[prefix]['name']
 
-            trace_result:json = requests.get(f'https://rest.cosmos.directory/{chain_name}/ibc/apps/transfer/v1/denom_traces/{value}').json()
+            try:
+                trace_result:json = requests.get(f'https://rest.cosmos.directory/{chain_name}/ibc/apps/transfer/v1/denom_traces/{value}').json()
             
-            if 'denom_trace' in trace_result:
-                return trace_result['denom_trace']
-            else:
+                if 'denom_trace' in trace_result:
+                    return trace_result['denom_trace']
+                else:
+                    return False
+            except Exception as err:
+                print (err)
                 return False
         else:
             return False
