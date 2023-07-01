@@ -452,81 +452,83 @@ def main():
 
                     # Update the balances after having done withdrawals and swaps
                     wallet.getBalances(True)
+                    if delegations[validator]['balance_amount'] > 1 * COIN_DIVISOR:
+                        if ULUNA in wallet.balances:     
 
-                    if ULUNA in wallet.balances:     
+                            # Figure out how much to delegate based on the user settings
+                            uluna_balance = int(wallet.balances[ULUNA])
+                            
+                            if isPercentage(wallet.delegations['delegate']):
+                                percentage:int = int(str(wallet.delegations['delegate']).strip(' ')[0:-1]) / 100
+                                delegated_uluna:int = int(uluna_balance * percentage)
+                            else:
+                                delegated_uluna:int = int(str(wallet.delegations['delegate']).strip(' '))
 
-                        # Figure out how much to delegate based on the user settings
-                        uluna_balance = int(wallet.balances[ULUNA])
-                        
-                        if isPercentage(wallet.delegations['delegate']):
-                            percentage:int = int(str(wallet.delegations['delegate']).strip(' ')[0:-1]) / 100
-                            delegated_uluna:int = int(uluna_balance * percentage)
-                        else:
-                            delegated_uluna:int = int(str(wallet.delegations['delegate']).strip(' '))
+                            # Adjust this so we have the desired amount still remaining
+                            delegated_uluna = int(delegated_uluna - ((WITHDRAWAL_REMAINDER) * COIN_DIVISOR))
 
-                        # Adjust this so we have the desired amount still remaining
-                        delegated_uluna = int(delegated_uluna - ((WITHDRAWAL_REMAINDER) * COIN_DIVISOR))
+                            if delegated_uluna > 0 and delegated_uluna <= wallet.balances[ULUNA]:
+                                print (f'Delegating {wallet.formatUluna(delegated_uluna, True)}')
 
-                        if delegated_uluna > 0 and delegated_uluna <= wallet.balances[ULUNA]:
-                            print (f'Delegating {wallet.formatUluna(delegated_uluna, True)}')
+                                # Create the delegation object
+                                delegation_tx = wallet.delegate().create()
 
-                            # Create the delegation object
-                            delegation_tx = wallet.delegate().create()
+                                # Assign the details:
+                                delegation_tx.delegator_address = delegations[validator]['delegator']
+                                delegation_tx.validator_address = delegations[validator]['validator']
+                                delegation_tx.delegated_uluna   = delegated_uluna
 
-                            # Assign the details:
-                            delegation_tx.delegator_address = delegations[validator]['delegator']
-                            delegation_tx.validator_address = delegations[validator]['validator']
-                            delegation_tx.delegated_uluna   = delegated_uluna
+                                # Simulate it
+                                result = delegation_tx.simulate(delegation_tx.delegate)
 
-                            # Simulate it
-                            result = delegation_tx.simulate(delegation_tx.delegate)
-
-                            if result == True:
-                                    
-                                print (delegation_tx.readableFee())
-                                
-                                # Now we know what the fee is, we can do it again and finalise it
-                                result = delegation_tx.delegate()
-                                
                                 if result == True:
-                                    delegation_tx.broadcast()
-
-                                    if delegation_tx.broadcast_result.code == 11:
-                                        while True:
-                                            print (' 🛎️  Increasing the gas adjustment fee and trying again')
-                                            delegation_tx.terra.gas_adjustment += GAS_ADJUSTMENT_INCREMENT
-                                            print (f' 🛎️  Gas adjustment value is now {delegation_tx.terra.gas_adjustment}')
-                                            delegation_tx.simulate(delegation_tx.delegate)
-                                            print (delegation_tx.readableFee())
-                                            delegation_tx.delegate()
-                                            delegation_tx.broadcast()
-
-                                            if delegation_tx.broadcast_result is None:
-                                                break
-
-                                            if delegation_tx.broadcast_result.code != 11:
-                                                break
-
-                                            if delegation_tx.terra.gas_adjustment >= MAX_GAS_ADJUSTMENT:
-                                                break
                                         
-                                    if delegation_tx.broadcast_result.is_tx_error():
-                                        print (' 🛎️ The delegation failed, an error occurred:')
-                                        print (f' 🛎️  {delegation_tx.broadcast_result.raw_log}')
+                                    print (delegation_tx.readableFee())
+                                    
+                                    # Now we know what the fee is, we can do it again and finalise it
+                                    result = delegation_tx.delegate()
+                                    
+                                    if result == True:
+                                        delegation_tx.broadcast()
+
+                                        if delegation_tx.broadcast_result.code == 11:
+                                            while True:
+                                                print (' 🛎️  Increasing the gas adjustment fee and trying again')
+                                                delegation_tx.terra.gas_adjustment += GAS_ADJUSTMENT_INCREMENT
+                                                print (f' 🛎️  Gas adjustment value is now {delegation_tx.terra.gas_adjustment}')
+                                                delegation_tx.simulate(delegation_tx.delegate)
+                                                print (delegation_tx.readableFee())
+                                                delegation_tx.delegate()
+                                                delegation_tx.broadcast()
+
+                                                if delegation_tx.broadcast_result is None:
+                                                    break
+
+                                                if delegation_tx.broadcast_result.code != 11:
+                                                    break
+
+                                                if delegation_tx.terra.gas_adjustment >= MAX_GAS_ADJUSTMENT:
+                                                    break
+                                            
+                                        if delegation_tx.broadcast_result.is_tx_error():
+                                            print (' 🛎️ The delegation failed, an error occurred:')
+                                            print (f' 🛎️  {delegation_tx.broadcast_result.raw_log}')
+                                        else:
+                                            print (f' ✅ Delegated amount: {wallet.formatUluna(delegated_uluna, True)}')
+                                            print (f' ✅ Tx Hash: {delegation_tx.broadcast_result.txhash}')
                                     else:
-                                        print (f' ✅ Delegated amount: {wallet.formatUluna(delegated_uluna, True)}')
-                                        print (f' ✅ Tx Hash: {delegation_tx.broadcast_result.txhash}')
+                                        print (' 🛎️  The delegation could not be completed')
                                 else:
-                                    print (' 🛎️  The delegation could not be completed')
+                                    print ('🛎️  The delegation could not be completed')
                             else:
-                                print ('🛎️  The delegation could not be completed')
+                                if delegated_uluna <= 0:
+                                    print (' 🛎️  Delegation error: the delegated amount is not greater than zero')
+                                else:
+                                    print (f' 🛎️  Delegation error: the delegated amount of {wallet.formatUluna(delegated_uluna, True)} exceeds the available amount of {wallet.formatUluna(uluna_balance, True)}')
                         else:
-                            if delegated_uluna <= 0:
-                                print (' 🛎️  Delegation error: the delegated amount is not greater than zero')
-                            else:
-                                print (f' 🛎️  Delegation error: the delegated amount of {wallet.formatUluna(delegated_uluna, True)} exceeds the available amount of {wallet.formatUluna(uluna_balance, True)}')
+                            print (' 🛎️  No LUNC to delegate!')
                     else:
-                        print (' 🛎️  No LUNC to delegate!')
+                        print (f' 🛎️  Skipping, the {validator} validator does not seem to be active!')
                 else:
                     print ('This wallet is not configured for delegations')
 
