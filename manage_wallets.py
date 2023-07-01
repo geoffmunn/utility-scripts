@@ -302,7 +302,7 @@ def main():
                     uluna_reward:int = delegations[validator]['rewards'][ULUNA]
 
                     # Only withdraw the staking rewards if the rewards exceed the threshold (if any)
-                    if uluna_reward > wallet.delegations['threshold'] and uluna_reward > 0:
+                    if uluna_reward > wallet.delegations['threshold'] and uluna_reward > 1 * COIN_DIVISOR:
 
                         print (f'Withdrawing {wallet.formatUluna(uluna_reward, False)} rewards')
 
