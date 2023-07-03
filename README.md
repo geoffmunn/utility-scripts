@@ -42,7 +42,7 @@ Current functionality includes:
   These can be installed via pip:
   ```
   python - m pip pip install terra-classic-proto
-  python - m pip pip install terra_classic_sdk
+  python - m pip pip install terra-classic-sdk
   python - m pip install cryptocode
   python - m pip install pyyaml
   ```
@@ -87,7 +87,7 @@ This will return the balances for each coin type on all of your wallets. You pro
 
 ### manage_wallets.py
 
-To make automatically update your wallets, you need to run ```manage_wallets.py```. Provide the same password you used in the configuration step, and then select the operation you want to do.
+To automatically update your wallets, you need to run ```manage_wallets.py```. Provide the same password you used in the configuration step, and then select the operation you want to do.
 
  - **Withdrawals**: All the staking rewards are withdrawn. The fee is paid by either a random minor coin (KRT for example), or LUNC, or USDT (in that order).
  - **Swap**: All the available USTC is swapped for LUNC. Currently the fee must be paid in USTC.
