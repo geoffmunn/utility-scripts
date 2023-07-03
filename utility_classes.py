@@ -34,6 +34,7 @@ from utility_constants import (
     USER_ACTION_CONTINUE,
     USER_ACTION_QUIT,
     UUSD,
+    VERSION_URI,
     WITHDRAWAL_REMAINDER    
 )
 
@@ -66,6 +67,40 @@ from terra_classic_sdk.core.tx import Tx
 from terra_classic_sdk.core.wasm.msgs import MsgExecuteContract
 from terra_classic_sdk.exceptions import LCDResponseError
 from terra_classic_sdk.key.mnemonic import MnemonicKey
+
+def check_version():
+
+    local_json:json  = None
+    remote_json:json = None
+
+    try:
+        with open('version.json') as file:
+            contents = file.read()
+        
+        local_json = json.loads(contents)
+    except:
+        print ('The local version.json file could not be opened.')
+        print ('Please make sure you are using the latest version, check https://github.com/geoffmunn/utility-scripts for updates.')
+
+    if local_json is not None:
+        try:
+            remote_json = requests.get(VERSION_URI).json()
+        except:
+            print ('The remote version.json file could not be opened.')
+            print ('Please make sure you are using the latest version, check https://github.com/geoffmunn/utility-scripts for updates.')
+    else:
+        return False
+    
+    if remote_json is not None:
+        if local_json['version'] != remote_json['version']:
+            print (' 🛎️  A new version is available!')
+            print (' 🛎️  Please check https://github.com/geoffmunn/utility-scripts for updates.')
+            
+            return False
+        else:
+            return True
+    else:
+        return False
 
 def coin_list(input: Coins, existingList: dict) -> dict:
     """ 
@@ -962,27 +997,30 @@ class Delegations(Wallet):
         It may contain more than one validator.
         """
 
-        if len(self.delegations) == 0:
-            terra = TerraInstance().create()
+        prefix = self.getPrefix(wallet_address)
 
-            pagOpt:PaginationOptions = PaginationOptions(limit=50, count_total=True)
-            try:
-                result, pagination = terra.staking.delegations(delegator = wallet_address, params = pagOpt)
+        if prefix == 'terra':
+            if len(self.delegations) == 0:
+                terra = TerraInstance().create()
 
-                delegator:Delegation 
-                for delegator in result:
-                    self.__iter_result__(terra, delegator)
-
-                while pagination['next_key'] is not None:
-
-                    pagOpt.key         = pagination['next_key']
+                pagOpt:PaginationOptions = PaginationOptions(limit=50, count_total=True)
+                try:
                     result, pagination = terra.staking.delegations(delegator = wallet_address, params = pagOpt)
 
                     delegator:Delegation 
                     for delegator in result:
                         self.__iter_result__(terra, delegator)
-            except:
-                print (' 🛎️  Network error: delegations could not be retrieved.')
+
+                    while pagination['next_key'] is not None:
+
+                        pagOpt.key         = pagination['next_key']
+                        result, pagination = terra.staking.delegations(delegator = wallet_address, params = pagOpt)
+
+                        delegator:Delegation 
+                        for delegator in result:
+                            self.__iter_result__(terra, delegator)
+                except:
+                    print (' 🛎️  Network error: delegations could not be retrieved.')
 
         return self.delegations
     
@@ -1015,31 +1053,34 @@ class Undelegations(Wallet):
         It may contain more than one validator.
         """
 
-        if len(self.undelegations) == 0:
-            terra = TerraInstance().create()
+        prefix = self.getPrefix(wallet_address)
 
-            pagOpt:PaginationOptions = PaginationOptions(limit=50, count_total=True)
-            try:
-            
-                result, pagination = terra.staking.unbonding_delegations(delegator = wallet_address, params = pagOpt)
+        if prefix == 'terra':
+            if len(self.undelegations) == 0:
+                terra = TerraInstance().create()
 
-                unbonding:UnbondingDelegation
-                for unbonding in result:
-
-                    self.__iter_result__(unbonding)
-
-                while pagination['next_key'] is not None:
-
-                    pagOpt.key         = pagination['next_key']
+                pagOpt:PaginationOptions = PaginationOptions(limit=50, count_total=True)
+                try:
+                
                     result, pagination = terra.staking.unbonding_delegations(delegator = wallet_address, params = pagOpt)
 
                     unbonding:UnbondingDelegation
                     for unbonding in result:
+
                         self.__iter_result__(unbonding)
 
-            except Exception as err:
-                print (err)
-                print (' 🛎️  Network error: undelegations could not be retrieved.')
+                    while pagination['next_key'] is not None:
+
+                        pagOpt.key         = pagination['next_key']
+                        result, pagination = terra.staking.unbonding_delegations(delegator = wallet_address, params = pagOpt)
+
+                        unbonding:UnbondingDelegation
+                        for unbonding in result:
+                            self.__iter_result__(unbonding)
+
+                except Exception as err:
+                    print (err)
+                    print (' 🛎️  Network error: undelegations could not be retrieved.')
 
         return self.undelegations
 
