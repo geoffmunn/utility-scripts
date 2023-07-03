@@ -78,8 +78,8 @@ def main():
             for validator in delegations:
                 
                 if validator not in validator_template:
-                    #if int(delegations[validator]['balance_amount']) > 0 or len(delegations[validator]['rewards']) > 0:
-                    if len(delegations[validator]['rewards']) > 0:
+                    if int(delegations[validator]['balance_amount']) > 0 and len(delegations[validator]['rewards']) > 0:
+                    #if len(delegations[validator]['rewards']) > 0:
 
                         validator_template.update({validator: ''})
 
