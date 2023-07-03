@@ -3,6 +3,7 @@ from getpass import getpass
 from os.path import exists
 
 from utility_classes import (
+    check_version,
     get_user_choice,
     get_user_number,
     get_user_recipient,
@@ -22,6 +23,9 @@ from utility_constants import (
 #   - check if supplied password is the same as already in use
 
 def main():
+
+    # Check if there is a new version we should be using
+    check_version()
 
     print ('\n*********************************************************************************************************')
     print ('You can add either just an address (for sending funds to), or an entire wallet.')

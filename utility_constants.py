@@ -22,6 +22,7 @@ GAS_ADJUSTMENT_SEND      = 3.6
 GAS_ADJUSTMENT_SWAPS     = 3.6
 GAS_ADJUSTMENT_INCREMENT = 0.1
 MAX_GAS_ADJUSTMENT       = 4
+VERSION_URI              = 'https://raw.githubusercontent.com/geoffmunn/utility-scripts/main/version.json'
 
 # Swap contracts can be found here
 # https://assets.terra.money/cw20/pairs.dex.json

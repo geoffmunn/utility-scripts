@@ -6,6 +6,7 @@ import copy
 from getpass import getpass
 
 from utility_classes import (
+    check_version,
     get_user_choice,
     UserConfig,
     Wallets,
@@ -21,6 +22,9 @@ from utility_constants import (
 
 def main():
     
+    # Check if there is a new version we should be using
+    check_version()
+
     # Get the password that decrypts the user wallets
     decrypt_password:str = getpass() # the secret password that encrypts the seed phrase
 

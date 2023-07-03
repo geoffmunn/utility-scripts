@@ -4,6 +4,7 @@
 from getpass import getpass
 
 from utility_classes import (
+    check_version,
     get_coin_selection,
     get_user_choice,
     get_user_number,
@@ -150,6 +151,9 @@ def get_user_singlechoice(question:str, user_wallets:dict):
     return user_wallet, answer
 
 def main():
+    
+    # Check if there is a new version we should be using
+    check_version()
     
     # Get the password that decrypts the user wallets
     decrypt_password:str = getpass() # the secret password that encrypts the seed phrase

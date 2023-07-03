@@ -4,6 +4,7 @@
 from getpass import getpass
 
 from utility_classes import (
+    check_version,
     get_user_choice,
     get_user_number,
     ULUNA,
@@ -377,6 +378,9 @@ def get_validator_singlechoice(question:str, validators:dict, filter_list:list, 
 #    return num.to_integral() if num == num.to_integral() else num.normalize()
 
 def main():
+
+    # Check if there is a new version we should be using
+    check_version()
 
     # Get the password that decrypts the user wallets
     decrypt_password:str = getpass() # the secret password that encrypts the seed phrase

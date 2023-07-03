@@ -4,6 +4,7 @@
 from getpass import getpass
 
 from utility_classes import (
+    check_version,
     get_user_choice,
     isPercentage,
     ULUNA,
@@ -190,6 +191,9 @@ def get_user_multichoice(question:str, user_wallets:dict) -> dict|str:
     return wallets_to_use, answer
     
 def main():
+    
+    # Check if there is a new version we should be using
+    check_version()
     
     # Get the password that decrypts the user wallets
     decrypt_password:str = getpass() # the secret password that encrypts the seed phrase
