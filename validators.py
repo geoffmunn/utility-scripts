@@ -455,7 +455,11 @@ def main():
 
         print (f'Select a validator to delegate to:')
 
-        user_validator, answer = get_validator_singlechoice("Select a validator number 1 - " + str(len(sorted_validators)) + ", 'X' to continue, or 'Q' to quit: ", sorted_validators, [], delegations)
+        max_number:int = len(sorted_validators)
+        if max_number > MAX_VALIDATOR_COUNT:
+            max_number = MAX_VALIDATOR_COUNT
+
+        user_validator, answer = get_validator_singlechoice("Select a validator number 1 - " + str(max_number) + ", 'X' to continue, or 'Q' to quit: ", sorted_validators, [], delegations)
 
         if answer == USER_ACTION_QUIT:
             print (' 🛑 Exiting...\n')
@@ -622,7 +626,11 @@ def main():
             exit()
 
         print (f'Select a validator to delegate switch TO:')
-        to_validator, answer = get_validator_singlechoice("Select a validator number 1 - " + str(len(sorted_validators)) + ", 'X' to continue, or 'Q' to quit: ", sorted_validators, [], delegations)
+        max_number:int = len(sorted_validators)
+        if max_number > MAX_VALIDATOR_COUNT:
+            max_number = MAX_VALIDATOR_COUNT
+
+        to_validator, answer = get_validator_singlechoice("Select a validator number 1 - " + str(max_number) + ", 'X' to continue, or 'Q' to quit: ", sorted_validators, [], delegations)
 
         if answer == USER_ACTION_QUIT:
             print (' 🛑 Exiting...\n')

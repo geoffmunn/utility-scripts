@@ -1111,14 +1111,12 @@ class Validators():
             if key not in sorted_validators:
                 sorted_validators[moniker] = {}
             
-            current:dict = sorted_validators[moniker]
-
-            current[moniker] = self.validators[validator]['voting_power']
-
+            current:dict               = sorted_validators[moniker]
+            current[moniker]           = self.validators[validator]['voting_power']
             sorted_validators[moniker] = key
 
 
-        sorted_list:list = sorted(sorted_validators.items(), key=lambda x:x[1], reverse=True)[0:130]
+        sorted_list:list = sorted(sorted_validators.items(), key=lambda x:x[1], reverse=True)[0:len(sorted_validators)]
         sorted_validators = dict(sorted_list)
 
         # Populate the sorted list with the actual validators
