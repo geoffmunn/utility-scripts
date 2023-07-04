@@ -34,18 +34,21 @@ Current functionality includes:
  ## Requirements
  
   * python 3.10.9+
-  * terra_proto (Terra Classic version)
   * terra_classic_sdk
+  * terra_proto (Terra Classic version)
   * cryptocode
   * yaml
 
   These can be installed via pip:
+
   ```
-  python - m pip pip install terra-classic-proto
   python - m pip pip install terra-classic-sdk
+  python - m pip pip install terra-classic-proto
   python - m pip install cryptocode
   python - m pip install pyyaml
   ```
+
+NOTE: installing terra-classic-sdk first should automatically install the terra-classic-proto dependency.
 
  ## Installation guide
 
