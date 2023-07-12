@@ -35,6 +35,8 @@ KUJI_SMART_CONTACT_ADDRESS       = 'terra1xfsdgcemqwxp4hhnyk4rle6wr22sseq7j07dnn
 TERRASWAP_UKRW_TO_ULUNA_ADDRESS  = 'terra1erfdlgdtt9e05z0j92wkndwav4t75xzyapntkv'
 TERRASWAP_UKUJI_TO_ULUNA_ADDRESS = 'terra19qx5xe6q9ll4w0890ux7lv2p4mf3csd4qvt3ex'
 TERRASWAP_ULUNA_TO_UUSD_ADDRESS = 'terra1l7vy20x940je7lskm6x9s839vjsmekz9k9mv7g'
+BASE_SMART_CONTRACT_ADDRESS = 'terra1uewxz67jhhhs2tj97pfm2egtk7zqxuhenm4y4m'
+
 # Do not change these:
 
 # Standard actions:
@@ -60,7 +62,7 @@ COIN_DIVISOR = 1000000
 MAX_VALIDATOR_COUNT = 130
 
 # Coin constants:
-
+UBASE = 'ubase'
 ULUNA = 'uluna'
 UKRW  = 'ukrw'
 UUSD  = 'uusd'
@@ -69,6 +71,7 @@ UKUJI = 'ukuji'
 # Coin keys and display values:
 FULL_COIN_LOOKUP = {
     'uaud': 'AUT',
+    'ubase': 'BASE',
     'ucad': 'CAT',
     'uchf': 'CHT',
     'ucny': 'CNT',
