@@ -73,19 +73,22 @@ def check_version():
     local_json:json  = None
     remote_json:json = None
 
+    print ('Checking for new version on Github...', end = '')
     try:
         with open('version.json') as file:
             contents = file.read()
         
         local_json = json.loads(contents)
     except:
+        print ('')
         print ('The local version.json file could not be opened.')
         print ('Please make sure you are using the latest version, check https://github.com/geoffmunn/utility-scripts for updates.')
 
     if local_json is not None:
         try:
-            remote_json = requests.get(VERSION_URI).json()
+            remote_json = requests.get(url = VERSION_URI, timeout = 0.5).json()
         except:
+            print ('')
             print ('The remote version.json file could not be opened.')
             print ('Please make sure you are using the latest version, check https://github.com/geoffmunn/utility-scripts for updates.')
     else:
@@ -93,11 +96,13 @@ def check_version():
     
     if remote_json is not None:
         if local_json['version'] != remote_json['version']:
+            print ('')
             print (' 🛎️  A new version is available!')
             print (' 🛎️  Please check https://github.com/geoffmunn/utility-scripts for updates.')
-            
+
             return False
         else:
+            print ('... done.')
             return True
     else:
         return False
