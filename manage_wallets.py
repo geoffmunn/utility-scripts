@@ -194,7 +194,7 @@ def main():
     
     # Check if there is a new version we should be using
     check_version()
-    
+
     # Get the password that decrypts the user wallets
     decrypt_password:str = getpass() # the secret password that encrypts the seed phrase
 
@@ -311,8 +311,8 @@ def main():
                         print (f'Withdrawing {wallet.formatUluna(uluna_reward, False)} rewards')
 
                         # Update the balances so we know what we have to pay the fee with
-                        wallet.getBalances(True)
-
+                        wallet.getBalances(clear_cache = True)
+                        
                         # Set up the withdrawal object
                         withdrawal_tx = wallet.withdrawal().create(delegations[validator]['delegator'], delegations[validator]['validator'])
 
@@ -379,7 +379,7 @@ def main():
                     print ('Starting swaps...')
 
                     # Update the balances so we know we have the correct amount
-                    wallet.getBalances(True)
+                    wallet.getBalances(clear_cache = True)
                     
                     # We are only supporting swaps with uusd (USTC) at the moment
                     if 'uusd' in wallet.balances:
@@ -455,8 +455,10 @@ def main():
                     print ('Starting delegations...')
 
                     # Update the balances after having done withdrawals and swaps
-                    wallet.getBalances(True)
-                    if delegations[validator]['balance_amount'] > 1 * COIN_DIVISOR:
+                    wallet.getBalances(clear_cache = True)
+                    
+                    # Only proceed if this is an active validator with a non-zero balance
+                    if delegations[validator]['balance_amount'] > 0:
                         if ULUNA in wallet.balances:     
 
                             # Figure out how much to delegate based on the user settings
