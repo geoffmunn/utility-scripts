@@ -1290,7 +1290,6 @@ class TransactionCore():
 
         if has_uluna > 0 or has_uusd > 0 or len(other_coin_list) > 0:
             
-            # @TODO: check that this works for random alts
             if len(other_coin_list) > 0:
                 requested_fee.amount = Coins({Coin(other_coin_list[0].denom, other_coin_list[0].amount)})
             elif has_uluna > 0:
@@ -1304,7 +1303,6 @@ class TransactionCore():
         else:
             print ('Not enough funds to pay for delegation!')
 
-        #print ('calculated fee:', requested_fee)
         return requested_fee
 
     def findTransaction(self) -> bool:
@@ -1396,6 +1394,7 @@ class TransactionCore():
         """
 
         if self.tax_rate is None:
+
             try:
                 tax_rate:json = requests.get(TAX_RATE_URI).json()
                 self.tax_rate = tax_rate
@@ -1546,7 +1545,7 @@ class DelegationTransaction(TransactionCore):
         """
 
         # Set the fee to be None so it is simulated
-        self.fee      = None
+        self.fee = None
         if self.sequence is None:
             self.sequence = self.current_wallet.sequence()
         
@@ -1803,8 +1802,6 @@ class SendTransaction(TransactionCore):
         else:
             return False
         
-        
-        
 class SwapTransaction(TransactionCore):
 
     def __init__(self, *args, **kwargs):
@@ -1831,7 +1828,7 @@ class SwapTransaction(TransactionCore):
 
         if self.contract is not None:
             try:
-                if self.swap_request_denom != UBASE:
+                if self.swap_denom != UBASE and self.swap_request_denom != UBASE:
                     result = self.terra.wasm.contract_query(self.contract, {"pool": {}})
                 
                     parts:dict = {}
@@ -1868,14 +1865,20 @@ class SwapTransaction(TransactionCore):
                                 belief_price:float = parts[UKUJI] / parts[UUSD]
                 else:
                     result = self.terra.wasm.contract_query(self.contract, {"curve_info": {}})
-                    belief_price:float = (float(result['spot_price']) * 1.053) / COIN_DIVISOR
+                    spot_price:float = float(result['spot_price'])
+                    if self.swap_request_denom == UBASE:
+                        belief_price:float =(spot_price * 1.053) / COIN_DIVISOR
+                    else:
+                        belief_price:float = (spot_price - (spot_price * 0.048)) / COIN_DIVISOR
 
             except Exception as err:
                 print (' 🛑 A connection error has occurred')
                 print (err)
                 return None
            
-        return round(belief_price, 18)
+        self.belief_price = round(belief_price, 18)
+
+        return self.belief_price
         
     def create(self):
         """
@@ -2055,19 +2058,32 @@ class SwapTransaction(TransactionCore):
             # We'll use uluna as the preferred fee currency just to keep things simple
             self.fee = self.calculateFee(requested_fee, ULUNA)
             
+            print ('requested fee:', self.fee)
+            
             # Figure out the fee structure
             fee_bit:Coin = Coin.from_str(str(requested_fee.amount))
             fee_amount   = fee_bit.amount
             fee_denom    = fee_bit.denom
 
-            # Calculate the tax portion
-            self.tax = int(math.ceil(self.swap_amount * float(self.tax_rate['tax_rate'])))
+            print ('fee denom:', fee_denom)
 
+            # Calculate the tax portion 
+            if self.swap_denom == UBASE:
+                print ('amount to tax:', self.swap_amount * self.belief_price)
+                self.tax = int(math.ceil((self.swap_amount * self.belief_price) * 0.048))
+            else:
+                self.tax = int(math.ceil(self.swap_amount * float(self.tax_rate['tax_rate'])))
+
+            print ('tax:', self.tax)
             # Build a fee object
             if fee_denom == ULUNA and self.swap_denom == ULUNA:
                 new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount + self.tax))})
+            if self.swap_denom == UBASE:
+                new_coin:Coins = Coins({Coin(fee_denom, int(self.tax))})
             else:
                 new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount)), Coin(self.swap_denom, int(self.tax))})
+
+            print ('FINAL FEE:', new_coin)
 
             requested_fee.amount = new_coin
 
@@ -2082,8 +2098,12 @@ class SwapTransaction(TransactionCore):
                 self.fee_deductables = int(fee_amount + self.tax)
             elif fee_denom == ULUNA and self.swap_denom == UUSD:
                 self.fee_deductables = int(self.tax)
+            elif fee_denom == ULUNA and self.swap_denom == UBASE:
+                self.fee_deductables = int(self.tax)
             else:
                 self.fee_deductables = int(self.tax * 2)
+
+            #print (self.fee_deductables)
 
             return True
         else:
@@ -2107,11 +2127,21 @@ class SwapTransaction(TransactionCore):
             if fee_denom in self.balances:
                 swap_amount = self.swap_amount
 
-                if self.tax is not None:
-                    if self.fee_deductables is not None:
-                        swap_amount = swap_amount - self.fee_deductables
+                print ('tax:', self.tax)
+                print ('fee deductables:', self.fee_deductables)
+                print ('swap amount 1:', swap_amount)
+                #if self.tax is not None:
+                #    if self.fee_deductables is not None:
+                #        if swap_amount + self.fee_deductables > self.balances[self.swap_denom]
+                #            swap_amount = swap_amount - self.fee_deductables
 
-                if self.swap_request_denom == UBASE:
+                print ('swap denom:', self.swap_denom)
+                print ('request denom:', self.swap_request_denom)
+                print ('swap amount 2:', swap_amount)
+
+                if self.swap_denom == ULUNA and self.swap_request_denom == UBASE:
+                    print ('swapping lunc to base')
+                    # We are swapping LUNC for BASE
                     tx_msg = MsgExecuteContract(
                         sender = self.current_wallet.key.acc_address,
                         contract = self.contract,
@@ -2123,6 +2153,23 @@ class SwapTransaction(TransactionCore):
                     options = CreateTxOptions(
                         fee        = self.fee,
                         gas        = 1000000,
+                        gas_prices = {'uluna': self.gas_list['uluna']},
+                        msgs       = [tx_msg],
+                        sequence   = self.sequence,
+                    )
+                elif self.swap_denom == UBASE:
+                    print ('swapping base to lunc:', swap_amount)
+                    # We are swapping BASE back to ULUNA
+                    tx_msg = MsgExecuteContract(
+                        sender = self.current_wallet.key.acc_address,
+                        contract = self.contract,
+                        execute_msg = {
+                            "burn": {"amount": str(swap_amount)}
+                        }
+                    )
+                    options = CreateTxOptions(
+                        fee        = self.fee,
+                        gas        = 500000,
                         gas_prices = {'uluna': self.gas_list['uluna']},
                         msgs       = [tx_msg],
                         sequence   = self.sequence,
@@ -2147,6 +2194,7 @@ class SwapTransaction(TransactionCore):
                         },
                         coins = Coins(str(swap_amount) + self.swap_denom)
                     )
+
                     options = CreateTxOptions(
                         fee        = self.fee,
                         gas        = 1000000,
@@ -2161,6 +2209,10 @@ class SwapTransaction(TransactionCore):
                     options.fee_denoms = [ULUNA]
                     options.gas_prices = {ULUNA: self.gas_list[ULUNA]}
 
+                print ('fee:', self.fee)
+
+                print (tx_msg)
+                print (options)
                 tx:Tx = None
                 while True:
                     try:
@@ -2233,6 +2285,13 @@ class SwapTransaction(TransactionCore):
                         swap_details:Coin = Coin(self.swap_request_denom, int(0))
                 else:
                     swap_details:Coin = Coin(self.swap_request_denom, 0)
+            elif self.swap_denom == UBASE:
+                if self.swap_request_denom == ULUNA:
+                    swap_price = self.beliefPrice()
+                    swap_details:Coin = Coin(self.swap_request_denom, int(self.swap_amount * swap_price))
+                else:
+                    swap_details:Coin = Coin(self.swap_request_denom, 0)
+
             else:
                 print ('UNSUPPORTED SWAP RATE')
                 print ('swap denom:', self.swap_denom)
