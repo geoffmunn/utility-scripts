@@ -2,17 +2,10 @@
 # -*- coding: UTF-8 -*-
 
 # User settings - can be changed if required
-TESTMODE = False
 WITHDRAWAL_REMAINDER = 250   # This is the amount of Lunc we want to keep after withdrawal and before delegating. You should never delegate the entire balance.
 SEARCH_RETRY_COUNT   = 30    # This is the number of times we will check for a transaction to appear in the chain before deciding it didn't work.
 
-# https://finder.terrarebels.net/classic/tx/62E1469304FC43107D3F572961B1865553191FFFAF9DFA8387BE3F6912809AC0
-
 # System settings - these can be changed, but shouldn't be necessary
-#DEFAULT_CHAIN_ID         = 'columbus-5'
-#LCD_ENDPOINT             = 'https://lcd.terrarebels.net'
-#LCD_ENDPOINT             = 'https://lcd.terra.dev'
-#LCD_ENDPOINT             = 'https://terra-classic-lcd.publicnode.com'
 GAS_PRICE_URI            = 'https://terra-classic-fcd.publicnode.com/v1/txs/gas_prices'
 TAX_RATE_URI             = 'https://terra-classic-lcd.publicnode.com/terra/treasury/v1beta1/tax_rate'
 TOKEN_LIST               = 'https://assets.terrarebels.net/cw20/tokens.json'
@@ -63,44 +56,44 @@ MAX_VALIDATOR_COUNT = 130
 
 # Coin constants:
 UBASE = 'ubase'
-ULUNA = 'uluna'
 UKRW  = 'ukrw'
-UUSD  = 'uusd'
 UKUJI = 'ukuji'
+ULUNA = 'uluna'
+UUSD  = 'uusd'
 
 # Coin keys and display values:
 FULL_COIN_LOOKUP = {
-    'uaud': 'AUT',
+    'uaud':  'AUT',
     'ubase': 'BASE',
-    'ucad': 'CAT',
-    'uchf': 'CHT',
-    'ucny': 'CNT',
-    'udkk': 'DKT',
-    'ueur': 'EUT',
-    'ugbp': 'GBT',
-    'uhkd': 'HKT',
-    'uidr': 'IDT',
-    'uinr': 'INT',
-    'ujpy': 'JPT',
-    'ukrw': 'KRT',
+    'ucad':  'CAT',
+    'uchf':  'CHT',
+    'ucny':  'CNT',
+    'udkk':  'DKT',
+    'ueur':  'EUT',
+    'ugbp':  'GBT',
+    'uhkd':  'HKT',
+    'uidr':  'IDT',
+    'uinr':  'INT',
+    'ujpy':  'JPT',
+    'ukrw':  'KRT',
     'ukuji': 'KUJI',
     'uluna': 'LUNC',
-    'umnt': 'MNT',
-    'umyr': 'MYT',
-    'unok': 'NOT',
+    'umnt':  'MNT',
+    'umyr':  'MYT',
+    'unok':  'NOT',
     'uosmo': 'OSMO',
-    'uphp': 'PHT',
-    'usdr': 'SDT',
-    'usek': 'SET',
-    'usgd': 'SGT',
-    'uthb': 'THT',
-    'utwd': 'TWT',
-    'uusd': 'UST'
+    'uphp':  'PHT',
+    'usdr':  'SDT',
+    'usek':  'SET',
+    'usgd':  'SGT',
+    'uthb':  'THT',
+    'utwd':  'TWT',
+    'uusd':  'UST'
 }
 
 BASIC_COIN_LOOKUP = {
     'uluna': 'LUNC',
-    'uusd': 'UST'
+    'uusd':  'UST'
 }
 
 # CHAIN_IDS = {
@@ -200,14 +193,3 @@ IBC_ADDRESSES = {
         }
     }
 }
-
-
-#terra = LCDClient(chain_id='juno-1', url = 'https://juno-lcd.stakely.io')
-#terra=LCDClient(chain_id='emoney-3', url='https://emoney.validator.network/api/')
-#terra=LCDClient(chain_id='sifchain-1', url='https://rest.cosmos.directory/sifchain')
-#terra=LCDClient(chain_id='injective-1', url='https://rest.cosmos.directory/injective')
-#terra=LCDClient(chain_id='axelar-dojo-1', url='https://rest.cosmos.directory/axelar')
-#terra=LCDClient(chain_id='umee-1', url='https://rest.cosmos.directory/umee')
-#terra=LCDClient(chain_id='omniflixhub-1', url='https://rest.cosmos.directory/omniflixhub')
-#terra=LCDClient(chain_id='gravity-bridge-3', url='https://rest.cosmos.directory/gravitybridge')
-#terra=LCDClient(chain_id='sommelier-3', url='https://rest.cosmos.directory/sommelier')
