@@ -243,7 +243,7 @@ def main():
         if result == True:
             print (swaps_tx.readableFee())
             
-            user_choice = get_user_choice('Do you want to continue? ', [])
+            user_choice = get_user_choice('Do you want to continue? (y/n) ', [])
 
             if user_choice == False:
                 exit()
@@ -255,7 +255,7 @@ def main():
         if result == True:
             print (swaps_tx.readableFee())
 
-            user_choice = get_user_choice('Do you want to continue? ', [])
+            user_choice = get_user_choice('Do you want to continue? (y/n) ', [])
 
             if user_choice == False:
                 exit()
