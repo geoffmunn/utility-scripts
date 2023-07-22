@@ -201,6 +201,7 @@ def get_send_to_address(user_wallets:Wallet):
 
         count          = 0
         wallet_numbers = {}
+        wallets_by_name = {}
 
         print ('\n' + horizontal_spacer)
         print (header_string)
@@ -211,7 +212,8 @@ def get_send_to_address(user_wallets:Wallet):
 
             count += 1
             wallet_numbers[count] = wallet
-                
+            wallets_by_name[wallet.name.lower()] = count
+
             if wallet_name in wallets_to_use:
                 glyph = '✅'
             else:
@@ -229,6 +231,10 @@ def get_send_to_address(user_wallets:Wallet):
         print ('You can also send to a completely new address by entering the wallet address.\n')
 
         answer = input("What is the address you are sending to? (or type 'X' to continue, or 'Q' to quit) ").lower()
+        
+        # Check if someone typed the name of a wallet
+        if answer in wallets_by_name.keys():
+            answer = str(wallets_by_name[answer])
         
         if answer.isdigit() and int(answer) in wallet_numbers:
 
