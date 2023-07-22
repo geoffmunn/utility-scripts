@@ -21,7 +21,6 @@ from utility_constants import (
     GAS_ADJUSTMENT_INCREMENT,
     GAS_ADJUSTMENT_SEND,
     MAX_GAS_ADJUSTMENT,
-    UBASE,
     ULUNA,
     USER_ACTION_CONTINUE,
     USER_ACTION_QUIT,
@@ -363,14 +362,12 @@ def main():
             send_tx.is_ibc_transfer = True
             send_tx.source_channel = CHAIN_IDS[address_prefix]['ibc_channels'][0]
 
-        #if denom == UBASE:
-
         # Assign the details:
         send_tx.recipient_address = recipient_address
         send_tx.memo              = memo
         send_tx.amount            = int(uluna_amount)
         send_tx.denom             = denom
-
+        
         if denom != ULUNA:
             
             result = send_tx.simulate()
