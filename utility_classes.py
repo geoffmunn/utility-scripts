@@ -1784,7 +1784,11 @@ class SendTransaction(TransactionCore):
             if self.is_ibc_transfer == False:
                 
                 # Calculate the tax portion
-                self.tax = int(math.ceil(self.amount * float(self.tax_rate['tax_rate'])))
+                if self.denom == UBASE:
+                    # No taxes for BASE transfers
+                    self.tax = 0
+                else:
+                    self.tax = int(math.ceil(self.amount * float(self.tax_rate['tax_rate'])))
 
                 # Build a fee object
                 if fee_denom == ULUNA and self.denom == ULUNA:
@@ -2144,8 +2148,8 @@ class SwapTransaction(TransactionCore):
 
                 if self.tax is not None:
                    if self.fee_deductables is not None:
-                       if swap_amount + self.fee_deductables > self.balances[self.swap_denom]:
-                           swap_amount = swap_amount - self.fee_deductables
+                       if int(swap_amount + self.fee_deductables) > int(self.balances[self.swap_denom]):
+                           swap_amount = int(swap_amount - self.fee_deductables)
 
                 if self.swap_denom == ULUNA and self.swap_request_denom == UBASE:
                     print ('swapping lunc to base')
