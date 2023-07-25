@@ -2,12 +2,13 @@
 # -*- coding: UTF-8 -*-
 
 import cryptocode
-from datetime import datetime
+from datetime import datetime, tzinfo
 import json
 import math
 import requests
 import time
 import yaml
+from dateutil.tz import tz
 
 import traceback
 
@@ -1122,9 +1123,26 @@ class Undelegations(Wallet):
             undelegated_amount:float = 0
             entries:list             = []
             
+            utc_zone = tz.gettz('UTC')
+            base_zone = tz.gettz('US/Eastern')
+
             for base_item in base_undelegations:
                 undelegated_amount += base_item['luncNetReleased']
-                entries.append({'balance': base_item['luncNetReleased'] * COIN_DIVISOR, 'completion_time': base_item['releaseDate']})
+
+                # Convert the BASE date to a UTC format
+                # First, we need to swap it to a d/m/y format
+                release_date_bits = base_item['releaseDate'].split('/')
+                release_date      = f"{release_date_bits[1]}/{release_date_bits[0]}/{release_date_bits[2]}" 
+                base_time         = datetime.strptime(release_date, '%d/%m/%Y')
+
+                # Now give it the timezone that BASE works in
+                base_time = base_time.replace(tzinfo = base_zone)
+                # Convert time to UTC
+                utc_time = base_time.astimezone(utc_zone)
+                # Generate UTC time string
+                utc_string = utc_time.strftime('%d/%m/%Y')
+
+                entries.append({'balance': base_item['luncNetReleased'] * COIN_DIVISOR, 'completion_time': utc_string})
             
             self.undelegations['base'] = {'balance_amount': undelegated_amount * COIN_DIVISOR, 'entries': entries}
 
