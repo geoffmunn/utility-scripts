@@ -1001,7 +1001,8 @@ class Delegations(Wallet):
         validator_commission = round(validator_commission * 100, 2)
 
         # Set up the object with the details we're interested in
-        self.delegations[validator_name] = {'balance_amount': balance_amount, 'balance_denom': balance_denom, 'commission': validator_commission, 'delegator': delegator_address, 'rewards': reward_coins, 'validator': validator_address,  'validator_name': validator_name}
+        if balance_amount > 0:
+            self.delegations[validator_name] = {'balance_amount': balance_amount, 'balance_denom': balance_denom, 'commission': validator_commission, 'delegator': delegator_address, 'rewards': reward_coins, 'validator': validator_address,  'validator_name': validator_name}
         
     def create(self, wallet_address:str) -> dict:
         """
