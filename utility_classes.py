@@ -2,6 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 import cryptocode
+from datetime import datetime
 import json
 import math
 import requests
@@ -832,7 +833,7 @@ class Wallet:
         """
 
         if self.undelegation_details is None:
-            self.undelegation_details = Undelegations().create(self.address)
+            self.undelegation_details = Undelegations().create(self.address, self.balances)
 
         return self.undelegation_details
     
@@ -961,9 +962,7 @@ class TerraInstance:
             )
 
             self.terra = terra
-        #else:
-        #    print ("NOT IN CHAIN IDS")
-
+        
         return self.terra
 
     def instance(self) -> LCDClient:
@@ -1049,8 +1048,11 @@ class Undelegations(Wallet):
         # Get the basic details about the delegator and validator etc
         delegator_address:str = undelegation.delegator_address
         validator_address:str = undelegation.validator_address
-        entries:list          = undelegation.entries
+        entries:list          = []
 
+        for entry in undelegation.entries:
+            entries.append({'balance': entry.balance, 'completion_time': datetime.strptime(entry.completion_time, '%m/%d/%Y')})
+       
         # Get the total balance from all the entries
         balance_total:int = 0
         for entry in entries:
@@ -1059,7 +1061,27 @@ class Undelegations(Wallet):
         # Set up the object with the details we're interested in
         self.undelegations[validator_address] = {'balance_amount': balance_total, 'delegator_address': delegator_address, 'validator_address': validator_address, 'entries': entries}
  
-    def create(self, wallet_address:str) -> dict:
+    def getUbaseUndelegations(self, wallet_address:str) -> list:
+        """
+        Get the undelegations that are in progress for BASE.
+
+        This returns a list of the active undelegations.
+        """
+
+        result:json  = requests.get('https://raw.githubusercontent.com/lbunproject/BASEswap-api-price/main/public/unstaked_plus_hashes.json').json()
+        results:list = []
+        today        = datetime.now()
+
+        for undelegation in result:
+            if datetime.strptime(undelegation['releaseDate'], '%m/%d/%Y') > today:
+                if undelegation['sendTo'] == wallet_address:
+                    results.append(undelegation)
+            else:
+                break
+
+        return results
+    
+    def create(self, wallet_address:str, balances:dict) -> dict:
         """
         Create a dictionary of information about the delegations on this wallet.
         It may contain more than one validator.
@@ -1093,6 +1115,18 @@ class Undelegations(Wallet):
                 except Exception as err:
                     print (err)
                     print (' 🛎️  Network error: undelegations could not be retrieved.')
+
+        # Get any BASE undelegations currently in progress
+        if 'ubase' in balances:
+            base_undelegations       = self.getUbaseUndelegations(wallet_address)
+            undelegated_amount:float = 0
+            entries:list             = []
+            
+            for base_item in base_undelegations:
+                undelegated_amount += base_item['luncNetReleased']
+                entries.append({'balance': base_item['luncNetReleased'] * COIN_DIVISOR, 'completion_time': base_item['releaseDate']})
+            
+            self.undelegations['base'] = {'balance_amount': undelegated_amount * COIN_DIVISOR, 'entries': entries}
 
         return self.undelegations
 
@@ -1167,7 +1201,6 @@ class Validators():
             current:dict               = sorted_validators[moniker]
             current[moniker]           = self.validators[validator]['voting_power']
             sorted_validators[moniker] = key
-
 
         sorted_list:list = sorted(sorted_validators.items(), key=lambda x:x[1], reverse=True)[0:len(sorted_validators)]
         sorted_validators = dict(sorted_list)
@@ -1324,6 +1357,7 @@ class TransactionCore():
             if len(result['txs']) > 0 and int(result['pagination']['total']) > 0:
                 if result['txs'][0].code == 0:
                     print ('Found the hash!')
+                    time.sleep(1)
                     transaction_found = True
                     break
 
@@ -2152,7 +2186,6 @@ class SwapTransaction(TransactionCore):
                            swap_amount = int(swap_amount - self.fee_deductables)
 
                 if self.swap_denom == ULUNA and self.swap_request_denom == UBASE:
-                    print ('swapping lunc to base')
                     # We are swapping LUNC for BASE
                     tx_msg = MsgExecuteContract(
                         sender = self.current_wallet.key.acc_address,
@@ -2170,7 +2203,6 @@ class SwapTransaction(TransactionCore):
                         sequence   = self.sequence,
                     )
                 elif self.swap_denom == UBASE:
-                    print ('swapping base to lunc:', swap_amount)
                     # We are swapping BASE back to ULUNA
                     tx_msg = MsgExecuteContract(
                         sender = self.current_wallet.key.acc_address,
@@ -2221,10 +2253,6 @@ class SwapTransaction(TransactionCore):
                     options.fee_denoms = [ULUNA]
                     options.gas_prices = {ULUNA: self.gas_list[ULUNA]}
 
-                #print ('fee:', self.fee)
-
-                #print (tx_msg)
-                #print (options)
                 tx:Tx = None
                 while True:
                     try:
@@ -2303,6 +2331,8 @@ class SwapTransaction(TransactionCore):
                     swap_details:Coin = Coin(self.swap_request_denom, int(self.swap_amount * swap_price))
                 else:
                     swap_details:Coin = Coin(self.swap_request_denom, 0)
+            elif self.swap_denom == UUSD and self.swap_request_denom == UBASE:
+                swap_details:Coin = Coin(self.swap_request_denom, 0)
 
             else:
                 print ('UNSUPPORTED SWAP RATE')

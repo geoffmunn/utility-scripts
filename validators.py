@@ -379,6 +379,16 @@ def get_validator_singlechoice(question:str, validators:dict, filter_list:list, 
 
 def main():
 
+    # today = datetime.now()
+    # test_date = datetime.strptime('4/23/2023', '%m/%d/%Y')
+
+    # print (today)
+    # print (test_date)
+
+    # diff = (test_date-today).days
+    # print (diff)
+    # exit()
+
     # Check if there is a new version we should be using
     check_version()
 
@@ -715,19 +725,32 @@ def main():
             exit()
             
         undelegations = wallet.getUndelegations()
-        today = datetime.now(timezone.utc)
+        
+        today = datetime.now()
 
         print ('')
 
         if len (undelegations) > 0:
             for undelegation in undelegations:
-                print (validator_list[undelegations[undelegation]['validator_address']]['moniker'])
-                for entry in undelegations[undelegation]['entries']:
+                if undelegation == 'base':
+                    #print (undelegation)
+                    print ('BASE')
+                else:
+                    print (validator_list[undelegations[undelegation]['validator_address']]['moniker'])
 
-                    finish_day = entry.completion_time
+                for entry in undelegations[undelegation]['entries']:
+                    #print ('entry:', entry)
+                    #print (entry['balance'])
+                    finish_day = datetime.strptime(entry['completion_time'], '%m/%d/%Y')
+
+                    #today = datetime.now()
+                    #test_date = datetime.strptime('4/23/2023', '%m/%d/%Y')
+    
+                    # print (finish_day)
+                    # print (today)
                     days_until = (finish_day - today).days
 
-                    print (f"{wallet.formatUluna(entry.balance, True)} becomes available in {days_until} days")
+                    print (f"{wallet.formatUluna(entry['balance'], True)} becomes available in {days_until} days")
         else:
             print ('No undelegations are currently in progress')
                 
