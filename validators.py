@@ -733,21 +733,13 @@ def main():
         if len (undelegations) > 0:
             for undelegation in undelegations:
                 if undelegation == 'base':
-                    #print (undelegation)
                     print ('BASE')
                 else:
                     print (validator_list[undelegations[undelegation]['validator_address']]['moniker'])
 
                 for entry in undelegations[undelegation]['entries']:
-                    #print ('entry:', entry)
-                    #print (entry['balance'])
-                    finish_day = datetime.strptime(entry['completion_time'], '%m/%d/%Y')
+                    finish_day = datetime.strptime(entry['completion_time'], '%d/%m/%Y')
 
-                    #today = datetime.now()
-                    #test_date = datetime.strptime('4/23/2023', '%m/%d/%Y')
-    
-                    # print (finish_day)
-                    # print (today)
                     days_until = (finish_day - today).days
 
                     print (f"{wallet.formatUluna(entry['balance'], True)} becomes available in {days_until} days")
