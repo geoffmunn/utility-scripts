@@ -1052,12 +1052,12 @@ class Undelegations(Wallet):
         entries:list          = []
 
         for entry in undelegation.entries:
-            entries.append({'balance': entry.balance, 'completion_time': datetime.strptime(entry.completion_time, '%m/%d/%Y')})
+            entries.append({'balance': entry.balance, 'completion_time': entry.completion_time.strftime('%m/%d/%Y')})
        
         # Get the total balance from all the entries
         balance_total:int = 0
         for entry in entries:
-            balance_total += entry.balance
+            balance_total += entry['balance']
 
         # Set up the object with the details we're interested in
         self.undelegations[validator_address] = {'balance_amount': balance_total, 'delegator_address': delegator_address, 'validator_address': validator_address, 'entries': entries}
