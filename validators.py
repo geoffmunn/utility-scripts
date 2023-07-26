@@ -435,7 +435,7 @@ def main():
     # Get the desired actions
     print ('\nWhat action do you want to take?\n')
     print ('  (D)  Delegate to a validator')
-    print ('  (U)  Undelegate all coins from a validator')
+    print ('  (U)  Undelegate coins from a validator')
     print ('  (S)  Switch validators')
     print ('  (L)  List undelegations in progress')
     print ('  (Q)  Quit\n')
@@ -715,17 +715,11 @@ def main():
     
     if user_action == USER_ACTION_VALIDATOR_LIST_UNDELEGATIONS:
         
-        validators = Validators()
-        validators.create()
-
+        # Get the validator list and the undelegations in progress
         validator_list:dict = validators.validators_by_address
-
-        if len(validator_list) == 0:
-            print (' 🛑 No validators could be retrieved - perhaps there are network issues?')
-            exit()
-            
-        undelegations = wallet.getUndelegations()
+        undelegations:dict  = wallet.getUndelegations()
         
+        # Use today's date. 
         today = datetime.now()
 
         print ('')
@@ -747,8 +741,6 @@ def main():
             print ('No undelegations are currently in progress')
                 
         print ('')
-       
-    #print (' 💯 Done!')
 
 if __name__ == "__main__":
     """ This is executed when run from the command line """
