@@ -17,6 +17,7 @@ from utility_constants import (
     #ASTROPORT_UUSD_TO_ULUNA_ADDRESS,
     BASE_SMART_CONTRACT_ADDRESS,
     CHAIN_IDS,
+    CHECK_FOR_UPDATES,
     COIN_DIVISOR,
     CONFIG_FILE_NAME,
     FULL_COIN_LOOKUP,
@@ -73,43 +74,50 @@ from terra_classic_sdk.exceptions import LCDResponseError
 from terra_classic_sdk.key.mnemonic import MnemonicKey
 
 def check_version():
+    """
+    Check the github repo to see if there's a new version.
+    This check can be disabled by changing CHECK_FOR_UPDATES in the constants file.
+    """
 
-    local_json:json  = None
-    remote_json:json = None
+    if CHECK_FOR_UPDATES == True:
+        local_json:json  = None
+        remote_json:json = None
 
-    print ('Checking for new version on Github...', end = '')
-    try:
-        with open('version.json') as file:
-            contents = file.read()
-        
-        local_json = json.loads(contents)
-    except:
-        print ('')
-        print ('The local version.json file could not be opened.')
-        print ('Please make sure you are using the latest version, check https://github.com/geoffmunn/utility-scripts for updates.')
-
-    if local_json is not None:
+        print ('Checking for new version on Github...', end = '')
         try:
-            remote_json = requests.get(url = VERSION_URI, timeout = 0.5).json()
+            with open('version.json') as file:
+                contents = file.read()
+            
+            local_json = json.loads(contents)
         except:
             print ('')
-            print ('The remote version.json file could not be opened.')
+            print ('The local version.json file could not be opened.')
             print ('Please make sure you are using the latest version, check https://github.com/geoffmunn/utility-scripts for updates.')
-    else:
-        return False
-    
-    if remote_json is not None:
-        if local_json['version'] != remote_json['version']:
-            print ('')
-            print (' 🛎️  A new version is available!')
-            print (' 🛎️  Please check https://github.com/geoffmunn/utility-scripts for updates.')
 
-            return False
+        if local_json is not None:
+            try:
+                remote_json = requests.get(url = VERSION_URI, timeout = 1).json()
+            except:
+                print ('')
+                print ('The remote version.json file could not be opened.')
+                print ('Please make sure you are using the latest version, check https://github.com/geoffmunn/utility-scripts for updates.')
         else:
-            print ('... you have the latest version.')
-            return True
+            return False
+        
+        if remote_json is not None:
+            if local_json['version'] != remote_json['version']:
+                print ('')
+                print (' 🛎️  A new version is available!')
+                print (' 🛎️  Please check https://github.com/geoffmunn/utility-scripts for updates.')
+
+                return False
+            else:
+                print ('... you have the latest version.')
+                return True
+        else:
+            return False
     else:
-        return False
+        return True
 
 def coin_list(input: Coins, existingList: dict) -> dict:
     """ 
