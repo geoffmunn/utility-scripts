@@ -2138,14 +2138,14 @@ class SwapTransaction(TransactionCore):
             # We'll use uluna as the preferred fee currency just to keep things simple
             self.fee = self.calculateFee(requested_fee, ULUNA)
             
-            print ('requested fee:', self.fee)
+            #print ('requested fee:', self.fee)
             
             # Figure out the fee structure
             fee_bit:Coin = Coin.from_str(str(requested_fee.amount))
             fee_amount   = fee_bit.amount
             fee_denom    = fee_bit.denom
 
-            print ('fee denom:', fee_denom)
+            #print ('fee denom:', fee_denom)
 
             # Calculate the tax portion 
             if self.swap_denom == UBASE:
@@ -2153,7 +2153,7 @@ class SwapTransaction(TransactionCore):
             else:
                 self.tax = int(math.ceil(self.swap_amount * float(self.tax_rate['tax_rate'])))
 
-            print ('tax:', self.tax)
+            #print ('tax:', self.tax)
             # Build a fee object
             if fee_denom == ULUNA and self.swap_denom == ULUNA:
                 new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount + self.tax))})
@@ -2162,7 +2162,7 @@ class SwapTransaction(TransactionCore):
             else:
                 new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount)), Coin(self.swap_denom, int(self.tax))})
 
-            print ('FINAL FEE:', new_coin)
+            #print ('FINAL FEE:', new_coin)
 
             requested_fee.amount = new_coin
 
