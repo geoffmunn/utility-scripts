@@ -11,22 +11,26 @@ They are intended to be useful for anyone making repeated interactions across mu
 Current functionality includes:
 
  * Address book functionality for commonly used addresses
+   * Includes LUNC and any supported IBC address
  * Viewing the balances across all your wallets
  * Withdrawing rewards from validator delegations
- * Swapping USTC for LUNC
- * Staking LUNC with validators
- * Sending LUNC to other addresses
- * Swapping Terra coins (KRT, MNT, IDT etc) to USTC or LUNC where possible
- * IBC integration
  * Managing validators
    * Delegating to new validators
    * Switching between validators
    * Undelegating from validators
    * Viewing undelegations in progress
+ * Swapping USTC for LUNC
+ * Staking LUNC with validators
+ * Sending LUNC to other addresses
+ * Swapping Terra coins (KRT, MNT, IDT etc) to USTC or LUNC where possible
+ * IBC integration
+   * Send LUNC to Kujira and Osmosis addresses
+ * Support for LUNC chain projects
+   * BASE token swapping and sending
 
  ## Why should you use these scripts?
 
- By running these on your own computer, you get direct access to the Luna Classic chain. You don't need to rely on 3rd party software like the Terra Station, browser extension wallets, or centralised exchanges.
+ By running these on your own computer, you get direct access to the Luna Classic chain. You don't need to rely on 3rd party software like the Terra Station app, browser extension wallets, or centralised exchanges.
 
 
  You can also be sure you're getting the correct prices and fees. You can edit the script to behave differently if you want to.
