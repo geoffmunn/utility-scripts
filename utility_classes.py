@@ -1254,6 +1254,7 @@ class TransactionCore():
         self.fee:Fee                                 = None
         self.gas_list:json                           = None
         self.gas_price_url:str                       = None
+        self.height:int                              = None
         self.seed:str                                = ''
         self.sequence:int                            = None
         self.tax_rate:json                           = None
@@ -1294,9 +1295,8 @@ class TransactionCore():
                 # Wait for this transaction to appear in the blockchain
                 if not self.broadcast_result.is_tx_error():
                     while True:
-                        result:dict = self.terra.tx.search([("tx.hash", self.broadcast_result.txhash)])
-                        self.terra.tx.search
-                        
+                        result:dict = self.search_by_transaction(self.broadcast_result.txhash)
+
                         if len(result['txs']) > 0:
                             print ('Transaction received')
                             break
@@ -1448,6 +1448,18 @@ class TransactionCore():
                 first = False
 
         return fee_string
+    
+    def search_by_transaction(self, tx_hash:str) -> dict:
+        """
+        Search the blockchain for this particular transaction.
+        """
+
+        if self.height is not None:
+            result:dict = self.terra.tx.search([('tx.hash', tx_hash), ('tx.height', self.height)])
+        else:
+            result:dict = self.terra.tx.search([('tx.hash', tx_hash)])
+
+        return result
     
     def taxRate(self) -> json:
         """
@@ -2134,11 +2146,13 @@ class SwapTransaction(TransactionCore):
             # Get the stub of the requested fee so we can adjust it
             requested_fee:Fee = tx.auth_info.fee
 
+            #print ('requested fee:', requested_fee)
             # This will be used by the swap function next time we call it
             # We'll use uluna as the preferred fee currency just to keep things simple
             self.fee = self.calculateFee(requested_fee, ULUNA)
+            #self.fee = self.calculateFee(requested_fee)
             
-            #print ('requested fee:', self.fee)
+            #print ('calculated fee:', self.fee)
             
             # Figure out the fee structure
             fee_bit:Coin = Coin.from_str(str(requested_fee.amount))
@@ -2197,6 +2211,9 @@ class SwapTransaction(TransactionCore):
 
         if self.belief_price is not None:
             
+            # Store the current block here - needed for transaction searches
+            self.height = self.terra.tendermint.block_info()['block']['header']['height']
+
             if self.fee is not None:
                 fee_amount:list = self.fee.amount.to_list()
                 fee_coin:Coin   = fee_amount[0]
