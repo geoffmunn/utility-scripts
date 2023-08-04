@@ -1292,30 +1292,14 @@ class TransactionCore():
                 # Send this back for a retry with a higher gas adjustment value
                 return self.broadcast_result
             else:
-                # Wait for this transaction to appear in the blockchain
-                if not self.broadcast_result.is_tx_error():
-                    while True:
-                        result:dict = self.search_by_transaction(self.broadcast_result.txhash)
-
-                        if len(result['txs']) > 0:
-                            print ('Transaction received')
-                            break
-                            
-                        else:
-                            print ('No such tx yet...')
-
                 # Find the transaction on the network and return the result
                 try:
-                    if 'code' in result and result.code == 5:
-                        print (' 🛑 A transaction error occurred.')
-            
-                    else:
-                        transaction_confirmed = self.findTransaction()
+                    transaction_confirmed = self.findTransaction()
 
-                        if transaction_confirmed == True:
-                            print ('This transaction should be visible in your wallet now.')
-                        else:
-                            print ('The transaction did not appear after many searches. Future transactions might fail due to a lack of expected funds.')
+                    if transaction_confirmed == True:
+                        print ('This transaction should be visible in your wallet now.')
+                    else:
+                        print ('The transaction did not appear. Future transactions might fail due to a lack of expected funds.')
                 except Exception as err:
                     print (err)
 
@@ -1371,12 +1355,16 @@ class TransactionCore():
         If it can't be found within 10 attempts, then give up.
         """
 
+        # Store the current block here - needed for transaction searches
+        self.height = self.terra.tendermint.block_info()['block']['header']['height']
+
         transaction_found:bool = False
 
         result:dict = self.terra.tx.search([
             ("message.sender", self.current_wallet.key.acc_address),
             ("message.recipient", self.current_wallet.key.acc_address),
-            ('tx.hash', self.broadcast_result.txhash)
+            ('tx.hash', self.broadcast_result.txhash),
+            ('tx.height', self.height)
         ])
 
         retry_count = 0
@@ -1386,6 +1374,10 @@ class TransactionCore():
                     print ('Found the hash!')
                     time.sleep(1)
                     transaction_found = True
+                    break
+                if result['txs'][0].code == 5:
+                    print (' 🛑 A transaction error occurred.')
+                    transaction_found = False
                     break
 
             retry_count += 1
@@ -1448,18 +1440,6 @@ class TransactionCore():
                 first = False
 
         return fee_string
-    
-    def search_by_transaction(self, tx_hash:str) -> dict:
-        """
-        Search the blockchain for this particular transaction.
-        """
-
-        if self.height is not None:
-            result:dict = self.terra.tx.search([('tx.hash', tx_hash), ('tx.height', self.height)])
-        else:
-            result:dict = self.terra.tx.search([('tx.hash', tx_hash)])
-
-        return result
     
     def taxRate(self) -> json:
         """
@@ -2211,9 +2191,6 @@ class SwapTransaction(TransactionCore):
 
         if self.belief_price is not None:
             
-            # Store the current block here - needed for transaction searches
-            self.height = self.terra.tendermint.block_info()['block']['header']['height']
-
             if self.fee is not None:
                 fee_amount:list = self.fee.amount.to_list()
                 fee_coin:Coin   = fee_amount[0]
