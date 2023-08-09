@@ -332,7 +332,7 @@ def main():
         print (' 🛑 Exiting...\n')
         exit()
 
-    address_prefix:str = wallet.getPrefix(recipient_address)
+    recipient_address_prefix:str = wallet.getPrefix(recipient_address)
 
     if recipient_address == USER_ACTION_QUIT:
         print (' 🛑 Exiting...\n')
@@ -342,8 +342,16 @@ def main():
     memo:str = get_user_text('Provide a memo (optional): ', 255, True)
 
     # Get the custom gas limit (if necessary)
+    sender_address = wallet.address
+    sender_prefix = wallet.getPrefix(sender_address)
+    
+    #print ('sender address:', sender_address)
+    #print ('sender prefix:', sender_prefix)
+    #print ('recipient address:', recipient_address)
+    #print ('recipient prefix:', recipient_address_prefix)
+
     custom_gas = 0
-    if denom != ULUNA and address_prefix == 'terra':
+    if denom != ULUNA and recipient_address_prefix == 'terra':
         print (' 🛎️  To make this more likely to work, you need to specific a higher than normal gas limit.')
         print (' 🛎️  200000 is a good number, but you can specify your own. Leave this blank if you want to accept the default.')
         custom_gas:int = get_user_number('Gas limit: ', {'max_number': wallet.balances[ULUNA], 'min_number': 0, 'empty_allowed': True, 'convert_to_uluna': False})
@@ -362,18 +370,36 @@ def main():
         print (f'Sending {wallet.formatUluna(uluna_amount)} {FULL_COIN_LOOKUP[denom]}')
 
         # Create the send tx object
-        send_tx = wallet.send().create()
+        send_tx = wallet.send().create(sender_prefix)
+        
+        #print ('address prefix:', recipient_address_prefix)
+        #print ('wallet chain id:', wallet.terra.chain_id)
+        #print ('send_tx chain id:', send_tx.terra.chain_id)
 
-        if address_prefix != 'terra' or wallet.terra.chain_id != 'columbus-5':
+        send_tx.recipient_address = recipient_address
+        send_tx.recipient_prefix  = recipient_address_prefix
+        send_tx.sender_address    = sender_address
+        send_tx.sender_prefix     = sender_prefix
+
+        if recipient_address_prefix != 'terra' or wallet.terra.chain_id != 'columbus-5':
             send_tx.is_ibc_transfer = True
-            send_tx.source_channel = CHAIN_IDS[address_prefix]['ibc_channels'][0]
+            send_tx.source_channel = CHAIN_IDS[recipient_address_prefix]['ibc_channels'][0]
+            if wallet.terra.chain_id == 'osmosis-1':
+                send_tx.revision_number = 6
+            else:
+                send_tx.revision_number = 1
 
+            #send_tx.block_height = int(send_tx.terra.tendermint.block_info()['block']['header']['height'])
+
+        #print ('source channel:', send_tx.source_channel)
+        
         # Assign the details:
         send_tx.recipient_address = recipient_address
         send_tx.memo              = memo
         send_tx.amount            = int(uluna_amount)
         send_tx.denom             = denom
-        
+        send_tx.block_height      = send_tx.terra.tendermint.block_info()['block']['header']['height']
+
         if denom != ULUNA:
             
             result = send_tx.simulate()

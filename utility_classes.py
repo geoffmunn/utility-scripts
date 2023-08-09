@@ -964,10 +964,16 @@ class TerraInstance:
             self.chain_id = CHAIN_IDS[prefix]['chain_id']
             self.url      = CHAIN_IDS[prefix]['lcd_urls'][0]
 
+            if self.chain_id == 'osmosis-1':
+                gas_prices = '1uosmo'
+            else:
+                gas_prices = None
+
             terra:LCDClient = LCDClient(
                 chain_id       = self.chain_id,
                 gas_adjustment = float(self.gas_adjustment),
-                url            = self.url
+                url            = self.url,
+                gas_prices     = gas_prices
             )
 
             self.terra = terra
@@ -1320,18 +1326,40 @@ class TransactionCore():
 
         coin:Coin
         for coin in requested_fee.amount:
-            if coin.denom in self.balances and int(self.balances[coin.denom]) >= int(coin.amount):
 
-                if coin.denom == UUSD:
-                    has_uusd = coin.amount
-                elif coin.denom == ULUNA:
-                    has_uluna = coin.amount
-                else:
-                    other_coin_list.append(coin)
+            if coin.denom == 'uosmo':
+            
+                # We need to convert OSMO to LUNC for the fee
+                #https://api-indexer.keplr.app/v1/price?ids=osmosis,terra-luna&vs_currencies=usd
+                #{"osmosis":{"usd":0.455433},"terra-luna":{"usd":0.00007799}}
 
-                if coin.denom == specific_denom:
-                    specific_denom_amount = coin.amount
+                prices:str = self.getPrices()
+                osmo_price = prices['osmosis']['usd']
+                lunc_price = prices['terra-luna']['usd']
+                
+                # Calculate the LUNC fee
+                # (osmosis amount * osmosis unit cost) / lunc price
+                uluna_fee_value = int(math.ceil((coin.amount * osmo_price) / lunc_price))
 
+                # Update the requested fee object:
+                requested_fee.amount    = Coins({Coin('ibc/0EF15DF2F02480ADE0BB6E85D9EBB5DAEA2836D3860E9F97F9AADE4F57A31AA0', uluna_fee_value)})
+                requested_fee.gas_limit = 300000
+
+                return requested_fee
+            else:
+                if coin.denom in self.balances and int(self.balances[coin.denom]) >= int(coin.amount):
+
+                    if coin.denom == UUSD:
+                        has_uusd = coin.amount
+                    elif coin.denom == ULUNA:
+                        has_uluna = coin.amount
+                    else:
+                        other_coin_list.append(coin)
+
+                    if coin.denom == specific_denom:
+                        specific_denom_amount = coin.amount
+
+        
         if has_uluna > 0 or has_uusd > 0 or len(other_coin_list) > 0:
             
             if len(other_coin_list) > 0:
@@ -1414,6 +1442,19 @@ class TransactionCore():
 
         return self.gas_list
     
+    def getPrices(self) -> json:
+        """
+        Get the current USD prices for two different coins.
+        """
+        try:
+            prices:json = requests.get('https://api-indexer.keplr.app/v1/price?ids=osmosis,terra-luna&vs_currencies=usd').json()
+        except:
+            print (' 🛑 Error getting coin prices')
+            print (requests.get(prices).content)
+            exit()
+
+        return prices
+    
     def readableFee(self) -> str:
         """
         Return a description of the fee for the current transaction.
@@ -1430,7 +1471,19 @@ class TransactionCore():
             for fee_coin in fee_coins.to_list():
 
                 amount = fee_coin.amount / COIN_DIVISOR
-                denom  = FULL_COIN_LOOKUP[fee_coin.denom]
+
+                wallet = Wallet()
+                print (self.sender_address)
+                wallet.address = self.sender_address
+
+                ibc_denom = wallet.denomTrace(fee_coin.denom)
+
+                print ('ibc denom:', ibc_denom)
+
+                if ibc_denom == False:
+                    denom  = FULL_COIN_LOOKUP[fee_coin.denom]
+                else:
+                    denom = ibc_denom['base_denom']
 
                 if first == False:
                     fee_string += ', and ' + str(amount) + ' ' + denom
@@ -1674,7 +1727,9 @@ class SendTransaction(TransactionCore):
 
         super(SendTransaction, self).__init__(*args, **kwargs)
 
+        self.account_number:int    = None
         self.amount:int            = 0
+        self.block_height:int      = None
         self.denom:str             = ''
         self.fee:Fee               = None
         self.fee_deductables:float = None
@@ -1682,20 +1737,24 @@ class SendTransaction(TransactionCore):
         self.is_ibc_transfer:bool  = False
         self.memo:str              = ''
         self.recipient_address:str = ''
+        self.recipient_prefix:str  = ''
+        self.revision_number:int   = None
+        self.sender_address:str    = ''
+        self.sender_prefix:str     = ''
         self.sequence:int          = None
         self.source_channel:str    = None
         self.tax:float             = None
 
-    def create(self):
+    def create(self, prefix:str = 'terra'):
         """
         Create a send object and set it up with the provided details.
         """
 
         # Create the terra instance
-        self.terra = TerraInstance().create()
+        self.terra = TerraInstance().create(prefix)
 
         # Create the wallet based on the calculated key
-        current_wallet_key  = MnemonicKey(self.seed)
+        current_wallet_key  = MnemonicKey(mnemonic = self.seed, prefix = prefix)
         self.current_wallet = self.terra.wallet(current_wallet_key)
 
         # Get the gas prices and tax rate:
@@ -1704,7 +1763,6 @@ class SendTransaction(TransactionCore):
 
         return self
 
-    
     def send(self) -> bool:
         """
         Complete a send transaction with the information we have so far.
@@ -1750,28 +1808,60 @@ class SendTransaction(TransactionCore):
                     sequence   = self.sequence
                 )
             else:
-                block_height:int = int(self.terra.tendermint.block_info()['block']['header']['height'])
 
-                msg = MsgTransfer(
-                    source_port       = 'transfer',
-                    source_channel    = self.source_channel,
-                    token             = Coin(self.denom, send_amount),
-                    sender            = self.current_wallet.key.acc_address,
-                    receiver          = self.recipient_address,
-                    timeout_height    = Height(revision_number = 1, revision_height = block_height),                            
-                    timeout_timestamp = 0
-                )
-                
-                options = CreateTxOptions(
-                    fee            = self.fee,
-                    gas            = self.gas_limit,
-                    #gas_adjustment = 3,
-                    gas_prices     = self.gas_list,
-                    memo           = self.memo,
-                    msgs           = [msg],
-                    sequence       = self.sequence
-                )
+                # Used for columbus-5/LUNC -> osmosis-1/LUNC
+                #block_height:int = int(self.terra.tendermint.block_info()['block']['header']['height'])
 
+                #sender_address = self.current_wallet.key.acc_address,
+                #sender_prefix = self.current_wallet.getPrefix(sender_address)
+                #self.
+                if self.sender_prefix == 'terra':
+                    msg = MsgTransfer(
+                        source_port       = 'transfer',
+                        source_channel    = self.source_channel,
+                        token             = Coin(self.denom, send_amount),
+                        sender            = self.sender_address,
+                        receiver          = self.recipient_address,
+                        #timeout_height    = Height(revision_number = 1, revision_height = block_height),                            
+                        timeout_height    = Height(revision_number = self.revision_number, revision_height = self.block_height),                            
+                        timeout_timestamp = 0
+                    )
+                    
+                    options = CreateTxOptions(
+                        fee            = self.fee,
+                        gas            = self.gas_limit,
+                        #gas_adjustment = 3,
+                        gas_prices     = self.gas_list,
+                        memo           = self.memo,
+                        msgs           = [msg],
+                        sequence       = self.sequence
+                    )
+                else:
+                    # OSMO:
+                    
+                    msg = MsgTransfer(
+                        source_port       = 'transfer',
+                        source_channel    = "channel-72",
+                        token = {
+                            "amount": "500000000",
+                            "denom": "ibc/0EF15DF2F02480ADE0BB6E85D9EBB5DAEA2836D3860E9F97F9AADE4F57A31AA0"
+                        },
+                        sender            = 'osmo1u2vljph6e3jkmpp7529cv8wd3987735vlmv4ea',
+                        receiver          = 'terra1kgge7tyctna52qfskpkw73xu4fhmd0y29ravr6',
+                        timeout_height    = Height(revision_number = 6, revision_height = self.block_height),
+                        timeout_timestamp = 0
+                    )
+                                        
+                    options = CreateTxOptions(
+                        account_number = str(self.account_number),
+                        sequence = str(self.sequence),
+                        msgs=[msg],
+                        fee = self.fee,
+                        gas = '7500',
+                        fee_denoms = ['uosmo']
+                    )
+
+                    #print ('options:', options)
             # This process often generates sequence errors. If we get a response error, then
             # bump up the sequence number by one and try again.
             while True:
@@ -1814,7 +1904,10 @@ class SendTransaction(TransactionCore):
 
         if self.sequence is None:
             self.sequence = self.current_wallet.sequence()
-        
+
+        if self.account_number is None:
+            self.account_number = self.current_wallet.account_number()
+
         # Perform the swap as a simulation, with no fee details
         self.send()
 
@@ -1859,6 +1952,8 @@ class SendTransaction(TransactionCore):
             # This will be used by the swap function next time we call it
             self.fee = requested_fee
         
+            #print ('requested fee:', self.fee)
+            
             # Store this so we can deduct it off the total amount to swap.
             # If the fee denom is the same as what we're paying the tax in, then combine the two
             # Otherwise the deductible is just the tax value
