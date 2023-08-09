@@ -1455,15 +1455,15 @@ class TransactionCore():
 
         while retry == True:
             try:
-                prices:json = requests.get('https://api-indexer.keplr.appxx/v1/price?ids=osmosis,terra-luna&vs_currencies=usd').json()
+                prices:json = requests.get('https://api-indexer.keplr.app/v1/price?ids=osmosis,terra-luna&vs_currencies=usd').json()
 
                 # Exit the loop if this hasn't returned an error
                 retry = False
-            except:
+            except Exception as err:
                 retry_count += 1
                 if retry_count == 10:
                     print (' 🛑 Error getting coin prices')
-                    print (requests.get(prices).content)
+                    print (err)
 
                     retry = False
                     exit()
