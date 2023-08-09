@@ -1445,13 +1445,30 @@ class TransactionCore():
     def getPrices(self) -> json:
         """
         Get the current USD prices for two different coins.
+
+        If the link doesn't work, we'll try 10 times
         """
-        try:
-            prices:json = requests.get('https://api-indexer.keplr.app/v1/price?ids=osmosis,terra-luna&vs_currencies=usd').json()
-        except:
-            print (' 🛑 Error getting coin prices')
-            print (requests.get(prices).content)
-            exit()
+
+        retry_count:int = 0
+        retry:bool      = True
+        prices:json     = {}
+
+        while retry == True:
+            try:
+                prices:json = requests.get('https://api-indexer.keplr.appxx/v1/price?ids=osmosis,terra-luna&vs_currencies=usd').json()
+
+                # Exit the loop if this hasn't returned an error
+                retry = False
+            except:
+                retry_count += 1
+                if retry_count == 10:
+                    print (' 🛑 Error getting coin prices')
+                    print (requests.get(prices).content)
+
+                    retry = False
+                    exit()
+                else:
+                    time.sleep(1)
 
         return prices
     
