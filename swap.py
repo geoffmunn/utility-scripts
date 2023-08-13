@@ -227,6 +227,8 @@ def main():
     swaps_tx.swap_amount        = int(swap_uluna)
     swaps_tx.swap_denom         = coin_from
     swaps_tx.swap_request_denom = coin_to
+    swaps_tx.sender_address     = wallet.address
+    swaps_tx.sender_prefix      = wallet.getPrefix(wallet.address)
     
     # Bump up the gas adjustment - it needs to be higher for swaps it turns out
     swaps_tx.terra.gas_adjustment = float(GAS_ADJUSTMENT_SWAPS)
