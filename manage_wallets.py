@@ -316,6 +316,10 @@ def main():
                         # Set up the withdrawal object
                         withdrawal_tx = wallet.withdrawal().create(delegations[validator]['delegator'], delegations[validator]['validator'])
 
+                        # We need to populate some details
+                        withdrawal_tx.sender_address = wallet.address
+                        withdrawal_tx.sender_prefix  = wallet.getPrefix(wallet.address)
+                        
                         # Simulate it
                         result = withdrawal_tx.simulate()
 
@@ -392,10 +396,12 @@ def main():
                             swaps_tx = wallet.swap().create()
 
                             # Populate the basic details.
-                            swaps_tx.swap_amount = swap_amount
-                            swaps_tx.swap_denom  = 'uusd'
-                            #swaps_tx.contract    = ASTROPORT_UUSD_TO_ULUNA_ADDRESS
-                            swaps_tx.contract    = TERRASWAP_UUSD_TO_ULUNA_ADDRESS
+                            swaps_tx.swap_amount    = swap_amount
+                            swaps_tx.swap_denom     = 'uusd'
+                            #swaps_tx.contract      = ASTROPORT_UUSD_TO_ULUNA_ADDRESS
+                            swaps_tx.contract       = TERRASWAP_UUSD_TO_ULUNA_ADDRESS
+                            swaps_tx.sender_address = wallet.address
+                            swaps_tx.sender_prefix  = wallet.getPrefix(wallet.address)
 
                             # Simulate it so we can get the fee
                             result = swaps_tx.simulate()
@@ -483,7 +489,9 @@ def main():
                                 delegation_tx.delegator_address = delegations[validator]['delegator']
                                 delegation_tx.validator_address = delegations[validator]['validator']
                                 delegation_tx.delegated_uluna   = delegated_uluna
-
+                                delegation_tx.sender_address    = wallet.address
+                                delegation_tx.sender_prefix     = wallet.getPrefix(wallet.address)
+                        
                                 # Simulate it
                                 result = delegation_tx.simulate(delegation_tx.delegate)
 
