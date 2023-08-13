@@ -1490,12 +1490,9 @@ class TransactionCore():
                 amount = fee_coin.amount / COIN_DIVISOR
 
                 wallet = Wallet()
-                print (self.sender_address)
                 wallet.address = self.sender_address
 
                 ibc_denom = wallet.denomTrace(fee_coin.denom)
-
-                print ('ibc denom:', ibc_denom)
 
                 if ibc_denom == False:
                     denom  = FULL_COIN_LOOKUP[fee_coin.denom]
