@@ -740,6 +740,7 @@ class Wallet:
                 else:
                     return False
             except Exception as err:
+                print (f'Denom trace error for {self.name}:')
                 print (err)
                 return False
         else:
@@ -772,28 +773,31 @@ class Wallet:
             pagOpt:PaginationOptions = PaginationOptions(limit=50, count_total=True)
 
             # Get the current balance in this wallet
-            result:Coins
-            result, pagination = self.terra.bank.balance(address = self.address, params = pagOpt)
-
-            # Convert the result into a friendly list
             balances:dict = {}
-            for coin in result:
-                denom_trace = self.denomTrace(coin.denom)
-                if denom_trace == False:
-                    balances[coin.denom] = coin.amount
-                else:
-                    balances[denom_trace['base_denom']] = coin.amount
-
-            # Go through the pagination (if any)
-            while pagination['next_key'] is not None:
-                pagOpt.key         = pagination["next_key"]
+            result:Coins
+            try:
                 result, pagination = self.terra.bank.balance(address = self.address, params = pagOpt)
-                
-                denom_trace = self.denomTrace(coin.denom)
-                if  denom_trace == False:
-                    balances[coin.denom] = coin.amount
-                else:
-                    balances[denom_trace['base_denom']] = coin.amount
+
+                # Convert the result into a friendly list
+                for coin in result:
+                    denom_trace = self.denomTrace(coin.denom)
+                    if denom_trace == False:
+                        balances[coin.denom] = coin.amount
+                    else:
+                        balances[denom_trace['base_denom']] = coin.amount
+
+                # Go through the pagination (if any)
+                while pagination['next_key'] is not None:
+                    pagOpt.key         = pagination["next_key"]
+                    result, pagination = self.terra.bank.balance(address = self.address, params = pagOpt)
+                    
+                    denom_trace = self.denomTrace(coin.denom)
+                    if  denom_trace == False:
+                        balances[coin.denom] = coin.amount
+                    else:
+                        balances[denom_trace['base_denom']] = coin.amount
+            except Exception as err:
+                print (f'Pagination error for {self.name}:', err)
 
             # Add the extra coins (Kuji etc)
             if self.terra.chain_id == 'columbus-5':
