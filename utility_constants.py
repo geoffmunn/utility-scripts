@@ -60,6 +60,7 @@ UBASE = 'ubase'
 UKRW  = 'ukrw'
 UKUJI = 'ukuji'
 ULUNA = 'uluna'
+UOSMO = 'uosmo'
 UUSD  = 'uusd'
 
 # Coin keys and display values:

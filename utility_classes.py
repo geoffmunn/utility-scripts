@@ -25,8 +25,6 @@ from utility_constants import (
     GAS_ADJUSTMENT_SWAPS,
     GAS_PRICE_URI,
     IBC_ADDRESSES,
-    UBASE,
-    UKUJI,
     KUJI_SMART_CONTACT_ADDRESS,
     SEARCH_RETRY_COUNT,
     TAX_RATE_URI,
@@ -34,7 +32,10 @@ from utility_constants import (
     TERRASWAP_UKRW_TO_ULUNA_ADDRESS,
     TERRASWAP_ULUNA_TO_UUSD_ADDRESS,
     TERRASWAP_UUSD_TO_ULUNA_ADDRESS,
+    UBASE,
+    UKUJI,
     ULUNA,
+    UOSMO,
     UKRW,
     USER_ACTION_CONTINUE,
     USER_ACTION_QUIT,
@@ -2045,6 +2046,7 @@ class SwapTransaction(TransactionCore):
                         #     if self.swap_request_denom == UUSD:
                         #         belief_price:float = parts[UKUJI] / parts[UUSD]
                 else:
+                    # UBASE does something different
                     result = self.terra.wasm.contract_query(self.contract, {"curve_info": {}})
                     spot_price:float = float(result['spot_price'])
                     if self.swap_request_denom == UBASE:
@@ -2404,6 +2406,10 @@ class SwapTransaction(TransactionCore):
         Get the swap rate based on the provided details.
         Returns a coin object that we need to decode.
         """
+        print ('swap request denom:', self.swap_request_denom)
+        print ('swap denom:', self.swap_denom)
+        print ('swap amount:', self.swap_amount)
+        print ('use market swap?', self.use_market_swap)
 
         if self.use_market_swap == False:
 
@@ -2419,9 +2425,6 @@ class SwapTransaction(TransactionCore):
                 swap_details:Coin = Coin(self.swap_request_denom, 0)
             else:
                 # This will cover nearly all swap pairs:
-                print ('swap request denom:', self.swap_request_denom)
-                print ('swap denom:', self.swap_denom)
-                print ('swap amount:', self.swap_amount)
                 swap_price = self.beliefPrice()
                 if swap_price is not None:
                     swap_details:Coin = Coin(self.swap_request_denom, int(self.swap_amount / swap_price))
@@ -2480,12 +2483,23 @@ class SwapTransaction(TransactionCore):
             #    print ('swap request denom:', self.swap_request_denom)
             #    exit()
         else:
-            if self.swap_denom != UKUJI and self.swap_request_denom != UKUJI:
-                try:
-                    swap_details:Coin = self.terra.market.swap_rate(Coin(self.swap_denom, self.swap_amount), self.swap_request_denom)
-                except Exception as err:
-                    swap_details:Coin = Coin(self.swap_request_denom, 0)
+            #if self.swap_denom != UKUJI and self.swap_request_denom != UKUJI:
+            #    try:
+            #        swap_details:Coin = self.terra.market.swap_rate(Coin(self.swap_denom, self.swap_amount), self.swap_request_denom)
+            #    except Exception as err:
+            #        swap_details:Coin = Coin(self.swap_request_denom, 0)
+            
+            if self.swap_denom == ULUNA and self.swap_request_denom == UOSMO:
+                prices = self.getPrices()
 
+                osmo_price = prices['osmosis']['usd']
+                lunc_price = prices['terra-luna']['usd']
+                
+                # Calculate the amount of OSMO we'll be getting:
+                # (lunc amount * lunc unit cost) / osmo price
+                estimated_amount:float = math.ceil((self.swap_amount * lunc_price) / osmo_price)
+                swap_details:Coin = Coin(self.swap_request_denom, estimated_amount)
+                
             else:
                 swap_details:Coin = Coin(self.swap_request_denom, 0)
 
