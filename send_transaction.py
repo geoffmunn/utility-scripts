@@ -372,10 +372,7 @@ def main():
         # Create the send tx object
         send_tx = wallet.send().create(sender_prefix)
         
-        #print ('address prefix:', recipient_address_prefix)
-        #print ('wallet chain id:', wallet.terra.chain_id)
-        #print ('send_tx chain id:', send_tx.terra.chain_id)
-
+        # Populate it with required details:
         send_tx.recipient_address = recipient_address
         send_tx.recipient_prefix  = recipient_address_prefix
         send_tx.sender_address    = sender_address
@@ -388,10 +385,6 @@ def main():
                 send_tx.revision_number = 6
             else:
                 send_tx.revision_number = 1
-
-            #send_tx.block_height = int(send_tx.terra.tendermint.block_info()['block']['header']['height'])
-
-        #print ('source channel:', send_tx.source_channel)
         
         # Assign the details:
         send_tx.recipient_address = recipient_address
@@ -472,7 +465,7 @@ def main():
                     
 
 
-                if send_tx.broadcast_result.code == 32:
+                if send_tx is not None and send_tx.broadcast_result.code == 32:
                     while True:
                         print (' 🛎️  Boosting sequence number and trying again...')
 
@@ -503,10 +496,13 @@ def main():
                             break
 
 
-                if send_tx.broadcast_result.is_tx_error():
-                    print (' 🛎️  The send transaction failed, an error occurred:')
-                    print (f' 🛎️  Error code {send_tx.broadcast_result.code}')
-                    print (f' 🛎️  {send_tx.broadcast_result.raw_log}')
+                if send_tx is None or send_tx.broadcast_result.is_tx_error():
+                    if send_tx is None:
+                        print (' 🛎️  The send transaction failed, no broadcast object was returned.')
+                    else:
+                        print (' 🛎️  The send transaction failed, an error occurred:')
+                        print (f' 🛎️  Error code {send_tx.broadcast_result.code}')
+                        print (f' 🛎️  {send_tx.broadcast_result.raw_log}')
                 else:
                     print (f' ✅ Sent amount: {wallet.formatUluna(uluna_amount)} {FULL_COIN_LOOKUP[denom]}')
                     print (f' ✅ Tx Hash: {send_tx.broadcast_result.txhash}')

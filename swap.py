@@ -290,7 +290,7 @@ def main():
         #         if swaps_tx.terra.gas_adjustment >= MAX_GAS_ADJUSTMENT:
         #             break
 
-        if swaps_tx.broadcast_result.code == 32:
+        if swaps_tx is not None and swaps_tx.broadcast_result.code == 32:
             while True:
                 print (' 🛎️  Boosting sequence number and trying again...')
 
@@ -308,8 +308,11 @@ def main():
                     break
 
         if swaps_tx is None or swaps_tx.broadcast_result.is_tx_error():
-            print (' 🛎️  The send transaction failed, an error occurred:')
-            print (f' 🛎️  {swaps_tx.broadcast_result.raw_log}')
+            if swaps_tx is None:
+                print (' 🛎️  The swap transaction failed, no broadcast object was returned.')
+            else:
+                print (' 🛎️  The swap transaction failed, an error occurred:')
+                print (f' 🛎️  {swaps_tx.broadcast_result.raw_log}')
         else:
             print (f' ✅ Swapped amount: {wallet.formatUluna(swaps_tx.swap_amount)} {FULL_COIN_LOOKUP[swaps_tx.swap_denom]}')
             print (f' ✅ Tx Hash: {swaps_tx.broadcast_result.txhash}')

@@ -333,7 +333,7 @@ def main():
                             if result == True:
                                 withdrawal_tx.broadcast()
                             
-                                if withdrawal_tx.broadcast_result.code == 11:
+                                if withdrawal_tx is not None and withdrawal_tx.broadcast_result.code == 11:
                                     while True:
                                         print (' 🛎️  Increasing the gas adjustment fee and trying again')
                                         withdrawal_tx.terra.gas_adjustment += GAS_ADJUSTMENT_INCREMENT
@@ -363,9 +363,12 @@ def main():
                                         if withdrawal_tx.terra.gas_adjustment >= MAX_GAS_ADJUSTMENT:
                                             break
                                         
-                                if withdrawal_tx.broadcast_result.is_tx_error():
-                                    print (' 🛎️  The withdrawal failed, an error occurred:')
-                                    print (f' 🛎️  {withdrawal_tx.broadcast_result.raw_log}')
+                                if withdrawal_tx is None or withdrawal_tx.broadcast_result.is_tx_error():
+                                    if withdrawal_tx is None:
+                                        print (' 🛎️  The withdrawal transaction failed, no broadcast object was returned.')
+                                    else:
+                                        print (' 🛎️  The withdrawal failed, an error occurred:')
+                                        print (f' 🛎️  {withdrawal_tx.broadcast_result.raw_log}')
                             
                                 else:
                                     print (f' ✅ Withdrawn amount: {wallet.formatUluna(uluna_reward, True)}')
@@ -415,7 +418,7 @@ def main():
                                 if result == True:
                                     swaps_tx.broadcast()
 
-                                    if swaps_tx.broadcast_result.code == 11:
+                                    if swaps_tx is not None and swaps_tx.broadcast_result.code == 11:
                                         while True:
                                             print (' 🛎️  Increasing the gas adjustment fee and trying again')
                                             swaps_tx.terra.gas_adjustment += GAS_ADJUSTMENT_INCREMENT
@@ -434,9 +437,12 @@ def main():
                                             if swaps_tx.terra.gas_adjustment >= MAX_GAS_ADJUSTMENT:
                                                 break
                                             
-                                    if swaps_tx.broadcast_result.is_tx_error():
-                                        print (' 🛎️ The swap failed, an error occurred:')
-                                        print (f' 🛎️  {swaps_tx.broadcast_result.raw_log}')
+                                    if swaps_tx is None or swaps_tx.broadcast_result.is_tx_error():
+                                        if swaps_tx is None:
+                                            print (' 🛎️  The swap transaction failed, no broadcast object was returned.')
+                                        else:
+                                            print (' 🛎️ The swap failed, an error occurred:')
+                                            print (f' 🛎️  {swaps_tx.broadcast_result.raw_log}')
                                 
                                     else:
                                         print (f' ✅ Swap successfully completed')
@@ -505,7 +511,7 @@ def main():
                                     if result == True:
                                         delegation_tx.broadcast()
 
-                                        if delegation_tx.broadcast_result.code == 11:
+                                        if delegation_tx is not None and delegation_tx.broadcast_result.code == 11:
                                             while True:
                                                 print (' 🛎️  Increasing the gas adjustment fee and trying again')
                                                 delegation_tx.terra.gas_adjustment += GAS_ADJUSTMENT_INCREMENT
@@ -524,9 +530,12 @@ def main():
                                                 if delegation_tx.terra.gas_adjustment >= MAX_GAS_ADJUSTMENT:
                                                     break
                                             
-                                        if delegation_tx.broadcast_result.is_tx_error():
-                                            print (' 🛎️ The delegation failed, an error occurred:')
-                                            print (f' 🛎️  {delegation_tx.broadcast_result.raw_log}')
+                                        if delegation_tx is None or delegation_tx.broadcast_result.is_tx_error():
+                                            if delegation_tx is None:
+                                                print (' 🛎️  The delegation transaction failed, no broadcast object was returned.')
+                                            else:
+                                                print (' 🛎️ The delegation failed, an error occurred:')
+                                                print (f' 🛎️  {delegation_tx.broadcast_result.raw_log}')
                                         else:
                                             print (f' ✅ Delegated amount: {wallet.formatUluna(delegated_uluna, True)}')
                                             print (f' ✅ Tx Hash: {delegation_tx.broadcast_result.txhash}')
