@@ -61,6 +61,7 @@ from terra_classic_sdk.core.fee import Fee
 from terra_classic_sdk.core.ibc import Height
 from terra_classic_sdk.core.ibc_transfer import MsgTransfer
 from terra_classic_sdk.core.market.msgs import MsgSwap
+from terra_classic_sdk.core.osmosis import MsgSwapExactAmountIn
 from terra_classic_sdk.core.staking import (
     MsgBeginRedelegate,
     MsgDelegate,
@@ -742,7 +743,6 @@ class Wallet:
                     return False
             except Exception as err:
                 print (f'Denom trace error for {self.name}:')
-                print (trace_result)
                 print (err)
                 return False
         else:
@@ -971,7 +971,7 @@ class TerraInstance:
             self.url      = CHAIN_IDS[prefix]['lcd_urls'][0]
 
             if self.chain_id == 'osmosis-1':
-                gas_prices = '1uosmo'
+                gas_prices = '1uosmo,1uluna'
             else:
                 gas_prices = None
 
@@ -1990,6 +1990,7 @@ class SwapTransaction(TransactionCore):
         self.fee_deductables:float  = None
         self.gas_limit:str          = 'auto'
         self.max_spread:float       = 0.01
+        self.min_out:int            = None
         self.recipient_address:str  = ''
         self.recipient_prefix:str   = ''
         self.sender_address:str     = ''
@@ -2062,17 +2063,17 @@ class SwapTransaction(TransactionCore):
         self.belief_price = round(belief_price, 18)
 
         return self.belief_price
-        
-    def create(self):
+    
+    def create(self, prefix:str = 'terra'):
         """
         Create a swap object and set it up with the provided details.
         """
 
         # Create the terra instance
-        self.terra = TerraInstance().create()
+        self.terra = TerraInstance().create(prefix)
 
         # Create the wallet based on the calculated key
-        current_wallet_key  = MnemonicKey(self.seed)
+        current_wallet_key  = MnemonicKey(mnemonic = self.seed, prefix = prefix)
         self.current_wallet = self.terra.wallet(current_wallet_key)
 
         # Get the gas prices and tax rate:
@@ -2154,6 +2155,141 @@ class SwapTransaction(TransactionCore):
             return True
         except:
             return False
+        
+    def offChainSimulate(self):
+        """
+        Simulate an offchain swap so we can get the fee details.
+        The fee details are saved so the actual market swap will work.
+        """
+
+        self.sequence = self.current_wallet.sequence()
+
+        # Figure out the minimum expected coins for this swap:
+        swap_rate:Coin = self.swapRate()
+        #self.min_out   = math.floor(swap_rate.amount * (1 - self.max_spread))
+        self.min_out   = math.floor(swap_rate.amount * 0.95)
+
+        self.offChainSwap()
+
+        # Get the transaction result
+        tx:Tx = self.transaction
+
+        if tx is not None:
+            # Get the stub of the requested fee so we can adjust it
+            requested_fee = tx.auth_info.fee
+
+            # Get the fee details, but we'll need to make some modifications
+            self.fee:Fee = self.calculateFee(requested_fee)
+            fee_coin:Coin = self.fee.amount.to_list()[0]
+            
+            # We'll take the returned fee and use that as the gas limit
+            #self.gas_limit = fee_coin.amount
+            self.gas_limit = 300000
+            
+            # Now calculate the actual fee
+            #(0.007264 * 0.424455) / 0.00006641 = 43.7972496474
+            min_uosmo_gas:float = 0.0025
+            uosmo_fee:float     = min_uosmo_gas * float(self.gas_limit)
+
+            # This bit probably needs to be abstracted - it's used in a few places:
+            prices     = self.getPrices()
+            osmo_price = prices['osmosis']['usd']
+            lunc_price = prices['terra-luna']['usd']
+        
+            print ('uosmo_fee:', uosmo_fee)
+            print ('osmo price:', osmo_price)
+            print ('lunc price:', lunc_price)
+
+            # Construct the new fee coin
+            fee_amount:int = int((uosmo_fee * osmo_price) / lunc_price)
+            fee_denom:str  = fee_coin.denom
+            new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount))})
+
+            print ('the fee amount is:', fee_amount)
+            # This will be used by the swap function next time we call it
+            self.fee.amount = new_coin
+
+            return True
+        else:
+            return False
+        
+
+    def offChainSwap(self):
+        """
+        Make an offchain swap with the information we have so far.
+        Currently we only support MsgSwapExactAmountIn via the GAMM module.
+
+        If fee is None then it will be a simulation.
+        """
+
+        # try:
+        
+        token_in:Coin = Coin(IBC_ADDRESSES[self.swap_request_denom][self.swap_denom]['address'], self.swap_amount)
+
+        tx_msg = MsgSwapExactAmountIn(
+            sender = self.sender_address,
+            routes = [{
+                "pool_id": "561",
+                "token_out_denom": self.swap_request_denom
+            }],
+            token_in = str(token_in),
+            token_out_min_amount = str(self.min_out)
+        )
+
+        options = CreateTxOptions(
+            fee        = self.fee,
+            gas        = self.gas_limit,
+            msgs       = [tx_msg],
+            sequence   = self.sequence
+        )
+
+        print ('tx msg:', tx_msg)
+        print ('options:', options)
+
+        tx:Tx = self.current_wallet.create_and_sign_tx(options)
+        
+        self.transaction = tx
+
+        return True
+
+            # tx:Tx = None
+
+            # tx_msg = MsgSwap(
+            #     trader = self.current_wallet.key.acc_address,
+            #     offer_coin = Coin(self.swap_denom, self.swap_amount),
+            #     ask_denom = self.swap_request_denom
+            # )
+
+            # options = CreateTxOptions(
+            #     fee        = self.fee,
+            #     gas        = self.gas_limit,
+            #     gas_prices = self.gas_list,
+            #     msgs       = [tx_msg],
+            #     sequence   = self.sequence,
+            # )
+            
+            # while True:
+            #     try:
+            #         tx:Tx = self.current_wallet.create_and_sign_tx(options)
+            #         break
+            #     except LCDResponseError as err:
+            #         if 'account sequence mismatch' in err.message:
+            #             self.sequence    = self.sequence + 1
+            #             options.sequence = self.sequence
+            #             print (' 🛎️  Boosting sequence number')
+            #         else:
+            #             print (err)
+            #             break
+            #     except Exception as err:
+            #         print (' 🛑 A random error has occurred')
+            #         print (err)
+            #         break
+
+            # self.transaction = tx
+
+            # return True
+        #except:
+        #    return False
 
     def setContract(self) -> bool:
         """
@@ -2164,7 +2300,6 @@ class SwapTransaction(TransactionCore):
         
         use_market_swap:bool = True
         self.contract        = None
-
         contract_swaps:list  = [ULUNA, UKRW, UUSD, UKUJI, UBASE]
 
         if self.swap_denom in contract_swaps and self.swap_request_denom in contract_swaps:
@@ -2406,10 +2541,10 @@ class SwapTransaction(TransactionCore):
         Get the swap rate based on the provided details.
         Returns a coin object that we need to decode.
         """
-        print ('swap request denom:', self.swap_request_denom)
-        print ('swap denom:', self.swap_denom)
-        print ('swap amount:', self.swap_amount)
-        print ('use market swap?', self.use_market_swap)
+        #print ('swap request denom:', self.swap_request_denom)
+        #print ('swap denom:', self.swap_denom)
+        #print ('swap amount:', self.swap_amount)
+        #print ('use market swap?', self.use_market_swap)
 
         if self.use_market_swap == False:
 

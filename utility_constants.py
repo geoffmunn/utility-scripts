@@ -178,7 +178,7 @@ IBC_ADDRESSES = {
             'channel': 19
         },
     },
-    'osmo': {
+    'uosmo': {
         'uluna': {
             'address': 'ibc/0EF15DF2F02480ADE0BB6E85D9EBB5DAEA2836D3860E9F97F9AADE4F57A31AA0',
             'channel': 72

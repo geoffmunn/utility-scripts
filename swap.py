@@ -10,6 +10,7 @@ from utility_classes import (
     get_user_number,
     UKUJI,
     ULUNA,
+    UOSMO,
     UserConfig,
     UUSD,
     Wallets,
@@ -221,7 +222,7 @@ def main():
         exit()
 
     # Create the swap object
-    swaps_tx = wallet.swap().create()
+    swaps_tx = wallet.swap().create(wallet.getPrefix(wallet.address))
 
     # Assign the details:
     swaps_tx.swap_amount        = int(swap_uluna)
@@ -240,30 +241,54 @@ def main():
     if swaps_tx.swap_request_denom == UKUJI:
         swaps_tx.max_spread = 0.005
 
-    if use_market_swap == True:
-        result = swaps_tx.marketSimulate()
+    print ('swap amount:', swaps_tx.swap_amount)
+    print ('swap denom:', swaps_tx.swap_denom)
+    print ('request denom:', swaps_tx.swap_request_denom)
+    print ('sender address:', swaps_tx.sender_address)
+    print ('sender prefix:', swaps_tx.sender_prefix)
+    print ('use market swap?', use_market_swap)
+    print ('max spread:', swaps_tx.max_spread)
+    
+    if swaps_tx.swap_request_denom in [UOSMO] and swaps_tx.sender_prefix != 'terra':
+        # This is an off-chain swap. Something like LUNC->OSMO
+        result = swaps_tx.offChainSimulate()
+
         if result == True:
             print (swaps_tx.readableFee())
-            
+                
             user_choice = get_user_choice('Do you want to continue? (y/n) ', [])
 
             if user_choice == False:
                 exit()
 
-            result = swaps_tx.marketSwap()
+            result = swaps_tx.offChainSwap()
     else:
-        result = swaps_tx.simulate()
+        if use_market_swap == True:
+            result = swaps_tx.marketSimulate()
+            if result == True:
+                print (swaps_tx.readableFee())
+                
+                user_choice = get_user_choice('Do you want to continue? (y/n) ', [])
 
-        if result == True:
-            print (swaps_tx.readableFee())
+                if user_choice == False:
+                    exit()
 
-            user_choice = get_user_choice('Do you want to continue? (y/n) ', [])
+                result = swaps_tx.marketSwap()
+        else:
+            result = swaps_tx.simulate()
 
-            if user_choice == False:
-                exit()
+            if result == True:
+                print (swaps_tx.readableFee())
 
-            result = swaps_tx.swap()
+                user_choice = get_user_choice('Do you want to continue? (y/n) ', [])
 
+                if user_choice == False:
+                    exit()
+
+                result = swaps_tx.swap()
+
+    print ('about to broadcast... exiting')
+    
     if result == True:
         swaps_tx.broadcast()
     
