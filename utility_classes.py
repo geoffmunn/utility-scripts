@@ -32,6 +32,7 @@ from utility_constants import (
     TERRASWAP_UKRW_TO_ULUNA_ADDRESS,
     TERRASWAP_ULUNA_TO_UUSD_ADDRESS,
     TERRASWAP_UUSD_TO_ULUNA_ADDRESS,
+    UATOM,
     UBASE,
     UKUJI,
     ULUNA,
@@ -1339,13 +1340,21 @@ class TransactionCore():
                 #https://api-indexer.keplr.app/v1/price?ids=osmosis,terra-luna&vs_currencies=usd
                 #{"osmosis":{"usd":0.455433},"terra-luna":{"usd":0.00007799}}
 
-                prices:str = self.getPrices()
-                osmo_price = prices['osmosis']['usd']
-                lunc_price = prices['terra-luna']['usd']
+                # from_id:str = self.getChainByDenom('uluna')
+                # to_id:str   = self.getChainByDenom(coin.denom)
+
+                # prices:str       = self.getPrices(from_id['name2'], to_id['name2'])
+                # osmo_price:float = prices[to_id['name2']]['usd']
+                # lunc_price:float = prices[from_id['name2']]['usd']
+                #prices:str = self.getPrices('terra-luna', 'osmosis')
+                #osmo_price = prices['osmosis']['usd']
+                #lunc_price = prices['terra-luna']['usd']
                 
+                prices:json = self.getPrices()
+
                 # Calculate the LUNC fee
                 # (osmosis amount * osmosis unit cost) / lunc price
-                uluna_fee_value = int(math.ceil((coin.amount * osmo_price) / lunc_price))
+                uluna_fee_value = int(math.ceil((coin.amount * prices['to']) / prices['from']))
 
                 # Update the requested fee object:
                 requested_fee.amount    = Coins({Coin('ibc/0EF15DF2F02480ADE0BB6E85D9EBB5DAEA2836D3860E9F97F9AADE4F57A31AA0', uluna_fee_value)})
@@ -1451,6 +1460,8 @@ class TransactionCore():
     def getPrices(self) -> json:
         """
         Get the current USD prices for two different coins.
+        From: swap_denom
+        To: request_denom
 
         If the link doesn't work, we'll try 10 times
         """
@@ -1459,9 +1470,14 @@ class TransactionCore():
         retry:bool      = True
         prices:json     = {}
 
+        # Get the chains that we are using
+        from_id:dict = self.getChainByDenom(self.swap_denom)
+        to_id:dict   = self.getChainByDenom(self.swap_request_denom)
+
         while retry == True:
             try:
-                prices:json = requests.get('https://api-indexer.keplr.app/v1/price?ids=osmosis,terra-luna&vs_currencies=usd').json()
+                #prices:json = requests.get('https://api-indexer.keplr.app/v1/price?ids=osmosis,terra-luna&vs_currencies=usd').json()
+                prices:json = requests.get(f"https://api-indexer.keplr.app/v1/price?ids={from_id['name2']},{to_id['name2']}&vs_currencies=usd").json()
 
                 # Exit the loop if this hasn't returned an error
                 retry = False
@@ -1476,8 +1492,24 @@ class TransactionCore():
                 else:
                     time.sleep(1)
 
-        return prices
+        to_price:float = prices[to_id['name2']]['usd']
+        from_price:float = prices[from_id['name2']]['usd']
+        
+        return {'from':from_price, 'to': to_price}
     
+    def getChainByDenom(self, denom) -> dict:
+        """
+        Return the chain item that matches the provided denom
+        """
+
+        result = False
+        for chain in CHAIN_IDS:
+            if CHAIN_IDS[chain]['denom'] == denom:
+                result = CHAIN_IDS[chain]
+                break
+
+        return result
+        
     def readableFee(self) -> str:
         """
         Return a description of the fee for the current transaction.
@@ -2184,7 +2216,7 @@ class SwapTransaction(TransactionCore):
             
             # We'll take the returned fee and use that as the gas limit
             #self.gas_limit = fee_coin.amount
-            self.gas_limit = 300000
+            self.gas_limit = 350000
             
             # Now calculate the actual fee
             #(0.007264 * 0.424455) / 0.00006641 = 43.7972496474
@@ -2192,20 +2224,26 @@ class SwapTransaction(TransactionCore):
             uosmo_fee:float     = min_uosmo_gas * float(self.gas_limit)
 
             # This bit probably needs to be abstracted - it's used in a few places:
-            prices     = self.getPrices()
-            osmo_price = prices['osmosis']['usd']
-            lunc_price = prices['terra-luna']['usd']
-        
-            print ('uosmo_fee:', uosmo_fee)
-            print ('osmo price:', osmo_price)
-            print ('lunc price:', lunc_price)
+            #from_id:str = self.getChainByDenom(self.swap_denom)
+            #to_id:str   = self.getChainByDenom(self.swap_request_denom)
 
+            #prices:json      = self.getPrices(from_id['name2'], to_id['name2'])
+            #osmo_price:float = prices[to_id['name2']]['usd']
+            #lunc_price:float = prices[from_id['name2']]['usd']
+
+            #prices:str = self.getPrices('terra-luna', 'osmosis')
+            #osmo_price = prices['osmosis']['usd']
+            #lunc_price = prices['terra-luna']['usd']
             # Construct the new fee coin
-            fee_amount:int = int((uosmo_fee * osmo_price) / lunc_price)
+            #fee_amount:int = int((uosmo_fee * osmo_price) / lunc_price)
+            prices:json = self.getPrices()
+
+            # Calculate the LUNC fee
+            # (osmosis amount * osmosis unit cost) / lunc price
+            fee_amount:int = int((uosmo_fee * prices['to']) / prices['from'])
             fee_denom:str  = fee_coin.denom
             new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount))})
 
-            print ('the fee amount is:', fee_amount)
             # This will be used by the swap function next time we call it
             self.fee.amount = new_coin
 
@@ -2237,59 +2275,17 @@ class SwapTransaction(TransactionCore):
         )
 
         options = CreateTxOptions(
-            fee        = self.fee,
-            gas        = self.gas_limit,
-            msgs       = [tx_msg],
-            sequence   = self.sequence
+            fee       = self.fee,
+            gas       = self.gas_limit,
+            msgs      = [tx_msg],
+            sequence  = self.sequence
         )
-
-        print ('tx msg:', tx_msg)
-        print ('options:', options)
 
         tx:Tx = self.current_wallet.create_and_sign_tx(options)
         
         self.transaction = tx
 
         return True
-
-            # tx:Tx = None
-
-            # tx_msg = MsgSwap(
-            #     trader = self.current_wallet.key.acc_address,
-            #     offer_coin = Coin(self.swap_denom, self.swap_amount),
-            #     ask_denom = self.swap_request_denom
-            # )
-
-            # options = CreateTxOptions(
-            #     fee        = self.fee,
-            #     gas        = self.gas_limit,
-            #     gas_prices = self.gas_list,
-            #     msgs       = [tx_msg],
-            #     sequence   = self.sequence,
-            # )
-            
-            # while True:
-            #     try:
-            #         tx:Tx = self.current_wallet.create_and_sign_tx(options)
-            #         break
-            #     except LCDResponseError as err:
-            #         if 'account sequence mismatch' in err.message:
-            #             self.sequence    = self.sequence + 1
-            #             options.sequence = self.sequence
-            #             print (' 🛎️  Boosting sequence number')
-            #         else:
-            #             print (err)
-            #             break
-            #     except Exception as err:
-            #         print (' 🛑 A random error has occurred')
-            #         print (err)
-            #         break
-
-            # self.transaction = tx
-
-            # return True
-        #except:
-        #    return False
 
     def setContract(self) -> bool:
         """
@@ -2624,16 +2620,24 @@ class SwapTransaction(TransactionCore):
             #    except Exception as err:
             #        swap_details:Coin = Coin(self.swap_request_denom, 0)
             
-            if self.swap_denom == ULUNA and self.swap_request_denom == UOSMO:
-                prices = self.getPrices()
+            off_chain_coins = [UOSMO, UATOM]
+            if self.swap_denom == ULUNA and self.swap_request_denom in off_chain_coins:
+                # from_id:str = self.getChainByDenom(self.swap_denom)
+                # to_id:str   = self.getChainByDenom(self.swap_request_denom)
 
-                osmo_price = prices['osmosis']['usd']
-                lunc_price = prices['terra-luna']['usd']
+                # prices:json      = self.getPrices(from_id['name2'], to_id['name2'])
+                # osmo_price:float = prices[to_id['name2']]['usd']
+                # lunc_price:float = prices[from_id['name2']]['usd']
                 
+                #prices:str = self.getPrices('terra-luna', 'osmosis')
+                #osmo_price = prices['osmosis']['usd']
+                #lunc_price = prices['terra-luna']['usd']
+
                 # Calculate the amount of OSMO we'll be getting:
                 # (lunc amount * lunc unit cost) / osmo price
-                estimated_amount:float = math.ceil((self.swap_amount * lunc_price) / osmo_price)
-                swap_details:Coin = Coin(self.swap_request_denom, estimated_amount)
+                prices:json = self.getPrices()
+                estimated_amount:float = math.ceil((self.swap_amount * prices['from']) / prices['to'])
+                swap_details:Coin      = Coin(self.swap_request_denom, estimated_amount)
                 
             else:
                 swap_details:Coin = Coin(self.swap_request_denom, 0)

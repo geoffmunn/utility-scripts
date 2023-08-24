@@ -56,6 +56,7 @@ COIN_DIVISOR = 1000000
 MAX_VALIDATOR_COUNT = 130
 
 # Coin constants:
+UATOM = 'uatom'
 UBASE = 'ubase'
 UKRW  = 'ukrw'
 UKUJI = 'ukuji'
@@ -66,6 +67,7 @@ UUSD  = 'uusd'
 # Coin keys and display values:
 FULL_COIN_LOOKUP = {
     'uaud':  'AUT',
+    'uatom': 'ATOM',
     'ubase': 'BASE',
     'ucad':  'CAT',
     'uchf':  'CHT',
@@ -114,6 +116,7 @@ BASIC_COIN_LOOKUP = {
 CHAIN_IDS = {
     'terra': {
         'name': 'terra',
+        'name2': 'terra-luna',
         'display_name': 'Luna Classic',
         'chain_id': 'columbus-5',
         'ibc_channels': ['channel-72'],
@@ -123,6 +126,7 @@ CHAIN_IDS = {
     },
     'osmo': {
         'name': 'osmosis',
+        'name2': 'osmosis',
         'display_name': 'Osmosis',
         'chain_id': 'osmosis-1',
         'ibc_channels': ['channel-1'],
@@ -132,6 +136,7 @@ CHAIN_IDS = {
     },
     'kujira': {
         'name': 'kujira',
+        'name2': 'kujira',
         'display_name': 'Kujira',
         'chain_id': 'kaiyo-1',
         'ibc_channels': ['channel-71'],
@@ -141,6 +146,7 @@ CHAIN_IDS = {
     },
     'kava': {
         'name': 'kava',
+        'name2': 'kava',
         'display_name': 'Kava',
         'chain_id': 'kava-9',
         'ibc_channels': ['channel-24'],
@@ -150,10 +156,11 @@ CHAIN_IDS = {
     },
     'cosmos': {
         'name': 'cosmos',
+        'name2': 'cosmos',
         'display_name': 'Cosmos',
         'chain_id': 'cosmoshub-4',
         'ibc_channels': ['channel-2', 'channel-41', 'channel-59'],
-        'lcd_urls': ['rest.cosmos.directory/cosmoshub', 'https://cosmoshub-lcd.stakely.io'],
+        'lcd_urls': ['https://rest.cosmos.directory/cosmoshub', 'https://cosmoshub-lcd.stakely.io'],
         'denom': 'uatom',
         'status': 'inactive'
     }

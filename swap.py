@@ -241,15 +241,16 @@ def main():
     if swaps_tx.swap_request_denom == UKUJI:
         swaps_tx.max_spread = 0.005
 
-    print ('swap amount:', swaps_tx.swap_amount)
-    print ('swap denom:', swaps_tx.swap_denom)
-    print ('request denom:', swaps_tx.swap_request_denom)
-    print ('sender address:', swaps_tx.sender_address)
-    print ('sender prefix:', swaps_tx.sender_prefix)
-    print ('use market swap?', use_market_swap)
-    print ('max spread:', swaps_tx.max_spread)
+    # print ('swap amount:', swaps_tx.swap_amount)
+    # print ('swap denom:', swaps_tx.swap_denom)
+    # print ('request denom:', swaps_tx.swap_request_denom)
+    # print ('sender address:', swaps_tx.sender_address)
+    # print ('sender prefix:', swaps_tx.sender_prefix)
+    # print ('use market swap?', use_market_swap)
+    # print ('max spread:', swaps_tx.max_spread)
     
-    if swaps_tx.swap_request_denom in [UOSMO] and swaps_tx.sender_prefix != 'terra':
+    #if swaps_tx.swap_request_denom == UOSMO and swaps_tx.sender_prefix != 'terra':
+    if swaps_tx.swap_request_denom in [UOSMO]:
         # This is an off-chain swap. Something like LUNC->OSMO
         result = swaps_tx.offChainSimulate()
 
@@ -286,8 +287,6 @@ def main():
                     exit()
 
                 result = swaps_tx.swap()
-
-    print ('about to broadcast... exiting')
     
     if result == True:
         swaps_tx.broadcast()
