@@ -8,6 +8,7 @@ from utility_classes import (
     get_coin_selection,
     get_user_choice,
     get_user_number,
+    UATOM,
     UKUJI,
     ULUNA,
     UOSMO,
@@ -250,7 +251,7 @@ def main():
     # print ('max spread:', swaps_tx.max_spread)
     
     #if swaps_tx.swap_request_denom == UOSMO and swaps_tx.sender_prefix != 'terra':
-    if swaps_tx.swap_request_denom in [UOSMO]:
+    if swaps_tx.swap_request_denom in [UOSMO, UATOM]:
         # This is an off-chain swap. Something like LUNC->OSMO
         result = swaps_tx.offChainSimulate()
 
@@ -288,6 +289,8 @@ def main():
 
                 result = swaps_tx.swap()
     
+    #print ('broadcasting and exiting.')
+    #exit()
     if result == True:
         swaps_tx.broadcast()
     

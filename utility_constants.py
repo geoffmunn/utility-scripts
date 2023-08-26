@@ -168,17 +168,44 @@ CHAIN_IDS = {
 
 IBC_ADDRESSES = {
     'uluna': {
+        'uatom': {
+            'address': 'ibc/18ABA66B791918D51D33415DA173632735D830E2E77E63C91C11D3008CFD5262',
+            'channel': 41,
+            'token': {
+                'address': 'ibc/0EF15DF2F02480ADE0BB6E85D9EBB5DAEA2836D3860E9F97F9AADE4F57A31AA0',
+                'channel': 72
+            },
+            'routes': [
+                {
+                    "pool_id": "800",
+                    "token_out_denom": "uosmo"
+                },
+                {
+                    "pool_id": "1",
+                    "token_out_denom": "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2"
+                }
+            ],
+            'gas_adjustment': '0.45',
+            'swap_fee': '0.08'
+        },
         'uosmo': {
             'address': 'ibc/0471F1C4E7AFD3F07702BEF6DC365268D64570F7C1FDC98EA6098DD6DE59817B',
-            'channel': 1
+            'channel': 1,
+            'token': {
+                'address': 'ibc/0EF15DF2F02480ADE0BB6E85D9EBB5DAEA2836D3860E9F97F9AADE4F57A31AA0',
+                'channel': 72
+            },
+            'routes': [{
+                "pool_id": "561",
+                #"token_out_denom": self.swap_request_denom
+                "token_out_denom": "uosmo"
+            }],
+            'gas_adjustment': '1.5',
+            'swap_fee': '0.002'
         },
         'uscrt': {
             'address': 'ibc/EB2CED20AB0466F18BE49285E56B31306D4C60438A022EA995BA65D5E3CF7E09',
             'channel': 16
-        },
-        'uatom': {
-            'address': 'ibc/18ABA66B791918D51D33415DA173632735D830E2E77E63C91C11D3008CFD5262',
-            'channel': 41
         },
         'uusdc': {
             'address': 'ibc/E1E3674A0E4E1EF9C69646F9AF8D9497173821826074622D831BAB73CCB99A2D',
@@ -186,10 +213,10 @@ IBC_ADDRESSES = {
         },
     },
     'uosmo': {
-        'uluna': {
-            'address': 'ibc/0EF15DF2F02480ADE0BB6E85D9EBB5DAEA2836D3860E9F97F9AADE4F57A31AA0',
-            'channel': 72
-        },
+        # 'uluna': {
+        #     'address': 'ibc/0EF15DF2F02480ADE0BB6E85D9EBB5DAEA2836D3860E9F97F9AADE4F57A31AA0',
+        #     'channel': 72
+        # },
         'ukuji': {
             'address': 'ibc/BB6BCDB515050BAE97516111873CCD7BCF1FD0CCB723CC12F3C4F704D6C646CE',
             'channel': 259
