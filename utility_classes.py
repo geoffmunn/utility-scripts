@@ -1462,6 +1462,7 @@ class TransactionCore():
 
         while retry == True:
             try:
+                #print (f"https://api-indexer.keplr.app/v1/price?ids={from_id['name2']},{to_id['name2']}&vs_currencies=usd")
                 prices:json = requests.get(f"https://api-indexer.keplr.app/v1/price?ids={from_id['name2']},{to_id['name2']}&vs_currencies=usd").json()
 
                 # Exit the loop if this hasn't returned an error
@@ -1522,7 +1523,7 @@ class TransactionCore():
                 if ibc_denom == False:
                     denom  = FULL_COIN_LOOKUP[fee_coin.denom]
                 else:
-                    denom = ibc_denom['base_denom']
+                    denom = FULL_COIN_LOOKUP[ibc_denom['base_denom']]
 
                 if first == False:
                     fee_string += ', and ' + str(amount) + ' ' + denom
@@ -1557,6 +1558,8 @@ class DelegationTransaction(TransactionCore):
         self.action:str                = ''
         self.delegator_address:str     = ''
         self.delegated_uluna:int       = 0
+        self.sender_address:str        = ''
+        self.sender_prefix:str         = ''
         self.sequence:int              = None
         self.validator_address_old:str = ''
         self.validator_address:str     = ''
