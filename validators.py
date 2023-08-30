@@ -503,7 +503,9 @@ def main():
         delegation_tx.delegator_address = wallet.address
         delegation_tx.validator_address = user_validator['operator_address']
         delegation_tx.delegated_uluna   = delegated_uluna
-
+        delegation_tx.sender_address    = wallet.address
+        delegation_tx.sender_prefix     = wallet.getPrefix(wallet.address)
+        
         # Simulate it
         result = delegation_tx.simulate(delegation_tx.delegate)
 
