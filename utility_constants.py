@@ -120,7 +120,7 @@ CHAIN_IDS = {
         'display_name': 'Luna Classic',
         'chain_id': 'columbus-5',
         'ibc_channels': ['channel-72'],
-        'lcd_urls': ['https://lcd.terrarebels.net', 'https://terra-classic-fcd.publicnode.com', 'https://lcd.terrarebels.net', 'https://rest.cosmos.directory/terra'],
+        'lcd_urls': ['https://terra-classic-fcd.publicnode.com', 'https://lcd.terrarebels.net', 'https://rest.cosmos.directory/terra'],
         'denom': 'uluna',
         'status': 'active'
     },
@@ -185,7 +185,7 @@ IBC_ADDRESSES = {
                     "token_out_denom": "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2"
                 }
             ],
-            'gas_adjustment': '0.45',
+            'gas_adjustment': '1.3',
             'swap_fee': '0.08'
         },
         'uosmo': {
@@ -197,7 +197,6 @@ IBC_ADDRESSES = {
             },
             'routes': [{
                 "pool_id": "561",
-                #"token_out_denom": self.swap_request_denom
                 "token_out_denom": "uosmo"
             }],
             'gas_adjustment': '1.5',
@@ -227,5 +226,23 @@ IBC_ADDRESSES = {
             'address': 'ibc/119334C55720942481F458C9C462F5C0CD1F1E7EEAC4679D674AA67221916AEA',
             'channel': 71
         }
+    }
+}
+
+OSMOSIS_POOLS = {
+    '1': {
+        'swap_fee': '0.002',
+        'token_in': 'uosmo',
+        'token_out': 'uatom'
+    },
+    '561': {
+        'swap_fee': '0.002',
+        'token_in': 'uluna',
+        'token_out': 'uosmo'
+    },
+    '800': {
+        'swap_fee': '0.08',
+        'token_in':'uluna',
+        'token_out': 'uosmo'
     }
 }
