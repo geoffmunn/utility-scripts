@@ -289,8 +289,6 @@ def main():
 
                 result = swaps_tx.swap()
     
-    #print ('broadcasting and exiting.')
-    #exit()
     if result == True:
         swaps_tx.broadcast()
     
@@ -317,7 +315,7 @@ def main():
         #         if swaps_tx.terra.gas_adjustment >= MAX_GAS_ADJUSTMENT:
         #             break
 
-        if swaps_tx is not None and swaps_tx.broadcast_result.code == 32:
+        if swaps_tx.broadcast_result is not None and swaps_tx.broadcast_result.code == 32:
             while True:
                 print (' 🛎️  Boosting sequence number and trying again...')
 
@@ -334,12 +332,15 @@ def main():
                 if swaps_tx.broadcast_result.code != 32:
                     break
 
-        if swaps_tx is None or swaps_tx.broadcast_result.is_tx_error():
-            if swaps_tx is None:
+        if swaps_tx.broadcast_result is None or swaps_tx.broadcast_result.is_tx_error():
+            if swaps_tx.broadcast_result is None:
                 print (' 🛎️  The swap transaction failed, no broadcast object was returned.')
             else:
                 print (' 🛎️  The swap transaction failed, an error occurred:')
-                print (f' 🛎️  {swaps_tx.broadcast_result.raw_log}')
+                if swaps_tx.broadcast_result.raw_log is not None:
+                    print (f' 🛎️  {swaps_tx.broadcast_result.raw_log}')
+                else:
+                    print ('No broadcast log was available.')
         else:
             print (f' ✅ Swapped amount: {wallet.formatUluna(swaps_tx.swap_amount)} {FULL_COIN_LOOKUP[swaps_tx.swap_denom]}')
             print (f' ✅ Tx Hash: {swaps_tx.broadcast_result.txhash}')

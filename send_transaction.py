@@ -496,13 +496,16 @@ def main():
                             break
 
 
-                if send_tx is None or send_tx.broadcast_result.is_tx_error():
-                    if send_tx is None:
+                if send_tx.broadcast_result is None or send_tx.broadcast_result.is_tx_error():
+                    if send_tx.broadcast_result is None:
                         print (' 🛎️  The send transaction failed, no broadcast object was returned.')
                     else:
                         print (' 🛎️  The send transaction failed, an error occurred:')
-                        print (f' 🛎️  Error code {send_tx.broadcast_result.code}')
-                        print (f' 🛎️  {send_tx.broadcast_result.raw_log}')
+                        if send_tx.broadcast_result.raw_log is not None:
+                            print (f' 🛎️  Error code {send_tx.broadcast_result.code}')
+                            print (f' 🛎️  {send_tx.broadcast_result.raw_log}')
+                        else:
+                            print ('No broadcast log was available.')
                 else:
                     print (f' ✅ Sent amount: {wallet.formatUluna(uluna_amount)} {FULL_COIN_LOOKUP[denom]}')
                     print (f' ✅ Tx Hash: {send_tx.broadcast_result.txhash}')
