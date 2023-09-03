@@ -9,7 +9,7 @@ from utility_classes import (
     get_user_choice,
     get_user_number,
     UATOM,
-    UKUJI,
+    #UKUJI,
     ULUNA,
     UOSMO,
     UserConfig,
@@ -239,8 +239,8 @@ def main():
     # As long as the swap_denom and swap_request_denom values are set, the correct contract should be picked
     use_market_swap = swaps_tx.setContract()
 
-    if swaps_tx.swap_request_denom == UKUJI:
-        swaps_tx.max_spread = 0.005
+    #if swaps_tx.swap_request_denom == UKUJI:
+    #    swaps_tx.max_spread = 0.005
 
     # print ('swap amount:', swaps_tx.swap_amount)
     # print ('swap denom:', swaps_tx.swap_denom)

@@ -23,11 +23,11 @@ VERSION_URI              = 'https://raw.githubusercontent.com/geoffmunn/utility-
 TERRASWAP_UUSD_TO_ULUNA_ADDRESS = 'terra1l7vy20x940je7lskm6x9s839vjsmekz9k9mv7g'
 #TERRASWAP_UKRW_TO_UUSD_ADDRESS  = 'terra1untf85jwv3kt0puyyc39myxjvplagr3wstgs5s'
 #ASTROPORT_UUSD_TO_MINA_ADDRESS  = 'terra134m8n2epp0n40qr08qsvvrzycn2zq4zcpmue48'
-ASTROPORT_UUSD_TO_UKUJI_ADDRESS  = 'terra1hasy32pvxmgu485x5tujylemqxynsv72lsu7ve'
+#ASTROPORT_UUSD_TO_UKUJI_ADDRESS  = 'terra1hasy32pvxmgu485x5tujylemqxynsv72lsu7ve'
 #ASTROPORT_UUSD_TO_ULUNA_ADDRESS  = 'terra1m6ywlgn6wrjuagcmmezzz2a029gtldhey5k552'
 KUJI_SMART_CONTACT_ADDRESS       = 'terra1xfsdgcemqwxp4hhnyk4rle6wr22sseq7j07dnn'
 TERRASWAP_UKRW_TO_ULUNA_ADDRESS  = 'terra1erfdlgdtt9e05z0j92wkndwav4t75xzyapntkv'
-TERRASWAP_UKUJI_TO_ULUNA_ADDRESS = 'terra19qx5xe6q9ll4w0890ux7lv2p4mf3csd4qvt3ex'
+#TERRASWAP_UKUJI_TO_ULUNA_ADDRESS = 'terra19qx5xe6q9ll4w0890ux7lv2p4mf3csd4qvt3ex'
 TERRASWAP_ULUNA_TO_UUSD_ADDRESS = 'terra1l7vy20x940je7lskm6x9s839vjsmekz9k9mv7g'
 BASE_SMART_CONTRACT_ADDRESS = 'terra1uewxz67jhhhs2tj97pfm2egtk7zqxuhenm4y4m'
 
@@ -59,7 +59,7 @@ MAX_VALIDATOR_COUNT = 130
 UATOM = 'uatom'
 UBASE = 'ubase'
 UKRW  = 'ukrw'
-UKUJI = 'ukuji'
+#UKUJI = 'ukuji'
 ULUNA = 'uluna'
 UOSMO = 'uosmo'
 UUSD  = 'uusd'
@@ -120,7 +120,7 @@ CHAIN_IDS = {
         'display_name': 'Luna Classic',
         'chain_id': 'columbus-5',
         'ibc_channels': ['channel-72'],
-        'lcd_urls': ['https://terra-classic-fcd.publicnode.com', 'https://lcd.terrarebels.net', 'https://rest.cosmos.directory/terra'],
+        'lcd_urls': ['https://lcd.terrarebels.net', 'https://terra-classic-fcd.publicnode.com', 'https://lcd.terrarebels.net', 'https://rest.cosmos.directory/terra'],
         'denom': 'uluna',
         'status': 'active'
     },
@@ -186,7 +186,27 @@ IBC_ADDRESSES = {
                 }
             ],
             'gas_adjustment': '1.3',
-            'swap_fee': '0.08'
+            'xswap_fee': '0.08'
+        },
+        'ukuji': {
+            'address': 'ibc/0471F1C4E7AFD3F07702BEF6DC365268D64570F7C1FDC98EA6098DD6DE59817B',
+            'xchannel': 1,
+            'token': {
+                'address': 'ibc/0EF15DF2F02480ADE0BB6E85D9EBB5DAEA2836D3860E9F97F9AADE4F57A31AA0',
+                'channel': 72
+            },
+            "routes": [
+                {
+                    "pool_id": "800",
+                    "token_out_denom": "uosmo"
+                },
+                {
+                    "pool_id": "744",
+                    "token_out_denom": "ibc/BB6BCDB515050BAE97516111873CCD7BCF1FD0CCB723CC12F3C4F704D6C646CE"
+                }
+            ],
+            'gas_adjustment': '1.5',
+            'xswap_fee': '0.002'
         },
         'uosmo': {
             'address': 'ibc/0471F1C4E7AFD3F07702BEF6DC365268D64570F7C1FDC98EA6098DD6DE59817B',
@@ -200,7 +220,7 @@ IBC_ADDRESSES = {
                 "token_out_denom": "uosmo"
             }],
             'gas_adjustment': '1.5',
-            'swap_fee': '0.002'
+            'xswap_fee': '0.002'
         },
         'uscrt': {
             'address': 'ibc/EB2CED20AB0466F18BE49285E56B31306D4C60438A022EA995BA65D5E3CF7E09',
@@ -216,17 +236,17 @@ IBC_ADDRESSES = {
         #     'address': 'ibc/0EF15DF2F02480ADE0BB6E85D9EBB5DAEA2836D3860E9F97F9AADE4F57A31AA0',
         #     'channel': 72
         # },
-        'ukuji': {
-            'address': 'ibc/BB6BCDB515050BAE97516111873CCD7BCF1FD0CCB723CC12F3C4F704D6C646CE',
-            'channel': 259
-        }
+        # 'ukuji': {
+        #     'address': 'ibc/BB6BCDB515050BAE97516111873CCD7BCF1FD0CCB723CC12F3C4F704D6C646CE',
+        #     'channel': 259
+        # }
     },
-    'ukuji': {
-        'uluna': {
-            'address': 'ibc/119334C55720942481F458C9C462F5C0CD1F1E7EEAC4679D674AA67221916AEA',
-            'channel': 71
-        }
-    }
+    # 'ukuji': {
+    #     'uluna': {
+    #         'address': 'ibc/119334C55720942481F458C9C462F5C0CD1F1E7EEAC4679D674AA67221916AEA',
+    #         'channel': 71
+    #     }
+    # }
 }
 
 OSMOSIS_POOLS = {
@@ -239,6 +259,11 @@ OSMOSIS_POOLS = {
         'swap_fee': '0.002',
         'token_in': 'uluna',
         'token_out': 'uosmo'
+    },
+    '744': {
+        'swap_fee': '0.002',
+        'token_in': 'uosmo',
+        'token_out': 'ukuji'
     },
     '800': {
         'swap_fee': '0.08',

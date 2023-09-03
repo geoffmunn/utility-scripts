@@ -13,7 +13,7 @@ from dateutil.tz import tz
 import traceback
 
 from utility_constants import (
-    ASTROPORT_UUSD_TO_UKUJI_ADDRESS,
+    #ASTROPORT_UUSD_TO_UKUJI_ADDRESS,
     #ASTROPORT_UUSD_TO_ULUNA_ADDRESS,
     BASE_SMART_CONTRACT_ADDRESS,
     CHAIN_IDS,
@@ -35,7 +35,7 @@ from utility_constants import (
     TERRASWAP_UUSD_TO_ULUNA_ADDRESS,
     UATOM,
     UBASE,
-    UKUJI,
+    #UKUJI,
     ULUNA,
     UOSMO,
     UKRW,
@@ -805,9 +805,9 @@ class Wallet:
 
             # Add the extra coins (Kuji etc)
             if self.terra.chain_id == 'columbus-5':
-                coin_balance = self.terra.wasm.contract_query(KUJI_SMART_CONTACT_ADDRESS, {'balance':{'address':self.address}})
-                if int(coin_balance['balance']) > 0:
-                    balances[UKUJI] = coin_balance['balance']
+                #coin_balance = self.terra.wasm.contract_query(KUJI_SMART_CONTACT_ADDRESS, {'balance':{'address':self.address}})
+                #if int(coin_balance['balance']) > 0:
+                #    balances[UKUJI] = coin_balance['balance']
 
                 coin_balance = self.terra.wasm.contract_query(BASE_SMART_CONTRACT_ADDRESS, {'balance':{'address':self.address}})
                 if int(coin_balance['balance']) > 0:
@@ -1514,7 +1514,6 @@ class TransactionCore():
             first      = True
             fee_coin:Coin
 
-            print ('fee coins:', fee_coins)
             for fee_coin in fee_coins.to_list():
 
                 amount = fee_coin.amount / COIN_DIVISOR
@@ -2045,13 +2044,13 @@ class SwapTransaction(TransactionCore):
                     parts:dict = {}
                     if 'native_token' in result['assets'][0]['info']:
                         parts[result['assets'][0]['info']['native_token']['denom']] = int(result['assets'][0]['amount'])
-                    else:
-                        if result['assets'][0]['info']['token']['contract_addr'] == KUJI_SMART_CONTACT_ADDRESS:
-                            parts[UKUJI] = int(result['assets'][0]['amount'])
+                    #else:
+                    #    if result['assets'][0]['info']['token']['contract_addr'] == KUJI_SMART_CONTACT_ADDRESS:
+                    #        parts[UKUJI] = int(result['assets'][0]['amount'])
 
                     parts[result['assets'][1]['info']['native_token']['denom']] = int(result['assets'][1]['amount'])
 
-                    contract_swaps:list  = [ULUNA, UKRW, UUSD, UKUJI]
+                    contract_swaps:list  = [ULUNA, UKRW, UUSD]#, UKUJI]
 
                     if self.swap_denom in contract_swaps and self.swap_request_denom in contract_swaps:
                         # Just about all swap types will use this approach:
@@ -2352,7 +2351,7 @@ class SwapTransaction(TransactionCore):
         
         use_market_swap:bool = True
         self.contract        = None
-        contract_swaps:list  = [ULUNA, UKRW, UUSD, UKUJI, UBASE]
+        contract_swaps:list  = [ULUNA, UKRW, UUSD, UBASE]# UKUJI, UBASE]
 
         if self.swap_denom in contract_swaps and self.swap_request_denom in contract_swaps:
 
@@ -2381,12 +2380,12 @@ class SwapTransaction(TransactionCore):
                     self.contract = None
                     use_market_swap = True
 
-            if self.swap_denom == UUSD:
-                if self.swap_request_denom == UKUJI:
-                    self.contract = ASTROPORT_UUSD_TO_UKUJI_ADDRESS
-            if self.swap_denom == UKUJI:
-                if self.swap_request_denom == UUSD:
-                    self.contract = ASTROPORT_UUSD_TO_UKUJI_ADDRESS
+            #if self.swap_denom == UUSD:
+                #if self.swap_request_denom == UKUJI:
+                #    self.contract = ASTROPORT_UUSD_TO_UKUJI_ADDRESS
+            #if self.swap_denom == UKUJI:
+            #    if self.swap_request_denom == UUSD:
+            #        self.contract = ASTROPORT_UUSD_TO_UKUJI_ADDRESS
 
             if self.swap_denom == UBASE:
                 if self.swap_request_denom == ULUNA:
@@ -2426,6 +2425,7 @@ class SwapTransaction(TransactionCore):
 
             # This will be used by the swap function next time we call it
             # We'll use uluna as the preferred fee currency just to keep things simple
+
             self.fee = self.calculateFee(requested_fee, ULUNA)
 
             # Figure out the fee structure
@@ -2448,7 +2448,7 @@ class SwapTransaction(TransactionCore):
                 new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount)), Coin(self.swap_denom, int(self.tax))})
 
             requested_fee.amount = new_coin
-
+            
             # This will be used by the swap function next time we call it
             self.fee = requested_fee
         
@@ -2462,8 +2462,13 @@ class SwapTransaction(TransactionCore):
                 self.fee_deductables = int(self.tax)
             elif fee_denom == ULUNA and self.swap_denom == UBASE:
                 self.fee_deductables = 0
+            #elif fee_denom == UKUJI and self.swap_denom == UUSD:
+            #    self.fee_deductables = int(self.tax)
             else:
-                self.fee_deductables = int(self.tax * 2)
+                if self.tax is not None:
+                    self.fee_deductables = int(self.tax * 2)
+                else:
+                    self.fee_deductables = None
 
             return True
         else:
@@ -2604,12 +2609,12 @@ class SwapTransaction(TransactionCore):
                     swap_details:Coin = Coin(self.swap_request_denom, 0)
             elif self.swap_denom == UUSD and self.swap_request_denom == UBASE:
                 swap_details:Coin = Coin(self.swap_request_denom, 0)
-            elif self.swap_request_denom == UKUJI:
-                swap_details:Coin = Coin(self.swap_request_denom, 0)
+            #elif self.swap_request_denom == UKUJI:
+            #    swap_details:Coin = Coin(self.swap_request_denom, 0)
             else:
                 # This will cover nearly all swap pairs:
                 swap_price = self.beliefPrice()
-                if swap_price is not None:
+                if swap_price is not None and swap_price > 0:
                     swap_details:Coin = Coin(self.swap_request_denom, int(self.swap_amount / swap_price))
                 else:
                     swap_details:Coin = Coin(self.swap_request_denom, int(0))
