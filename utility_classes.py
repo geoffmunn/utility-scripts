@@ -35,7 +35,7 @@ from utility_constants import (
     TERRASWAP_UUSD_TO_ULUNA_ADDRESS,
     UATOM,
     UBASE,
-    #UKUJI,
+    UKUJI,
     ULUNA,
     UOSMO,
     UKRW,
@@ -2180,13 +2180,13 @@ class SwapTransaction(TransactionCore):
         self.ibc_routes     = IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['routes']
 
         # Figure out the minimum expected coins for this swap:
-        swap_rate:Coin = self.swapRate()
+        #swap_rate:Coin = self.swapRate()
 
-        swap_fee:float = IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['swap_fee']
+        #swap_fee:float = IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['swap_fee']
         gas_adjustment = IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['gas_adjustment']
 
-        print ('swap amount before tax:', (swap_rate.amount * 0.995))
-        print ('max spread:', self.max_spread)
+        #print ('swap amount before tax:', (swap_rate.amount * 0.995))
+        #print ('max spread:', self.max_spread)
 
         #For each route, conver the current coin to the base price
         # Deduct swap fee
@@ -2626,7 +2626,7 @@ class SwapTransaction(TransactionCore):
             #    except Exception as err:
             #        swap_details:Coin = Coin(self.swap_request_denom, 0)
             
-            off_chain_coins = [UOSMO, UATOM]
+            off_chain_coins = [UOSMO, UATOM, UKUJI]
             if self.swap_denom == ULUNA and self.swap_request_denom in off_chain_coins:
                 # Calculate the amount of OSMO we'll be getting:
                 # (lunc amount * lunc unit cost) / osmo price
