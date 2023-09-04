@@ -1876,16 +1876,18 @@ class SendTransaction(TransactionCore):
                     )
                 else:
                     # OSMO:
-                    
+                    #print (self.sender_address)
+                    #print (self.recipient_address)
+                    #print (self.source_channel)
                     msg = MsgTransfer(
                         source_port       = 'transfer',
-                        source_channel    = "channel-72",
+                        source_channel    = self.source_channel,
                         token = {
                             "amount": str(send_amount),
-                            "denom": "ibc/0EF15DF2F02480ADE0BB6E85D9EBB5DAEA2836D3860E9F97F9AADE4F57A31AA0"
+                            "denom": "ibc/0EF15DF2F02480ADE0BB6E85D9EBB5DAEA2836D3860E9F97F9AADE4F57A31AA0" # This is uluna, we only support LUNC at the moment
                         },
-                        sender            = 'osmo1u2vljph6e3jkmpp7529cv8wd3987735vlmv4ea',
-                        receiver          = 'terra1kgge7tyctna52qfskpkw73xu4fhmd0y29ravr6',
+                        sender            = self.sender_address,
+                        receiver          = self.recipient_address,
                         timeout_height    = Height(revision_number = 6, revision_height = self.block_height),
                         timeout_timestamp = 0
                     )
@@ -1898,6 +1900,8 @@ class SendTransaction(TransactionCore):
                         gas = '7500',
                         fee_denoms = ['uosmo']
                     )
+
+                    exit()
 
             # This process often generates sequence errors. If we get a response error, then
             # bump up the sequence number by one and try again.
@@ -2317,7 +2321,7 @@ class SwapTransaction(TransactionCore):
 
         # try:
         
-        token_in:Coin   = Coin(IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['token']['address'], self.swap_amount)
+        token_in:Coin   = Coin(IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['token_in'], self.swap_amount)
 
         tx_msg = MsgSwapExactAmountIn(
             sender               = self.sender_address,
