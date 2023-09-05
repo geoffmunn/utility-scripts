@@ -2188,7 +2188,7 @@ class SwapTransaction(TransactionCore):
 
         #swap_fee:float = IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['swap_fee']
         #gas_adjustment = IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['gas_adjustment']
-        fee_multiplier:float = IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['fee_multiplier']
+        fee_multiplier:float = float(IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['fee_multiplier'])
         #print ('swap amount before tax:', (swap_rate.amount * 0.995))
         #print ('max spread:', self.max_spread)
 
