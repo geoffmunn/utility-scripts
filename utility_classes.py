@@ -1461,18 +1461,16 @@ class TransactionCore():
         prices:json     = {}
 
         # Get the chains that we are using
-        #from_id:dict = self.getChainByDenom(self.swap_denom)
-        #to_id:dict   = self.getChainByDenom(self.swap_request_denom)
         from_id:dict = self.getChainByDenom(from_denom)
         to_id:dict   = self.getChainByDenom(to_denom)
 
         while retry == True:
             try:
-                #print (f"https://api-indexer.keplr.app/v1/price?ids={from_id['name2']},{to_id['name2']}&vs_currencies=usd")
                 prices:json = requests.get(f"https://api-indexer.keplr.app/v1/price?ids={from_id['name2']},{to_id['name2']}&vs_currencies=usd").json()
 
                 # Exit the loop if this hasn't returned an error
                 retry = False
+
             except Exception as err:
                 retry_count += 1
                 if retry_count == 10:
@@ -1484,8 +1482,8 @@ class TransactionCore():
                 else:
                     time.sleep(1)
 
-        to_price:float = prices[to_id['name2']]['usd']
         from_price:float = prices[from_id['name2']]['usd']
+        to_price:float   = prices[to_id['name2']]['usd']
         
         return {'from':from_price, 'to': to_price}
     
@@ -2300,10 +2298,24 @@ class SwapTransaction(TransactionCore):
             print ('uosmo fee:', uosmo_fee)
             # Calculate the LUNC fee
             # (osmosis amount * osmosis unit cost) / lunc price
-            prices:json    = self.getPrices(self.swap_denom, self.swap_request_denom)
+            # For the calculation to work, the 'to' value always needs to be the usomo price
+            if self.swap_denom == ULUNA and self.swap_request_denom == UOSMO:
+                from_denom:str = self.swap_denom
+                to_denom:str = self.swap_request_denom
+            elif self.swap_denom == UOSMO and self.swap_request_denom == ULUNA:
+                from_denom:str = self.swap_request_denom
+                to_denom:str = self.swap_denom
+
+            prices:json    = self.getPrices(from_denom, to_denom)
             print ('prices:', prices)
             #fee_amount:float = float((uosmo_fee * prices['to']) / prices['from'])
-            fee_amount:float = float((uosmo_fee * prices['from']) / prices['to'])
+            print ('from:', self.swap_denom, from_denom)
+            print ('to:', self.swap_request_denom, to_denom)
+
+            # OSMO -> LUNC:
+            #fee_amount:float = float((uosmo_fee * prices['from']) / prices['to'])
+            fee_amount:float = float((uosmo_fee * prices['to']) / prices['from'])
+
             #print ((uosmo_fee * prices['from']))
             #print (float((uosmo_fee * prices['from']) / prices['to']))
             
@@ -2311,7 +2323,7 @@ class SwapTransaction(TransactionCore):
             fee_denom:str  = fee_coin.denom
             print ('fee denom:', fee_denom)
             fee_denom:str = 'ibc/0EF15DF2F02480ADE0BB6E85D9EBB5DAEA2836D3860E9F97F9AADE4F57A31AA0'
-            
+
             new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount))})
 
             # This will be used by the swap function next time we call it

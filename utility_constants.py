@@ -202,7 +202,7 @@ IBC_ADDRESSES = {
                 "pool_id": "561",
                 "token_out_denom": "uosmo"
             }],
-            'gas_adjustment': '1.5'
+            'gas_adjustment': '2.5'
         },
         #'uscrt': {
         #    'address': 'ibc/EB2CED20AB0466F18BE49285E56B31306D4C60438A022EA995BA65D5E3CF7E09',
