@@ -1334,34 +1334,36 @@ class TransactionCore():
 
         coin:Coin
         for coin in requested_fee.amount:
-
-            if coin.denom == 'uosmo':
+            #print ('requested fee coin:', coin)
+            # if coin.denom == 'uosmo':
             
-                # We need to convert OSMO to LUNC for the fee
+            #     print ('ALERT: THIS IS USING THE OSMO FEE CONVERSION')
+            #     print ('PLEASE DOUBLE CHECK THAT THIS WORKS - IT IS SET SPECIFICALLY FOR OSMO->LUNC')
+            #     # We need to convert OSMO to LUNC for the fee
+            #     prices:json = self.getPrices(self.swap_denom, self.swap_request_denom)
 
-                prices:json = self.getPrices(self.swap_denom, self.swap_request_denom)
+            #     # Calculate the LUNC fee
+            #     # (osmosis amount * osmosis unit cost) / lunc price
+            #     uluna_fee_value = int(math.ceil((coin.amount * prices['to']) / prices['from']))
 
-                # Calculate the LUNC fee
-                # (osmosis amount * osmosis unit cost) / lunc price
-                uluna_fee_value = int(math.ceil((coin.amount * prices['to']) / prices['from']))
+            #     # Update the requested fee object:
+            #     requested_fee.amount    = Coins({Coin('ibc/0EF15DF2F02480ADE0BB6E85D9EBB5DAEA2836D3860E9F97F9AADE4F57A31AA0', uluna_fee_value)})
+            #     #requested_fee.gas_limit = requested_fee.gas_limit * 1
 
-                # Update the requested fee object:
-                requested_fee.amount    = Coins({Coin('ibc/0EF15DF2F02480ADE0BB6E85D9EBB5DAEA2836D3860E9F97F9AADE4F57A31AA0', uluna_fee_value)})
-                #requested_fee.gas_limit = 300000
+            #     print ('new amount:', requested_fee.amount)
+            #     return requested_fee
+            # else:
+            if coin.denom in self.balances and int(self.balances[coin.denom]) >= int(coin.amount):
 
-                return requested_fee
-            else:
-                if coin.denom in self.balances and int(self.balances[coin.denom]) >= int(coin.amount):
+                if coin.denom == UUSD:
+                    has_uusd = coin.amount
+                elif coin.denom == ULUNA:
+                    has_uluna = coin.amount
+                else:
+                    other_coin_list.append(coin)
 
-                    if coin.denom == UUSD:
-                        has_uusd = coin.amount
-                    elif coin.denom == ULUNA:
-                        has_uluna = coin.amount
-                    else:
-                        other_coin_list.append(coin)
-
-                    if coin.denom == specific_denom:
-                        specific_denom_amount = coin.amount
+                if coin.denom == specific_denom:
+                    specific_denom_amount = coin.amount
 
         if has_uluna > 0 or has_uusd > 0 or len(other_coin_list) > 0:
             
@@ -2195,10 +2197,7 @@ class SwapTransaction(TransactionCore):
         #For each route, conver the current coin to the base price
         # Deduct swap fee
         # deduct slippage
-        print (self.ibc_routes)
-        for route in self.ibc_routes:
-            print (route)
-
+        
 
         # ibc_denom = wallet.denomTrace(denom)
         # raw_amount = float(wallet.balances[denom]) / COIN_DIVISOR
@@ -2279,15 +2278,17 @@ class SwapTransaction(TransactionCore):
             # Get the stub of the requested fee so we can adjust it
             requested_fee = tx.auth_info.fee
 
+            print ('requested fee:', requested_fee)
+
             # Get the fee details, but we'll need to make some modifications
             self.fee:Fee  = self.calculateFee(requested_fee)
-            print (requested_fee)
+            print ('calculated fee:', self.fee)
             
             fee_coin:Coin = self.fee.amount.to_list()[0]
             
             # We'll take the returned fee and use that as the gas limit
-            self.gas_limit = math.floor(self.fee.gas_limit * float(gas_adjustment))
-            #self.gas_limit = self.fee.gas_limit
+            #self.gas_limit = math.floor(self.fee.gas_limit * float(gas_adjustment))
+            self.gas_limit = self.fee.gas_limit
             
             #self.gas_limit = 350000
             print ('gas limit:', self.gas_limit)            
@@ -2296,16 +2297,27 @@ class SwapTransaction(TransactionCore):
             min_uosmo_gas:float = 0.0025
             uosmo_fee:float     = min_uosmo_gas * float(self.gas_limit)
 
+            print ('uosmo fee:', uosmo_fee)
             # Calculate the LUNC fee
             # (osmosis amount * osmosis unit cost) / lunc price
             prices:json    = self.getPrices(self.swap_denom, self.swap_request_denom)
-            fee_amount:int = int((uosmo_fee * prices['to']) / prices['from'])
+            print ('prices:', prices)
+            #fee_amount:float = float((uosmo_fee * prices['to']) / prices['from'])
+            fee_amount:float = float((uosmo_fee * prices['from']) / prices['to'])
+            #print ((uosmo_fee * prices['from']))
+            #print (float((uosmo_fee * prices['from']) / prices['to']))
+            
+            print ('fee amount:', fee_amount)
             fee_denom:str  = fee_coin.denom
+            print ('fee denom:', fee_denom)
+            fee_denom:str = 'ibc/0EF15DF2F02480ADE0BB6E85D9EBB5DAEA2836D3860E9F97F9AADE4F57A31AA0'
+            
             new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount))})
 
             # This will be used by the swap function next time we call it
             self.fee.amount = new_coin
 
+            print ('final fee:', self.fee)
             return True
         else:
             return False
@@ -2603,6 +2615,10 @@ class SwapTransaction(TransactionCore):
         Returns a coin object that we need to decode.
         """
         
+        print ('use market swap?', self.use_market_swap)
+        print (self.swap_denom)
+        print (self.swap_request_denom)
+
         if self.use_market_swap == False:
 
             if self.swap_denom == UBASE:
@@ -2630,8 +2646,9 @@ class SwapTransaction(TransactionCore):
             #    except Exception as err:
             #        swap_details:Coin = Coin(self.swap_request_denom, 0)
             
-            off_chain_coins = [UOSMO, UATOM, UKUJI]
-            if self.swap_denom == ULUNA and self.swap_request_denom in off_chain_coins:
+            off_chain_coins = [ULUNA, UOSMO, UATOM, UKUJI]
+            #if self.swap_denom == ULUNA and self.swap_request_denom in off_chain_coins:
+            if self.swap_denom in off_chain_coins and self.swap_request_denom in off_chain_coins:
                 # Calculate the amount of OSMO we'll be getting:
                 # (lunc amount * lunc unit cost) / osmo price
                 prices:json = self.getPrices(self.swap_denom, self.swap_request_denom)

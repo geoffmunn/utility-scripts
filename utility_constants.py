@@ -218,9 +218,9 @@ IBC_ADDRESSES = {
             'token_in': 'uosmo',
             'routes': [{
                 "pool_id": "561",
-                "token_out_denom": "uluna"
+                "token_out_denom": "ibc/0EF15DF2F02480ADE0BB6E85D9EBB5DAEA2836D3860E9F97F9AADE4F57A31AA0"
             }],
-            'gas_adjustment': '1'
+            'gas_adjustment': '2.5'
         }
     }
 

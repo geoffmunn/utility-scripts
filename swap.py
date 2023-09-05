@@ -251,7 +251,7 @@ def main():
     # print ('max spread:', swaps_tx.max_spread)
     
     #if swaps_tx.swap_request_denom == UOSMO and swaps_tx.sender_prefix != 'terra':
-    if swaps_tx.swap_request_denom in [UOSMO, UATOM, UKUJI]:
+    if swaps_tx.swap_request_denom in [UOSMO, UATOM, UKUJI] or swaps_tx.swap_denom in [UOSMO, UATOM, UKUJI]:
         # This is an off-chain swap. Something like LUNC->OSMO
         result = swaps_tx.offChainSimulate()
 
@@ -289,6 +289,8 @@ def main():
 
                 result = swaps_tx.swap()
     
+    #print ('about to broadcast... exiting')
+    #exit()
     if result == True:
         swaps_tx.broadcast()
     
