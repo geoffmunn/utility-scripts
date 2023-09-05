@@ -2187,8 +2187,8 @@ class SwapTransaction(TransactionCore):
         #swap_rate:Coin = self.swapRate()
 
         #swap_fee:float = IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['swap_fee']
-        gas_adjustment = IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['gas_adjustment']
-
+        #gas_adjustment = IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['gas_adjustment']
+        fee_multiplier:float = IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['fee_multiplier']
         #print ('swap amount before tax:', (swap_rate.amount * 0.995))
         #print ('max spread:', self.max_spread)
 
@@ -2261,7 +2261,6 @@ class SwapTransaction(TransactionCore):
 
         #self.min_out = math.floor((swap_rate.amount * 0.995) * (1 - float(swap_fee)) * (1 - float(self.max_spread)))
         self.min_out = math.floor(current_value)
-        #self.min_out = 7250
         print ('min out:', self.min_out)   
                     
         #self.min_out   = math.floor(swap_rate.amount * (1 - self.max_spread))
@@ -2288,7 +2287,6 @@ class SwapTransaction(TransactionCore):
             #self.gas_limit = math.floor(self.fee.gas_limit * float(gas_adjustment))
             self.gas_limit = self.fee.gas_limit
             
-            #self.gas_limit = 350000
             print ('gas limit:', self.gas_limit)            
             # Now calculate the actual fee
             #(0.007264 * 0.424455) / 0.00006641 = 43.7972496474
@@ -2299,27 +2297,31 @@ class SwapTransaction(TransactionCore):
             # Calculate the LUNC fee
             # (osmosis amount * osmosis unit cost) / lunc price
             # For the calculation to work, the 'to' value always needs to be the usomo price
-            if self.swap_denom == ULUNA and self.swap_request_denom == UOSMO:
-                from_denom:str = self.swap_denom
-                to_denom:str = self.swap_request_denom
-            elif self.swap_denom == UOSMO and self.swap_request_denom == ULUNA:
-                from_denom:str = self.swap_request_denom
-                to_denom:str = self.swap_denom
+            #if self.swap_denom == ULUNA and self.swap_request_denom == UOSMO:
+                #from_denom:str = self.swap_denom
+                #to_denom:str = self.swap_request_denom
+            #elif self.swap_denom == UOSMO and self.swap_request_denom == ULUNA:
+            #    from_denom:str = self.swap_request_denom
+            #    to_denom:str = self.swap_denom
+
+            from_denom:str = UOSMO
+            to_denom:str = ULUNA
 
             prices:json    = self.getPrices(from_denom, to_denom)
             print ('prices:', prices)
             #fee_amount:float = float((uosmo_fee * prices['to']) / prices['from'])
-            print ('from:', self.swap_denom, from_denom)
-            print ('to:', self.swap_request_denom, to_denom)
+            #print ('from:', from_denom)
+            #print ('to:', to_denom)
 
             # OSMO -> LUNC:
-            #fee_amount:float = float((uosmo_fee * prices['from']) / prices['to'])
-            fee_amount:float = float((uosmo_fee * prices['to']) / prices['from'])
+            fee_amount:float = float((uosmo_fee * prices['from']) / prices['to'])
+            #fee_amount:float = float((uosmo_fee * prices['to']) / prices['from'])
 
-            #print ((uosmo_fee * prices['from']))
-            #print (float((uosmo_fee * prices['from']) / prices['to']))
+            print ((uosmo_fee * prices['from']))
+            print (float((uosmo_fee * prices['from']) / prices['to']))
             
             print ('fee amount:', fee_amount)
+            fee_amount = fee_amount * fee_multiplier
             fee_denom:str  = fee_coin.denom
             print ('fee denom:', fee_denom)
             fee_denom:str = 'ibc/0EF15DF2F02480ADE0BB6E85D9EBB5DAEA2836D3860E9F97F9AADE4F57A31AA0'
