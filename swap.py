@@ -45,12 +45,12 @@ def get_user_singlechoice(question:str, user_wallets:dict):
             label_widths[1] = len(wallet_name)
 
         if ULUNA in user_wallets[wallet_name].balances:
-            uluna_val = user_wallets[wallet_name].formatUluna(user_wallets[wallet_name].balances[ULUNA])
+            uluna_val = user_wallets[wallet_name].formatUluna(user_wallets[wallet_name].balances[ULUNA], ULUNA)
         else:
             uluna_val = ''
             
         if UUSD in user_wallets[wallet_name].balances:
-            ustc_val = user_wallets[wallet_name].formatUluna(user_wallets[wallet_name].balances[UUSD])
+            ustc_val = user_wallets[wallet_name].formatUluna(user_wallets[wallet_name].balances[UUSD], UUSD)
         else:
             ustc_val = ''
 
@@ -109,14 +109,14 @@ def get_user_singlechoice(question:str, user_wallets:dict):
             wallet_name_str = wallet_name + padding_str[0:label_widths[1] - len(wallet_name)]
 
             if ULUNA in wallet.balances:
-                lunc_str = wallet.formatUluna(wallet.balances[ULUNA], False)
+                lunc_str = wallet.formatUluna(wallet.balances[ULUNA], ULUNA, False)
             else: 
                 lunc_str = ''
 
             lunc_str = lunc_str + padding_str[0:label_widths[2] - len(lunc_str)]
             
             if UUSD in wallet.balances:
-                ustc_str = wallet.formatUluna(wallet.balances[UUSD], False)
+                ustc_str = wallet.formatUluna(wallet.balances[UUSD], UUSD, False)
             else:
                 ustc_str = ' '
             
@@ -204,9 +204,9 @@ def main():
         print (' 🛑 Exiting...\n')
         exit()
 
-    available_balance:float = float(wallet.formatUluna(wallet.balances[coin_from]))
+    available_balance:float = float(wallet.formatUluna(wallet.balances[coin_from], coin_from))
     print (f'This coin has a maximum of {available_balance} {FULL_COIN_LOOKUP[coin_from]} available.')
-    swap_uluna = get_user_number('How much do you want to swap? ', {'max_number': available_balance, 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': True, 'keep_minimum': False})
+    swap_uluna = get_user_number('How much do you want to swap? ', {'max_number': available_balance, 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': True, 'keep_minimum': False, 'target_denom': coin_from})
 
     print ('\nWhat coin do you want to swap TO?')
     coin_to, answer, estimated_amount = get_coin_selection("Select a coin number 1 - " + str(len(wallet.balances)) + ", 'X' to continue, or 'Q' to quit: ", wallet.balances, False, {'denom':coin_from, 'amount':swap_uluna}, wallet)
@@ -215,7 +215,7 @@ def main():
         print (' 🛑 Exiting...\n')
         exit()
 
-    print (f'You will be swapping {wallet.formatUluna(swap_uluna, False)} {FULL_COIN_LOOKUP[coin_from]} for approximately {estimated_amount} {FULL_COIN_LOOKUP[coin_to]}')
+    print (f'You will be swapping {wallet.formatUluna(swap_uluna, coin_from, False)} {FULL_COIN_LOOKUP[coin_from]} for approximately {estimated_amount} {FULL_COIN_LOOKUP[coin_to]}')
     complete_transaction = get_user_choice('Do you want to continue? (y/n) ', [])
 
     if complete_transaction == False:
@@ -344,7 +344,7 @@ def main():
                 else:
                     print ('No broadcast log was available.')
         else:
-            print (f' ✅ Swapped amount: {wallet.formatUluna(swaps_tx.swap_amount)} {FULL_COIN_LOOKUP[swaps_tx.swap_denom]}')
+            print (f' ✅ Swapped amount: {wallet.formatUluna(swaps_tx.swap_amount, swaps_tx.swap_denom)} {FULL_COIN_LOOKUP[swaps_tx.swap_denom]}')
             print (f' ✅ Tx Hash: {swaps_tx.broadcast_result.txhash}')
     else:
         print (' 🛎️  The swap transaction could not be completed')

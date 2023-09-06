@@ -53,6 +53,7 @@ USER_ACTION_VALIDATOR_UNDELEGATE         = 'u'
 USER_ACTION_VALIDATOR_SWITCH             = 's'
 
 COIN_DIVISOR = 1000000
+COIN_DIVISOR_ETH = 1000000000000000000
 MAX_VALIDATOR_COUNT = 130
 
 # Coin constants:
@@ -92,7 +93,8 @@ FULL_COIN_LOOKUP = {
     'usgd':  'SGT',
     'uthb':  'THT',
     'utwd':  'TWT',
-    'uusd':  'UST'
+    'uusd':  'UST',
+    'weth-wei': 'ETH'
 }
 
 BASIC_COIN_LOOKUP = {
@@ -209,6 +211,21 @@ IBC_ADDRESSES = {
             'gas_adjustment': '2.5',
             'fee_multiplier': '1'
         },
+        'weth-wei': {
+            'token_in': 'ibc/0EF15DF2F02480ADE0BB6E85D9EBB5DAEA2836D3860E9F97F9AADE4F57A31AA0',
+            'routes': [
+                {
+                    "pool_id": "800",
+                    "token_out_denom": "uosmo"
+                },
+                {
+                    "pool_id": "704",
+                    "token_out_denom": "ibc/EA1D43981D5C9A1C4AAEA9C23BB1D4FA126BA9BC7020A25E0AE4AA841EA25DC5"
+                }
+            ],
+            'gas_adjustment': '2.5',
+            'fee_multiplier': '1'
+        }
         #'uscrt': {
         #    'address': 'ibc/EB2CED20AB0466F18BE49285E56B31306D4C60438A022EA995BA65D5E3CF7E09',
         #    'channel': 16
@@ -306,3 +323,51 @@ OSMOSIS_POOLS = {
         'token_out': 'uosmo'
     }
 }
+
+# Cronos
+# Injective
+# Kava
+# Fetch.ai
+# Akash Network
+# Band Protocol
+# Axelar
+# Stride
+# Medibloc
+# Bluzelle
+# Shentu
+# Secret
+# Evmos
+# Sommelier
+# Persistence
+# IRISnet
+# Oraichain
+# Cudos
+# Stargaze
+# KI
+# Umee
+# Juno
+# Cheqd Network
+# Ion
+# Sentinel
+# Carbon Protocol
+# Regen
+# Mars Protocol
+# COMDEX
+# Chihuahua Chain
+# Lambda
+# Planq
+# LikeCoin
+# Bitsong
+# AssetMantle
+# Graviton
+# Desmos
+# IXO
+# e-Money
+# Decentr
+# Odin Protocol
+# Starname
+# Sifchain
+# Vidulum
+# Microtick
+# Arable Protocol
+# Bidao

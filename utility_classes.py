@@ -19,6 +19,7 @@ from utility_constants import (
     CHAIN_IDS,
     CHECK_FOR_UPDATES,
     COIN_DIVISOR,
+    COIN_DIVISOR_ETH,
     CONFIG_FILE_NAME,
     FULL_COIN_LOOKUP,
     GAS_ADJUSTMENT,
@@ -135,6 +136,18 @@ def coin_list(input: Coins, existingList: dict) -> dict:
 
     return existingList
 
+def divide_raw_balance(amount:int, denom:str):
+    """
+    Return a human-readable amount depending on what type of coin this is.
+    """
+    result:float = 0
+    if denom == 'weth-wei':
+        result = amount / COIN_DIVISOR_ETH
+    else:
+        result = amount / COIN_DIVISOR
+
+    return result
+
 def isDigit(value):
     """
     A better method for identifying digits. This one can handle decimal places.
@@ -155,6 +168,18 @@ def isPercentage(value:str):
         return True
     else:
         return False
+    
+def multiply_raw_balance(amount:int, denom:str):
+    """
+    Return a human-readable amount depending on what type of coin this is.
+    """
+    result:float = 0
+    if denom == 'weth-wei':
+        result = amount * COIN_DIVISOR_ETH
+    else:
+        result = amount * COIN_DIVISOR
+
+    return result
     
 def strtobool(val):
     """
@@ -207,7 +232,7 @@ def get_coin_selection(question:str, coins:dict, only_active_coins:bool = True, 
         if coin in coins or only_active_coins == False:
 
             if coin in coins:
-                coin_val = wallet.formatUluna(coins[coin])
+                coin_val = wallet.formatUluna(coins[coin], coin)
 
                 if len(str(coin_val)) > label_widths[2]:
                     label_widths[2] = len(str(coin_val))
@@ -224,12 +249,12 @@ def get_coin_selection(question:str, coins:dict, only_active_coins:bool = True, 
 
                 if coin != estimation_against['denom']:
                     estimated_result:Coin = swaps_tx.swapRate()
-                    estimated_value:str   = wallet.formatUluna(estimated_result.amount)
+                    estimated_value:str   = wallet.formatUluna(estimated_result.amount, estimated_result.denom)
 
                     if estimated_value == '0':
                         estimated_value = None
                 else:
-                    estimated_result:Coin = Coin(estimation_against['denom'], 1 * COIN_DIVISOR)
+                    estimated_result:Coin = Coin(estimation_against['denom'], multiply_raw_balance(1, estimation_against['denom']))
                     estimated_value:str   = None
                 
                 coin_values[coin] = estimated_value
@@ -293,7 +318,7 @@ def get_coin_selection(question:str, coins:dict, only_active_coins:bool = True, 
                 coin_name_str = coin_name
 
             if coin in coins:
-                coin_val = wallet.formatUluna(coins[coin])
+                coin_val = wallet.formatUluna(coins[coin], coin)
 
                 if label_widths[2] > len(str(coin_val)):
                     balance_str = coin_val + padding_str[0:label_widths[2] - len(coin_val)]
@@ -496,12 +521,12 @@ def get_user_number(question:str, params:dict):
         if 'percentages_allowed' in params and is_percentage == True:
             if 'convert_percentages' in params and params['convert_percentages'] == True:
                 wallet:Wallet = Wallet()
-                answer = float(wallet.convertPercentage(answer, params['keep_minimum'], params['max_number']))
+                answer = float(wallet.convertPercentage(answer, params['keep_minimum'], params['max_number'], params['target_denom']))
             else:
                 answer = answer + '%'
         else:
             if convert_to_uluna == True:
-                answer = float(float(answer) * COIN_DIVISOR)
+                answer = float(multiply_raw_balance(answer, params['target_denom']))
 
     return answer
 
@@ -680,7 +705,7 @@ class Wallet:
         
         return True
     
-    def convertPercentage(self, percentage:float, keep_minimum:bool, target_amount:float):
+    def convertPercentage(self, percentage:float, keep_minimum:bool, target_amount:float, target_denom:str):
         """
         A generic helper function to convert a potential percentage into an actual number.
         """
@@ -694,7 +719,7 @@ class Wallet:
             lunc_amount:float = float(target_amount) * percentage
             
         lunc_amount:float = float(str(lunc_amount))
-        uluna_amount:int  = int(lunc_amount * COIN_DIVISOR)
+        uluna_amount:int  = int(multiply_raw_balance(lunc_amount, target_denom))
         
         return uluna_amount
     
@@ -750,12 +775,12 @@ class Wallet:
         else:
             return False
 
-    def formatUluna(self, uluna:float, add_suffix:bool = False):
+    def formatUluna(self, uluna:float, denom:str, add_suffix:bool = False):
         """
         A generic helper function to convert uluna amounts to LUNC.
         """
 
-        lunc:float = round(float(int(uluna) / COIN_DIVISOR), 6)
+        lunc:float = round(float(divide_raw_balance(uluna, denom)), 6)
 
         lunc = ("%.6f" % (lunc)).rstrip('0').rstrip('.')
 
@@ -815,6 +840,7 @@ class Wallet:
 
             self.balances = balances
 
+        print (self.balances)
         return self.balances
     
     def getDelegations(self) -> dict:
@@ -1165,9 +1191,9 @@ class Undelegations(Wallet):
                 # Generate UTC time string
                 utc_string = utc_time.strftime('%d/%m/%Y')
 
-                entries.append({'balance': base_item['luncNetReleased'] * COIN_DIVISOR, 'completion_time': utc_string})
+                entries.append({'balance': multiply_raw_balance(base_item['luncNetReleased'], UBASE), 'completion_time': utc_string})
             
-            self.undelegations['base'] = {'balance_amount': undelegated_amount * COIN_DIVISOR, 'entries': entries}
+            self.undelegations['base'] = {'balance_amount': multiply_raw_balance(undelegated_amount, UBASE), 'entries': entries}
 
         return self.undelegations
 
@@ -1516,7 +1542,7 @@ class TransactionCore():
 
             for fee_coin in fee_coins.to_list():
 
-                amount = fee_coin.amount / COIN_DIVISOR
+                amount = divide_raw_balance(fee_coin.amount, fee_coin.denom)
 
                 wallet = Wallet()
                 wallet.address = self.sender_address
@@ -2065,9 +2091,9 @@ class SwapTransaction(TransactionCore):
                     result = self.terra.wasm.contract_query(self.contract, {"curve_info": {}})
                     spot_price:float = float(result['spot_price'])
                     if self.swap_request_denom == UBASE:
-                        belief_price:float =(spot_price * 1.053) / COIN_DIVISOR
+                        belief_price:float = divide_raw_balance((spot_price * 1.053), UBASE)
                     else:
-                        belief_price:float = (spot_price - (spot_price * 0.048)) / COIN_DIVISOR
+                        belief_price:float = divide_raw_balance((spot_price - (spot_price * 0.048)), UBASE)
 
             except Exception as err:
                 print (' 🛑 A connection error has occurred')
@@ -2195,19 +2221,6 @@ class SwapTransaction(TransactionCore):
         #For each route, conver the current coin to the base price
         # Deduct swap fee
         # deduct slippage
-        
-
-        # ibc_denom = wallet.denomTrace(denom)
-        # raw_amount = float(wallet.balances[denom]) / COIN_DIVISOR
-
-        # if ibc_denom != False:     
-        #     denom = ibc_denom['base_denom']
-            
-        # Get the first route in the swap
-        #wallet = Wallet()
-                # wallet.address = self.sender_address
-
-                # ibc_denom = wallet.denomTrace(fee_coin.denom)
         
         current_value = self.swap_amount
         current_denom = self.swap_denom

@@ -6,6 +6,7 @@ import copy
 from getpass import getpass
 
 from utility_classes import (
+    divide_raw_balance,
     check_version,
     get_user_choice,
     UserConfig,
@@ -101,7 +102,7 @@ def main():
 
         for denom in wallet.balances:            
             ibc_denom = wallet.denomTrace(denom)
-            raw_amount = float(wallet.balances[denom]) / COIN_DIVISOR
+            raw_amount = divide_raw_balance(wallet.balances[denom], denom)
 
             if ibc_denom != False:     
                 denom = ibc_denom['base_denom']
@@ -142,10 +143,10 @@ def main():
                 for denom in delegations[validator]['rewards']:
 
                     if denom == ULUNA:
-                        raw_amount = delegations[validator]['balance_amount'] / COIN_DIVISOR
+                        raw_amount = divide_raw_balance(delegations[validator]['balance_amount'], denom)
                         delegated_amount += float(("%.6f" % (raw_amount)).rstrip('0').rstrip('.'))
 
-                    raw_amount = float(delegations[validator]['rewards'][denom]) / COIN_DIVISOR
+                    raw_amount = divide_raw_balance(delegations[validator]['rewards'][denom], denom)
                     amount = ("%.6f" % (raw_amount)).rstrip('0').rstrip('.')
 
                     if denom in coin_lookup:

@@ -7,6 +7,7 @@ from utility_classes import (
     check_version,
     get_user_choice,
     isPercentage,
+    multiply_raw_balance,
     ULUNA,
     UUSD,
     UserConfig,
@@ -60,10 +61,10 @@ def get_user_multichoice(question:str, user_wallets:dict) -> dict|str:
         if delegations is not None:
             for validator in delegations:
                 if ULUNA in delegations[validator]['rewards']:
-                    ulunc_reward += float(wallet.formatUluna(delegations[validator]['rewards'][ULUNA], False))
+                    ulunc_reward += float(wallet.formatUluna(delegations[validator]['rewards'][ULUNA], ULUNA, False))
                                         
                 if UUSD in delegations[validator]['rewards']:
-                    ustc_reward += float(wallet.formatUluna(delegations[validator]['rewards'][UUSD], False))
+                    ustc_reward += float(wallet.formatUluna(delegations[validator]['rewards'][UUSD], UUSD, False))
 
         if len(wallet_name) > label_widths[1]:
             label_widths[1] = len(wallet_name)
@@ -75,7 +76,7 @@ def get_user_multichoice(question:str, user_wallets:dict) -> dict|str:
             label_widths[3] = len(str(ustc_reward))
 
         if ULUNA in balances:
-            formatted_val = str(wallet.formatUluna(balances[ULUNA], False))
+            formatted_val = str(wallet.formatUluna(balances[ULUNA], ULUNA, False))
             if len(formatted_val) > label_widths[4]:
                 label_widths[4] = len(formatted_val)
 
@@ -143,19 +144,19 @@ def get_user_multichoice(question:str, user_wallets:dict) -> dict|str:
                     if UUSD in delegations[validator]['rewards']:
                         ustc_reward += delegations[validator]['rewards'][UUSD]
 
-            lunc_str = str(wallet.formatUluna(uluna_reward, False))
+            lunc_str = str(wallet.formatUluna(uluna_reward, ULUNA, False))
             if label_widths[2] - len(str(lunc_str)) > 0:
                 lunc_str += padding_str[0:(label_widths[2] - (len(str(lunc_str))))]
             
             if ULUNA in wallet.balances:
-                uluna_balance = str(wallet.formatUluna(wallet.balances[ULUNA], False))
+                uluna_balance = str(wallet.formatUluna(wallet.balances[ULUNA], ULUNA, False))
                 if label_widths[4] - len(str(uluna_balance)) > 0:
                     uluna_balance += padding_str[0:(label_widths[4] - (len(str(uluna_balance))))]
             else:
                 uluna_balance = padding_str[0:label_widths[4]]
 
             if UUSD in wallet.balances:
-                ustc_str = str(wallet.formatUluna(ustc_reward, False))
+                ustc_str = str(wallet.formatUluna(ustc_reward, UUSD, False))
                 if label_widths[3] - len(str(ustc_str)) > 0:
                     ustc_str += padding_str[0:(label_widths[3] - (len(str(ustc_str))))]
             else:
@@ -306,9 +307,9 @@ def main():
                     uluna_reward:int = delegations[validator]['rewards'][ULUNA]
 
                     # Only withdraw the staking rewards if the rewards exceed the threshold (if any)
-                    if uluna_reward > wallet.delegations['threshold'] and uluna_reward > 1 * COIN_DIVISOR:
+                    if uluna_reward > wallet.delegations['threshold'] and uluna_reward > multiply_raw_balance(1, ULUNA):
 
-                        print (f'Withdrawing {wallet.formatUluna(uluna_reward, False)} rewards')
+                        print (f'Withdrawing {wallet.formatUluna(uluna_reward, ULUNA, False)} rewards')
 
                         # Update the balances so we know what we have to pay the fee with
                         wallet.getBalances(clear_cache = True)
@@ -371,7 +372,7 @@ def main():
                                         print (f' 🛎️  {withdrawal_tx.broadcast_result.raw_log}')
                             
                                 else:
-                                    print (f' ✅ Withdrawn amount: {wallet.formatUluna(uluna_reward, True)}')
+                                    print (f' ✅ Withdrawn amount: {wallet.formatUluna(uluna_reward, ULUNA, True)}')
                                     print (f' ✅ Tx Hash: {withdrawal_tx.broadcast_result.txhash}')
                         else:
                             print (' 🛎️  The withdrawal could not be completed')
@@ -393,7 +394,7 @@ def main():
                         swap_amount = wallet.balances['uusd']
 
                         if swap_amount > 0:
-                            print (f'Swapping {wallet.formatUluna(swap_amount, False)} USTC for LUNC')
+                            print (f'Swapping {wallet.formatUluna(swap_amount, UUSD, False)} USTC for LUNC')
 
                             # Set up the basic swap object
                             swaps_tx = wallet.swap().create()
@@ -483,10 +484,10 @@ def main():
                                 delegated_uluna:int = int(str(wallet.delegations['delegate']).strip(' '))
 
                             # Adjust this so we have the desired amount still remaining
-                            delegated_uluna = int(delegated_uluna - ((WITHDRAWAL_REMAINDER) * COIN_DIVISOR))
+                            delegated_uluna = multiply_raw_balance(delegated_uluna - ((WITHDRAWAL_REMAINDER), ULUNA))
 
                             if delegated_uluna > 0 and delegated_uluna <= wallet.balances[ULUNA]:
-                                print (f'Delegating {wallet.formatUluna(delegated_uluna, True)}')
+                                print (f'Delegating {wallet.formatUluna(delegated_uluna, ULUNA, True)}')
 
                                 # Create the delegation object
                                 delegation_tx = wallet.delegate().create()
@@ -537,7 +538,7 @@ def main():
                                                 print (' 🛎️ The delegation failed, an error occurred:')
                                                 print (f' 🛎️  {delegation_tx.broadcast_result.raw_log}')
                                         else:
-                                            print (f' ✅ Delegated amount: {wallet.formatUluna(delegated_uluna, True)}')
+                                            print (f' ✅ Delegated amount: {wallet.formatUluna(delegated_uluna, ULUNA, True)}')
                                             print (f' ✅ Tx Hash: {delegation_tx.broadcast_result.txhash}')
                                     else:
                                         print (' 🛎️  The delegation could not be completed')
@@ -547,7 +548,7 @@ def main():
                                 if delegated_uluna <= 0:
                                     print (' 🛎️  Delegation error: the delegated amount is not greater than zero')
                                 else:
-                                    print (f' 🛎️  Delegation error: the delegated amount of {wallet.formatUluna(delegated_uluna, True)} exceeds the available amount of {wallet.formatUluna(uluna_balance, True)}')
+                                    print (f' 🛎️  Delegation error: the delegated amount of {wallet.formatUluna(delegated_uluna, ULUNA, True)} exceeds the available amount of {wallet.formatUluna(uluna_balance, ULUNA, True)}')
                         else:
                             print (' 🛎️  No LUNC to delegate!')
                     else:
