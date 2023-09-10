@@ -484,8 +484,7 @@ def main():
                                 delegated_uluna:int = int(str(wallet.delegations['delegate']).strip(' '))
 
                             # Adjust this so we have the desired amount still remaining
-                            delegated_uluna = multiply_raw_balance(delegated_uluna - ((WITHDRAWAL_REMAINDER), ULUNA))
-
+                            delegated_uluna = int(delegated_uluna - multiply_raw_balance(WITHDRAWAL_REMAINDER, ULUNA))
                             if delegated_uluna > 0 and delegated_uluna <= wallet.balances[ULUNA]:
                                 print (f'Delegating {wallet.formatUluna(delegated_uluna, ULUNA, True)}')
 
