@@ -354,7 +354,7 @@ def main():
     if denom != ULUNA and recipient_address_prefix == 'terra':
         print (' 🛎️  To make this more likely to work, you need to specific a higher than normal gas limit.')
         print (' 🛎️  200000 is a good number, but you can specify your own. Leave this blank if you want to accept the default.')
-        custom_gas:int = get_user_number('Gas limit: ', {'max_number': wallet.balances[ULUNA], 'min_number': 0, 'empty_allowed': True, 'convert_to_uluna': False})
+        custom_gas:int = get_user_number('Gas limit: ', {'max_number': float(wallet.balances[ULUNA]), 'min_number': 0, 'empty_allowed': True, 'convert_to_uluna': False})
 
     # Convert the provided value into actual numbers:
     complete_transaction = get_user_choice(f"You are about to send {wallet.formatUluna(uluna_amount, denom)} {FULL_COIN_LOOKUP[denom]} to {recipient_address} - do you want to continue? (y/n) ", [])
