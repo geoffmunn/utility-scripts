@@ -237,7 +237,8 @@ IBC_ADDRESSES = {
                     "token_out_denom": "uosmo"
                 },
                 {
-                    "pool_id": "704",
+                    #"pool_id": "704",
+                    "pool_id": "1134",
                     "token_out_denom": "ibc/EA1D43981D5C9A1C4AAEA9C23BB1D4FA126BA9BC7020A25E0AE4AA841EA25DC5"
                 }
             ],
@@ -351,6 +352,13 @@ OSMOSIS_POOLS = {
         #'token_out': 'uosmo'
         'uluna': 'uosmo',
         'uosmo': 'uluna'
+    },
+    '1134': {
+        'swap_fee': '0.002',
+        #'token_in':'uluna',
+        #'token_out': 'uosmo'
+        'uosmo': 'weth-wei',
+        'weth-wei': 'uosmo'
     }
 }
 

@@ -137,16 +137,16 @@ def coin_list(input: Coins, existingList: dict) -> dict:
 
     return existingList
 
-def divide_raw_balance(amount:int, denom:str) -> float:
+def divide_raw_balance(amount:float, denom:str) -> float:
     """
     Return a human-readable amount depending on what type of coin this is.
     """
     result:float = 0
 
     if denom == WETH:
-        result = int(amount) / COIN_DIVISOR_ETH
+        result = float(amount) / COIN_DIVISOR_ETH
     else:
-        result = int(amount) / COIN_DIVISOR
+        result = float(amount) / COIN_DIVISOR
 
     return result
 
@@ -2255,9 +2255,10 @@ class SwapTransaction(TransactionCore):
         for route in self.ibc_routes:
             print ('--------')
             print ('route:', route)
+            print ('amount at this point:', current_amount)
             # Get the token we want to swap to (what we expect to end up with for this route)
             token_out_denom = OSMOSIS_POOLS[route['pool_id']][current_denom]
-            print (f'Swapping {current_denom} to {token_out_denom}')
+            print (f'Swapping {current_amount} {current_denom} to {token_out_denom}')
 
             # Get the prices for the current denom and the output denom
             coin_prices:json = self.getPrices(current_denom, token_out_denom)
@@ -2272,17 +2273,25 @@ class SwapTransaction(TransactionCore):
             # Get the initial base price (no fee deductions)
             base_amount = (current_amount * coin_prices['from']) / coin_prices['to']
 
-            print ('base amount1:', base_amount)
+            print ('base amount:', base_amount)
             #step 1: run price conversion
             #step 2: divide by $eth precision
             #Step 3: multiple by Cosmo precision
             #step 4: round to cosmo precision
 
-            #from_precision=getPrecision(current_denom)
-            #target_precision= getPrecision(token_out_denom)
+            from_precision=getPrecision(current_denom)
+            target_precision= getPrecision(token_out_denom)
             base_amount = divide_raw_balance(base_amount, current_denom)
-            base_amount = multiply_raw_balance(base_amount, token_out_denom)
-            print ('base amount2:', base_amount)
+            print ('base amount after dividing:', base_amount)
+            # Only multiply if the token out demo has a higher precision
+            print (f'{token_out_denom} precision is {target_precision}')
+            print (f'{current_denom} precision is {from_precision}')
+                     
+            if target_precision != from_precision:
+                print ('target precision is greater than from precision, multiplying base amount')
+                base_amount = multiply_raw_balance(base_amount, token_out_denom)
+
+            print ('base after multiplying:', base_amount)
 
             #print ('current amount:', current_amount)
             #print ('from price:', coin_prices['from'])
@@ -2311,7 +2320,7 @@ class SwapTransaction(TransactionCore):
 
             print ('base price minus swap fee:', base_amount_minus_swap_fee)
             # Deduct the slippage
-            base_amount_minus_swap_fee = base_amount_minus_swap_fee * (1 - self.max_spread)
+            base_amount_minus_swap_fee = float(base_amount_minus_swap_fee * (1 - self.max_spread))
 
             print ('base price minus slippage:', base_amount_minus_swap_fee)
 
