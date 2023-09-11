@@ -64,6 +64,7 @@ UKUJI = 'ukuji'
 ULUNA = 'uluna'
 UOSMO = 'uosmo'
 UUSD  = 'uusd'
+WETH  = 'weth-wei'
 
 # Coin keys and display values:
 FULL_COIN_LOOKUP = {
@@ -165,6 +166,18 @@ CHAIN_IDS = {
         'lcd_urls': ['https://rest.cosmos.directory/cosmoshub', 'https://cosmoshub-lcd.stakely.io'],
         'denom': 'uatom',
         'status': 'inactive'
+    },
+    'weth-wei': {
+        'name': 'axelar ',
+        'name2': 'weth',
+        'display_name': 'Wrapped Eth',
+        'chain_id': 'axelar-dojo-1',
+        #'chain_id': 'osmosis-1',
+        'ibc_channels': [],
+        'lcd_urls': ['https://rest.cosmos.directory/axelar'],
+        #'lcd_urls': ['https://lcd.osmosis.zone'],
+        'denom': 'weth-wei',
+        'status': 'active'
     }
 }
 
@@ -174,13 +187,18 @@ IBC_ADDRESSES = {
             'token_in': 'ibc/0EF15DF2F02480ADE0BB6E85D9EBB5DAEA2836D3860E9F97F9AADE4F57A31AA0',
             'routes': [
                 {
-                    "pool_id": "800",
+                    #"pool_id": "800",
+                    "pool_id": "561",
                     "token_out_denom": "uosmo"
                 },
                 {
                     "pool_id": "1",
                     "token_out_denom": "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2"
                 }
+                # {
+                #     "pool_id": "565",
+                #     "token_out_denom": "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2"
+                # },
             ],
             'gas_adjustment': '1.5',
             'fee_multiplier': '1.1'
@@ -224,16 +242,8 @@ IBC_ADDRESSES = {
                 }
             ],
             'gas_adjustment': '2.5',
-            'fee_multiplier': '1'
+            'fee_multiplier': '1.1'
         }
-        #'uscrt': {
-        #    'address': 'ibc/EB2CED20AB0466F18BE49285E56B31306D4C60438A022EA995BA65D5E3CF7E09',
-        #    'channel': 16
-        #},
-        #'uusdc': {
-        #    'address': 'ibc/E1E3674A0E4E1EF9C69646F9AF8D9497173821826074622D831BAB73CCB99A2D',
-        #    'channel': 19
-        #},
     },
     'uosmo': {
         'uluna': {
@@ -281,46 +291,66 @@ IBC_ADDRESSES = {
             'gas_adjustment': '1.5',
             'fee_multiplier': '1.1'
         }
+    },
+    'weth-wei': {
+        'uluna': {
+            'token_in': 'ibc/EA1D43981D5C9A1C4AAEA9C23BB1D4FA126BA9BC7020A25E0AE4AA841EA25DC5',
+            'routes': [
+                {
+                    "pool_id": "704",
+                    "token_out_denom": "uosmo"
+                },
+                {
+                    "pool_id": "800",
+                    "token_out_denom": "ibc/0EF15DF2F02480ADE0BB6E85D9EBB5DAEA2836D3860E9F97F9AADE4F57A31AA0"
+                }
+            ],
+            'gas_adjustment': '2.5',
+            'fee_multiplier': '1.1'
+        }
     }
-
-    #'uosmo': {
-        # 'uluna': {
-        #     'address': 'ibc/0EF15DF2F02480ADE0BB6E85D9EBB5DAEA2836D3860E9F97F9AADE4F57A31AA0',
-        #     'channel': 72
-        # },
-        # 'ukuji': {
-        #     'address': 'ibc/BB6BCDB515050BAE97516111873CCD7BCF1FD0CCB723CC12F3C4F704D6C646CE',
-        #     'channel': 259
-        # }
-    #},
-    # 'ukuji': {
-    #     'uluna': {
-    #         'address': 'ibc/119334C55720942481F458C9C462F5C0CD1F1E7EEAC4679D674AA67221916AEA',
-    #         'channel': 71
-    #     }
-    # }
 }
 
 OSMOSIS_POOLS = {
     '1': {
         'swap_fee': '0.002',
-        'token_in': 'uosmo',
-        'token_out': 'uatom'
+        #'token_in': 'uosmo',
+        #'token_out': 'uatom',
+        'uosmo': 'uatom',
+        'uatom': 'uosmo'
     },
     '561': {
         'swap_fee': '0.002',
-        'token_in': 'uluna',
-        'token_out': 'uosmo'
+        #'token_in': 'uluna',
+        #'token_out': 'uosmo',
+        'uluna': 'uosmo',
+        'uosmo': 'uluna'
+    },
+    '565': {
+        'swap_fee': '0.003',
+        'uluna': 'uatom',
+        'uatom': 'uluna'
+    },
+    '704': {
+        'swap_fee': '0.002',
+        #'token_in': 'uosmo',
+        #'token_out': 'weth-wei'
+        'uosmo': 'weth-wei',
+        'weth-wei': 'uosmo'
     },
     '744': {
         'swap_fee': '0.002',
-        'token_in': 'uosmo',
-        'token_out': 'ukuji'
+        #'token_in': 'uosmo',
+        #'token_out': 'ukuji'
+        'uosmo': 'ukuji',
+        'ukuji': 'uosmo'
     },
     '800': {
         'swap_fee': '0.08',
-        'token_in':'uluna',
-        'token_out': 'uosmo'
+        #'token_in':'uluna',
+        #'token_out': 'uosmo'
+        'uluna': 'uosmo',
+        'uosmo': 'uluna'
     }
 }
 

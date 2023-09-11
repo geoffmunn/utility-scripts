@@ -15,7 +15,8 @@ from utility_classes import (
     UserConfig,
     UUSD,
     Wallets,
-    Wallet
+    Wallet,
+    WETH,
 )
 
 from utility_constants import (
@@ -204,9 +205,14 @@ def main():
         print (' 🛑 Exiting...\n')
         exit()
 
-    available_balance:float = float(wallet.formatUluna(wallet.balances[coin_from], coin_from))
+    available_balance:float = wallet.formatUluna(wallet.balances[coin_from], coin_from)
     print (f'This coin has a maximum of {available_balance} {FULL_COIN_LOOKUP[coin_from]} available.')
-    swap_uluna = get_user_number('How much do you want to swap? ', {'max_number': available_balance, 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': True, 'keep_minimum': False, 'target_denom': coin_from})
+    swap_uluna = get_user_number("How much do you want to swap? (Or type 'Q' to quit) ", {'max_number': float(available_balance), 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': True, 'keep_minimum': False, 'target_denom': coin_from})
+
+    if swap_uluna == USER_ACTION_QUIT:
+        print (' 🛑 Exiting...\n')
+        exit()
+
 
     print ('\nWhat coin do you want to swap TO?')
     coin_to, answer, estimated_amount = get_coin_selection("Select a coin number 1 - " + str(len(wallet.balances)) + ", 'X' to continue, or 'Q' to quit: ", wallet.balances, False, {'denom':coin_from, 'amount':swap_uluna}, wallet)
@@ -214,6 +220,8 @@ def main():
     if answer == USER_ACTION_QUIT:
         print (' 🛑 Exiting...\n')
         exit()
+
+    estimated_amount = str(("%.6f" % (estimated_amount)).rstrip('0').rstrip('.'))
 
     print (f'You will be swapping {wallet.formatUluna(swap_uluna, coin_from, False)} {FULL_COIN_LOOKUP[coin_from]} for approximately {estimated_amount} {FULL_COIN_LOOKUP[coin_to]}')
     complete_transaction = get_user_choice('Do you want to continue? (y/n) ', [])
@@ -251,7 +259,7 @@ def main():
     # print ('max spread:', swaps_tx.max_spread)
     
     #if swaps_tx.swap_request_denom == UOSMO and swaps_tx.sender_prefix != 'terra':
-    if swaps_tx.swap_request_denom in [UOSMO, UATOM, UKUJI] or swaps_tx.swap_denom in [UOSMO, UATOM, UKUJI]:
+    if swaps_tx.swap_request_denom in [UOSMO, UATOM, UKUJI, WETH] or swaps_tx.swap_denom in [UOSMO, UATOM, UKUJI, WETH]:
         # This is an off-chain swap. Something like LUNC->OSMO
         result = swaps_tx.offChainSimulate()
 

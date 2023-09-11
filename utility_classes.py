@@ -44,6 +44,7 @@ from utility_constants import (
     USER_ACTION_QUIT,
     UUSD,
     VERSION_URI,
+    WETH,
     WITHDRAWAL_REMAINDER    
 )
 
@@ -136,19 +137,32 @@ def coin_list(input: Coins, existingList: dict) -> dict:
 
     return existingList
 
-def divide_raw_balance(amount:int, denom:str):
+def divide_raw_balance(amount:int, denom:str) -> float:
     """
     Return a human-readable amount depending on what type of coin this is.
     """
     result:float = 0
-    if denom == 'weth-wei':
-        result = amount / COIN_DIVISOR_ETH
+
+    if denom == WETH:
+        result = int(amount) / COIN_DIVISOR_ETH
     else:
-        result = amount / COIN_DIVISOR
+        result = int(amount) / COIN_DIVISOR
 
     return result
 
-def isDigit(value):
+def getPrecision(denom:str) -> int:
+    """
+    Depending on the denomination, return the number of zeros that we need to account for
+    """
+
+    if denom == WETH:
+        precision:int = str(COIN_DIVISOR_ETH).count('0')
+    else:
+        precision:int = str(COIN_DIVISOR).count('0')
+
+    return precision
+
+def isDigit(value) -> bool:
     """
     A better method for identifying digits. This one can handle decimal places.
     """
@@ -159,7 +173,7 @@ def isDigit(value):
     except ValueError:
         return False
     
-def isPercentage(value:str):
+def isPercentage(value:str) -> bool:
     """
     A helpter function to figure out if a value is a percentage or not.
     """
@@ -174,10 +188,11 @@ def multiply_raw_balance(amount:int, denom:str):
     Return a human-readable amount depending on what type of coin this is.
     """
     result:float = 0
+
     if denom == 'weth-wei':
-        result = amount * COIN_DIVISOR_ETH
+        result = float(amount) * COIN_DIVISOR_ETH
     else:
-        result = amount * COIN_DIVISOR
+        result = float(amount) * COIN_DIVISOR
 
     return result
     
@@ -240,7 +255,7 @@ def get_coin_selection(question:str, coins:dict, only_active_coins:bool = True, 
             if estimation_against is not None:
 
                 # Set up the swap details
-                swaps_tx.swap_amount        = int(estimation_against['amount'])
+                swaps_tx.swap_amount        = float(wallet.formatUluna(estimation_against['amount'], estimation_against['denom'], False))
                 swaps_tx.swap_denom         = estimation_against['denom']
                 swaps_tx.swap_request_denom = coin
 
@@ -248,13 +263,9 @@ def get_coin_selection(question:str, coins:dict, only_active_coins:bool = True, 
                 swaps_tx.setContract()
 
                 if coin != estimation_against['denom']:
-                    estimated_result:Coin = swaps_tx.swapRate()
-                    estimated_value:str   = wallet.formatUluna(estimated_result.amount, estimated_result.denom)
+                    estimated_value:float = swaps_tx.swapRate()
 
-                    if estimated_value == '0':
-                        estimated_value = None
                 else:
-                    estimated_result:Coin = Coin(estimation_against['denom'], multiply_raw_balance(1, estimation_against['denom']))
                     estimated_value:str   = None
                 
                 coin_values[coin] = estimated_value
@@ -284,7 +295,7 @@ def get_coin_selection(question:str, coins:dict, only_active_coins:bool = True, 
     horizontal_spacer = '-' * len(header_string)
 
     coin_to_use:str            = None
-    returned_estimation: float = None    
+    returned_estimation:float  = None    
     answer:str                 = False
     coin_index:dict            = {}
 
@@ -334,8 +345,7 @@ def get_coin_selection(question:str, coins:dict, only_active_coins:bool = True, 
                 else:
                     if coin in coin_values:
                         if coin_values[coin] is not None:
-                            estimated_str = float(coin_values[coin])
-                            estimated_str = str(("%.6f" % (estimated_str)).rstrip('0').rstrip('.'))
+                            estimated_str:str = str(("%.6f" % (coin_values[coin])).rstrip('0').rstrip('.'))
                         else:
                             estimated_str = '--'
                     else:
@@ -476,6 +486,9 @@ def get_user_number(question:str, params:dict):
     while True:    
         answer = input(question).strip(' ')
 
+        if answer == USER_ACTION_QUIT:
+            break
+
         if answer == '' and empty_allowed == False:
             print (f' 🛎️  The value cannot be blank or empty')
         else:
@@ -517,7 +530,7 @@ def get_user_number(question:str, params:dict):
                     if is_percentage == False:
                         break
 
-    if answer != '':
+    if answer != '' and answer != USER_ACTION_QUIT:
         if 'percentages_allowed' in params and is_percentage == True:
             if 'convert_percentages' in params and params['convert_percentages'] == True:
                 wallet:Wallet = Wallet()
@@ -526,6 +539,7 @@ def get_user_number(question:str, params:dict):
                 answer = answer + '%'
         else:
             if convert_to_uluna == True:
+                print ('answer:', answer)
                 answer = float(multiply_raw_balance(answer, params['target_denom']))
 
     return answer
@@ -780,9 +794,16 @@ class Wallet:
         A generic helper function to convert uluna amounts to LUNC.
         """
 
-        lunc:float = round(float(divide_raw_balance(uluna, denom)), 6)
+        # if denom == WETH:
+        #     accuracy = str(COIN_DIVISOR_ETH).count('0')
+        # else:
+        #     accuracy = str(COIN_DIVISOR).count('0')
+        precision:int = getPrecision(denom)
+        
+        lunc:float = round(float(divide_raw_balance(uluna, denom)), precision)
 
-        lunc = ("%.6f" % (lunc)).rstrip('0').rstrip('.')
+        target = '%.' + str(precision) + 'f'
+        lunc = (target % (lunc)).rstrip('0').rstrip('.')
 
         if add_suffix:
             lunc = str(lunc) + ' LUNC'
@@ -840,7 +861,6 @@ class Wallet:
 
             self.balances = balances
 
-        print (self.balances)
         return self.balances
     
     def getDelegations(self) -> dict:
@@ -1482,34 +1502,37 @@ class TransactionCore():
         If the link doesn't work, we'll try 10 times
         """
 
-        retry_count:int = 0
-        retry:bool      = True
-        prices:json     = {}
+        retry_count:int  = 0
+        retry:bool       = True
+        prices:json      = {}
+        from_price:float = None
+        to_price:float   = None
 
         # Get the chains that we are using
         from_id:dict = self.getChainByDenom(from_denom)
         to_id:dict   = self.getChainByDenom(to_denom)
 
-        while retry == True:
-            try:
-                prices:json = requests.get(f"https://api-indexer.keplr.app/v1/price?ids={from_id['name2']},{to_id['name2']}&vs_currencies=usd").json()
+        if from_id != False and to_id != False:
+            while retry == True:
+                try:
+                    prices:json = requests.get(f"https://api-indexer.keplr.app/v1/price?ids={from_id['name2']},{to_id['name2']}&vs_currencies=usd").json()
 
-                # Exit the loop if this hasn't returned an error
-                retry = False
-
-            except Exception as err:
-                retry_count += 1
-                if retry_count == 10:
-                    print (' 🛑 Error getting coin prices')
-                    print (err)
-
+                    # Exit the loop if this hasn't returned an error
                     retry = False
-                    exit()
-                else:
-                    time.sleep(1)
 
-        from_price:float = prices[from_id['name2']]['usd']
-        to_price:float   = prices[to_id['name2']]['usd']
+                except Exception as err:
+                    retry_count += 1
+                    if retry_count == 10:
+                        print (' 🛑 Error getting coin prices')
+                        print (err)
+
+                        retry = False
+                        exit()
+                    else:
+                        time.sleep(1)
+
+            from_price:float = prices[from_id['name2']]['usd']
+            to_price:float   = prices[to_id['name2']]['usd']
         
         return {'from':from_price, 'to': to_price}
     
@@ -2046,7 +2069,7 @@ class SwapTransaction(TransactionCore):
         self.fee_deductables:float  = None
         self.gas_limit:str          = 'auto'
         self.ibc_routes:list        = []
-        self.max_spread:float       = 0.02
+        self.max_spread:float       = 0.01
         self.min_out:int            = None
         self.recipient_address:str  = ''
         self.recipient_prefix:str   = ''
@@ -2222,37 +2245,113 @@ class SwapTransaction(TransactionCore):
         # Deduct swap fee
         # deduct slippage
         
-        current_value = self.swap_amount
+        current_amount = self.swap_amount
         current_denom = self.swap_denom
+        target_denom = self.swap_request_denom
+
+        print ('starting amount:', current_amount)
+        #wallet = Wallet()
+
         for route in self.ibc_routes:
+            print ('--------')
             print ('route:', route)
-            token_out_denom = OSMOSIS_POOLS[route['pool_id']]['token_out']
+            # Get the token we want to swap to (what we expect to end up with for this route)
+            token_out_denom = OSMOSIS_POOLS[route['pool_id']][current_denom]
             print (f'Swapping {current_denom} to {token_out_denom}')
-            coin_prices = self.getPrices(current_denom, token_out_denom)
+
+            # Get the prices for the current denom and the output denom
+            coin_prices:json = self.getPrices(current_denom, token_out_denom)
+            
+
             print ('coin prices:', coin_prices)
-            # Get the initial base price
-            base_price = (current_value * coin_prices['from']) / coin_prices['to']
-            print ('base price:', base_price)
+            
+            
+            #lunc = ('%.6f' % (lunc)).rstrip('0').rstrip('.')
+            #print ('the current value is:', current_value)
+            
+            # Get the initial base price (no fee deductions)
+            base_amount = (current_amount * coin_prices['from']) / coin_prices['to']
+
+            print ('base amount1:', base_amount)
+            #step 1: run price conversion
+            #step 2: divide by $eth precision
+            #Step 3: multiple by Cosmo precision
+            #step 4: round to cosmo precision
+
+            #from_precision=getPrecision(current_denom)
+            #target_precision= getPrecision(token_out_denom)
+            base_amount = divide_raw_balance(base_amount, current_denom)
+            base_amount = multiply_raw_balance(base_amount, token_out_denom)
+            print ('base amount2:', base_amount)
+
+            #print ('current amount:', current_amount)
+            #print ('from price:', coin_prices['from'])
+            #print ('to price:', coin_prices['to'])
+
+            #print ('the current denom at this point is:', token_out_denom)
+            #print ('the original base amount is', base_amount)
+            #test = divide_raw_balance(base_amount, token_out_denom)
+            #precision = getPrecision(token_out_denom)
+            #target = f'%.{precision}f'
+            #test = (target % (test)).rstrip('0').rstrip('.')
+            #print (f"We now have {test} of {token_out_denom}")
+            
+            #print ('This should have a precision of', precision)
+
+
+            #print ('base price:', base_price)
+            #base_price:int = ('%.6f' % (base_price)).rstrip('0').rstrip('.')
+            #print ('base price2:', base_price)
+
             # deduct the swap fee:
             swap_fee:float = float(OSMOSIS_POOLS[route['pool_id']]['swap_fee'])
             print ('swap fee:', swap_fee)
             # Deduct the swap fee
-            base_price_minus_swap_fee = base_price * (1 - swap_fee)
-            print ('base price minus swap fee:', base_price_minus_swap_fee)
+            base_amount_minus_swap_fee:float = float(base_amount) * (1 - swap_fee)
+
+            print ('base price minus swap fee:', base_amount_minus_swap_fee)
             # Deduct the slippage
-            base_price_minus_swap_fee = base_price_minus_swap_fee * (1 - self.max_spread)
+            base_amount_minus_swap_fee = base_amount_minus_swap_fee * (1 - self.max_spread)
 
-            print ('base price minus slippage:', base_price_minus_swap_fee)
+            print ('base price minus slippage:', base_amount_minus_swap_fee)
 
-            print (base_price_minus_swap_fee)
+            print (base_amount_minus_swap_fee)
 
+            # Now we have the new denom and the new value
             current_denom = token_out_denom        
-            current_value = base_price_minus_swap_fee
+            current_amount = base_amount_minus_swap_fee
+            precision = getPrecision(token_out_denom)
+            target = f'%.{precision}f'
 
+            test = (target % (current_amount)).rstrip('0').rstrip('.')
+            print (f"We now have {test} of {token_out_denom}")
+            
+            print ('This should have a precision of', precision)
+            #target = f'%.{precision}f'
+            #print ('initial test value:', ((target % (current_amount)).rstrip('0').rstrip('.')))
+
+            #print (target_denom, precision)
+            #current_value = round(current_value, precision)
+            #test = divide_raw_balance(current_value, current_denom)
+            #test = multiply_raw_balance(test, current_denom)
+            #test = current_value / (10 * int(precision))
+            #print ('test divided:', test)
+            #test = round(test, precision)
+            #print ('test rounded:', test)
+            
+            #print ('fixed value:', ((target % (test)).rstrip('0').rstrip('.')))
+            #test = divide_raw_balance(current_value, current_denom)
+            
             print ('new current denom:', current_denom)
-            print ('current value:', current_value)
+            print ('current amount:', (target % (current_amount)).rstrip('0').rstrip('.'))
 
-        print ('swap min:', current_value)
+        precision = getPrecision(target_denom)
+        print ('precision:', precision)
+        current_amount = round(current_amount, precision)
+        
+        print (('%.6f' % (current_amount)).rstrip('0').rstrip('.'))
+        #current_value = 990798716
+        print ('swap min:', current_amount)
         # Now do route 2
         # route = self.ibc_routes[1]
 
@@ -2273,7 +2372,7 @@ class SwapTransaction(TransactionCore):
         #exit()
 
         #self.min_out = math.floor((swap_rate.amount * 0.995) * (1 - float(swap_fee)) * (1 - float(self.max_spread)))
-        self.min_out = math.floor(current_value)
+        self.min_out = math.floor(current_amount)
         print ('min out:', self.min_out)   
                     
         #self.min_out   = math.floor(swap_rate.amount * (1 - self.max_spread))
@@ -2636,55 +2735,36 @@ class SwapTransaction(TransactionCore):
             print ('No belief price calculated - did you run the simulation first?')
             return False
   
-    def swapRate(self) -> Coin:
+    def swapRate(self) -> float:
         """
         Get the swap rate based on the provided details.
-        Returns a coin object that we need to decode.
+        Returns a float value of the amount
         """
         
-        print ('use market swap?', self.use_market_swap)
-        print (self.swap_denom)
-        print (self.swap_request_denom)
+        estimated_amount:float = None
 
         if self.use_market_swap == False:
 
             if self.swap_denom == UBASE:
                 if self.swap_request_denom == ULUNA:
                     swap_price = self.beliefPrice()
-                    swap_details:Coin = Coin(self.swap_request_denom, int(self.swap_amount * swap_price))
-                else:
-                    swap_details:Coin = Coin(self.swap_request_denom, 0)
-            elif self.swap_denom == UUSD and self.swap_request_denom == UBASE:
-                swap_details:Coin = Coin(self.swap_request_denom, 0)
-            #elif self.swap_request_denom == UKUJI:
-            #    swap_details:Coin = Coin(self.swap_request_denom, 0)
+                    estimated_amount = float(self.swap_amount * swap_price)
+                
             else:
                 # This will cover nearly all swap pairs:
                 swap_price = self.beliefPrice()
                 if swap_price is not None and swap_price > 0:
-                    swap_details:Coin = Coin(self.swap_request_denom, int(self.swap_amount / swap_price))
-                else:
-                    swap_details:Coin = Coin(self.swap_request_denom, int(0))
-
+                    estimated_amount = float(self.swap_amount / swap_price)
+                    
         else:
-            #if self.swap_denom != UKUJI and self.swap_request_denom != UKUJI:
-            #    try:
-            #        swap_details:Coin = self.terra.market.swap_rate(Coin(self.swap_denom, self.swap_amount), self.swap_request_denom)
-            #    except Exception as err:
-            #        swap_details:Coin = Coin(self.swap_request_denom, 0)
-            
-            off_chain_coins = [ULUNA, UOSMO, UATOM, UKUJI]
-            #if self.swap_denom == ULUNA and self.swap_request_denom in off_chain_coins:
+            off_chain_coins = [ULUNA, UOSMO, UATOM, UKUJI, WETH]
             if self.swap_denom in off_chain_coins and self.swap_request_denom in off_chain_coins:
                 # Calculate the amount of OSMO we'll be getting:
                 # (lunc amount * lunc unit cost) / osmo price
                 prices:json = self.getPrices(self.swap_denom, self.swap_request_denom)
-                estimated_amount:float = math.ceil((self.swap_amount * prices['from']) / prices['to'])
-                swap_details:Coin      = Coin(self.swap_request_denom, estimated_amount)
-            else:
-                swap_details:Coin = Coin(self.swap_request_denom, 0)
+                estimated_amount:float = (self.swap_amount * float(prices['from']) / float(prices['to']))
 
-        return swap_details
+        return estimated_amount
     
 class WithdrawalTransaction(TransactionCore):
 
