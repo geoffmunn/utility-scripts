@@ -103,28 +103,35 @@ BASIC_COIN_LOOKUP = {
     'uusd':  'UST'
 }
 
-# CHAIN_IDS = {
-#     #'cosmos': 'channel-2', # Not active
-#     #'emoney': 'channel-5', # Not active
-#     #'sif': 'channel-7' # Not active
-#     #'inj': 'channel-17' # Not active
-#     #'axelar': 'channel-19', # Not active
-#     #'juno': 'channel-20' # Not active
-#     #'umee': 'channel-26', # Not active
-#     #'omniflix': 'channel-27', # Not active
-#     #'evmos': 'channel-51', # Not active
-#     #'gravity': 'channel-64' # Not active
-#     #'somm': 'channel-83', # Not active
-# }
 CHAIN_IDS = {
-    'terra': {
-        'name': 'terra',
-        'name2': 'terra-luna',
-        'display_name': 'Luna Classic',
-        'chain_id': 'columbus-5',
-        'ibc_channels': ['channel-72'],
-        'lcd_urls': ['https://lcd.terrarebels.net', 'https://terra-classic-fcd.publicnode.com', 'https://lcd.terrarebels.net', 'https://rest.cosmos.directory/terra'],
-        'denom': 'uluna',
+    'cosmos': {
+        'name': 'cosmos',
+        'name2': 'cosmos',
+        'display_name': 'Cosmos',
+        'chain_id': 'cosmoshub-4',
+        'ibc_channels': ['channel-2', 'channel-41', 'channel-59'],
+        'lcd_urls': ['https://rest.cosmos.directory/cosmoshub', 'https://cosmoshub-lcd.stakely.io'],
+        'denom': 'uatom',
+        'status': 'inactive'
+    },
+    'kava': {
+        'name': 'kava',
+        'name2': 'kava',
+        'display_name': 'Kava',
+        'chain_id': 'kava-9',
+        'ibc_channels': ['channel-24'],
+        'lcd_urls': ['https://rest.cosmos.directory/kava'],
+        'denom': 'ukava',
+        'status': 'inactive'
+    },
+    'kujira': {
+        'name': 'kujira',
+        'name2': 'kujira',
+        'display_name': 'Kujira',
+        'chain_id': 'kaiyo-1',
+        'ibc_channels': ['channel-71'],
+        'lcd_urls': ['https://rest.cosmos.directory/kujira', 'https://lcd-kujira.mintthemoon.xyz'],
+        'denom': 'ukuji',
         'status': 'active'
     },
     'osmo': {
@@ -137,35 +144,15 @@ CHAIN_IDS = {
         'denom': 'uosmo',
         'status': 'active'
     },
-    'kujira': {
-        'name': 'kujira',
-        'name2': 'kujira',
-        'display_name': 'Kujira',
-        'chain_id': 'kaiyo-1',
-        'ibc_channels': ['channel-71'],
-        'lcd_urls': ['https://rest.cosmos.directory/kujira', 'https://lcd-kujira.mintthemoon.xyz'],
-        'denom': 'ukuji',
+    'terra': {
+        'name': 'terra',
+        'name2': 'terra-luna',
+        'display_name': 'Luna Classic',
+        'chain_id': 'columbus-5',
+        'ibc_channels': ['channel-72'],
+        'lcd_urls': ['https://lcd.terrarebels.net', 'https://terra-classic-fcd.publicnode.com', 'https://lcd.terrarebels.net', 'https://rest.cosmos.directory/terra'],
+        'denom': 'uluna',
         'status': 'active'
-    },
-    'kava': {
-        'name': 'kava',
-        'name2': 'kava',
-        'display_name': 'Kava',
-        'chain_id': 'kava-9',
-        'ibc_channels': ['channel-24'],
-        'lcd_urls': ['https://rest.cosmos.directory/kava'],
-        'denom': 'ukava',
-        'status': 'inactive'
-    },
-    'cosmos': {
-        'name': 'cosmos',
-        'name2': 'cosmos',
-        'display_name': 'Cosmos',
-        'chain_id': 'cosmoshub-4',
-        'ibc_channels': ['channel-2', 'channel-41', 'channel-59'],
-        'lcd_urls': ['https://rest.cosmos.directory/cosmoshub', 'https://cosmoshub-lcd.stakely.io'],
-        'denom': 'uatom',
-        'status': 'inactive'
     },
     'weth-wei': {
         'name': 'axelar ',
@@ -182,6 +169,122 @@ CHAIN_IDS = {
 }
 
 IBC_ADDRESSES = {
+    'uatom': {
+        'ukuji': {
+            'token_in': 'ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2',
+            'routes':  [
+                {
+                    "pool_id": "1135",
+                    "token_out_denom": "uosmo"
+                },
+                {
+                    "pool_id": "744",
+                    "token_out_denom": "ibc/BB6BCDB515050BAE97516111873CCD7BCF1FD0CCB723CC12F3C4F704D6C646CE"
+                }
+            ],
+            'gas_adjustment': '1.5',
+            'fee_multiplier': '1.1'
+        },
+        'uluna': {
+            'token_in': 'ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2',
+            'routes': [
+                {
+                    "pool_id": "1",
+                    "token_out_denom": "uosmo"
+                },
+                {
+                    "pool_id": "800",
+                    "token_out_denom": "ibc/0EF15DF2F02480ADE0BB6E85D9EBB5DAEA2836D3860E9F97F9AADE4F57A31AA0"
+                }
+            ],
+            'gas_adjustment': '1.5',
+            'fee_multiplier': '1.1'
+        },
+        'uosmo': {
+            'token_in': 'ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2',
+            'routes': [
+                {
+                    "pool_id": "1",
+                    "token_out_denom": "uosmo"
+                }
+             ],
+             'gas_adjustment': '1.5',
+             'fee_multiplier': '1.1'
+        },
+        'weth-wei': {
+            'token_in': 'ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2',
+            'routes': [
+                {
+                    "pool_id": "1135",
+                    "token_out_denom": "uosmo"
+                },
+                {
+                    "pool_id": "1134",
+                    "token_out_denom": "ibc/EA1D43981D5C9A1C4AAEA9C23BB1D4FA126BA9BC7020A25E0AE4AA841EA25DC5"
+                }
+            ],
+            'gas_adjustment': '2.5',
+            'fee_multiplier': '1.1'
+        }
+    },
+    'ukuji': {
+        'uatom': {
+            'token_in': 'ibc/BB6BCDB515050BAE97516111873CCD7BCF1FD0CCB723CC12F3C4F704D6C646CE',
+            'routes': [
+                {
+                    "pool_id": "744",
+                    "token_out_denom": "uosmo"
+                },
+                {
+                    "pool_id": "1135",
+                    "token_out_denom": "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2"
+                }
+            ],
+            'gas_adjustment': '1.5',
+            'fee_multiplier': '1.1'
+        },
+        'uluna': {
+            'token_in': 'ibc/BB6BCDB515050BAE97516111873CCD7BCF1FD0CCB723CC12F3C4F704D6C646CE',
+            'routes': [
+                {
+                    "pool_id": "744",
+                    "token_out_denom": "uosmo"
+                },
+                {
+                    "pool_id": "800",
+                    "token_out_denom": "ibc/0EF15DF2F02480ADE0BB6E85D9EBB5DAEA2836D3860E9F97F9AADE4F57A31AA0"
+                }
+            ],
+            'gas_adjustment': '1.5',
+            'fee_multiplier': '1.1'
+        },
+        'uosmo': {
+            'token_in': 'ibc/BB6BCDB515050BAE97516111873CCD7BCF1FD0CCB723CC12F3C4F704D6C646CE',
+            'routes': [
+                {
+                    "pool_id": "744",
+                    "token_out_denom": "uosmo"
+                }
+            ],
+            'gas_adjustment': '1.5',
+            'fee_multiplier': '1.1'
+        },
+        'weth-wei': {
+            'token_in': 'ibc/BB6BCDB515050BAE97516111873CCD7BCF1FD0CCB723CC12F3C4F704D6C646CE',
+            'routes': [
+                {
+                    "pool_id": "744",
+                    "token_out_denom": "uosmo"
+                },
+                {
+                    "pool_id": "1134",
+                    "token_out_denom": "ibc/EA1D43981D5C9A1C4AAEA9C23BB1D4FA126BA9BC7020A25E0AE4AA841EA25DC5"
+                }
+            ],
+            'gas_adjustment': '2.5',
+            'fee_multiplier': '1.1'
+        }
+    },
     'uluna': {
         'uatom': {
             'token_in': 'ibc/0EF15DF2F02480ADE0BB6E85D9EBB5DAEA2836D3860E9F97F9AADE4F57A31AA0',
@@ -243,7 +346,8 @@ IBC_ADDRESSES = {
                 }
             ],
             'gas_adjustment': '2.5',
-            'fee_multiplier': '1.1'
+            'fee_multiplier': '1.1',
+            'max_spread': '0.03'
         }
     },
     'uosmo': {
@@ -259,41 +363,33 @@ IBC_ADDRESSES = {
             'fee_multiplier': '1'
         }
     },
-    'uatom': {
-        'uluna': {
-            'token_in': 'ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2',
+    'weth-wei': {
+        'uatom': {
+            'token_in': 'ibc/EA1D43981D5C9A1C4AAEA9C23BB1D4FA126BA9BC7020A25E0AE4AA841EA25DC5',
+            'routes': [
+              {
+                "pool_id": "704",
+                "token_out_denom": "uosmo"
+              }
+            ],
+            'gas_adjustment': '2.5',
+            'fee_multiplier': '1.1'
+        },
+        'ukuji': {
+            'token_in': 'ibc/EA1D43981D5C9A1C4AAEA9C23BB1D4FA126BA9BC7020A25E0AE4AA841EA25DC5',
             'routes': [
                 {
-                    "pool_id": "1",
+                    "pool_id": "1134",
                     "token_out_denom": "uosmo"
                 },
-                {
-                    "pool_id": "800",
-                    "token_out_denom": "ibc/0EF15DF2F02480ADE0BB6E85D9EBB5DAEA2836D3860E9F97F9AADE4F57A31AA0"
-                }
-            ],
-            'gas_adjustment': '1.5',
-            'fee_multiplier': '1.1'
-        }
-    },
-    'ukuji': {
-        'uluna': {
-            'token_in': 'ibc/BB6BCDB515050BAE97516111873CCD7BCF1FD0CCB723CC12F3C4F704D6C646CE',
-            'routes': [
                 {
                     "pool_id": "744",
-                    "token_out_denom": "uosmo"
-                },
-                {
-                    "pool_id": "800",
-                    "token_out_denom": "ibc/0EF15DF2F02480ADE0BB6E85D9EBB5DAEA2836D3860E9F97F9AADE4F57A31AA0"
+                    "token_out_denom": "ibc/BB6BCDB515050BAE97516111873CCD7BCF1FD0CCB723CC12F3C4F704D6C646CE"
                 }
             ],
-            'gas_adjustment': '1.5',
+            'gas_adjustment': '2.5',
             'fee_multiplier': '1.1'
-        }
-    },
-    'weth-wei': {
+        },
         'uluna': {
             'token_in': 'ibc/EA1D43981D5C9A1C4AAEA9C23BB1D4FA126BA9BC7020A25E0AE4AA841EA25DC5',
             'routes': [
@@ -308,6 +404,17 @@ IBC_ADDRESSES = {
             ],
             'gas_adjustment': '2.5',
             'fee_multiplier': '1.1'
+        },
+        'uosmo': {
+            'token_in': 'ibc/EA1D43981D5C9A1C4AAEA9C23BB1D4FA126BA9BC7020A25E0AE4AA841EA25DC5',
+            'routes': [
+                {
+                    "pool_id": "704",
+                    "token_out_denom": "uosmo"
+                }
+            ],
+            'gas_adjustment': '2.5',
+            'fee_multiplier': '1.1'
         }
     }
 }
@@ -315,15 +422,11 @@ IBC_ADDRESSES = {
 OSMOSIS_POOLS = {
     '1': {
         'swap_fee': '0.002',
-        #'token_in': 'uosmo',
-        #'token_out': 'uatom',
         'uosmo': 'uatom',
         'uatom': 'uosmo'
     },
     '561': {
         'swap_fee': '0.002',
-        #'token_in': 'uluna',
-        #'token_out': 'uosmo',
         'uluna': 'uosmo',
         'uosmo': 'uluna'
     },
@@ -334,32 +437,30 @@ OSMOSIS_POOLS = {
     },
     '704': {
         'swap_fee': '0.002',
-        #'token_in': 'uosmo',
-        #'token_out': 'weth-wei'
         'uosmo': 'weth-wei',
         'weth-wei': 'uosmo'
     },
     '744': {
         'swap_fee': '0.002',
-        #'token_in': 'uosmo',
-        #'token_out': 'ukuji'
         'uosmo': 'ukuji',
         'ukuji': 'uosmo'
     },
     '800': {
         'swap_fee': '0.08',
-        #'token_in':'uluna',
-        #'token_out': 'uosmo'
         'uluna': 'uosmo',
         'uosmo': 'uluna'
     },
     '1134': {
         'swap_fee': '0.002',
-        #'token_in':'uluna',
-        #'token_out': 'uosmo'
         'uosmo': 'weth-wei',
         'weth-wei': 'uosmo'
+    },
+    '1135': {
+        'swap_fee': '0.002',
+        'uosmo': 'uatom',
+        'uatom': 'uosmo'
     }
+
 }
 
 # Cronos
