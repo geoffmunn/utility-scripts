@@ -2232,6 +2232,12 @@ class SwapTransaction(TransactionCore):
         self.account_number = self.current_wallet.account_number()
         self.ibc_routes     = IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['routes']
 
+        max_spread:float = self.max_spread
+        if 'max_spread' in IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]:
+            max_spread = float(IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['max_spread'])
+
+        print ('max spread:', max_spread)
+
         # Figure out the minimum expected coins for this swap:
         #swap_rate:Coin = self.swapRate()
 
@@ -2247,10 +2253,8 @@ class SwapTransaction(TransactionCore):
         
         current_amount = self.swap_amount
         current_denom = self.swap_denom
-        #target_denom = self.swap_request_denom
 
         print ('starting amount:', current_amount)
-        #wallet = Wallet()
 
         for route in self.ibc_routes:
             print ('--------')
@@ -2281,17 +2285,18 @@ class SwapTransaction(TransactionCore):
 
             from_precision = getPrecision(current_denom)
             target_precision = getPrecision(token_out_denom)
-            base_amount = divide_raw_balance(base_amount, current_denom)
-            print ('base amount after dividing:', base_amount)
+
+            if from_precision != target_precision:
+                base_amount = divide_raw_balance(base_amount, current_denom)
+                print ('base amount after dividing:', base_amount)
 
             # Only multiply if the token out demo has a higher precision
             print (f'{current_denom} precision is {from_precision}')
             print (f'{token_out_denom} precision is {target_precision}')
-            print (f'{target_precision} == {from_precision}')
+            print (f'{target_precision} < {from_precision}')
                      
-            
             if target_precision < from_precision:
-                print ('target precision is different than from precision, multiplying base amount')
+                print ('target precision is less than precision, so we are multiplying the base amount')
                 base_amount = multiply_raw_balance(base_amount, token_out_denom)
 
             print ('base after multiplying:', base_amount)
@@ -2304,7 +2309,7 @@ class SwapTransaction(TransactionCore):
 
             print ('base price minus swap fee:', base_amount_minus_swap_fee)
             # Deduct the slippage
-            base_amount_minus_swap_fee = float(base_amount_minus_swap_fee * (1 - self.max_spread))
+            base_amount_minus_swap_fee = float(base_amount_minus_swap_fee * (1 - max_spread))
 
             print ('base price minus slippage:', base_amount_minus_swap_fee)
 
@@ -2315,15 +2320,13 @@ class SwapTransaction(TransactionCore):
             current_denom = token_out_denom        
             current_amount = base_amount_minus_swap_fee
             precision = getPrecision(token_out_denom)
-            target = f'%.{precision}f'
+            #target = f'%.{precision}f'
 
-            test = (target % (current_amount)).rstrip('0').rstrip('.')
-            print (f"We now have {test} of {token_out_denom}")
-            
             print ('This should have a precision of', precision)
     
             print ('new current denom:', current_denom)
-            print ('current amount:', (target % (current_amount)).rstrip('0').rstrip('.'))
+            #print ('current amount:', (target % (current_amount)).rstrip('0').rstrip('.'))
+            print ('current amount:', current_amount)
 
 
         from_precision=getPrecision(prev_denom)
@@ -2333,8 +2336,10 @@ class SwapTransaction(TransactionCore):
         # print (f'last {token_out_denom} precision is {target_precision}')
         # print (f'last {target_precision} == {from_precision}')
                     
-        if target_precision >= from_precision:
-            print ('target precision is different than from precision, multiplying base amount')
+        print ('current amount before:', current_amount)
+        if target_precision > from_precision:
+            print ('target precision is greater or equal to the precision, so we are multiplying the base amount')
+            
             current_amount = multiply_raw_balance(current_amount, current_denom)
             
         print ('final current amount:', current_amount)
@@ -2343,11 +2348,10 @@ class SwapTransaction(TransactionCore):
         print ('precision:', precision)
         current_amount = round(current_amount, precision)
         
-        #print (('%.6f' % (current_amount)).rstrip('0').rstrip('.'))
         print ('swap min:', current_amount)
         
+        #self.min_out = math.floor(current_amount)
         self.min_out = math.floor(current_amount)
-        #self.min_out = float(current_amount)
         print ('min out:', self.min_out)   
                     
         self.offChainSwap()
@@ -2381,21 +2385,12 @@ class SwapTransaction(TransactionCore):
             # Calculate the LUNC fee
             # (osmosis amount * osmosis unit cost) / lunc price
             # For the calculation to work, the 'to' value always needs to be the usomo price
-            #if self.swap_denom == ULUNA and self.swap_request_denom == UOSMO:
-                #from_denom:str = self.swap_denom
-                #to_denom:str = self.swap_request_denom
-            #elif self.swap_denom == UOSMO and self.swap_request_denom == ULUNA:
-            #    from_denom:str = self.swap_request_denom
-            #    to_denom:str = self.swap_denom
 
             from_denom:str = UOSMO
             to_denom:str = ULUNA
 
             prices:json    = self.getPrices(from_denom, to_denom)
             print ('prices:', prices)
-            #fee_amount:float = float((uosmo_fee * prices['to']) / prices['from'])
-            #print ('from:', from_denom)
-            #print ('to:', to_denom)
 
             # OSMO -> LUNC:
             fee_amount:float = float((uosmo_fee * prices['from']) / prices['to'])
