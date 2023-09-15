@@ -17,6 +17,7 @@ GAS_ADJUSTMENT_SWAPS     = 3.6
 GAS_ADJUSTMENT_INCREMENT = 0.1
 MAX_GAS_ADJUSTMENT       = 4
 VERSION_URI              = 'https://raw.githubusercontent.com/geoffmunn/utility-scripts/main/version.json'
+MIN_OSMO_GAS             = 0.0025
 
 # Swap contracts can be found here
 # https://assets.terra.money/cw20/pairs.dex.json
@@ -25,11 +26,11 @@ TERRASWAP_UUSD_TO_ULUNA_ADDRESS = 'terra1l7vy20x940je7lskm6x9s839vjsmekz9k9mv7g'
 #ASTROPORT_UUSD_TO_MINA_ADDRESS  = 'terra134m8n2epp0n40qr08qsvvrzycn2zq4zcpmue48'
 #ASTROPORT_UUSD_TO_UKUJI_ADDRESS  = 'terra1hasy32pvxmgu485x5tujylemqxynsv72lsu7ve'
 #ASTROPORT_UUSD_TO_ULUNA_ADDRESS  = 'terra1m6ywlgn6wrjuagcmmezzz2a029gtldhey5k552'
-KUJI_SMART_CONTACT_ADDRESS       = 'terra1xfsdgcemqwxp4hhnyk4rle6wr22sseq7j07dnn'
-TERRASWAP_UKRW_TO_ULUNA_ADDRESS  = 'terra1erfdlgdtt9e05z0j92wkndwav4t75xzyapntkv'
+KUJI_SMART_CONTACT_ADDRESS      = 'terra1xfsdgcemqwxp4hhnyk4rle6wr22sseq7j07dnn'
+TERRASWAP_UKRW_TO_ULUNA_ADDRESS = 'terra1erfdlgdtt9e05z0j92wkndwav4t75xzyapntkv'
 #TERRASWAP_UKUJI_TO_ULUNA_ADDRESS = 'terra19qx5xe6q9ll4w0890ux7lv2p4mf3csd4qvt3ex'
 TERRASWAP_ULUNA_TO_UUSD_ADDRESS = 'terra1l7vy20x940je7lskm6x9s839vjsmekz9k9mv7g'
-BASE_SMART_CONTRACT_ADDRESS = 'terra1uewxz67jhhhs2tj97pfm2egtk7zqxuhenm4y4m'
+BASE_SMART_CONTRACT_ADDRESS     = 'terra1uewxz67jhhhs2tj97pfm2egtk7zqxuhenm4y4m'
 
 # Do not change these:
 
@@ -52,8 +53,11 @@ USER_ACTION_VALIDATOR_LIST_UNDELEGATIONS = 'l'
 USER_ACTION_VALIDATOR_UNDELEGATE         = 'u'
 USER_ACTION_VALIDATOR_SWITCH             = 's'
 
-COIN_DIVISOR = 1000000
-COIN_DIVISOR_ETH = 1000000000000000000
+# Precision values
+COIN_DIVISOR        = 1000000
+COIN_DIVISOR_ETH    = 1000000000000000000
+
+# Max number of validators that Luna Classic allows
 MAX_VALIDATOR_COUNT = 130
 
 # Coin constants:
@@ -68,39 +72,39 @@ WETH  = 'weth-wei'
 
 # Coin keys and display values:
 FULL_COIN_LOOKUP = {
-    'uaud':  'AUT',
+    'uaud':  'AUTC',
     'uatom': 'ATOM',
     'ubase': 'BASE',
-    'ucad':  'CAT',
-    'uchf':  'CHT',
-    'ucny':  'CNT',
-    'udkk':  'DKT',
-    'ueur':  'EUT',
-    'ugbp':  'GBT',
-    'uhkd':  'HKT',
-    'uidr':  'IDT',
-    'uinr':  'INT',
-    'ujpy':  'JPT',
-    'ukrw':  'KRT',
+    'ucad':  'CATC',
+    'uchf':  'CHTC',
+    'ucny':  'CNTC',
+    'udkk':  'DKTC',
+    'ueur':  'EUTC',
+    'ugbp':  'GBTC',
+    'uhkd':  'HKTC',
+    'uidr':  'IDTC',
+    'uinr':  'INTC',
+    'ujpy':  'JPTC',
+    'ukrw':  'KRTC',
     'ukuji': 'KUJI',
     'uluna': 'LUNC',
-    'umnt':  'MNT',
-    'umyr':  'MYT',
-    'unok':  'NOT',
+    'umnt':  'MNTC',
+    'umyr':  'MYTC',
+    'unok':  'NOTC',
     'uosmo': 'OSMO',
-    'uphp':  'PHT',
-    'usdr':  'SDT',
-    'usek':  'SET',
-    'usgd':  'SGT',
-    'uthb':  'THT',
-    'utwd':  'TWT',
-    'uusd':  'UST',
-    'weth-wei': 'ETH'
+    'uphp':  'PHTC',
+    'usdr':  'SDTC',
+    'usek':  'SETC',
+    'usgd':  'SGTC',
+    'uthb':  'THTC',
+    'utwd':  'TWTC',
+    'uusd':  'USTC',
+    'weth-wei': 'wETH'
 }
 
 BASIC_COIN_LOOKUP = {
     'uluna': 'LUNC',
-    'uusd':  'UST'
+    'uusd':  'USTC'
 }
 
 CHAIN_IDS = {

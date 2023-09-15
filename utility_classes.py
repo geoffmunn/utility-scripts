@@ -27,6 +27,7 @@ from utility_constants import (
     GAS_PRICE_URI,
     IBC_ADDRESSES,
     KUJI_SMART_CONTACT_ADDRESS,
+    MIN_OSMO_GAS,
     OSMOSIS_POOLS,
     SEARCH_RETRY_COUNT,
     TAX_RATE_URI,
@@ -170,6 +171,7 @@ def isDigit(value) -> bool:
     try:
         float(value)
         return True
+    
     except ValueError:
         return False
     
@@ -180,6 +182,7 @@ def isPercentage(value:str) -> bool:
     last_char = str(value).strip(' ')[-1]
     if last_char == '%':
         return True
+    
     else:
         return False
     
@@ -231,6 +234,7 @@ def get_coin_selection(question:str, coins:dict, only_active_coins:bool = True, 
     wallet:Wallet = Wallet()
     coin_list     = []
     coin_values   = {}
+
     coin_list.append('')
 
     for coin in FULL_COIN_LOOKUP:
@@ -539,7 +543,6 @@ def get_user_number(question:str, params:dict):
                 answer = answer + '%'
         else:
             if convert_to_uluna == True:
-                print ('answer:', answer)
                 answer = float(multiply_raw_balance(answer, params['target_denom']))
 
     return answer
@@ -655,6 +658,7 @@ class Wallets:
 
                 wallet_item.validated = wallet_item.validateWallet()
 
+                # Add this completed wallet to the list
                 self.wallets[wallet['wallet']] = wallet_item
 
                 # Add this to the address list as well
@@ -682,7 +686,7 @@ class Wallets:
         """
 
         if validate == True:
-            validated_wallets = {}
+            validated_wallets:dict = {}
             for wallet_name in self.wallets:
                 wallet:Wallet = self.wallets[wallet_name]
                 
@@ -806,7 +810,7 @@ class Wallet:
         lunc = (target % (lunc)).rstrip('0').rstrip('.')
 
         if add_suffix:
-            lunc = str(lunc) + ' LUNC'
+            lunc = str(lunc) + ' ' + FULL_COIN_LOOKUP[denom]
         
         return lunc
     
@@ -1380,25 +1384,6 @@ class TransactionCore():
 
         coin:Coin
         for coin in requested_fee.amount:
-            #print ('requested fee coin:', coin)
-            # if coin.denom == 'uosmo':
-            
-            #     print ('ALERT: THIS IS USING THE OSMO FEE CONVERSION')
-            #     print ('PLEASE DOUBLE CHECK THAT THIS WORKS - IT IS SET SPECIFICALLY FOR OSMO->LUNC')
-            #     # We need to convert OSMO to LUNC for the fee
-            #     prices:json = self.getPrices(self.swap_denom, self.swap_request_denom)
-
-            #     # Calculate the LUNC fee
-            #     # (osmosis amount * osmosis unit cost) / lunc price
-            #     uluna_fee_value = int(math.ceil((coin.amount * prices['to']) / prices['from']))
-
-            #     # Update the requested fee object:
-            #     requested_fee.amount    = Coins({Coin('ibc/0EF15DF2F02480ADE0BB6E85D9EBB5DAEA2836D3860E9F97F9AADE4F57A31AA0', uluna_fee_value)})
-            #     #requested_fee.gas_limit = requested_fee.gas_limit * 1
-
-            #     print ('new amount:', requested_fee.amount)
-            #     return requested_fee
-            # else:
             if coin.denom in self.balances and int(self.balances[coin.denom]) >= int(coin.amount):
 
                 if coin.denom == UUSD:
@@ -1877,8 +1862,8 @@ class SendTransaction(TransactionCore):
 
                 if self.denom == UBASE:
                     msg = MsgExecuteContract(
-                        sender = self.current_wallet.key.acc_address,
-                        contract = BASE_SMART_CONTRACT_ADDRESS,
+                        sender      = self.current_wallet.key.acc_address,
+                        contract    = BASE_SMART_CONTRACT_ADDRESS,
                         execute_msg = {
                             "transfer": {
                                 "amount": str(send_amount),
@@ -1909,25 +1894,20 @@ class SendTransaction(TransactionCore):
                         token             = Coin(self.denom, send_amount),
                         sender            = self.sender_address,
                         receiver          = self.recipient_address,
-                        #timeout_height    = Height(revision_number = 1, revision_height = block_height),                            
                         timeout_height    = Height(revision_number = self.revision_number, revision_height = self.block_height),                            
                         timeout_timestamp = 0
                     )
                     
                     options = CreateTxOptions(
-                        fee            = self.fee,
-                        gas            = self.gas_limit,
-                        #gas_adjustment = 3,
-                        gas_prices     = self.gas_list,
-                        memo           = self.memo,
-                        msgs           = [msg],
-                        sequence       = self.sequence
+                        fee        = self.fee,
+                        gas        = self.gas_limit,
+                        gas_prices = self.gas_list,
+                        memo       = self.memo,
+                        msgs       = [msg],
+                        sequence   = self.sequence
                     )
                 else:
                     # OSMO:
-                    #print (self.sender_address)
-                    #print (self.recipient_address)
-                    #print (self.source_channel)
                     msg = MsgTransfer(
                         source_port       = 'transfer',
                         source_channel    = self.source_channel,
@@ -1943,14 +1923,12 @@ class SendTransaction(TransactionCore):
                                         
                     options = CreateTxOptions(
                         account_number = str(self.account_number),
-                        sequence = str(self.sequence),
-                        msgs=[msg],
-                        fee = self.fee,
-                        gas = '7500',
-                        fee_denoms = ['uosmo']
+                        sequence       = str(self.sequence),
+                        msgs           = [msg],
+                        fee            = self.fee,
+                        gas            = '7500',
+                        fee_denoms     = ['uosmo']
                     )
-
-                    exit()
 
             # This process often generates sequence errors. If we get a response error, then
             # bump up the sequence number by one and try again.
@@ -1989,7 +1967,6 @@ class SendTransaction(TransactionCore):
         self.fee - requested_fee object with fee + tax as separate coins (unless both are lunc)
         self.tax - the tax component
         self.fee_deductables - the amount we need to deduct off the transferred amount
-
         """
 
         if self.sequence is None:
@@ -2092,18 +2069,16 @@ class SwapTransaction(TransactionCore):
         if self.contract is not None:
             try:
                 if self.swap_denom != UBASE and self.swap_request_denom != UBASE:
+                    parts:dict          = {}
+                    contract_swaps:list = [ULUNA, UKRW, UUSD]
+
+                    # Get the pool details
                     result = self.terra.wasm.contract_query(self.contract, {"pool": {}})
-                
-                    parts:dict = {}
+                    
                     if 'native_token' in result['assets'][0]['info']:
                         parts[result['assets'][0]['info']['native_token']['denom']] = int(result['assets'][0]['amount'])
-                    #else:
-                    #    if result['assets'][0]['info']['token']['contract_addr'] == KUJI_SMART_CONTACT_ADDRESS:
-                    #        parts[UKUJI] = int(result['assets'][0]['amount'])
 
                     parts[result['assets'][1]['info']['native_token']['denom']] = int(result['assets'][1]['amount'])
-
-                    contract_swaps:list  = [ULUNA, UKRW, UUSD]#, UKUJI]
 
                     if self.swap_denom in contract_swaps and self.swap_request_denom in contract_swaps:
                         # Just about all swap types will use this approach:
@@ -2111,8 +2086,9 @@ class SwapTransaction(TransactionCore):
                         
                 else:
                     # UBASE does something different
-                    result = self.terra.wasm.contract_query(self.contract, {"curve_info": {}})
+                    result           = self.terra.wasm.contract_query(self.contract, {"curve_info": {}})
                     spot_price:float = float(result['spot_price'])
+
                     if self.swap_request_denom == UBASE:
                         belief_price:float = divide_raw_balance((spot_price * 1.053), UBASE)
                     else:
@@ -2196,7 +2172,6 @@ class SwapTransaction(TransactionCore):
                 msgs           = [tx_msg],
                 sequence       = self.sequence,
                 account_number = str(self.account_number),
-                
             )
             
             while True:
@@ -2236,26 +2211,18 @@ class SwapTransaction(TransactionCore):
         if 'max_spread' in IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]:
             max_spread = float(IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['max_spread'])
 
-        print ('max spread:', max_spread)
+        #print ('max spread:', max_spread)
 
         # Figure out the minimum expected coins for this swap:
-        #swap_rate:Coin = self.swapRate()
-
-        #swap_fee:float = IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['swap_fee']
-        #gas_adjustment = IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['gas_adjustment']
         fee_multiplier:float = float(IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['fee_multiplier'])
-        #print ('swap amount before tax:', (swap_rate.amount * 0.995))
-        #print ('max spread:', self.max_spread)
-
-        #For each route, conver the current coin to the base price
-        # Deduct swap fee
-        # deduct slippage
         
-        current_amount = self.swap_amount
-        current_denom = self.swap_denom
+        current_amount:int = self.swap_amount
+        current_denom:str  = self.swap_denom
 
-        print ('starting amount:', current_amount)
-
+        # For each route:
+        # Step 1: convert the current coin to the base price
+        # Step 2: deduct swap fee
+        # Step 3: deduct slippage
         for route in self.ibc_routes:
             print ('--------')
             print ('route:', route)
@@ -2329,12 +2296,8 @@ class SwapTransaction(TransactionCore):
             print ('current amount:', current_amount)
 
 
-        from_precision=getPrecision(prev_denom)
-        target_precision= getPrecision(current_denom)
-        
-        # print (f'last {current_denom} precision is {from_precision}')
-        # print (f'last {token_out_denom} precision is {target_precision}')
-        # print (f'last {target_precision} == {from_precision}')
+        from_precision   = getPrecision(prev_denom)
+        target_precision = getPrecision(current_denom)
                     
         print ('current amount before:', current_amount)
         if target_precision > from_precision:
@@ -2344,7 +2307,7 @@ class SwapTransaction(TransactionCore):
             
         print ('final current amount:', current_amount)
 
-        precision = getPrecision(current_denom)
+        precision:int = getPrecision(current_denom)
         print ('precision:', precision)
         current_amount = round(current_amount, precision)
         
@@ -2378,7 +2341,7 @@ class SwapTransaction(TransactionCore):
             print ('gas limit:', self.gas_limit)            
             # Now calculate the actual fee
             #(0.007264 * 0.424455) / 0.00006641 = 43.7972496474
-            min_uosmo_gas:float = 0.0025
+            min_uosmo_gas:float = MIN_OSMO_GAS
             uosmo_fee:float     = min_uosmo_gas * float(self.gas_limit)
 
             print ('uosmo fee:', uosmo_fee)
@@ -2424,31 +2387,33 @@ class SwapTransaction(TransactionCore):
         If fee is None then it will be a simulation.
         """
 
-        # try:
+        try:
         
-        token_in:Coin   = Coin(IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['token_in'], self.swap_amount)
+            token_in:Coin   = Coin(IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['token_in'], self.swap_amount)
 
-        tx_msg = MsgSwapExactAmountIn(
-            sender               = self.sender_address,
-            routes               = self.ibc_routes,
-            token_in             = str(token_in),
-            token_out_min_amount = str(self.min_out)
-        )
+            tx_msg = MsgSwapExactAmountIn(
+                sender               = self.sender_address,
+                routes               = self.ibc_routes,
+                token_in             = str(token_in),
+                token_out_min_amount = str(self.min_out)
+            )
 
-        options = CreateTxOptions(
-            fee            = self.fee,
-            gas            = self.gas_limit,
-            gas_adjustment = IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['gas_adjustment'],
-            msgs           = [tx_msg],
-            sequence       = self.sequence,
-            account_number = self.account_number
-        )
+            options = CreateTxOptions(
+                fee            = self.fee,
+                gas            = self.gas_limit,
+                gas_adjustment = IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['gas_adjustment'],
+                msgs           = [tx_msg],
+                sequence       = self.sequence,
+                account_number = self.account_number
+            )
 
-        tx:Tx = self.current_wallet.create_and_sign_tx(options)
-        
-        self.transaction = tx
+            tx:Tx = self.current_wallet.create_and_sign_tx(options)
+            
+            self.transaction = tx
 
-        return True
+            return True
+        except:
+            return False
 
     def setContract(self) -> bool:
         """
@@ -2459,7 +2424,7 @@ class SwapTransaction(TransactionCore):
         
         use_market_swap:bool = True
         self.contract        = None
-        contract_swaps:list  = [ULUNA, UKRW, UUSD, UBASE]# UKUJI, UBASE]
+        contract_swaps:list  = [ULUNA, UKRW, UUSD, UBASE]
 
         if self.swap_denom in contract_swaps and self.swap_request_denom in contract_swaps:
 
@@ -2475,7 +2440,6 @@ class SwapTransaction(TransactionCore):
 
             if self.swap_denom == UUSD:
                 if self.swap_request_denom == ULUNA:
-                    #self.contract = ASTROPORT_UUSD_TO_ULUNA_ADDRESS
                     self.contract = TERRASWAP_UUSD_TO_ULUNA_ADDRESS
                 if self.swap_request_denom == UKRW:
                     self.contract = None
@@ -2487,13 +2451,6 @@ class SwapTransaction(TransactionCore):
                 if self.swap_request_denom == UUSD:
                     self.contract = None
                     use_market_swap = True
-
-            #if self.swap_denom == UUSD:
-                #if self.swap_request_denom == UKUJI:
-                #    self.contract = ASTROPORT_UUSD_TO_UKUJI_ADDRESS
-            #if self.swap_denom == UKUJI:
-            #    if self.swap_request_denom == UUSD:
-            #        self.contract = ASTROPORT_UUSD_TO_UKUJI_ADDRESS
 
             if self.swap_denom == UBASE:
                 if self.swap_request_denom == ULUNA:
@@ -2517,7 +2474,6 @@ class SwapTransaction(TransactionCore):
         """
 
         self.belief_price   = self.beliefPrice()
-
         self.sequence       = self.current_wallet.sequence()
         self.account_number = self.current_wallet.account_number()
         
@@ -2713,7 +2669,7 @@ class SwapTransaction(TransactionCore):
 
             if self.swap_denom == UBASE:
                 if self.swap_request_denom == ULUNA:
-                    swap_price = self.beliefPrice()
+                    swap_price       = self.beliefPrice()
                     estimated_amount = float(self.swap_amount * swap_price)
                 
             else:
@@ -2727,7 +2683,7 @@ class SwapTransaction(TransactionCore):
             if self.swap_denom in off_chain_coins and self.swap_request_denom in off_chain_coins:
                 # Calculate the amount of OSMO we'll be getting:
                 # (lunc amount * lunc unit cost) / osmo price
-                prices:json = self.getPrices(self.swap_denom, self.swap_request_denom)
+                prices:json            = self.getPrices(self.swap_denom, self.swap_request_denom)
                 estimated_amount:float = (self.swap_amount * float(prices['from']) / float(prices['to']))
 
         return estimated_amount
