@@ -1187,8 +1187,9 @@ class Undelegations(Wallet):
                             self.__iter_result__(unbonding)
 
                 except Exception as err:
-                    print (err)
                     print (' 🛎️  Network error: undelegations could not be retrieved.')
+                    print (err)
+                    
 
         # Get any BASE undelegations currently in progress
         if 'ubase' in balances:
@@ -1365,6 +1366,7 @@ class TransactionCore():
                     else:
                         print ('The transaction did not appear. Future transactions might fail due to a lack of expected funds.')
                 except Exception as err:
+                    print ('An unexpected error occurred when broadcasting:')
                     print (err)
 
         return self.broadcast_result
@@ -1657,10 +1659,11 @@ class DelegationTransaction(TransactionCore):
                         options.sequence = self.sequence
                         print (' 🛎️  Boosting sequence number')
                     else:
+                        print ('An unexpected error occurred in the delegation function:')
                         print (err)
                         break
                 except Exception as err:
-                    print (' 🛑 A random error has occurred')
+                    print (' 🛑 An unexpected error occurred in the delegation function:')
                     print (err)
                     break
 
@@ -1708,10 +1711,11 @@ class DelegationTransaction(TransactionCore):
                         options.sequence = self.sequence
                         print (' 🛎️  Boosting sequence number')
                     else:
+                        print ('An unexpected error occurred in the redelegation function:')
                         print (err)
                         break
                 except Exception as err:
-                    print (' 🛑 A random error has occurred')
+                    print (' 🛑 An unexpected error occurred in the redelegation function:')
                     print (err)
                     break
 
@@ -1786,10 +1790,11 @@ class DelegationTransaction(TransactionCore):
                         options.sequence = self.sequence
                         print (' 🛎️  Boosting sequence number')
                     else:
+                        print ('An unexpected error occurred in the undelegation function:')
                         print (err)
                         break
                 except Exception as err:
-                    print (' 🛑 A random error has occurred')
+                    print (' 🛑 An unexpected error occurred in the undelegation function:')
                     print (err)
                     break
 
@@ -1942,10 +1947,11 @@ class SendTransaction(TransactionCore):
                         options.sequence = self.sequence
                         print (' 🛎️  Boosting sequence number')
                     else:
+                        print ('An unexpected error occurred in the send function:')
                         print (err)
                         break
                 except Exception as err:
-                    print (' 🛑 A random error has occurred')
+                    print (' 🛑 An unexpected error occurred in the send function:')
                     print (err)
                     break
 
@@ -1954,7 +1960,7 @@ class SendTransaction(TransactionCore):
 
             return True
         except Exception as err:
-            print (' 🛑 A random error has occurred')
+            print (' 🛑 An unexpected error occurred in the send function:')
             print (err)
             return False
     
@@ -2095,7 +2101,7 @@ class SwapTransaction(TransactionCore):
                         belief_price:float = divide_raw_balance((spot_price - (spot_price * 0.048)), UBASE)
 
             except Exception as err:
-                print (' 🛑 A connection error has occurred')
+                print (' 🛑 A connection error has occurred:')
                 print (err)
                 return None
            
@@ -2184,10 +2190,11 @@ class SwapTransaction(TransactionCore):
                         options.sequence = self.sequence
                         print (' 🛎️  Boosting sequence number')
                     else:
+                        print ('An unexpected error occurred in the marketSwap function:')
                         print (err)
                         break
                 except Exception as err:
-                    print (' 🛑 A random error has occurred')
+                    print (' 🛑 An unexpected error occurred in the marketSwap function:')
                     print (err)
                     break
 
@@ -2640,11 +2647,12 @@ class SwapTransaction(TransactionCore):
                         #     options.sequence = self.sequence
                         #     print (' 🛎️  Boosting sequence number')
                         # else:
+                        print ('An unexpected error occurred in the swap function:')
                         print (err)
                         break
                     except Exception as err:
                         
-                        print (' 🛑 A random error has occurred')
+                        print (' 🛑 An unexpected error occurred in the swap function:')
                         print (err)
                         break
 
@@ -2778,11 +2786,11 @@ class WithdrawalTransaction(TransactionCore):
                         options.sequence = self.sequence
                         print (' 🛎️  Boosting sequence number')
                     else:
-                        print ('withdraw error:')
+                        print ('An unexpected error occurred in the withdrawal function:')
                         print (err)
                         break
                 except Exception as err:
-                    print (' 🛑 A random error has occurred')
+                    print (' 🛑 An unexpected error occurred in the withdrawal function:')
                     print (err)
                     break
 
