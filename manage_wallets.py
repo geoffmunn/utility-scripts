@@ -365,7 +365,7 @@ def main():
                                             break
                                         
                                 if withdrawal_tx.broadcast_result is None or withdrawal_tx.broadcast_result.is_tx_error():
-                                    if withdrawal_tx is None:
+                                    if withdrawal_tx.broadcast_result is None:
                                         print (' 🛎️  The withdrawal transaction failed, no broadcast object was returned.')
                                     else:
                                         print (' 🛎️  The withdrawal failed, an error occurred:')
@@ -439,7 +439,7 @@ def main():
                                                 break
                                             
                                     if swaps_tx.broadcast_result is None or swaps_tx.broadcast_result.is_tx_error():
-                                        if swaps_tx is None:
+                                        if swaps_tx.broadcast_result is None:
                                             print (' 🛎️  The swap transaction failed, no broadcast object was returned.')
                                         else:
                                             print (' 🛎️ The swap failed, an error occurred:')
@@ -531,7 +531,7 @@ def main():
                                                     break
                                             
                                         if delegation_tx.broadcast_result is None or delegation_tx.broadcast_result.is_tx_error():
-                                            if delegation_tx is None:
+                                            if delegation_tx.broadcast_result is None:
                                                 print (' 🛎️  The delegation transaction failed, no broadcast object was returned.')
                                             else:
                                                 print (' 🛎️ The delegation failed, an error occurred:')
