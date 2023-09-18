@@ -689,28 +689,31 @@ def main():
             if result == True:
                 delegation_tx.broadcast()
             
-                if delegation_tx.broadcast_result.code == 11:
-                    while True:
-                        print (' 🛎️  Increasing the gas adjustment fee and trying again')
-                        delegation_tx.terra.gas_adjustment += GAS_ADJUSTMENT_INCREMENT
-                        print (f' 🛎️  Gas adjustment value is now {delegation_tx.terra.gas_adjustment}')
-                        delegation_tx.simulate(delegation_tx.redelegate)
-                        print (delegation_tx.readableFee())
-                        delegation_tx.redelegate()
-                        delegation_tx.broadcast()
+                if delegation_tx is not None:
+                    if delegation_tx.broadcast_result.code == 11:
+                        while True:
+                            print (' 🛎️  Increasing the gas adjustment fee and trying again')
+                            delegation_tx.terra.gas_adjustment += GAS_ADJUSTMENT_INCREMENT
+                            print (f' 🛎️  Gas adjustment value is now {delegation_tx.terra.gas_adjustment}')
+                            delegation_tx.simulate(delegation_tx.redelegate)
+                            print (delegation_tx.readableFee())
+                            delegation_tx.redelegate()
+                            delegation_tx.broadcast()
 
-                        if delegation_tx.broadcast_result.code != 11:
-                            break
+                            if delegation_tx.broadcast_result.code != 11:
+                                break
 
-                        if delegation_tx.terra.gas_adjustment >= MAX_GAS_ADJUSTMENT:
-                            break
-                    
-                if delegation_tx.broadcast_result.is_tx_error():
-                    print (' 🛎️ The delegation failed, an error occurred:')
-                    print (f' 🛎️  {delegation_tx.broadcast_result.raw_log}')
+                            if delegation_tx.terra.gas_adjustment >= MAX_GAS_ADJUSTMENT:
+                                break
+                        
+                    if delegation_tx.broadcast_result.is_tx_error():
+                        print (' 🛎️ The delegation failed, an error occurred:')
+                        print (f' 🛎️  {delegation_tx.broadcast_result.raw_log}')
+                    else:
+                        print (f' ✅ Delegated amount: {wallet.formatUluna(switched_uluna, ULUNA, True)}')
+                        print (f' ✅ Tx Hash: {delegation_tx.broadcast_result.txhash}')
                 else:
-                    print (f' ✅ Delegated amount: {wallet.formatUluna(switched_uluna, ULUNA, True)}')
-                    print (f' ✅ Tx Hash: {delegation_tx.broadcast_result.txhash}')
+                    print (' 🛎️ Please check the validator list to see what the current status is. This transaction returned an error but may have completed.')
             else:
                 print (' 🛎️  The delegation could not be completed')
         else:
