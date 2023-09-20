@@ -114,9 +114,20 @@ def check_version():
         if remote_json is not None:
             if local_json['version'] != remote_json['version']:
                 print ('')
-                print (' 🛎️  A new version is available!')
-                print (' 🛎️  Please check https://github.com/geoffmunn/utility-scripts for updates.')
 
+                local_bits = local_json['version'].split('.')
+                remote_bits = remote_json['version'].split('.')
+
+                if int(remote_bits[0]) > int(local_bits[0]):
+                    print (' 🛎️  A new major version is available!')
+                elif int(remote_bits[1]) > int(local_bits[1]):
+                    print (' 🛎️  A new minor version is available!')
+                elif int(remote_bits[2]) > int(local_bits[2]):
+                    print (' 🛎️  An update is available!')
+                elif int(local_bits[0]) > int(remote_bits[0]) or int(local_bits[1]) > int(remote_bits[1]) or int(local_bits[2]) > int(remote_bits[2]):
+                    print (' 🛎️  You are running a version ahead of the official release!')
+                    
+                print (' 🛎️  Please check https://github.com/geoffmunn/utility-scripts for updates.')
                 return False
             else:
                 print ('... you have the latest version.')
