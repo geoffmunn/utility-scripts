@@ -2229,8 +2229,6 @@ class SwapTransaction(TransactionCore):
         if 'max_spread' in IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]:
             max_spread = float(IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['max_spread'])
 
-        #print ('max spread:', max_spread)
-
         # Figure out the minimum expected coins for this swap:
         fee_multiplier:float = float(IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['fee_multiplier'])
         
@@ -2242,99 +2240,56 @@ class SwapTransaction(TransactionCore):
         # Step 2: deduct swap fee
         # Step 3: deduct slippage
         for route in self.ibc_routes:
-            print ('--------')
-            print ('route:', route)
-            print ('amount at this point:', current_amount)
             # Get the token we want to swap to (what we expect to end up with for this route)
             token_out_denom = OSMOSIS_POOLS[route['pool_id']][current_denom]
-            print (f'Swapping {current_amount} {current_denom} to {token_out_denom}')
-
+            
             # Get the prices for the current denom and the output denom
             coin_prices:json = self.getPrices(current_denom, token_out_denom)
-            
-
-            print ('coin prices:', coin_prices)
-            
-            
-            #lunc = ('%.6f' % (lunc)).rstrip('0').rstrip('.')
-            #print ('the current value is:', current_value)
             
             # Get the initial base price (no fee deductions)
             base_amount = (current_amount * coin_prices['from']) / coin_prices['to']
 
-            print ('base amount:', base_amount)
             #step 1: run price conversion
             #step 2: divide by $eth precision
             #Step 3: multiple by Cosmo precision
             #step 4: round to cosmo precision
 
-            from_precision = getPrecision(current_denom)
-            target_precision = getPrecision(token_out_denom)
+            from_precision:int   = getPrecision(current_denom)
+            target_precision:int = getPrecision(token_out_denom)
 
             if from_precision != target_precision:
-                base_amount = divide_raw_balance(base_amount, current_denom)
-                print ('base amount after dividing:', base_amount)
-
+                base_amount:float = divide_raw_balance(base_amount, current_denom)
+            
             # Only multiply if the token out demo has a higher precision
-            print (f'{current_denom} precision is {from_precision}')
-            print (f'{token_out_denom} precision is {target_precision}')
-            print (f'{target_precision} < {from_precision}')
-                     
             if target_precision < from_precision:
-                print ('target precision is less than precision, so we are multiplying the base amount')
-                base_amount = multiply_raw_balance(base_amount, token_out_denom)
-
-            print ('base after multiplying:', base_amount)
+                base_amount:float = multiply_raw_balance(base_amount, token_out_denom)
 
             # deduct the swap fee:
             swap_fee:float = float(OSMOSIS_POOLS[route['pool_id']]['swap_fee'])
-            print ('swap fee:', swap_fee)
+            
             # Deduct the swap fee
             base_amount_minus_swap_fee:float = float(base_amount) * (1 - swap_fee)
 
-            print ('base price minus swap fee:', base_amount_minus_swap_fee)
             # Deduct the slippage
             base_amount_minus_swap_fee = float(base_amount_minus_swap_fee * (1 - max_spread))
 
-            print ('base price minus slippage:', base_amount_minus_swap_fee)
-
-            print (base_amount_minus_swap_fee)
-
             # Now we have the new denom and the new value
-            prev_denom = current_denom
-            current_denom = token_out_denom        
-            current_amount = base_amount_minus_swap_fee
-            precision = getPrecision(token_out_denom)
-            #target = f'%.{precision}f'
+            prev_denom:str       = current_denom
+            current_denom:str    = token_out_denom        
+            current_amount:float = base_amount_minus_swap_fee
+            precision:int        = getPrecision(token_out_denom)
 
-            print ('This should have a precision of', precision)
-    
-            print ('new current denom:', current_denom)
-            #print ('current amount:', (target % (current_amount)).rstrip('0').rstrip('.'))
-            print ('current amount:', current_amount)
-
-
-        from_precision   = getPrecision(prev_denom)
-        target_precision = getPrecision(current_denom)
+        from_precision:int   = getPrecision(prev_denom)
+        target_precision:int = getPrecision(current_denom)
                     
-        print ('current amount before:', current_amount)
         if target_precision > from_precision:
-            print ('target precision is greater or equal to the precision, so we are multiplying the base amount')
-            
             current_amount = multiply_raw_balance(current_amount, current_denom)
             
-        print ('final current amount:', current_amount)
-
-        precision:int = getPrecision(current_denom)
-        print ('precision:', precision)
+        # Finish off the final value and store it:
+        precision:int  = getPrecision(current_denom)
         current_amount = round(current_amount, precision)
+        self.min_out   = math.floor(current_amount)
         
-        print ('swap min:', current_amount)
-        
-        #self.min_out = math.floor(current_amount)
-        self.min_out = math.floor(current_amount)
-        print ('min out:', self.min_out)   
-                    
         self.offChainSwap()
 
         # Get the transaction result
@@ -2344,54 +2299,40 @@ class SwapTransaction(TransactionCore):
             # Get the stub of the requested fee so we can adjust it
             requested_fee = tx.auth_info.fee
 
-            print ('requested fee:', requested_fee)
-
             # Get the fee details, but we'll need to make some modifications
             self.fee:Fee  = self.calculateFee(requested_fee)
-            print ('calculated fee:', self.fee)
-            
             fee_coin:Coin = self.fee.amount.to_list()[0]
             
             # We'll take the returned fee and use that as the gas limit
-            #self.gas_limit = math.floor(self.fee.gas_limit * float(gas_adjustment))
             self.gas_limit = self.fee.gas_limit
             
-            print ('gas limit:', self.gas_limit)            
             # Now calculate the actual fee
             #(0.007264 * 0.424455) / 0.00006641 = 43.7972496474
             min_uosmo_gas:float = MIN_OSMO_GAS
             uosmo_fee:float     = min_uosmo_gas * float(self.gas_limit)
 
-            print ('uosmo fee:', uosmo_fee)
             # Calculate the LUNC fee
             # (osmosis amount * osmosis unit cost) / lunc price
             # For the calculation to work, the 'to' value always needs to be the usomo price
 
             from_denom:str = UOSMO
-            to_denom:str = ULUNA
+            to_denom:str   = ULUNA
 
-            prices:json    = self.getPrices(from_denom, to_denom)
-            print ('prices:', prices)
-
+            # Get the current prices
+            prices:json = self.getPrices(from_denom, to_denom)
+            
             # OSMO -> LUNC:
             fee_amount:float = float((uosmo_fee * prices['from']) / prices['to'])
-            #fee_amount:float = float((uosmo_fee * prices['to']) / prices['from'])
+            fee_amount       = fee_amount * fee_multiplier
+            fee_denom:str    = fee_coin.denom
+            fee_denom:str    = 'ibc/0EF15DF2F02480ADE0BB6E85D9EBB5DAEA2836D3860E9F97F9AADE4F57A31AA0'
 
-            print ((uosmo_fee * prices['from']))
-            print (float((uosmo_fee * prices['from']) / prices['to']))
-            
-            print ('fee amount:', fee_amount)
-            fee_amount = fee_amount * fee_multiplier
-            fee_denom:str  = fee_coin.denom
-            print ('fee denom:', fee_denom)
-            fee_denom:str = 'ibc/0EF15DF2F02480ADE0BB6E85D9EBB5DAEA2836D3860E9F97F9AADE4F57A31AA0'
-
+            # Create the coin object
             new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount))})
 
             # This will be used by the swap function next time we call it
             self.fee.amount = new_coin
 
-            print ('final fee:', self.fee)
             return True
         else:
             return False
@@ -2407,7 +2348,7 @@ class SwapTransaction(TransactionCore):
 
         try:
         
-            token_in:Coin   = Coin(IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['token_in'], self.swap_amount)
+            token_in:Coin = Coin(IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['token_in'], self.swap_amount)
 
             tx_msg = MsgSwapExactAmountIn(
                 sender               = self.sender_address,
