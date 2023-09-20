@@ -1435,7 +1435,7 @@ class TransactionCore():
 
         retry_count = 0
         while True:
-            if len(result['txs']) > 0 and int(result['pagination']['total']) > 0:
+            if len(result['txs']) > 0:
                 if result['txs'][0].code == 0:
                     print ('Found the hash!')
                     time.sleep(1)
