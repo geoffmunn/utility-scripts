@@ -423,50 +423,6 @@ IBC_ADDRESSES = {
     }
 }
 
-OSMOSIS_POOLS = {
-    '1': {
-        'swap_fee': '0.002',
-        'uosmo': 'uatom',
-        'uatom': 'uosmo'
-    },
-    '561': {
-        'swap_fee': '0.002',
-        'uluna': 'uosmo',
-        'uosmo': 'uluna'
-    },
-    '565': {
-        'swap_fee': '0.003',
-        'uluna': 'uatom',
-        'uatom': 'uluna'
-    },
-    '704': {
-        'swap_fee': '0.002',
-        'uosmo': 'weth-wei',
-        'weth-wei': 'uosmo'
-    },
-    '744': {
-        'swap_fee': '0.002',
-        'uosmo': 'ukuji',
-        'ukuji': 'uosmo'
-    },
-    '800': {
-        'swap_fee': '0.08',
-        'uluna': 'uosmo',
-        'uosmo': 'uluna'
-    },
-    '1134': {
-        'swap_fee': '0.002',
-        'uosmo': 'weth-wei',
-        'weth-wei': 'uosmo'
-    },
-    '1135': {
-        'swap_fee': '0.002',
-        'uosmo': 'uatom',
-        'uatom': 'uosmo'
-    }
-
-}
-
 # Cronos
 # Injective
 # Kava
