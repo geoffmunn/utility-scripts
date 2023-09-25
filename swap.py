@@ -246,17 +246,6 @@ def main():
     # Set the contract based on what we've picked
     # As long as the swap_denom and swap_request_denom values are set, the correct contract should be picked
     use_market_swap = swaps_tx.setContract()
-
-    #if swaps_tx.swap_request_denom == UKUJI:
-    #    swaps_tx.max_spread = 0.005
-
-    # print ('swap amount:', swaps_tx.swap_amount)
-    # print ('swap denom:', swaps_tx.swap_denom)
-    # print ('request denom:', swaps_tx.swap_request_denom)
-    # print ('sender address:', swaps_tx.sender_address)
-    # print ('sender prefix:', swaps_tx.sender_prefix)
-    # print ('use market swap?', use_market_swap)
-    # print ('max spread:', swaps_tx.max_spread)
     
     #if swaps_tx.swap_request_denom == UOSMO and swaps_tx.sender_prefix != 'terra':
     if swaps_tx.swap_request_denom in [UOSMO, UATOM, UKUJI, WETH] or swaps_tx.swap_denom in [UOSMO, UATOM, UKUJI, WETH]:
