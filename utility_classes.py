@@ -66,7 +66,7 @@ from terra_classic_sdk.core.fee import Fee
 from terra_classic_sdk.core.ibc import Height
 from terra_classic_sdk.core.ibc_transfer import MsgTransfer
 from terra_classic_sdk.core.market.msgs import MsgSwap
-from terra_classic_sdk.core.osmosis import MsgSwapExactAmountIn
+from terra_classic_sdk.core.osmosis import MsgSwapExactAmountIn, Pool, PoolAsset
 from terra_classic_sdk.core.staking import (
     MsgBeginRedelegate,
     MsgDelegate,
@@ -2065,6 +2065,7 @@ class SwapTransaction(TransactionCore):
         self.ibc_routes:list        = []
         self.max_spread:float       = 0.01
         self.min_out:int            = None
+        self.osmosis_pools:dict     = {}
         self.recipient_address:str  = ''
         self.recipient_prefix:str   = ''
         self.sender_address:str     = ''
@@ -2241,7 +2242,12 @@ class SwapTransaction(TransactionCore):
         # Step 3: deduct slippage
         for route in self.ibc_routes:
             # Get the token we want to swap to (what we expect to end up with for this route)
-            token_out_denom = OSMOSIS_POOLS[route['pool_id']][current_denom]
+            token_out_denom = self.osmosisDenomSwapTo(route['pool_id'], current_denom)
+            wallet = Wallet()
+            wallet.address = self.sender_address
+            ibc_denom = wallet.denomTrace(token_out_denom)
+            if ibc_denom != False:
+                token_out_denom = ibc_denom['base_denom']
             
             # Get the prices for the current denom and the output denom
             coin_prices:json = self.getPrices(current_denom, token_out_denom)
@@ -2265,8 +2271,8 @@ class SwapTransaction(TransactionCore):
                 base_amount:float = multiply_raw_balance(base_amount, token_out_denom)
 
             # deduct the swap fee:
-            swap_fee:float = float(OSMOSIS_POOLS[route['pool_id']]['swap_fee'])
-            
+            swap_fee:float = float(self.osmosisPoolByID(route['pool_id']).pool_params.swap_fee)
+
             # Deduct the swap fee
             base_amount_minus_swap_fee:float = float(base_amount) * (1 - swap_fee)
 
@@ -2374,6 +2380,60 @@ class SwapTransaction(TransactionCore):
         except:
             return False
 
+    def osmosisPoolByID(self, pool_id:int) -> Pool:
+        """
+        Get the pool details for the provided pool id.
+        Save them in memory so we can access individual details and discover the best paths.
+        """
+
+        result:Pool = None
+
+        if pool_id not in self.osmosis_pools:
+            # Get this pool:
+            pool:pool = self.terra.pool.osmosis_pool(pool_id)
+            # Save it in the publicly available object:
+            self.osmosis_pools[pool.id] = pool
+
+            # Return this result
+            result = pool        
+            
+        return result
+    
+    def osmosisDenomSwapTo(self, pool_id:int, from_denom:str):
+        """
+        """
+
+        pool:Pool = self.osmosisPoolByID(pool_id)
+        
+        if pool is not None:
+            swap_to:Coin = None
+
+            assets = pool.pool_assets
+            asset:PoolAsset
+            for asset in assets:
+                if asset.token.denom != from_denom:
+                    swap_to = asset.token
+
+            #print (f'swap from {from_denom} to {swap_to.denom}')
+
+            return swap_to.denom
+        else:
+            print (' 🛑 Osmosis pool details could not be retrieved')
+            exit()
+    
+    # def osmosisPools(self):
+    #     """
+    #     Get the pool details for all the available pools.
+    #     Save them in memory so we can access individual details and discover the best paths.
+    #     """
+
+    #     if len(self.osmosis_pools) == 0:
+    #         pools:list = self.terra.pool.osmosis_pools()
+    #         for pool in pools:
+    #             self.osmosis_pools[pool.id] = pool
+                
+    #     return self.osmosis_pools
+    
     def setContract(self) -> bool:
         """
         Depending on what the 'from' denom is and the 'to' denom, change the contract endpoint.
