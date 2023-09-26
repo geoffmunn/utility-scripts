@@ -3,12 +3,13 @@
 
 import cryptocode
 from datetime import datetime, tzinfo
+from dateutil.tz import tz
+from hashlib import sha256
 import json
 import math
 import requests
 import time
 import yaml
-from dateutil.tz import tz
 
 import traceback
 
@@ -2221,6 +2222,18 @@ class SwapTransaction(TransactionCore):
         The fee details are saved so the actual market swap will work.
         """
 
+        # all_pools = self.terra.pool.osmosis_pools()
+        # poolx:Pool
+        # for poolx in all_pools:
+        #     #print (poolx.pool_assets)
+        #     if len(poolx.pool_assets) == 2:
+        #         if poolx.pool_assets[0].token.denom == 'ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2' and poolx.pool_assets[1].token.denom == 'ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2':
+        #             print (poolx)
+        #         if poolx.pool_assets[1].token.denom == 'ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2' and poolx.pool_assets[0].token.denom == 'ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2':
+        #             print (poolx)
+
+        # exit()
+
         self.sequence       = self.current_wallet.sequence()
         self.account_number = self.current_wallet.account_number()
         self.ibc_routes     = IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['routes']
@@ -2248,6 +2261,7 @@ class SwapTransaction(TransactionCore):
             if ibc_denom != False:
                 token_out_denom = ibc_denom['base_denom']
             
+            print ('token out denom:', token_out_denom)
             # Get the prices for the current denom and the output denom
             coin_prices:json = self.getPrices(current_denom, token_out_denom)
             
@@ -2270,8 +2284,10 @@ class SwapTransaction(TransactionCore):
                 base_amount:float = multiply_raw_balance(base_amount, token_out_denom)
 
             # deduct the swap fee:
+            print ('pool:', self.osmosisPoolByID(route['pool_id']))
             swap_fee:float = float(self.osmosisPoolByID(route['pool_id']).pool_params.swap_fee)
 
+            print ('swap fee:', swap_fee)
             # Deduct the swap fee
             base_amount_minus_swap_fee:float = float(base_amount) * (1 - swap_fee)
 
@@ -2295,6 +2311,8 @@ class SwapTransaction(TransactionCore):
         current_amount = round(current_amount, precision)
         self.min_out   = math.floor(current_amount)
         
+        print ('min out:', self.min_out)
+        print ('getting swap details:')
         self.offChainSwap()
 
         # Get the transaction result
@@ -2338,6 +2356,7 @@ class SwapTransaction(TransactionCore):
             # This will be used by the swap function next time we call it
             self.fee.amount = new_coin
 
+            print ('hi')
             return True
         else:
             return False
@@ -2351,33 +2370,61 @@ class SwapTransaction(TransactionCore):
         If fee is None then it will be a simulation.
         """
 
-        try:
+        #try:
+        #print ('sender prefix:', self.sender_prefix)
+        print ('swap denom:', self.swap_denom)
+        chain = self.getChainByDenom(self.swap_denom)
+        prefix = chain['prefix']
+        print ('prefix:', prefix)
+        channel_id = CHAIN_IDS[prefix]['ibc_channel']
         
-            token_in:Coin = Coin(IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['token_in'], self.swap_amount)
+        print ('channel id:', channel_id)
+        print (f'hash: /transfer/{channel_id}/{self.swap_denom}')
+        print ('hash result:', sha256(f'transfer/{channel_id}/{self.swap_denom}'.encode('utf-8')).hexdigest().upper())
+        print ('should look like this:', IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['token_in'])
 
-            tx_msg = MsgSwapExactAmountIn(
-                sender               = self.sender_address,
-                routes               = self.ibc_routes,
-                token_in             = str(token_in),
-                token_out_min_amount = str(self.min_out)
-            )
+        if self.swap_denom != 'uosmo':
+            ibc_value = sha256(f'transfer/{channel_id}/{self.swap_denom}'.encode('utf-8')).hexdigest().upper()
+        #if ibc_value == '375f47f338f158dc35571c50ad6ddc42b62812d580ed23bac602b51af1b54cfb':
+        #    coin_denom = 'uosmo'
+        #else:
+            coin_denom = 'ibc/' + ibc_value
+        else:
+            coin_denom = 'uosmo'
 
-            options = CreateTxOptions(
-                fee            = self.fee,
-                gas            = self.gas_limit,
-                gas_adjustment = IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['gas_adjustment'],
-                msgs           = [tx_msg],
-                sequence       = self.sequence,
-                account_number = self.account_number
-            )
+        print ('we will be using', coin_denom)
 
-            tx:Tx = self.current_wallet.create_and_sign_tx(options)
-            
-            self.transaction = tx
+        token_in:Coin = Coin(coin_denom, self.swap_amount)
 
-            return True
-        except:
-            return False
+        old:Coin = Coin(IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['token_in'], self.swap_amount)
+        print (f"old coin: {self.swap_denom}/{self.swap_request_denom} returns {IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['token_in']}")
+        print ('old denom:', old.denom)
+
+        #token_in:Coin = Coin(IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['token_in'], self.swap_amount)
+
+        tx_msg = MsgSwapExactAmountIn(
+            sender               = self.sender_address,
+            routes               = self.ibc_routes,
+            token_in             = str(token_in),
+            token_out_min_amount = str(self.min_out)
+        )
+
+        options = CreateTxOptions(
+            fee            = self.fee,
+            gas            = self.gas_limit,
+            gas_adjustment = IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['gas_adjustment'],
+            msgs           = [tx_msg],
+            sequence       = self.sequence,
+            account_number = self.account_number
+        )
+
+        tx:Tx = self.current_wallet.create_and_sign_tx(options)
+        
+        self.transaction = tx
+
+        return True
+        #except:
+        #    return False
 
     def osmosisPoolByID(self, pool_id:int) -> Pool:
         """
@@ -2404,12 +2451,14 @@ class SwapTransaction(TransactionCore):
 
         pool:Pool = self.osmosisPoolByID(pool_id)
         
+        print ('pool details:', pool)
         if pool is not None:
             swap_to:Coin = None
 
             assets = pool.pool_assets
             asset:PoolAsset
             for asset in assets:
+                print ('this asset:', asset)
                 if asset.token.denom != from_denom:
                     swap_to = asset.token
 

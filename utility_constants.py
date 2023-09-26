@@ -113,69 +113,71 @@ CHAIN_IDS = {
         'name2': 'cosmos',
         'display_name': 'Cosmos',
         'chain_id': 'cosmoshub-4',
-        'ibc_channels': ['channel-2', 'channel-41', 'channel-59'],
+        'ibc_channel': 'channel-0',
         'lcd_urls': ['https://rest.cosmos.directory/cosmoshub', 'https://cosmoshub-lcd.stakely.io'],
         'denom': 'uatom',
-        'status': 'inactive'
+        'prefix': 'cosmos'
     },
-    'kava': {
-        'name': 'kava',
-        'name2': 'kava',
-        'display_name': 'Kava',
-        'chain_id': 'kava-9',
-        'ibc_channels': ['channel-24'],
-        'lcd_urls': ['https://rest.cosmos.directory/kava'],
-        'denom': 'ukava',
-        'status': 'inactive'
-    },
+    # 'kava': {
+    #     'name': 'kava',
+    #     'name2': 'kava',
+    #     'display_name': 'Kava',
+    #     'chain_id': 'kava-9',
+    #     'ibc_channels': ['channel-24'],
+    #     'lcd_urls': ['https://rest.cosmos.directory/kava'],
+    #     'denom': 'ukava',
+    #     'status': 'inactive'
+    # },
     'kujira': {
         'name': 'kujira',
         'name2': 'kujira',
         'display_name': 'Kujira',
         'chain_id': 'kaiyo-1',
-        'ibc_channels': ['channel-71'],
+        'ibc_channel': 'channel-259',
         'lcd_urls': ['https://rest.cosmos.directory/kujira', 'https://lcd-kujira.mintthemoon.xyz'],
         'denom': 'ukuji',
-        'status': 'active'
+        'status': 'active',
+        'prefix': 'kujira'
     },
     'osmo': {
         'name': 'osmosis',
         'name2': 'osmosis',
         'display_name': 'Osmosis',
         'chain_id': 'osmosis-1',
-        'ibc_channels': ['channel-1'],
+        'ibc_channel': 'channel-1',
         'lcd_urls': ['https://lcd.osmosis.zone'],
         'denom': 'uosmo',
-        'status': 'active'
+        'prefix': 'osmo'
     },
     'terra': {
         'name': 'terra',
         'name2': 'terra-luna',
         'display_name': 'Luna Classic',
         'chain_id': 'columbus-5',
-        'ibc_channels': ['channel-72'],
+        'ibc_channel': 'channel-72',
         'lcd_urls': ['https://lcd.terrarebels.net', 'https://terra-classic-fcd.publicnode.com', 'https://lcd.terrarebels.net', 'https://rest.cosmos.directory/terra'],
         'denom': 'uluna',
-        'status': 'active'
+        'prefix': 'terra'
     },
-    'weth-wei': {
+    #'weth-wei': {
+    'axelar': {
         'name': 'axelar ',
         'name2': 'weth',
         'display_name': 'Wrapped Eth',
         'chain_id': 'axelar-dojo-1',
         #'chain_id': 'osmosis-1',
-        'ibc_channels': [],
+        'ibc_channel': 'channel-208',
         'lcd_urls': ['https://rest.cosmos.directory/axelar'],
         #'lcd_urls': ['https://lcd.osmosis.zone'],
         'denom': 'weth-wei',
-        'status': 'active'
+        'prefix': 'axelar'
     }
 }
 
 IBC_ADDRESSES = {
     'uatom': {
         'ukuji': {
-            'token_in': 'ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2',
+            #'token_in': 'ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2',
             'routes':  [
                 {
                     "pool_id": "1135",
@@ -190,7 +192,7 @@ IBC_ADDRESSES = {
             'fee_multiplier': '1.1'
         },
         'uluna': {
-            'token_in': 'ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2',
+            #'token_in': 'ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2',
             'routes': [
                 {
                     "pool_id": "1",
@@ -205,7 +207,7 @@ IBC_ADDRESSES = {
             'fee_multiplier': '1.1'
         },
         'uosmo': {
-            'token_in': 'ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2',
+            #'token_in': 'ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2',
             'routes': [
                 {
                     "pool_id": "1",
@@ -216,7 +218,7 @@ IBC_ADDRESSES = {
              'fee_multiplier': '1.1'
         },
         'weth-wei': {
-            'token_in': 'ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2',
+            #'token_in': 'ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2',
             'routes': [
                 {
                     "pool_id": "1135",
@@ -233,7 +235,7 @@ IBC_ADDRESSES = {
     },
     'ukuji': {
         'uatom': {
-            'token_in': 'ibc/BB6BCDB515050BAE97516111873CCD7BCF1FD0CCB723CC12F3C4F704D6C646CE',
+            #'token_in': 'ibc/BB6BCDB515050BAE97516111873CCD7BCF1FD0CCB723CC12F3C4F704D6C646CE',
             'routes': [
                 {
                     "pool_id": "744",
@@ -248,7 +250,7 @@ IBC_ADDRESSES = {
             'fee_multiplier': '1.1'
         },
         'uluna': {
-            'token_in': 'ibc/BB6BCDB515050BAE97516111873CCD7BCF1FD0CCB723CC12F3C4F704D6C646CE',
+            #'token_in': 'ibc/BB6BCDB515050BAE97516111873CCD7BCF1FD0CCB723CC12F3C4F704D6C646CE',
             'routes': [
                 {
                     "pool_id": "744",
@@ -263,7 +265,7 @@ IBC_ADDRESSES = {
             'fee_multiplier': '1.1'
         },
         'uosmo': {
-            'token_in': 'ibc/BB6BCDB515050BAE97516111873CCD7BCF1FD0CCB723CC12F3C4F704D6C646CE',
+            #'token_in': 'ibc/BB6BCDB515050BAE97516111873CCD7BCF1FD0CCB723CC12F3C4F704D6C646CE',
             'routes': [
                 {
                     "pool_id": "744",
@@ -274,7 +276,7 @@ IBC_ADDRESSES = {
             'fee_multiplier': '1.1'
         },
         'weth-wei': {
-            'token_in': 'ibc/BB6BCDB515050BAE97516111873CCD7BCF1FD0CCB723CC12F3C4F704D6C646CE',
+            #'token_in': 'ibc/BB6BCDB515050BAE97516111873CCD7BCF1FD0CCB723CC12F3C4F704D6C646CE',
             'routes': [
                 {
                     "pool_id": "744",
