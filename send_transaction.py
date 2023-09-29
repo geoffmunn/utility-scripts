@@ -380,7 +380,7 @@ def main():
 
         if recipient_address_prefix != 'terra' or wallet.terra.chain_id != 'columbus-5':
             send_tx.is_ibc_transfer = True
-            send_tx.source_channel = CHAIN_IDS[recipient_address_prefix]['ibc_channels'][0]
+            send_tx.source_channel = CHAIN_IDS[recipient_address_prefix]['ibc_channel']
             if wallet.terra.chain_id == 'osmosis-1':
                 send_tx.revision_number = 6
             else:

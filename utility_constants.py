@@ -63,6 +63,7 @@ MAX_VALIDATOR_COUNT = 130
 # Coin constants:
 UATOM = 'uatom'
 UBASE = 'ubase'
+UKAVA = 'ukava'
 UKRW  = 'ukrw'
 UKUJI = 'ukuji'
 ULUNA = 'uluna'
@@ -85,6 +86,7 @@ FULL_COIN_LOOKUP = {
     'uidr':  'IDTC',
     'uinr':  'INTC',
     'ujpy':  'JPTC',
+    'ukava': 'KAVA',
     'ukrw':  'KRTC',
     'ukuji': 'KUJI',
     'uluna': 'LUNC',
@@ -118,16 +120,16 @@ CHAIN_IDS = {
         'denom': 'uatom',
         'prefix': 'cosmos'
     },
-    # 'kava': {
-    #     'name': 'kava',
-    #     'name2': 'kava',
-    #     'display_name': 'Kava',
-    #     'chain_id': 'kava-9',
-    #     'ibc_channels': ['channel-24'],
-    #     'lcd_urls': ['https://rest.cosmos.directory/kava'],
-    #     'denom': 'ukava',
-    #     'status': 'inactive'
-    # },
+    'kava': {
+        'name': 'kava',
+        'name2': 'kava',
+        'display_name': 'Kava',
+        'chain_id': 'kava-9',
+        'ibc_channel': 'channel-24',
+        'lcd_urls': ['https://rest.cosmos.directory/kava'],
+        'denom': 'ukava',
+        'prefix': 'kava'
+    },
     'kujira': {
         'name': 'kujira',
         'name2': 'kujira',
@@ -136,7 +138,6 @@ CHAIN_IDS = {
         'ibc_channel': 'channel-259',
         'lcd_urls': ['https://rest.cosmos.directory/kujira', 'https://lcd-kujira.mintthemoon.xyz'],
         'denom': 'ukuji',
-        'status': 'active',
         'prefix': 'kujira'
     },
     'osmo': {
@@ -159,269 +160,15 @@ CHAIN_IDS = {
         'denom': 'uluna',
         'prefix': 'terra'
     },
-    #'weth-wei': {
     'axelar': {
         'name': 'axelar ',
         'name2': 'weth',
         'display_name': 'Wrapped Eth',
         'chain_id': 'axelar-dojo-1',
-        #'chain_id': 'osmosis-1',
         'ibc_channel': 'channel-208',
         'lcd_urls': ['https://rest.cosmos.directory/axelar'],
-        #'lcd_urls': ['https://lcd.osmosis.zone'],
         'denom': 'weth-wei',
         'prefix': 'axelar'
-    }
-}
-
-IBC_ADDRESSES = {
-    'uatom': {
-        'ukuji': {
-            #'token_in': 'ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2',
-            'routes':  [
-                {
-                    "pool_id": "1135",
-                    "token_out_denom": "uosmo"
-                },
-                {
-                    "pool_id": "744",
-                    "token_out_denom": "ibc/BB6BCDB515050BAE97516111873CCD7BCF1FD0CCB723CC12F3C4F704D6C646CE"
-                }
-            ],
-            'gas_adjustment': '1.5',
-            'fee_multiplier': '1.1'
-        },
-        'uluna': {
-            #'token_in': 'ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2',
-            'routes': [
-                {
-                    "pool_id": "1",
-                    "token_out_denom": "uosmo"
-                },
-                {
-                    "pool_id": "800",
-                    "token_out_denom": "ibc/0EF15DF2F02480ADE0BB6E85D9EBB5DAEA2836D3860E9F97F9AADE4F57A31AA0"
-                }
-            ],
-            'gas_adjustment': '1.5',
-            'fee_multiplier': '1.1'
-        },
-        'uosmo': {
-            #'token_in': 'ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2',
-            'routes': [
-                {
-                    "pool_id": "1",
-                    "token_out_denom": "uosmo"
-                }
-             ],
-             'gas_adjustment': '1.5',
-             'fee_multiplier': '1.1'
-        },
-        'weth-wei': {
-            #'token_in': 'ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2',
-            'routes': [
-                {
-                    "pool_id": "1135",
-                    "token_out_denom": "uosmo"
-                },
-                {
-                    "pool_id": "1134",
-                    "token_out_denom": "ibc/EA1D43981D5C9A1C4AAEA9C23BB1D4FA126BA9BC7020A25E0AE4AA841EA25DC5"
-                }
-            ],
-            'gas_adjustment': '2.5',
-            'fee_multiplier': '1.1'
-        }
-    },
-    'ukuji': {
-        'uatom': {
-            #'token_in': 'ibc/BB6BCDB515050BAE97516111873CCD7BCF1FD0CCB723CC12F3C4F704D6C646CE',
-            'routes': [
-                {
-                    "pool_id": "744",
-                    "token_out_denom": "uosmo"
-                },
-                {
-                    "pool_id": "1135",
-                    "token_out_denom": "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2"
-                }
-            ],
-            'gas_adjustment': '1.5',
-            'fee_multiplier': '1.1'
-        },
-        'uluna': {
-            #'token_in': 'ibc/BB6BCDB515050BAE97516111873CCD7BCF1FD0CCB723CC12F3C4F704D6C646CE',
-            'routes': [
-                {
-                    "pool_id": "744",
-                    "token_out_denom": "uosmo"
-                },
-                {
-                    "pool_id": "800",
-                    "token_out_denom": "ibc/0EF15DF2F02480ADE0BB6E85D9EBB5DAEA2836D3860E9F97F9AADE4F57A31AA0"
-                }
-            ],
-            'gas_adjustment': '1.5',
-            'fee_multiplier': '1.1'
-        },
-        'uosmo': {
-            #'token_in': 'ibc/BB6BCDB515050BAE97516111873CCD7BCF1FD0CCB723CC12F3C4F704D6C646CE',
-            'routes': [
-                {
-                    "pool_id": "744",
-                    "token_out_denom": "uosmo"
-                }
-            ],
-            'gas_adjustment': '1.5',
-            'fee_multiplier': '1.1'
-        },
-        'weth-wei': {
-            #'token_in': 'ibc/BB6BCDB515050BAE97516111873CCD7BCF1FD0CCB723CC12F3C4F704D6C646CE',
-            'routes': [
-                {
-                    "pool_id": "744",
-                    "token_out_denom": "uosmo"
-                },
-                {
-                    "pool_id": "1134",
-                    "token_out_denom": "ibc/EA1D43981D5C9A1C4AAEA9C23BB1D4FA126BA9BC7020A25E0AE4AA841EA25DC5"
-                }
-            ],
-            'gas_adjustment': '2.5',
-            'fee_multiplier': '1.1'
-        }
-    },
-    'uluna': {
-        'uatom': {
-            'token_in': 'ibc/0EF15DF2F02480ADE0BB6E85D9EBB5DAEA2836D3860E9F97F9AADE4F57A31AA0',
-            'routes': [
-                {
-                    #"pool_id": "800",
-                    "pool_id": "561",
-                    "token_out_denom": "uosmo"
-                },
-                {
-                    "pool_id": "1",
-                    "token_out_denom": "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2"
-                }
-                # {
-                #     "pool_id": "565",
-                #     "token_out_denom": "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2"
-                # },
-            ],
-            'gas_adjustment': '1.5',
-            'fee_multiplier': '1.1'
-        },
-        'ukuji': {
-            'token_in': 'ibc/0EF15DF2F02480ADE0BB6E85D9EBB5DAEA2836D3860E9F97F9AADE4F57A31AA0',
-            "routes": [
-                {
-                    "pool_id": "800",
-                    "token_out_denom": "uosmo"
-                },
-                {
-                    "pool_id": "744",
-                    "token_out_denom": "ibc/BB6BCDB515050BAE97516111873CCD7BCF1FD0CCB723CC12F3C4F704D6C646CE"
-                }
-            ],
-            'gas_adjustment': '1.5',
-            'fee_multiplier': '1.1'
-        },
-        'uosmo': {
-            'token_in': 'ibc/0EF15DF2F02480ADE0BB6E85D9EBB5DAEA2836D3860E9F97F9AADE4F57A31AA0',
-            'routes': [
-                {
-                    "pool_id": "561",
-                    "token_out_denom": "uosmo"
-                }
-            ],
-            'gas_adjustment': '2.5',
-            'fee_multiplier': '1'
-        },
-        'weth-wei': {
-            'token_in': 'ibc/0EF15DF2F02480ADE0BB6E85D9EBB5DAEA2836D3860E9F97F9AADE4F57A31AA0',
-            'routes': [
-                {
-                    "pool_id": "800",
-                    "token_out_denom": "uosmo"
-                },
-                {
-                    #"pool_id": "704",
-                    "pool_id": "1134",
-                    "token_out_denom": "ibc/EA1D43981D5C9A1C4AAEA9C23BB1D4FA126BA9BC7020A25E0AE4AA841EA25DC5"
-                }
-            ],
-            'gas_adjustment': '2.5',
-            'fee_multiplier': '1.1',
-            'max_spread': '0.03'
-        }
-    },
-    'uosmo': {
-        'uluna': {
-            'token_in': 'uosmo',
-            'routes': [
-                {
-                    "pool_id": "561",
-                    "token_out_denom": "ibc/0EF15DF2F02480ADE0BB6E85D9EBB5DAEA2836D3860E9F97F9AADE4F57A31AA0"
-                }
-            ],
-            'gas_adjustment': '2.5',
-            'fee_multiplier': '1'
-        }
-    },
-    'weth-wei': {
-        'uatom': {
-            'token_in': 'ibc/EA1D43981D5C9A1C4AAEA9C23BB1D4FA126BA9BC7020A25E0AE4AA841EA25DC5',
-            'routes': [
-              {
-                "pool_id": "704",
-                "token_out_denom": "uosmo"
-              }
-            ],
-            'gas_adjustment': '2.5',
-            'fee_multiplier': '1.1'
-        },
-        'ukuji': {
-            'token_in': 'ibc/EA1D43981D5C9A1C4AAEA9C23BB1D4FA126BA9BC7020A25E0AE4AA841EA25DC5',
-            'routes': [
-                {
-                    "pool_id": "1134",
-                    "token_out_denom": "uosmo"
-                },
-                {
-                    "pool_id": "744",
-                    "token_out_denom": "ibc/BB6BCDB515050BAE97516111873CCD7BCF1FD0CCB723CC12F3C4F704D6C646CE"
-                }
-            ],
-            'gas_adjustment': '2.5',
-            'fee_multiplier': '1.1'
-        },
-        'uluna': {
-            'token_in': 'ibc/EA1D43981D5C9A1C4AAEA9C23BB1D4FA126BA9BC7020A25E0AE4AA841EA25DC5',
-            'routes': [
-                {
-                    "pool_id": "704",
-                    "token_out_denom": "uosmo"
-                },
-                {
-                    "pool_id": "800",
-                    "token_out_denom": "ibc/0EF15DF2F02480ADE0BB6E85D9EBB5DAEA2836D3860E9F97F9AADE4F57A31AA0"
-                }
-            ],
-            'gas_adjustment': '2.5',
-            'fee_multiplier': '1.1'
-        },
-        'uosmo': {
-            'token_in': 'ibc/EA1D43981D5C9A1C4AAEA9C23BB1D4FA126BA9BC7020A25E0AE4AA841EA25DC5',
-            'routes': [
-                {
-                    "pool_id": "704",
-                    "token_out_denom": "uosmo"
-                }
-            ],
-            'gas_adjustment': '2.5',
-            'fee_multiplier': '1.1'
-        }
     }
 }
 
