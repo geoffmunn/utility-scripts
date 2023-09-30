@@ -29,25 +29,6 @@ from terra_classic_sdk.core.osmosis import Pool, PoolAsset
 conn = sqlite3.connect('osmosis.db')
 print ("Opened database successfully")
 
-path_query:str = "SELECT pool.pool_id, readable_denom, swap_fee FROM pool INNER JOIN asset ON pool.pool_id=asset.pool_id WHERE pool.pool_id IN (SELECT pool_id FROM asset WHERE readable_denom = ?) AND readable_denom=? ORDER BY swap_fee ASC;"
-
-liquidity_query:str = "SELECT readable_denom, amount FROM asset WHERE pool_id = ?;"
-
-cur = conn.cursor()
-cur.execute(path_query, ('uluna', 'weth-wei',))
-
-selected_pool_id = None
-rows = cur.fetchall()
-
-for row in rows:
-    print (row[0])
-    
-    #cur2 = conn.cursor()
-    cur.execute(liquidity_query, (row[0],))
-    for row2 in cur.fetchall():
-        actual_amount = divide_raw_balance(row2[1], row2[0])
-        print (row2, actual_amount)
-exit()
 # Create a terra object and get the Osmosis pools
 add_pool = "INSERT INTO pool (pool_id, type, address, swap_fee, exit_fee, total_weight) VALUES (?, ?, ?, ?, ?, ?);"
 add_asset = "INSERT INTO asset (pool_id, denom, readable_denom, amount, weight) VALUES (?, ?, ?, ?, ?);"
