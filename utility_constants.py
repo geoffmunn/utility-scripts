@@ -124,8 +124,10 @@ CHAIN_IDS = {
         'name': 'kava',
         'name2': 'kava',
         'display_name': 'Kava',
-        'chain_id': 'kava-9',
-        'ibc_channel': 'channel-24',
+        #'chain_id': 'kava_2222-10',
+        'chain_id': 'osmosis-1',
+        #'ibc_channel': 'channel-24',
+        'ibc_channel': 'channel-143',
         'lcd_urls': ['https://rest.cosmos.directory/kava'],
         'denom': 'ukava',
         'prefix': 'kava'
