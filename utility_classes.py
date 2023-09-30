@@ -148,12 +148,14 @@ def divide_raw_balance(amount:float, denom:str) -> float:
     """
     Return a human-readable amount depending on what type of coin this is.
     """
-    result:float = 0
 
-    if denom == WETH:
-        result = float(amount) / COIN_DIVISOR_ETH
-    else:
+    result:float  = 0
+    precision:int = getPrecision(denom)
+
+    if precision == 6:
         result = float(amount) / COIN_DIVISOR
+    else:
+        result = float(amount) / COIN_DIVISOR_ETH
 
     return result
 
@@ -162,10 +164,11 @@ def getPrecision(denom:str) -> int:
     Depending on the denomination, return the number of zeros that we need to account for
     """
 
-    if denom == WETH:
-        precision:int = str(COIN_DIVISOR_ETH).count('0')
-    else:
-        precision:int = str(COIN_DIVISOR).count('0')
+    precision = False
+
+    for chain in CHAIN_IDS:
+        if CHAIN_IDS[chain]['denom'] == denom:
+            precision = CHAIN_IDS[chain]['precision']
 
     return precision
 
@@ -817,16 +820,11 @@ class Wallet:
         A generic helper function to convert uluna amounts to LUNC.
         """
 
-        # if denom == WETH:
-        #     accuracy = str(COIN_DIVISOR_ETH).count('0')
-        # else:
-        #     accuracy = str(COIN_DIVISOR).count('0')
         precision:int = getPrecision(denom)
-        
-        lunc:float = round(float(divide_raw_balance(uluna, denom)), precision)
+        lunc:float    = round(float(divide_raw_balance(uluna, denom)), precision)
 
         target = '%.' + str(precision) + 'f'
-        lunc = (target % (lunc)).rstrip('0').rstrip('.')
+        lunc   = (target % (lunc)).rstrip('0').rstrip('.')
 
         if add_suffix:
             lunc = str(lunc) + ' ' + FULL_COIN_LOOKUP[denom]
@@ -2596,18 +2594,18 @@ class SwapTransaction(TransactionCore):
         """
 
         #try:
-        print ('sender prefix:', self.sender_prefix)
-        print ('swap denom:', self.swap_denom)
+        #print ('sender prefix:', self.sender_prefix)
+        #print ('swap denom:', self.swap_denom)
         chain = self.getChainByDenom(self.swap_denom)
         prefix = chain['prefix']
-        print ('prefix:', prefix)
+        #print ('prefix:', prefix)
         channel_id = CHAIN_IDS[prefix]['ibc_channel']
         
-        print ('channel id:', channel_id)
-        print (f'hash: transfer/{channel_id}/{self.swap_denom}')
-        print ('hash result:', sha256(f'transfer/{channel_id}/{self.swap_denom}'.encode('utf-8')).hexdigest().upper())
+        #print ('channel id:', channel_id)
+        #print (f'hash: transfer/{channel_id}/{self.swap_denom}')
+        #print ('hash result:', sha256(f'transfer/{channel_id}/{self.swap_denom}'.encode('utf-8')).hexdigest().upper())
         #print ('should look like this:', IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['token_in'])
-        print ('should look like this: ibc/57AA1A70A4BC9769C525EBF6386F7A21536E04A79D62E1981EFCEF9428EBB205')
+        #print ('should look like this: ibc/57AA1A70A4BC9769C525EBF6386F7A21536E04A79D62E1981EFCEF9428EBB205')
         
         if self.swap_denom != 'uosmo':
             ibc_value = sha256(f'transfer/{channel_id}/{self.swap_denom}'.encode('utf-8')).hexdigest().upper()
