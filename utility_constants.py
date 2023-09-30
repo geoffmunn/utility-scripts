@@ -61,7 +61,7 @@ COIN_DIVISOR_ETH    = 1000000000000000000
 MAX_VALIDATOR_COUNT = 130
 
 # Coin constants:
-CRO   = 'cro'
+#CRO   = 'cro'
 UATOM = 'uatom'
 UBASE = 'ubase'
 UKAVA = 'ukava'
@@ -80,7 +80,7 @@ FULL_COIN_LOOKUP = {
     'ucad':  'CATC',
     'uchf':  'CHTC',
     'ucny':  'CNTC',
-    'basecro': 'CRO',
+    #'cro': 'CRO',
     'udkk':  'DKTC',
     'ueur':  'EUTC',
     'ugbp':  'GBTC',
@@ -112,7 +112,7 @@ BASIC_COIN_LOOKUP = {
 }
 
 OFFCHAIN_COINS = [
-    CRO,
+    #CRO,
     UATOM,
     UKAVA,
     UKUJI,
@@ -129,7 +129,8 @@ CHAIN_IDS = {
         'lcd_urls': ['https://rest.cosmos.directory/axelar'],
         'name': 'axelar ',
         'name2': 'weth',
-        'precision': 18
+        'precision': 18,
+        'prefix': 'axelar'
     },
     'cosmos': {
         'chain_id': 'cosmoshub-4',
@@ -139,18 +140,19 @@ CHAIN_IDS = {
         'lcd_urls': ['https://rest.cosmos.directory/cosmoshub', 'https://cosmoshub-lcd.stakely.io'],
         'name': 'cosmos',
         'name2': 'cosmos',
-        'precision': 6
+        'precision': 6,
+        'prefix': 'cosmos'
     },
-    'cronos': {
-        'chain_id': 'osmosis-1',
-        'denom': 'cro',
-        'display_name': 'Cronos',
-        'ibc_channel': '',
-        'lcd_urls': ['rest.cosmos.directory/cronos'],
-        'name': 'cronos',
-        'name2': 'cronos',
-        'precision': 18
-    },
+    # 'cro': {
+    #     'chain_id': 'osmosis-1',
+    #     'denom': 'cro',
+    #     'display_name': 'Cronos',
+    #     'ibc_channel': '',
+    #     'lcd_urls': ['rest.cosmos.directory/cronos'],
+    #     'name': 'cronos',
+    #     'name2': 'cronos',
+    #     'precision': 18
+    # },
     'kava': {
         'chain_id': 'osmosis-1',
         'denom': 'ukava',
@@ -159,7 +161,8 @@ CHAIN_IDS = {
         'lcd_urls': ['https://rest.cosmos.directory/kava'],
         'name': 'kava',
         'name2': 'kava',
-        'precision': 6
+        'precision': 6,
+        'prefix': 'kava'
     },
     'kujira': {
         'chain_id': 'kaiyo-1',
@@ -169,7 +172,8 @@ CHAIN_IDS = {
         'lcd_urls': ['https://rest.cosmos.directory/kujira', 'https://lcd-kujira.mintthemoon.xyz'],
         'name': 'kujira',
         'name2': 'kujira',
-        'precision': 6
+        'precision': 6,
+        'prefix': 'kujira'
     },
     'osmo': {
         'chain_id': 'osmosis-1',
@@ -179,7 +183,8 @@ CHAIN_IDS = {
         'lcd_urls': ['https://lcd.osmosis.zone'],
         'name': 'osmosis',
         'name2': 'osmosis',
-        'precision': 6
+        'precision': 6,
+        'prefix': 'osmo'
     },
     'terra': {
         'chain_id': 'columbus-5',
@@ -189,7 +194,8 @@ CHAIN_IDS = {
         'lcd_urls': ['https://lcd.terrarebels.net', 'https://terra-classic-fcd.publicnode.com', 'https://lcd.terrarebels.net', 'https://rest.cosmos.directory/terra'],
         'name': 'terra',
         'name2': 'terra-luna',
-        'precision': 6
+        'precision': 6,
+        'prefix': 'terra'
     },
     
 }
