@@ -2243,31 +2243,126 @@ class SwapTransaction(TransactionCore):
             print (f'pool id {row[0]} for {row[1]}')
 
             cursor.execute(liquidity_query, (row[0],))
-            for row2 in cursor.fetchall():
-                print (row2)
-                if row2[0] == denom_out:
-                    #swap_amount = self.swapRate()
-                    prices:json            = self.getPrices(denom_in, denom_out)
-                    swap_amount:float = (initial_amount * float(prices['from']) / float(prices['to']))
-                    available_amount = row2[1]
+            origin_liquidity = []
+            exit_liquidity = []
 
-                    swap_amount = multiply_raw_balance(divide_raw_balance(swap_amount,denom_in), denom_out)
-                    print (f'{row2[0]} liquidity is {available_amount}, and the amount we are swapping into is {swap_amount}')
-                    if available_amount > float(swap_amount * 3):
-                        #print (row2, actual_amount)
-                        print ('liquidity is good!')
-                        #print (row)
-                        #print (current_option)
-                        if row[3] < current_option['swap_fee']:
-                            current_option['pool_id'] = row[0]
-                            current_option['token_out_denom'] = row[1]
-                            current_option['denom'] = row[2]
-                            current_option['swap_fee'] = row[3]
-                            current_option['swap_amount'] = swap_amount
-                    else:
-                        print ('not enough liquidity!')
+            for row2 in cursor.fetchall():
+                if row2[0] == self.swap_denom:
+                    origin_liquidity = row2
+                if row2[0] == self.swap_request_denom:
+                    exit_liquidity = row2
+                    
+                # if row2[0] == denom_out:
+                #     #swap_amount = self.swapRate()
+                #     prices:json            = self.getPrices(denom_in, denom_out)
+                #     swap_amount:float = (initial_amount * float(prices['from']) / float(prices['to']))
+                #     available_amount = row2[1]
+
+                #     swap_amount = multiply_raw_balance(divide_raw_balance(swap_amount,denom_in), denom_out)
+                #     print (f'{row2[0]} liquidity is {available_amount}, and the amount we are swapping into is {swap_amount}')
+                #     if available_amount > float(swap_amount * 3):
+                #         #print (row2, actual_amount)
+                #         print ('liquidity is good!')
+                #         #print (row)
+                #         #print (current_option)
+                #         if row[3] < current_option['swap_fee']:
+                #             current_option['pool_id'] = row[0]
+                #             current_option['token_out_denom'] = row[1]
+                #             current_option['denom'] = row[2]
+                #             current_option['swap_fee'] = row[3]
+                #             current_option['swap_amount'] = swap_amount
+                #     else:
+                #         print ('not enough liquidity!')
+            
+            swap_amount = self.swap_amount
+            print (f'{origin_liquidity[0]} liquidity is {origin_liquidity[1]}, and the amount we are swapping with is {swap_amount}')
+            if origin_liquidity[1] > float(swap_amount * 3):
+                print ('origin liquidity is good!')
+
+            #swap_amount = self.swapRate()
+            prices:json            = self.getPrices(denom_in, denom_out)
+            swap_amount:float = (initial_amount * float(prices['from']) / float(prices['to']))
+            available_amount = row2[1]
+
+            swap_amount = multiply_raw_balance(divide_raw_balance(swap_amount,denom_in), denom_out)
+            print (f'{row2[0]} liquidity is {available_amount}, and the amount we are swapping into is {swap_amount}')
+            if available_amount > float(swap_amount * 3):
+                #print (row2, actual_amount)
+                print ('liquidity is good!')
+                #print (row)
+                #print (current_option)
+                if row[3] < current_option['swap_fee']:
+                    current_option['pool_id'] = row[0]
+                    current_option['token_out_denom'] = row[1]
+                    current_option['denom'] = row[2]
+                    current_option['swap_fee'] = row[3]
+                    current_option['swap_amount'] = swap_amount
+            else:
+                print ('not enough liquidity!')
 
         #print ('current option so far:', current_option)
+        return current_option
+    
+    def getRoute2(self, denom_in:str, denom_out:str, initial_amount:float):
+        path_query:str = "SELECT pool.pool_id, denom, readable_denom, swap_fee FROM pool INNER JOIN asset ON pool.pool_id=asset.pool_id WHERE pool.pool_id IN (SELECT pool_id FROM asset WHERE readable_denom = ?) AND readable_denom=? ORDER BY swap_fee ASC;"
+        liquidity_query:str = "SELECT readable_denom, amount FROM asset WHERE pool_id = ?;"
+
+        conn = sqlite3.connect('osmosis.db')
+        cursor = conn.execute(path_query, [denom_in, denom_out])
+        rows = cursor.fetchall()
+        current_option:dict = {'pool_id': None, 'denom': None, 'swap_fee': 1}
+
+        # Go and check for single pool swaps. The origin is swap_denom and the exit is swap_request_denom
+        for row in rows:
+            print (f'currently checking pool id {row[0]}')
+            cursor.execute(liquidity_query, (row[0],))
+
+            origin_liquidity = []
+            exit_liquidity = []
+            for row2 in cursor.fetchall():
+                if row2[0] == denom_in:
+                    origin_liquidity = row2
+                if row2[0] == denom_out:
+                    exit_liquidity = row2
+                    # swap_amount = self.swapRate()
+                    # available_amount = row2[1]
+
+                    # swap_amount = multiply_raw_balance(divide_raw_balance(swap_amount, self.swap_denom), self.swap_request_denom)
+                    # print (f'{row2[0]} liquidity is {available_amount}, and the amount we are swapping into is {swap_amount}')
+                    # if available_amount > float(swap_amount * 3):
+                    #     #print (row2, actual_amount)
+                    #     print ('liquidity is good!')
+                    #     if row['swap_rate'] < current_option['swap_rate']:
+                    #         current_option['pool_id'] = row['pool_id']
+                    #         current_option['swap_rate'] = row['swap_rate']
+                    # else:
+                    #     print ('not enough liquidity!')
+
+            # Now we have the origin and exit options, check that the liquidity amounts are sufficient
+            swap_amount = initial_amount
+            print (f'{origin_liquidity[0]} liquidity is {origin_liquidity[1]}, and the amount we are swapping with is {initial_amount}')
+            if origin_liquidity[1] > float(swap_amount * 10):
+                print ('origin liquidity is good!')
+                
+                #swap_amount = self.swapRate()
+                prices:json            = self.getPrices(denom_in, denom_out)
+                swap_amount:float = (initial_amount * float(prices['from']) / float(prices['to']))
+
+                swap_amount = multiply_raw_balance(divide_raw_balance(swap_amount, denom_in), denom_out)
+                print (f'{exit_liquidity[0]} liquidity is {exit_liquidity[1]}, and the amount we are swapping into is {swap_amount}')
+                if exit_liquidity[1] > float(swap_amount * 10):
+                    print ('exit liquidity is good!')
+                    if row[3] < current_option['swap_fee']:
+                        current_option['pool_id'] = row[0]
+                        current_option['token_out_denom'] = row[1]
+                        current_option['denom'] = row[2]
+                        current_option['swap_fee'] = row[3]
+                        current_option['swap_amount'] = swap_amount
+                else:
+                    print ('not enough exit liquidity!')
+            else:
+                print ('not enough origin liquidity!')
+
         return current_option
 
     def offChainSimulate(self):
@@ -2276,45 +2371,74 @@ class SwapTransaction(TransactionCore):
         The fee details are saved so the actual market swap will work.
         """
 
-        path_query:str = "SELECT pool.pool_id, readable_denom, swap_fee FROM pool INNER JOIN asset ON pool.pool_id=asset.pool_id WHERE pool.pool_id IN (SELECT pool_id FROM asset WHERE readable_denom = ?) AND readable_denom=? ORDER BY swap_fee ASC;"
-        liquidity_query:str = "SELECT readable_denom, amount FROM asset WHERE pool_id = ?;"
+        # path_query:str = "SELECT pool.pool_id, denom, readable_denom, swap_fee FROM pool INNER JOIN asset ON pool.pool_id=asset.pool_id WHERE pool.pool_id IN (SELECT pool_id FROM asset WHERE readable_denom = ?) AND readable_denom=? ORDER BY swap_fee ASC;"
+        # liquidity_query:str = "SELECT readable_denom, amount FROM asset WHERE pool_id = ?;"
 
-        conn = sqlite3.connect('osmosis.db')
-        cursor = conn.execute(path_query, [self.swap_denom, self.swap_request_denom])
-        rows = cursor.fetchall()
-        current_option:dict = {'pool_id': None, 'swap_rate': 1}
-        for row in rows:
-            print ('pool id:', row[0])
-            cursor.execute(liquidity_query, (row[0],))
-            for row2 in cursor.fetchall():
-                #print (row2)
-                if row2[0] == self.swap_request_denom:
-                    swap_amount = self.swapRate()
-                    available_amount = row2[1]
+        # conn = sqlite3.connect('osmosis.db')
+        # cursor = conn.execute(path_query, [self.swap_denom, self.swap_request_denom])
+        # rows = cursor.fetchall()
+        # current_option:dict = {'pool_id': None, 'denom': None, 'swap_fee': 1}
 
-                    swap_amount = multiply_raw_balance(divide_raw_balance(swap_amount,self.swap_denom), self.swap_request_denom)
-                    print (f'{row2[0]} liquidity is {available_amount}, and the amount we are swapping into is {swap_amount}')
-                    if available_amount > float(swap_amount * 3):
-                        #print (row2, actual_amount)
-                        print ('liquidity is good!')
-                        if row['swap_rate'] < current_option['swap_rate']:
-                            current_option['pool_id'] = row['pool_id']
-                            current_option['swap_rate'] = row['swap_rate']
-                    else:
-                        print ('not enough liquidity!')
+        # # Go and check for single pool swaps. The origin is swap_denom and the exit is swap_request_denom
+        # for row in rows:
+        #     print (f'currently checking pool id {row[0]}')
+        #     cursor.execute(liquidity_query, (row[0],))
 
-        print ('current option so far:', current_option)
+        #     origin_liquidity = []
+        #     exit_liquidity = []
+        #     for row2 in cursor.fetchall():
+        #         if row2[0] == self.swap_denom:
+        #             origin_liquidity = row2
+        #         if row2[0] == self.swap_request_denom:
+        #             exit_liquidity = row2
+        #             # swap_amount = self.swapRate()
+        #             # available_amount = row2[1]
+
+        #             # swap_amount = multiply_raw_balance(divide_raw_balance(swap_amount, self.swap_denom), self.swap_request_denom)
+        #             # print (f'{row2[0]} liquidity is {available_amount}, and the amount we are swapping into is {swap_amount}')
+        #             # if available_amount > float(swap_amount * 3):
+        #             #     #print (row2, actual_amount)
+        #             #     print ('liquidity is good!')
+        #             #     if row['swap_rate'] < current_option['swap_rate']:
+        #             #         current_option['pool_id'] = row['pool_id']
+        #             #         current_option['swap_rate'] = row['swap_rate']
+        #             # else:
+        #             #     print ('not enough liquidity!')
+
+        #     # Now we have the origin and exit options, check that the liquidity amounts are sufficient
+        #     swap_amount = self.swap_amount
+        #     print (f'{origin_liquidity[0]} liquidity is {origin_liquidity[1]}, and the amount we are swapping with is {swap_amount}')
+        #     if origin_liquidity[1] > float(swap_amount * 3):
+        #         print ('origin liquidity is good!')
+                
+        #         swap_amount = self.swapRate()
+        #         swap_amount = multiply_raw_balance(divide_raw_balance(swap_amount, self.swap_denom), self.swap_request_denom)
+        #         print (f'{exit_liquidity[0]} liquidity is {exit_liquidity[1]}, and the amount we are swapping into is {swap_amount}')
+        #         if exit_liquidity[1] > float(swap_amount * 3):
+        #             print ('exit liquidity is good!')
+        #             if row[3] < current_option['swap_fee']:
+        #                 current_option['pool_id'] = row[0]
+        #                 current_option['token_out_denom'] = row[1]
+        #                 current_option['denom'] = row[2]
+        #                 current_option['swap_fee'] = row[3]
+        #                 current_option['swap_amount'] = swap_amount
+        #         else:
+        #             print ('not enough exit liquidity!')
+        #     else:
+        #         print ('not enough origin liquidity!')
+
+        # print ('current option so far:', current_option)
 
         print ('starting with', self.swap_denom)
-        current_option = self.getRoute(self.swap_denom, self.swap_request_denom, self.swap_amount)
+        current_option = self.getRoute2(self.swap_denom, self.swap_request_denom, self.swap_amount)
 
         if current_option['pool_id'] is None:
             print ('no options so far, trying an osmo jump')
             # Now we have to try OSMO jumps
             print ('getting denom in:')
-            current_option1 = self.getRoute(self.swap_denom, UOSMO, self.swap_amount)
+            current_option1 = self.getRoute2(self.swap_denom, UOSMO, self.swap_amount)
             print (f"getting denom out for {current_option1['swap_amount']} {current_option1['denom']}:")
-            current_option2 = self.getRoute(UOSMO, self.swap_request_denom, current_option1['swap_amount'])
+            current_option2 = self.getRoute2(UOSMO, self.swap_request_denom, current_option1['swap_amount'])
 
             print ('denom in:', current_option1)
             print ('denom out:', current_option2)
@@ -2338,176 +2462,14 @@ class SwapTransaction(TransactionCore):
                 "token_out_denom": current_option['token_out_denom']
             }]
 
-        # #print (routes)
-        
-        # wallet:Wallet = Wallet()
-        # self.sequence       = self.current_wallet.sequence()
-        # self.account_number = self.current_wallet.account_number()
-        # self.ibc_routes     = IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['routes']
-        # self.ibc_routes = routes
-
-        # max_spread:float = self.max_spread
-        # #if 'max_spread' in IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]:
-        # #    max_spread = float(IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['max_spread'])
-
-        # # Figure out the minimum expected coins for this swap:
-        # fee_multiplier:float = float(IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['fee_multiplier'])
-        
-        # current_amount:int = self.swap_amount
-        # print ('current denom:', self.swap_denom)
-        # #ibc_denom = wallet.denomTrace(self.swap_denom)
-        # #if ibc_denom != False:     
-        # #    current_denom:str = ibc_denom['base_denom']
-        # current_denom:str  = self.swap_denom
-
-        # #print ('current denom at loop start:', current_denom)
-        # # For each route:
-        # # Step 1: convert the current coin to the base price
-        # # Step 2: deduct swap fee
-        # # Step 3: deduct slippage
-        
-        # for route in self.ibc_routes:
-        #     #print ('current amount:', current_amount)
-        #     #print ('current denom:', current_denom)
-
-        #     # Get the token we want to swap to (what we expect to end up with for this route)
-        #     token_out_denom = self.osmosisDenomSwapTo(route['pool_id'], current_denom)
-        #     #wallet = Wallet()
-        #     #wallet.address = self.sender_address
-        #     print ('getting the ibc denom for ', token_out_denom)
-        #     ibc_denom = wallet.denomTrace(token_out_denom)
-        #     if ibc_denom != False:
-        #         token_out_denom = ibc_denom['base_denom']
-            
-        #     #print ('token out denom:', token_out_denom)
-        #     # Get the prices for the current denom and the output denom
-        #     #print ('getting coin prices for', current_denom, token_out_denom)
-        #     coin_prices:json = self.getPrices(current_denom, token_out_denom)
-            
-        #     #print ('coin prices:', coin_prices)
-        #     # Get the initial base price (no fee deductions)
-        #     base_amount = (current_amount * coin_prices['from']) / coin_prices['to']
-        #     #print ('initial amount at the start:', base_amount)
-        #     #step 1: run price conversion
-        #     #step 2: divide by $eth precision
-        #     #Step 3: multiple by Cosmo precision
-        #     #step 4: round to cosmo precision
-
-        #     from_precision:int   = getPrecision(current_denom)
-        #     target_precision:int = getPrecision(token_out_denom)
-
-        #     if from_precision != target_precision:
-        #         base_amount:float = divide_raw_balance(base_amount, current_denom)
-            
-        #     #print ('base amount after precision adjustments::', base_amount)
-        #     # Only multiply if the token out demo has a higher precision
-        #     if target_precision < from_precision:
-        #         base_amount:float = multiply_raw_balance(base_amount, token_out_denom)
-
-        #     # deduct the swap fee:
-        #     #print ('pool:', self.osmosisPoolByID(route['pool_id']))
-        #     swap_fee:float = float(self.osmosisPoolByID(route['pool_id']).pool_params.swap_fee)
-
-        #     #print ('swap fee:', swap_fee)
-        #     # Deduct the swap fee
-        #     base_amount_minus_swap_fee:float = float(base_amount) * (1 - swap_fee)
-
-        #     #print ('base amount minus swap fee:', base_amount_minus_swap_fee)
-
-        #     # Deduct the slippage
-        #     #print ('max spread (slippage):', max_spread)
-        #     base_amount_minus_swap_fee = float(base_amount_minus_swap_fee * (1 - max_spread))
-
-        #     #print ('base amount minus slippage:', base_amount_minus_swap_fee)
-
-        #     # Now we have the new denom and the new value
-        #     prev_denom:str       = current_denom
-        #     current_denom:str    = token_out_denom        
-        #     current_amount:float = base_amount_minus_swap_fee
-        #     #precision:int        = getPrecision(token_out_denom)
-
-        # from_precision:int   = getPrecision(prev_denom)
-        # target_precision:int = getPrecision(current_denom)
-                    
-        # if target_precision > from_precision:
-        #     current_amount = multiply_raw_balance(current_amount, current_denom)
-            
-        # # Finish off the final value and store it:
-        # precision:int  = getPrecision(current_denom)
-        # current_amount = round(current_amount, precision)
-        # self.min_out   = math.floor(current_amount)
-        
-        # #print ('min out:', self.min_out)
-        # #print ('getting swap details:')
-        # self.offChainSwap()
-
-        # # Get the transaction result
-        # tx:Tx = self.transaction
-
-        # if tx is not None:
-        #     # Get the stub of the requested fee so we can adjust it
-        #     requested_fee = tx.auth_info.fee
-
-        #     # Get the fee details, but we'll need to make some modifications
-        #     self.fee:Fee  = self.calculateFee(requested_fee)
-        #     fee_coin:Coin = self.fee.amount.to_list()[0]
-            
-        #     # We'll take the returned fee and use that as the gas limit
-        #     self.gas_limit = self.fee.gas_limit
-            
-        #     # Now calculate the actual fee
-        #     #(0.007264 * 0.424455) / 0.00006641 = 43.7972496474
-        #     min_uosmo_gas:float = MIN_OSMO_GAS
-        #     uosmo_fee:float     = min_uosmo_gas * float(self.gas_limit)
-
-        #     # Calculate the LUNC fee
-        #     # (osmosis amount * osmosis unit cost) / lunc price
-        #     # For the calculation to work, the 'to' value always needs to be the usomo price
-
-        #     from_denom:str = UOSMO
-        #     to_denom:str   = ULUNA
-
-        #     # Get the current prices
-        #     prices:json = self.getPrices(from_denom, to_denom)
-            
-        #     # OSMO -> LUNC:
-        #     fee_amount:float = float((uosmo_fee * prices['from']) / prices['to'])
-        #     fee_amount       = fee_amount * fee_multiplier
-        #     fee_denom:str    = fee_coin.denom
-        #     fee_denom:str    = 'ibc/0EF15DF2F02480ADE0BB6E85D9EBB5DAEA2836D3860E9F97F9AADE4F57A31AA0'
-
-        #     # Create the coin object
-        #     new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount))})
-
-        #     # This will be used by the swap function next time we call it
-        #     self.fee.amount = new_coin
-
-        #     #print ('hi')
-        #     return True
-        # else:
-        #     return False
-        """
-        Simulate an offchain swap so we can get the fee details.
-        The fee details are saved so the actual market swap will work.
-        """
-
-        # all_pools = self.terra.pool.osmosis_pools()
-        # poolx:Pool
-        # for poolx in all_pools:
-        #     #print (poolx.pool_assets)
-        #     if len(poolx.pool_assets) == 2:
-        #         if poolx.pool_assets[0].token.denom == 'ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2' and poolx.pool_assets[1].token.denom == 'ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2':
-        #             print (poolx)
-        #         if poolx.pool_assets[1].token.denom == 'ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2' and poolx.pool_assets[0].token.denom == 'ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2':
-        #             print (poolx)
-
-        # exit()
-
         self.sequence       = self.current_wallet.sequence()
         self.account_number = self.current_wallet.account_number()
         #self.ibc_routes     = IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['routes']
         self.ibc_routes = routes
 
+        print ('******************')
+        print (routes)
+        print ('******************')
         max_spread:float = self.max_spread
         #if 'max_spread' in IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]:
         #    max_spread = float(IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['max_spread'])
@@ -2641,18 +2603,19 @@ class SwapTransaction(TransactionCore):
         """
 
         #try:
-        #print ('sender prefix:', self.sender_prefix)
-        #print ('swap denom:', self.swap_denom)
+        print ('sender prefix:', self.sender_prefix)
+        print ('swap denom:', self.swap_denom)
         chain = self.getChainByDenom(self.swap_denom)
         prefix = chain['prefix']
-        #print ('prefix:', prefix)
+        print ('prefix:', prefix)
         channel_id = CHAIN_IDS[prefix]['ibc_channel']
         
-        #print ('channel id:', channel_id)
-        #print (f'hash: /transfer/{channel_id}/{self.swap_denom}')
-        #print ('hash result:', sha256(f'transfer/{channel_id}/{self.swap_denom}'.encode('utf-8')).hexdigest().upper())
+        print ('channel id:', channel_id)
+        print (f'hash: transfer/{channel_id}/{self.swap_denom}')
+        print ('hash result:', sha256(f'transfer/{channel_id}/{self.swap_denom}'.encode('utf-8')).hexdigest().upper())
         #print ('should look like this:', IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['token_in'])
-
+        print ('should look like this: ibc/57AA1A70A4BC9769C525EBF6386F7A21536E04A79D62E1981EFCEF9428EBB205')
+        
         if self.swap_denom != 'uosmo':
             ibc_value = sha256(f'transfer/{channel_id}/{self.swap_denom}'.encode('utf-8')).hexdigest().upper()
         #if ibc_value == '375f47f338f158dc35571c50ad6ddc42b62812d580ed23bac602b51af1b54cfb':
@@ -2688,6 +2651,9 @@ class SwapTransaction(TransactionCore):
             sequence       = self.sequence,
             account_number = self.account_number
         )
+
+        print ('options:')
+        print (options)
 
         tx:Tx = self.current_wallet.create_and_sign_tx(options)
         
