@@ -61,6 +61,7 @@ COIN_DIVISOR_ETH    = 1000000000000000000
 MAX_VALIDATOR_COUNT = 130
 
 # Coin constants:
+CRO   = 'cro'
 UATOM = 'uatom'
 UBASE = 'ubase'
 UKAVA = 'ukava'
@@ -79,6 +80,7 @@ FULL_COIN_LOOKUP = {
     'ucad':  'CATC',
     'uchf':  'CHTC',
     'ucny':  'CNTC',
+    'basecro': 'CRO',
     'udkk':  'DKTC',
     'ueur':  'EUTC',
     'ugbp':  'GBTC',
@@ -109,78 +111,94 @@ BASIC_COIN_LOOKUP = {
     'uusd':  'USTC'
 }
 
+OFFCHAIN_COINS = [
+    CRO,
+    UATOM,
+    UKAVA,
+    UKUJI,
+    UOSMO,
+    WETH 
+]
+
 CHAIN_IDS = {
-    'cosmos': {
-        'name': 'cosmos',
-        'name2': 'cosmos',
-        'display_name': 'Cosmos',
-        'chain_id': 'cosmoshub-4',
-        'ibc_channel': 'channel-0',
-        'lcd_urls': ['https://rest.cosmos.directory/cosmoshub', 'https://cosmoshub-lcd.stakely.io'],
-        'denom': 'uatom',
-        'prefix': 'cosmos'
-    },
-    'kava': {
-        'name': 'kava',
-        'name2': 'kava',
-        'display_name': 'Kava',
-        #'chain_id': 'kava_2222-10',
-        'chain_id': 'osmosis-1',
-        #'ibc_channel': 'channel-24',
-        'ibc_channel': 'channel-143',
-        'lcd_urls': ['https://rest.cosmos.directory/kava'],
-        'denom': 'ukava',
-        'prefix': 'kava'
-    },
-    'kujira': {
-        'name': 'kujira',
-        'name2': 'kujira',
-        'display_name': 'Kujira',
-        'chain_id': 'kaiyo-1',
-        'ibc_channel': 'channel-259',
-        'lcd_urls': ['https://rest.cosmos.directory/kujira', 'https://lcd-kujira.mintthemoon.xyz'],
-        'denom': 'ukuji',
-        'prefix': 'kujira'
-    },
-    'osmo': {
-        'name': 'osmosis',
-        'name2': 'osmosis',
-        'display_name': 'Osmosis',
-        'chain_id': 'osmosis-1',
-        'ibc_channel': 'channel-1',
-        'lcd_urls': ['https://lcd.osmosis.zone'],
-        'denom': 'uosmo',
-        'prefix': 'osmo'
-    },
-    'terra': {
-        'name': 'terra',
-        'name2': 'terra-luna',
-        'display_name': 'Luna Classic',
-        'chain_id': 'columbus-5',
-        'ibc_channel': 'channel-72',
-        'lcd_urls': ['https://lcd.terrarebels.net', 'https://terra-classic-fcd.publicnode.com', 'https://lcd.terrarebels.net', 'https://rest.cosmos.directory/terra'],
-        'denom': 'uluna',
-        'prefix': 'terra'
-    },
     'axelar': {
-        'name': 'axelar ',
-        'name2': 'weth',
-        'display_name': 'Wrapped Eth',
         'chain_id': 'axelar-dojo-1',
+        'denom': 'weth-wei',
+        'display_name': 'Wrapped Eth',
         'ibc_channel': 'channel-208',
         'lcd_urls': ['https://rest.cosmos.directory/axelar'],
-        'denom': 'weth-wei',
-        'prefix': 'axelar'
-    }
+        'name': 'axelar ',
+        'name2': 'weth',
+        'precision': 18
+    },
+    'cosmos': {
+        'chain_id': 'cosmoshub-4',
+        'denom': 'uatom',
+        'display_name': 'Cosmos',
+        'ibc_channel': 'channel-0',
+        'lcd_urls': ['https://rest.cosmos.directory/cosmoshub', 'https://cosmoshub-lcd.stakely.io'],
+        'name': 'cosmos',
+        'name2': 'cosmos',
+        'precision': 6
+    },
+    'cronos': {
+        'chain_id': 'osmosis-1',
+        'denom': 'cro',
+        'display_name': 'Cronos',
+        'ibc_channel': '',
+        'lcd_urls': ['rest.cosmos.directory/cronos'],
+        'name': 'cronos',
+        'name2': 'cronos',
+        'precision': 18
+    },
+    'kava': {
+        'chain_id': 'osmosis-1',
+        'denom': 'ukava',
+        'display_name': 'Kava',
+        'ibc_channel': 'channel-143',
+        'lcd_urls': ['https://rest.cosmos.directory/kava'],
+        'name': 'kava',
+        'name2': 'kava',
+        'precision': 6
+    },
+    'kujira': {
+        'chain_id': 'kaiyo-1',
+        'denom': 'ukuji',
+        'display_name': 'Kujira',
+        'ibc_channel': 'channel-259',
+        'lcd_urls': ['https://rest.cosmos.directory/kujira', 'https://lcd-kujira.mintthemoon.xyz'],
+        'name': 'kujira',
+        'name2': 'kujira',
+        'precision': 6
+    },
+    'osmo': {
+        'chain_id': 'osmosis-1',
+        'denom': 'uosmo',
+        'display_name': 'Osmosis',
+        'ibc_channel': 'channel-1',
+        'lcd_urls': ['https://lcd.osmosis.zone'],
+        'name': 'osmosis',
+        'name2': 'osmosis',
+        'precision': 6
+    },
+    'terra': {
+        'chain_id': 'columbus-5',
+        'denom': 'uluna',
+        'display_name': 'Luna Classic',
+        'ibc_channel': 'channel-72',
+        'lcd_urls': ['https://lcd.terrarebels.net', 'https://terra-classic-fcd.publicnode.com', 'https://lcd.terrarebels.net', 'https://rest.cosmos.directory/terra'],
+        'name': 'terra',
+        'name2': 'terra-luna',
+        'precision': 6
+    },
+    
 }
 
 # Cronos
 # Injective
-# Kava
 # Fetch.ai
 # Akash Network
 # Band Protocol
-# Axelar
 # Stride
 # Medibloc
 # Bluzelle

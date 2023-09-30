@@ -15,8 +15,6 @@ import yaml
 import traceback
 
 from utility_constants import (
-    #ASTROPORT_UUSD_TO_UKUJI_ADDRESS,
-    #ASTROPORT_UUSD_TO_ULUNA_ADDRESS,
     BASE_SMART_CONTRACT_ADDRESS,
     CHAIN_IDS,
     CHECK_FOR_UPDATES,
@@ -27,19 +25,14 @@ from utility_constants import (
     GAS_ADJUSTMENT,
     GAS_ADJUSTMENT_SWAPS,
     GAS_PRICE_URI,
-    #IBC_ADDRESSES,
-    KUJI_SMART_CONTACT_ADDRESS,
     MIN_OSMO_GAS,
+    OFFCHAIN_COINS,
     SEARCH_RETRY_COUNT,
     TAX_RATE_URI,
-    #TERRASWAP_UKUJI_TO_ULUNA_ADDRESS,
     TERRASWAP_UKRW_TO_ULUNA_ADDRESS,
     TERRASWAP_ULUNA_TO_UUSD_ADDRESS,
     TERRASWAP_UUSD_TO_ULUNA_ADDRESS,
-    UATOM,
     UBASE,
-    UKAVA,
-    UKUJI,
     ULUNA,
     UOSMO,
     UKRW,
@@ -2984,8 +2977,7 @@ class SwapTransaction(TransactionCore):
                     estimated_amount = float(self.swap_amount / swap_price)
                     
         else:
-            off_chain_coins = [ULUNA, UOSMO, UATOM, UKAVA, UKUJI, WETH]
-            if self.swap_denom in off_chain_coins and self.swap_request_denom in off_chain_coins:
+            if self.swap_denom in OFFCHAIN_COINS + [ULUNA] and self.swap_request_denom in OFFCHAIN_COINS + [ULUNA]:
                 #print (self.swap_request_denom)
                 # Calculate the amount of OSMO we'll be getting:
                 # (lunc amount * lunc unit cost) / osmo price

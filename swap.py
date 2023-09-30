@@ -8,16 +8,12 @@ from utility_classes import (
     get_coin_selection,
     get_user_choice,
     get_user_number,
-    UATOM,
-    UKAVA,
-    UKUJI,
+    OFFCHAIN_COINS,
     ULUNA,
-    UOSMO,
     UserConfig,
     UUSD,
     Wallets,
-    Wallet,
-    WETH,
+    Wallet
 )
 
 from utility_constants import (
@@ -159,15 +155,15 @@ def get_user_singlechoice(question:str, user_wallets:dict):
 def main():
 
     # for i in range(2000):
-    #     test = f'transfer/channel-{i}/weth-wei'.encode('utf-8')
+    #     test = f'transfer/channel-{i}/ukava'.encode('utf-8')
     #     hashed =  sha256(test).hexdigest()
-    #     if hashed.upper() == 'EA1D43981D5C9A1C4AAEA9C23BB1D4FA126BA9BC7020A25E0AE4AA841EA25DC5':
+    #     if hashed.upper() == '57AA1A70A4BC9769C525EBF6386F7A21536E04A79D62E1981EFCEF9428EBB205':
     #         print ('found on channel', i)
     #         print (hashed)
     #         exit
 
-    # # ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2
-    # # ibc/c4cff46fd6de35ca4cf4ce031e643c8fdc9ba4b99ae598e9b0ed98fe3a2319f9
+    # # # ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2
+    # # # ibc/c4cff46fd6de35ca4cf4ce031e643c8fdc9ba4b99ae598e9b0ed98fe3a2319f9
     # exit()
     
     # Check if there is a new version we should be using
@@ -263,7 +259,7 @@ def main():
     use_market_swap = swaps_tx.setContract()
     
     #if swaps_tx.swap_request_denom == UOSMO and swaps_tx.sender_prefix != 'terra':
-    if swaps_tx.swap_request_denom in [UOSMO, UATOM, UKAVA, UKUJI, WETH] or swaps_tx.swap_denom in [UOSMO, UATOM, UKAVA, UKUJI, WETH]:
+    if swaps_tx.swap_request_denom in OFFCHAIN_COINS or swaps_tx.swap_denom in OFFCHAIN_COINS:
         # This is an off-chain swap. Something like LUNC->OSMO
         result = swaps_tx.offChainSimulate()
 
