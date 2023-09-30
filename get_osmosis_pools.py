@@ -1,27 +1,11 @@
 
 #!/usr/bin/python
 
-import requests
-import json
 import sqlite3
 from datetime import datetime
 
 from utility_classes import (
-    check_version,
-    divide_raw_balance,
-    get_coin_selection,
-    get_user_choice,
-    get_user_number,
-    UATOM,
-    UKUJI,
-    ULUNA,
-    UOSMO,
-    UserConfig,
-    UUSD,
-    Wallets,
-    Wallet,
-    WETH,
-    getPrecision
+    Wallet
 )
 
 from terra_classic_sdk.core.osmosis import Pool, PoolAsset
@@ -30,8 +14,20 @@ conn = sqlite3.connect('osmosis.db')
 print ("Opened database successfully")
 
 # Create a terra object and get the Osmosis pools
-add_pool = "INSERT INTO pool (pool_id, type, address, swap_fee, exit_fee, total_weight) VALUES (?, ?, ?, ?, ?, ?);"
+delete_pool_table  = "DROP TABLE IF EXISTS pool;"
+delete_asset_table = "DROP TABLE IF EXISTS asset;"
+create_pool_table  = "CREATE TABLE pool (ID INTEGER PRIMARY KEY AUTOINCREMENT, pool_id INTEGER NOT NULL, type TEXT NOT NULL, address TEXT NOT NULL, swap_fee FLOAT NOT NULL, exit_fee FLOAT NOT NULL, total_weight INTEGER NOT NULL);"
+create_asset_table = "CREATE TABLE asset (ID INTEGER PRIMARY KEY AUTOINCREMENT, pool_id INTEGER NOT NULL, denom TEXT NOT NULL, readable_denom TEXT NOT NULL, amount INTEGER NOT NULL, weight INTEGER NOT NULL);"
+
+add_pool  = "INSERT INTO pool (pool_id, type, address, swap_fee, exit_fee, total_weight) VALUES (?, ?, ?, ?, ?, ?);"
 add_asset = "INSERT INTO asset (pool_id, denom, readable_denom, amount, weight) VALUES (?, ?, ?, ?, ?);"
+
+cursor = conn.execute(delete_pool_table)
+cursor = conn.execute(delete_asset_table)
+conn.commit()
+cursor = conn.execute(create_pool_table)
+cursor = conn.execute(create_asset_table)
+conn.commit()
 
 wallet:Wallet = Wallet().create(prefix = 'osmo')
 
@@ -70,22 +66,10 @@ for pool in pools:
         cursor = conn.execute(add_asset, asset)
         conn.commit()
 
-
 conn.close()
 exit()
 
-
-
 ####
-
-#Pool(pool_params=PoolParams(swap_fee='0.002000000000000000', exit_fee='0.000000000000000000'), future_pool_governor='24h', total_shares=Coin(denom='gamm/pool/1', amount=122560565422811362239556855), pool_assets=[PoolAsset(token=Coin(denom='ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2', amount='984427777103'), weight='536870912000000'), PoolAsset(token=Coin(denom='uosmo', amount='22482716727191'), weight='536870912000000')], total_weight=1073741824000000)
-
-"""
-DROP TABLE IF EXISTS pool;
-DROP TABLE IF EXISTS asset;
-CREATE TABLE pool (ID INTEGER PRIMARY KEY AUTOINCREMENT, pool_id INTEGER NOT NULL, type TEXT NOT NULL, address TEXT NOT NULL, swap_fee FLOAT NOT NULL, exit_fee FLOAT NOT NULL, total_weight INTEGER NOT NULL);
-CREATE TABLE asset (ID INTEGER PRIMARY KEY AUTOINCREMENT, pool_id INTEGER NOT NULL, denom TEXT NOT NULL, readable_denom TEXT NOT NULL, amount INTEGER NOT NULL, weight INTEGER NOT NULL);
-"""
 
 # CREATE INDEX history_date_added ON history (date_added);
 # CREATE INDEX history_coin_id ON history (coin_id);
