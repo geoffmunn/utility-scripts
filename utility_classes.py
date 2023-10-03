@@ -1591,6 +1591,7 @@ class TransactionCore():
             for fee_coin in fee_coins.to_list():
 
                 amount = divide_raw_balance(fee_coin.amount, fee_coin.denom)
+                amount = ("%.6f" % (amount)).rstrip('0').rstrip('.')
 
                 wallet = Wallet()
                 wallet.address = self.sender_address
