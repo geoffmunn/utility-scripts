@@ -787,21 +787,55 @@ class Wallet:
         """
         Based on the wallet prefix, get the IBC denom trace details for this IBC address
         """
+        
         result:list = []
+
         if ibc_address[0:4] == 'ibc/':
             
             value      = ibc_address[4:]
             prefix     = self.prefix
             if prefix == '':
-                prefix     = self.getPrefix(self.address)
+                prefix = self.getPrefix(self.address)
 
             chain_name = CHAIN_IDS[prefix]['name']
             uri:str    = f'https://rest.cosmos.directory/{chain_name}/ibc/apps/transfer/v1/denom_traces/{value}'
 
             if uri not in self.denom_traces:
+
+                retry_count:int = 0
+                retry:bool      = True
+
+                while retry == True:
+                    try:
+                        trace_result:json = requests.get(uri).json()
+                    
+                        if 'denom_trace' in trace_result:
+                            # Store this result for future requests
+                            self.denom_traces[uri] = trace_result['denom_trace']
+                            # Return this result
                             result = trace_result['denom_trace']
+                            break
+                        else:
+                            break
+                    except Exception as err:
+                        print (f'Denom trace error for {uri}:')
+                        print (err)
+
+                        retry_count += 1
+                        if retry_count == 10:
+                            retry = False
+                            break
+                        else:
+                            time.sleep(1)
+            else:
+                result = self.denom_traces[uri]
+        
+        #print ('denom trace result:', result)
+        if len(result) == 0:
             return False
+        else:
             return result
+    
     def formatUluna(self, uluna:float, denom:str, add_suffix:bool = False):
         """
         A generic helper function to convert uluna amounts to LUNC.
