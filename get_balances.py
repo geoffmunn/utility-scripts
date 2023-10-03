@@ -84,7 +84,6 @@ def main():
                 
                 if validator not in validator_template:
                     if int(delegations[validator]['balance_amount']) > 0 and len(delegations[validator]['rewards']) > 0:
-                    #if len(delegations[validator]['rewards']) > 0:
 
                         validator_template.update({validator: ''})
 
@@ -100,7 +99,7 @@ def main():
         if len(wallet_name) > label_widths[1]:
             label_widths[1] = len(wallet_name)
 
-        for denom in wallet.balances:            
+        for denom in wallet.balances:
             ibc_denom = wallet.denomTrace(denom)
             raw_amount = divide_raw_balance(wallet.balances[denom], denom)
 
