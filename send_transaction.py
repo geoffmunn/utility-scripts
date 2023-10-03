@@ -402,7 +402,7 @@ def main():
                     custom_gas = send_tx.fee.gas_limit * 1.14
                     send_tx.gas_limit = custom_gas
             else:
-                print (' 🛎️  The send transaction could not be completed')
+                print (' 🛎️  The send simulation could not be completed')
             
         # Simulate it            
         result = send_tx.simulate()
@@ -422,25 +422,25 @@ def main():
             if result == True:
                 send_tx.broadcast()
 
-                if send_tx.broadcast_result.code == 11:
-                    while True:
-                        #print (' 🛎️  Increasing the gas adjustment fee and trying again')
-                        send_tx.terra.gas_adjustment += GAS_ADJUSTMENT_INCREMENT
-                        print (f' 🛎️  Gas adjustment value is now {send_tx.terra.gas_adjustment}')
-                        send_tx.simulate()
-                        #print (send_tx.readableFee())
-                        send_tx.send()
-                        send_tx.broadcast()
+                # if send_tx.broadcast_result is not None and send_tx.broadcast_result.code == 11:
+                #     while True:
+                #         #print (' 🛎️  Increasing the gas adjustment fee and trying again')
+                #         send_tx.terra.gas_adjustment += GAS_ADJUSTMENT_INCREMENT
+                #         print (f' 🛎️  Gas adjustment value is now {send_tx.terra.gas_adjustment}')
+                #         send_tx.simulate()
+                #         #print (send_tx.readableFee())
+                #         send_tx.send()
+                #         send_tx.broadcast()
 
-                        if send_tx is None:
-                            break
+                #         if send_tx is None:
+                #             break
 
-                        # Code 32 = account sequence mismatch
-                        if send_tx.broadcast_result.code != 11:
-                            break
+                #         # Code 32 = account sequence mismatch
+                #         if send_tx.broadcast_result.code != 11:
+                #             break
 
-                        if send_tx.terra.gas_adjustment >= MAX_GAS_ADJUSTMENT:
-                            break
+                #         if send_tx.terra.gas_adjustment >= MAX_GAS_ADJUSTMENT:
+                #             break
 
                 # if send_tx.broadcast_result.code == 13:
                 #     print ('Insufficient fee')
@@ -465,7 +465,7 @@ def main():
                     
 
 
-                if send_tx is not None and send_tx.broadcast_result.code == 32:
+                if send_tx.broadcast_result is not None and send_tx.broadcast_result.code == 32:
                     while True:
                         print (' 🛎️  Boosting sequence number and trying again...')
 
