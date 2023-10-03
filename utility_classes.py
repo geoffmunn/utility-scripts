@@ -164,7 +164,7 @@ def getPrecision(denom:str) -> int:
     Depending on the denomination, return the number of zeros that we need to account for
     """
 
-    precision = False
+    precision = 6
 
     for chain in CHAIN_IDS:
         if CHAIN_IDS[chain]['denom'] == denom:
