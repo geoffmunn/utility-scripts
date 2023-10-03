@@ -787,6 +787,7 @@ class Wallet:
         """
         Based on the wallet prefix, get the IBC denom trace details for this IBC address
         """
+        result:list = []
         if ibc_address[0:4] == 'ibc/':
             
             value      = ibc_address[4:]
@@ -798,23 +799,9 @@ class Wallet:
             uri:str    = f'https://rest.cosmos.directory/{chain_name}/ibc/apps/transfer/v1/denom_traces/{value}'
 
             if uri not in self.denom_traces:
-                try:
-                    trace_result:json = requests.get(uri).json()
-                
-                    if 'denom_trace' in trace_result:
-                        self.denom_traces[uri] = trace_result['denom_trace']
-                        return trace_result['denom_trace']
-                    else:
-                        return False
-                except Exception as err:
-                    print (f'Denom trace error for {uri}:')
-                    print (err)
-                    return False
-            else:
-                return self.denom_traces[uri]
-        else:
+                            result = trace_result['denom_trace']
             return False
-
+            return result
     def formatUluna(self, uluna:float, denom:str, add_suffix:bool = False):
         """
         A generic helper function to convert uluna amounts to LUNC.
