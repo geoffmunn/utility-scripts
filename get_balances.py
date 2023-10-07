@@ -100,13 +100,14 @@ def main():
             label_widths[1] = len(wallet_name)
 
         for denom in wallet.balances:
-            ibc_denom = wallet.denomTrace(denom)
+            
             raw_amount = divide_raw_balance(wallet.balances[denom], denom)
+            ibc_denom  = wallet.denomTrace(denom)
 
             if ibc_denom != False:     
                 denom = ibc_denom['base_denom']
 
-            amount     = ("%.6f" % (raw_amount)).rstrip('0').rstrip('.')
+            amount = ("%.6f" % (raw_amount)).rstrip('0').rstrip('.')
 
             if float(amount) > 0:
 
@@ -134,19 +135,21 @@ def main():
 
                     balance_coins.update({coin_denom: cur_wallets})
 
+        # Get the delegations on this wallet
         delegations = wallet.getDelegations()
-        delegated_amount = 0
 
+        # Keep track of the current delegated amount
+        delegated_amount = 0
         if delegations is not None:
             for validator in delegations:
                 for denom in delegations[validator]['rewards']:
 
                     if denom == ULUNA:
-                        raw_amount = divide_raw_balance(delegations[validator]['balance_amount'], denom)
+                        raw_amount       = divide_raw_balance(delegations[validator]['balance_amount'], denom)
                         delegated_amount += float(("%.6f" % (raw_amount)).rstrip('0').rstrip('.'))
 
                     raw_amount = divide_raw_balance(delegations[validator]['rewards'][denom], denom)
-                    amount = ("%.6f" % (raw_amount)).rstrip('0').rstrip('.')
+                    amount     = ("%.6f" % (raw_amount)).rstrip('0').rstrip('.')
 
                     if denom in coin_lookup:
                         if float(amount) > 0:
