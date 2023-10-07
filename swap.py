@@ -155,15 +155,13 @@ def get_user_singlechoice(question:str, user_wallets:dict):
 def main():
 
     # for i in range(2000):
-    #     test = f'transfer/channel-{i}/ukava'.encode('utf-8')
+    #     test = f'transfer/channel-{i}/wbtc-satoshi'.encode('utf-8')
     #     hashed =  sha256(test).hexdigest()
-    #     if hashed.upper() == '57AA1A70A4BC9769C525EBF6386F7A21536E04A79D62E1981EFCEF9428EBB205':
+    #     if hashed.upper() == 'D1542AA8762DB13087D8364F3EA6509FD6F009A34F00426AF9E4F9FA85CBBF1F':
     #         print ('found on channel', i)
     #         print (hashed)
     #         exit
 
-    # # # ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2
-    # # # ibc/c4cff46fd6de35ca4cf4ce031e643c8fdc9ba4b99ae598e9b0ed98fe3a2319f9
     # exit()
     
     # Check if there is a new version we should be using
@@ -242,7 +240,7 @@ def main():
         exit()
 
     # Create the swap object
-    swaps_tx = wallet.swap().create(wallet.getPrefix(wallet.address))
+    swaps_tx = wallet.swap().create(denom = wallet.denom)
 
     # Assign the details:
     swaps_tx.swap_amount        = int(swap_uluna)
@@ -250,7 +248,8 @@ def main():
     swaps_tx.swap_request_denom = coin_to
     swaps_tx.sender_address     = wallet.address
     swaps_tx.sender_prefix      = wallet.getPrefix(wallet.address)
-    
+    swaps_tx.wallet_denom       = wallet.denom
+
     # Bump up the gas adjustment - it needs to be higher for swaps it turns out
     swaps_tx.terra.gas_adjustment = float(GAS_ADJUSTMENT_SWAPS)
 
@@ -274,6 +273,8 @@ def main():
             result = swaps_tx.offChainSwap()
     else:
         if use_market_swap == True:
+            # uluna -> umnt, uluna -> ujpy etc
+            # This is for terra-native swaps ONLY
             result = swaps_tx.marketSimulate()
             if result == True:
                 print (swaps_tx.readableFee())
@@ -285,6 +286,7 @@ def main():
 
                 result = swaps_tx.marketSwap()
         else:
+            # This is for uluna -> uusd swaps ONLY. We use the contract addresses to support this
             result = swaps_tx.simulate()
 
             if result == True:
@@ -297,8 +299,6 @@ def main():
 
                 result = swaps_tx.swap()
     
-    #print ('about to broadcast... exiting')
-    #exit()
     if result == True:
         swaps_tx.broadcast()
     
