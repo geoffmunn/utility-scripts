@@ -53,7 +53,7 @@ def main():
         is_new_wallet = get_user_choice('You want to generate a new wallet address? (y/n) ', [])
         
         if is_new_wallet == True:
-            new_wallet:Wallet = Wallet().create(wallet_name, '', '', '')
+            new_wallet:Wallet = Wallet().create(name = wallet_name)
             wallet_seed, wallet_address = new_wallet.newWallet()
 
             print (f'Your seed and address for the new wallet "{wallet_name}" are about to be displayed on the screen')
