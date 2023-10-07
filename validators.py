@@ -506,7 +506,8 @@ def main():
         delegation_tx.delegated_uluna   = delegated_uluna
         delegation_tx.sender_address    = wallet.address
         delegation_tx.sender_prefix     = wallet.getPrefix(wallet.address)
-        
+        delegation_tx.wallet_denom      = wallet.denom
+
         # Simulate it
         result = delegation_tx.simulate(delegation_tx.delegate)
 
@@ -586,6 +587,7 @@ def main():
         undelegation_tx.delegator_address = wallet.address
         undelegation_tx.validator_address = user_validator['operator_address']
         undelegation_tx.delegated_uluna   = undelegated_uluna
+        undelegation_tx.wallet_denom      = wallet.denom
 
         # Simulate it
         result = undelegation_tx.simulate(undelegation_tx.undelegate)
@@ -675,7 +677,8 @@ def main():
         delegation_tx.validator_address     = to_validator['operator_address']
         delegation_tx.validator_address_old = from_validator['operator_address']
         delegation_tx.delegated_uluna       = int(switched_uluna)
-
+        delegation_tx.wallet_denom          = wallet.denom
+        
         # Simulate it
         result = delegation_tx.simulate(delegation_tx.redelegate)
 
