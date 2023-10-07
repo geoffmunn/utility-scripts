@@ -22,30 +22,25 @@ create_asset_table = "CREATE TABLE asset (ID INTEGER PRIMARY KEY AUTOINCREMENT, 
 add_pool  = "INSERT INTO pool (pool_id, type, address, swap_fee, exit_fee, total_weight) VALUES (?, ?, ?, ?, ?, ?);"
 add_asset = "INSERT INTO asset (pool_id, denom, readable_denom, amount, weight) VALUES (?, ?, ?, ?, ?);"
 
+all_pool_ids = "SELECT pool_id FROM pool ORDER BY pool_id ASC;"
+
+wallet:Wallet = Wallet().create(denom = 'uosmo')
+
 cursor = conn.execute(delete_pool_table)
 cursor = conn.execute(delete_asset_table)
 conn.commit()
+
 cursor = conn.execute(create_pool_table)
 cursor = conn.execute(create_asset_table)
 conn.commit()
 
-wallet:Wallet = Wallet().create(prefix = 'osmo')
-
 pools:list = wallet.terra.pool.osmosis_pools()
-
 pool:Pool
 for pool in pools:
-    vals:list = []
-    vals.append(pool.id)
-    vals.append(pool.type)
-    vals.append(pool.address)
-    vals.append(pool.pool_params.swap_fee)
-    vals.append(pool.pool_params.exit_fee)
-    vals.append(pool.total_weight)
+    print ('pool id:', pool.id)
 
-    cursor = conn.execute(add_pool, vals)
-    conn.commit()
-
+    cursor = conn.execute(add_pool, [pool.id, pool.type, pool.address, pool.pool_params.swap_fee, pool.pool_params.exit_fee, pool.total_weight])
+    
     pool_asset:PoolAsset
     for pool_asset in pool.pool_assets:
         denom_trace = wallet.denomTrace(pool_asset.token.denom)
@@ -57,28 +52,41 @@ for pool in pools:
         if pool_asset.token.denom == 'ibc/785AFEC6B3741100D15E7AF01374E3C4C36F24888E96479B1C33F5C71F364EF9':
             readable_denom = 'uluna2'
 
-        asset:list = []
-        asset.append(pool.id)
-        asset.append(pool_asset.token.denom)
-        asset.append(readable_denom)
-        asset.append(pool_asset.token.amount)
-        asset.append(pool_asset.weight)
-        cursor = conn.execute(add_asset, asset)
-        conn.commit()
+        cursor = conn.execute(add_asset, [pool.id, pool_asset.token.denom, readable_denom, pool_asset.token.amount, pool_asset.weight])
+        
+    conn.commit()
+
+cursor = conn.execute(all_pool_ids)
+existing_ids = []
+max_id:int = 0
+for row in cursor.fetchall():
+    existing_ids.append(row[0])
+    max_id = row[0]
+
+for i in range(max_id):
+    if i not in existing_ids:
+        try:
+            print (f'adding missing pool {i}')
+            pool = wallet.terra.pool.osmosis_pool(i)
+
+            cursor = conn.execute(add_pool, [pool.id, pool.type, pool.address, pool.pool_params.swap_fee, pool.pool_params.exit_fee, pool.total_weight])
+            
+            pool_asset:PoolAsset
+            for pool_asset in pool.pool_assets:
+                denom_trace = wallet.denomTrace(pool_asset.token.denom)
+                if denom_trace == False:
+                    readable_denom = pool_asset.token.denom
+                else:
+                    readable_denom = denom_trace['base_denom']
+                    
+                if pool_asset.token.denom == 'ibc/785AFEC6B3741100D15E7AF01374E3C4C36F24888E96479B1C33F5C71F364EF9':
+                    readable_denom = 'uluna2'
+
+                cursor = conn.execute(add_asset, [pool.id, pool_asset.token.denom, readable_denom, pool_asset.token.amount, pool_asset.weight])
+                
+            conn.commit()
+        except Exception as err:
+            print (err)
 
 conn.close()
 exit()
-
-####
-
-# CREATE INDEX history_date_added ON history (date_added);
-# CREATE INDEX history_coin_id ON history (coin_id);
-# CREATE INDEX coin_coin_id ON coin (coin_id); 
-# CREATE UNIQUE INDEX category_id ON category (category_id);
-
-#SELECT pool.pool_id, readable_denom, swap_fee FROM pool INNER JOIN asset ON pool.pool_id=asset.pool_id WHERE pool.pool_id IN (SELECT pool_id FROM asset WHERE readable_denom = 'uluna') AND readable_denom='uosmo' ORDER BY swap_fee ASC;
-
-#SELECt pool.pool_id, readable_denom, swap_fee FROM pool INNER JOIN asset ON pool.pool_id=asset.pool_id WHERE pool.pool_id IN (SELECT pool_id FROM asset WHERE readable_denom = 'uosmo') and readable_denom='ukuji' ORDER BY swap_fee ASC;
-
-
-
