@@ -320,7 +320,8 @@ def main():
                         # We need to populate some details
                         withdrawal_tx.sender_address = wallet.address
                         withdrawal_tx.sender_prefix  = wallet.getPrefix(wallet.address)
-                        
+                        withdrawal_tx.wallet_denom   = wallet.denom
+
                         # Simulate it
                         result = withdrawal_tx.simulate()
 
@@ -406,6 +407,7 @@ def main():
                             swaps_tx.contract       = TERRASWAP_UUSD_TO_ULUNA_ADDRESS
                             swaps_tx.sender_address = wallet.address
                             swaps_tx.sender_prefix  = wallet.getPrefix(wallet.address)
+                            swaps_tx.wallet_denom   = wallet.denom
 
                             # Simulate it so we can get the fee
                             result = swaps_tx.simulate()
@@ -497,7 +499,8 @@ def main():
                                 delegation_tx.delegated_uluna   = delegated_uluna
                                 delegation_tx.sender_address    = wallet.address
                                 delegation_tx.sender_prefix     = wallet.getPrefix(wallet.address)
-                        
+                                delegation_tx.wallet_denom      = wallet.denom
+                                
                                 # Simulate it
                                 result = delegation_tx.simulate(delegation_tx.delegate)
 
