@@ -16,7 +16,7 @@ from utility_classes import (
 )
 
 from utility_constants import (
-    CHAIN_IDS,
+    CHAIN_DATA,
     FULL_COIN_LOOKUP,
     GAS_ADJUSTMENT_INCREMENT,
     GAS_ADJUSTMENT_SEND,
@@ -370,17 +370,18 @@ def main():
         print (f'Sending {wallet.formatUluna(uluna_amount, denom)} {FULL_COIN_LOOKUP[denom]}')
 
         # Create the send tx object
-        send_tx = wallet.send().create(sender_prefix)
+        send_tx = wallet.send().create(denom)
         
         # Populate it with required details:
         send_tx.recipient_address = recipient_address
         send_tx.recipient_prefix  = recipient_address_prefix
         send_tx.sender_address    = sender_address
         send_tx.sender_prefix     = sender_prefix
+        send_tx.wallet_denom      = wallet.denom
 
         if recipient_address_prefix != 'terra' or wallet.terra.chain_id != 'columbus-5':
             send_tx.is_ibc_transfer = True
-            send_tx.source_channel = CHAIN_IDS[recipient_address_prefix]['ibc_channel']
+            send_tx.source_channel = CHAIN_DATA[denom]['ibc_channel']
             if wallet.terra.chain_id == 'osmosis-1':
                 send_tx.revision_number = 6
             else:
