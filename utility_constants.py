@@ -69,7 +69,10 @@ UKRW  = 'ukrw'
 UKUJI = 'ukuji'
 ULUNA = 'uluna'
 UOSMO = 'uosmo'
+USCRT = 'uscrt'
 UUSD  = 'uusd'
+UWHALE = 'uwhale'
+WBTC  = 'wbtc-satoshi'
 WETH  = 'weth-wei'
 
 # Coin keys and display values:
@@ -97,12 +100,15 @@ FULL_COIN_LOOKUP = {
     'unok':  'NOTC',
     'uosmo': 'OSMO',
     'uphp':  'PHTC',
+    #'uscrt': 'SCRT',
     'usdr':  'SDTC',
     'usek':  'SETC',
     'usgd':  'SGTC',
     'uthb':  'THTC',
     'utwd':  'TWTC',
     'uusd':  'USTC',
+    #'uwhale': 'WHALE',
+    'wbtc-satoshi': 'wBTC',
     'weth-wei': 'wETH'
 }
 
@@ -117,88 +123,191 @@ OFFCHAIN_COINS = [
     UKAVA,
     UKUJI,
     UOSMO,
-    WETH 
+    USCRT,
+    UWHALE,
+    WBTC,
+    WETH
 ]
 
-CHAIN_IDS = {
-    'axelar': {
-        'chain_id': 'axelar-dojo-1',
-        'denom': 'weth-wei',
-        'display_name': 'Wrapped Eth',
-        'ibc_channel': 'channel-208',
-        'lcd_urls': ['https://rest.cosmos.directory/axelar'],
-        'name': 'axelar ',
-        'name2': 'weth',
-        'precision': 18,
-        'prefix': 'axelar'
-    },
-    'cosmos': {
+CHAIN_DATA = {
+    'uatom': {
         'chain_id': 'cosmoshub-4',
-        'denom': 'uatom',
-        'display_name': 'Cosmos',
         'ibc_channel': 'channel-0',
         'lcd_urls': ['https://rest.cosmos.directory/cosmoshub', 'https://cosmoshub-lcd.stakely.io'],
         'name': 'cosmos',
-        'name2': 'cosmos',
+        'keplr_name': 'cosmos',
         'precision': 6,
         'prefix': 'cosmos'
     },
-    # 'cro': {
-    #     'chain_id': 'osmosis-1',
-    #     'denom': 'cro',
-    #     'display_name': 'Cronos',
-    #     'ibc_channel': '',
-    #     'lcd_urls': ['rest.cosmos.directory/cronos'],
-    #     'name': 'cronos',
-    #     'name2': 'cronos',
-    #     'precision': 18
-    # },
-    'kava': {
+    'ukava': {
         'chain_id': 'osmosis-1',
-        'denom': 'ukava',
-        'display_name': 'Kava',
         'ibc_channel': 'channel-143',
         'lcd_urls': ['https://rest.cosmos.directory/kava'],
         'name': 'kava',
-        'name2': 'kava',
+        'keplr_name': 'kava',
         'precision': 6,
         'prefix': 'kava'
     },
-    'kujira': {
+    'ukuji': {
         'chain_id': 'kaiyo-1',
-        'denom': 'ukuji',
-        'display_name': 'Kujira',
         'ibc_channel': 'channel-259',
         'lcd_urls': ['https://rest.cosmos.directory/kujira', 'https://lcd-kujira.mintthemoon.xyz'],
         'name': 'kujira',
-        'name2': 'kujira',
+        'keplr_name': 'kujira',
         'precision': 6,
         'prefix': 'kujira'
     },
-    'osmo': {
-        'chain_id': 'osmosis-1',
-        'denom': 'uosmo',
-        'display_name': 'Osmosis',
-        'ibc_channel': 'channel-1',
-        'lcd_urls': ['https://lcd.osmosis.zone'],
-        'name': 'osmosis',
-        'name2': 'osmosis',
-        'precision': 6,
-        'prefix': 'osmo'
-    },
-    'terra': {
+    'uluna': {
         'chain_id': 'columbus-5',
-        'denom': 'uluna',
-        'display_name': 'Luna Classic',
         'ibc_channel': 'channel-72',
-        'lcd_urls': ['https://lcd.terrarebels.net', 'https://terra-classic-fcd.publicnode.com', 'https://lcd.terrarebels.net', 'https://rest.cosmos.directory/terra'],
+        'lcd_urls': ['https://lcd.terraclassic.community/', 'https://terra-classic-fcd.publicnode.com', 'https://lcd.terraclassic.community/', 'https://rest.cosmos.directory/terra'],
         'name': 'terra',
-        'name2': 'terra-luna',
+        'keplr_name': 'terra-luna',
         'precision': 6,
         'prefix': 'terra'
     },
-    
+    'uosmo': {
+        'chain_id': 'osmosis-1',
+        'ibc_channel': 'channel-1',
+        'lcd_urls': ['https://lcd.osmosis.zone'],
+        'name': 'osmosis',
+        'keplr_name': 'osmosis',
+        'precision': 6,
+        'prefix': 'osmo'
+    },
+    'uusd': {
+        'chain_id': 'columbus-5',
+        'ibc_channel': 'channel-72',
+        'lcd_urls': ['https://lcd.terraclassic.community/', 'https://terra-classic-fcd.publicnode.com', 'https://lcd.terraclassic.community/', 'https://rest.cosmos.directory/terra'],
+        'name': 'terra',
+        'keplr_name': 'terra-luna',
+        'precision': 6,
+        'prefix': 'terra'
+    },
+    'wbtc-satoshi': {
+        #'chain_id': 'axelar-dojo-1',
+        'chain_id': 'osmosis-1',
+        'ibc_channel': 'channel-208',
+        #'lcd_urls': ['https://rest.cosmos.directory/axelar'],
+        'lcd_urls': ['https://lcd.osmosis.zone'],
+        'name': 'axelar',
+        'keplr_name': 'bitcoin',
+        'precision': 8,
+        'prefix': 'axelar'
+    },
+    'weth-wei': {
+        'chain_id': 'axelar-dojo-1',
+        'ibc_channel': 'channel-208',
+        'lcd_urls': ['https://rest.cosmos.directory/axelar'],
+        'name': 'axelar',
+        'keplr_name': 'weth',
+        'precision': 18,
+        'prefix': 'axelar'
+    }
 }
+
+# CHAIN_IDS = {
+#     'axelar': {
+#         'chain_id': 'axelar-dojo-1',
+#         'denom': 'weth-wei',
+#         'display_name': 'Wrapped Eth',
+#         'ibc_channel': 'channel-208',
+#         'lcd_urls': ['https://rest.cosmos.directory/axelar'],
+#         'name': 'axelar ',
+#         'name2': 'weth',
+#         'precision': 18,
+#         'prefix': 'axelar'
+#     },
+#     'cosmos': {
+#         'chain_id': 'cosmoshub-4',
+#         'denom': 'uatom',
+#         'display_name': 'Cosmos',
+#         'ibc_channel': 'channel-0',
+#         'lcd_urls': ['https://rest.cosmos.directory/cosmoshub', 'https://cosmoshub-lcd.stakely.io'],
+#         'name': 'cosmos',
+#         'name2': 'cosmos',
+#         'precision': 6,
+#         'prefix': 'cosmos'
+#     },
+#     # 'cro': {
+#     #     'chain_id': 'osmosis-1',
+#     #     'denom': 'cro',
+#     #     'display_name': 'Cronos',
+#     #     'ibc_channel': '',
+#     #     'lcd_urls': ['rest.cosmos.directory/cronos'],
+#     #     'name': 'cronos',
+#     #     'name2': 'cronos',
+#     #     'precision': 18
+#     # },
+#     'kava': {
+#         'chain_id': 'osmosis-1',
+#         'denom': 'ukava',
+#         'display_name': 'Kava',
+#         'ibc_channel': 'channel-143',
+#         'lcd_urls': ['https://rest.cosmos.directory/kava'],
+#         'name': 'kava',
+#         'name2': 'kava',
+#         'precision': 6,
+#         'prefix': 'kava'
+#     },
+#     'kujira': {
+#         'chain_id': 'kaiyo-1',
+#         'denom': 'ukuji',
+#         'display_name': 'Kujira',
+#         'ibc_channel': 'channel-259',
+#         'lcd_urls': ['https://rest.cosmos.directory/kujira', 'https://lcd-kujira.mintthemoon.xyz'],
+#         'name': 'kujira',
+#         'name2': 'kujira',
+#         'precision': 6,
+#         'prefix': 'kujira'
+#     },
+#     'osmo': {
+#         'chain_id': 'osmosis-1',
+#         'denom': 'uosmo',
+#         'display_name': 'Osmosis',
+#         'ibc_channel': 'channel-1',
+#         'lcd_urls': ['https://lcd.osmosis.zone'],
+#         'name': 'osmosis',
+#         'name2': 'osmosis',
+#         'precision': 6,
+#         'prefix': 'osmo'
+#     },
+#     'secret': {
+#         'chain_id': 'osmosis-1',
+#         #'chain_id': 'secret-4',
+#         'denom': 'uscrt',
+#         'display_name': 'Luna Classic',
+#         'ibc_channel': 'channel-88',
+#         'lcd_urls': ['https://lcd.osmosis.zone'],
+#         #'lcd_urls': ['https://lcd.secret.express'],
+#         'name': 'secret',
+#         'name2': 'secret',
+#         'precision': 6,
+#         'prefix': 'secret'
+#     },
+#     'terra': {
+#         'chain_id': 'columbus-5',
+#         'denom': 'uluna',
+#         'display_name': 'Luna Classic',
+#         'ibc_channel': 'channel-72',
+#         'lcd_urls': ['https://terra-classic-fcd.publicnode.com', 'https://lcd.terrarebels.net', 'https://rest.cosmos.directory/terra'],
+#         'name': 'terra',
+#         'name2': 'terra-luna',
+#         'precision': 6,
+#         'prefix': 'terra'
+#     },
+#     'whale': {
+#         'chain_id': 'osmosis-1',
+#         'denom': 'uwhale',
+#         'display_name': 'White Whale',
+#         'ibc_channel': 'channel-84',
+#         'lcd_urls': ['https://rest.cosmos.directory/migaloo', 'https://lcd.osmosis.zone'],
+#         'name': 'whale',
+#         'name2': 'whale',
+#         'precision': 6,
+#         'prefix': 'migaloo'
+#     }
+# }
 
 # Cronos
 # Injective
