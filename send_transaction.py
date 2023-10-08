@@ -370,7 +370,7 @@ def main():
         print (f'Sending {wallet.formatUluna(uluna_amount, denom)} {FULL_COIN_LOOKUP[denom]}')
 
         # Create the send tx object
-        send_tx = wallet.send().create(denom)
+        send_tx = wallet.send().create(wallet.denom)
         
         # Populate it with required details:
         send_tx.recipient_address = recipient_address
@@ -379,9 +379,13 @@ def main():
         send_tx.sender_prefix     = sender_prefix
         send_tx.wallet_denom      = wallet.denom
 
+        print ('wallet denom:', wallet.denom)
+        print ('denom:', denom)
+        print ('we want to use:', CHAIN_DATA[wallet.denom]['ibc_channels'][denom])
+
         if recipient_address_prefix != 'terra' or wallet.terra.chain_id != 'columbus-5':
-            send_tx.is_ibc_transfer = True
-            send_tx.source_channel = CHAIN_DATA[denom]['ibc_channel']
+            send_tx.is_on_chain = False
+            send_tx.source_channel = CHAIN_DATA[wallet.denom]['ibc_channels'][denom]
             if wallet.terra.chain_id == 'osmosis-1':
                 send_tx.revision_number = 6
             else:
@@ -394,22 +398,28 @@ def main():
         send_tx.denom             = denom
         send_tx.block_height      = send_tx.terra.tendermint.block_info()['block']['header']['height']
 
-        if denom != ULUNA:
+        print ('chain id:', send_tx.terra.chain_id)
+        print ('send channel id:', send_tx.source_channel)
+        
+        # if denom != ULUNA:
             
-            result = send_tx.simulate()
+        #     result = send_tx.simulate()
 
-            if result == True:
-                if custom_gas == 0 or custom_gas == '':
-                    custom_gas = send_tx.fee.gas_limit * 1.14
-                    send_tx.gas_limit = custom_gas
-            else:
-                print (' 🛎️  The send simulation could not be completed')
+        #     if result == True:
+        #         if custom_gas == 0 or custom_gas == '':
+        #             custom_gas = send_tx.fee.gas_limit * 1.14
+        #             send_tx.gas_limit = custom_gas
+        #     else:
+        #         print (' 🛎️  The send simulation could not be completed')
             
         # Simulate it            
-        result = send_tx.simulate()
+        
+        if send_tx.is_on_chain == True:
+            result = send_tx.simulate()
+        else:
+            result = send_tx.simulateOffchain()
         
         if result == True:
-            
             print (send_tx.readableFee())
 
             user_choice = get_user_choice('Do you want to continue? (y/n) ', [])
@@ -418,7 +428,10 @@ def main():
                 exit()
 
             # Now we know what the fee is, we can do it again and finalise it
-            result = send_tx.send()
+            if send_tx.is_on_chain == True:
+                result = send_tx.send()
+            else:
+                result = send_tx.sendOffchain()
             
             if result == True:
                 send_tx.broadcast()
@@ -495,7 +508,6 @@ def main():
                         # Code 32 = account sequence mismatch
                         if send_tx.broadcast_result.code != 32:
                             break
-
 
                 if send_tx.broadcast_result is None or send_tx.broadcast_result.is_tx_error():
                     if send_tx.broadcast_result is None:

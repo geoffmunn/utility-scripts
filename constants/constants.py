@@ -130,37 +130,39 @@ OFFCHAIN_COINS = [
 ]
 
 CHAIN_DATA = {
-    'uatom': {
-        'chain_id': 'cosmoshub-4',
-        'ibc_channel': 'channel-0',
-        'lcd_urls': ['https://rest.cosmos.directory/cosmoshub', 'https://cosmoshub-lcd.stakely.io'],
-        'name': 'cosmos',
-        'keplr_name': 'cosmos',
-        'precision': 6,
-        'prefix': 'cosmos'
-    },
-    'ukava': {
-        'chain_id': 'osmosis-1',
-        'ibc_channel': 'channel-143',
-        'lcd_urls': ['https://rest.cosmos.directory/kava'],
-        'name': 'kava',
-        'keplr_name': 'kava',
-        'precision': 6,
-        'prefix': 'kava'
-    },
-    'ukuji': {
-        'chain_id': 'kaiyo-1',
-        'ibc_channel': 'channel-259',
-        'lcd_urls': ['https://rest.cosmos.directory/kujira', 'https://lcd-kujira.mintthemoon.xyz'],
-        'name': 'kujira',
-        'keplr_name': 'kujira',
-        'precision': 6,
-        'prefix': 'kujira'
-    },
+    # 'uatom': {
+    #     'chain_id': 'cosmoshub-4',
+    #     'ibc_channel': 'channel-0',
+    #     'lcd_urls': ['https://rest.cosmos.directory/cosmoshub', 'https://cosmoshub-lcd.stakely.io'],
+    #     'name': 'cosmos',
+    #     'keplr_name': 'cosmos',
+    #     'precision': 6,
+    #     'prefix': 'cosmos'
+    # },
+    # 'ukava': {
+    #     'chain_id': 'osmosis-1',
+    #     'ibc_channel': 'channel-143',
+    #     'lcd_urls': ['https://rest.cosmos.directory/kava'],
+    #     'name': 'kava',
+    #     'keplr_name': 'kava',
+    #     'precision': 6,
+    #     'prefix': 'kava'
+    # },
+    # 'ukuji': {
+    #     'chain_id': 'kaiyo-1',
+    #     'ibc_channel': 'channel-259',
+    #     'lcd_urls': ['https://rest.cosmos.directory/kujira', 'https://lcd-kujira.mintthemoon.xyz'],
+    #     'name': 'kujira',
+    #     'keplr_name': 'kujira',
+    #     'precision': 6,
+    #     'prefix': 'kujira'
+    # },
     'uluna': {
         'chain_id': 'columbus-5',
-        'ibc_channel': 'channel-72',
-        'lcd_urls': ['https://lcd.terraclassic.community/', 'https://terra-classic-fcd.publicnode.com', 'https://lcd.terraclassic.community/', 'https://rest.cosmos.directory/terra'],
+        'ibc_channels': {
+            'uluna': 'channel-1',
+        },
+        'lcd_urls': ['https://terra-classic-fcd.publicnode.com', 'https://rest.cosmos.directory/terra'],
         'name': 'terra',
         'keplr_name': 'terra-luna',
         'precision': 6,
@@ -168,33 +170,37 @@ CHAIN_DATA = {
     },
     'uosmo': {
         'chain_id': 'osmosis-1',
-        'ibc_channel': 'channel-1',
+        #'ibc_channel': 'channel-72',
+        'ibc_channels': {
+            'uluna': 'channel-72',
+            'weth-wei': 'channel-208'
+        },
         'lcd_urls': ['https://lcd.osmosis.zone'],
         'name': 'osmosis',
         'keplr_name': 'osmosis',
         'precision': 6,
         'prefix': 'osmo'
     },
-    'uusd': {
-        'chain_id': 'columbus-5',
-        'ibc_channel': 'channel-72',
-        'lcd_urls': ['https://lcd.terraclassic.community/', 'https://terra-classic-fcd.publicnode.com', 'https://lcd.terraclassic.community/', 'https://rest.cosmos.directory/terra'],
-        'name': 'terra',
-        'keplr_name': 'terra-luna',
-        'precision': 6,
-        'prefix': 'terra'
-    },
-    'wbtc-satoshi': {
-        #'chain_id': 'axelar-dojo-1',
-        'chain_id': 'osmosis-1',
-        'ibc_channel': 'channel-208',
-        #'lcd_urls': ['https://rest.cosmos.directory/axelar'],
-        'lcd_urls': ['https://lcd.osmosis.zone'],
-        'name': 'axelar',
-        'keplr_name': 'bitcoin',
-        'precision': 8,
-        'prefix': 'axelar'
-    },
+    # 'uusd': {
+    #     'chain_id': 'columbus-5',
+    #     'ibc_channel': 'channel-72',
+    #     'lcd_urls': ['https://lcd.terraclassic.community/', 'https://terra-classic-fcd.publicnode.com', 'https://lcd.terraclassic.community/', 'https://rest.cosmos.directory/terra'],
+    #     'name': 'terra',
+    #     'keplr_name': 'terra-luna',
+    #     'precision': 6,
+    #     'prefix': 'terra'
+    # },
+    # 'wbtc-satoshi': {
+    #     #'chain_id': 'axelar-dojo-1',
+    #     'chain_id': 'osmosis-1',
+    #     'ibc_channel': 'channel-208',
+    #     #'lcd_urls': ['https://rest.cosmos.directory/axelar'],
+    #     'lcd_urls': ['https://lcd.osmosis.zone'],
+    #     'name': 'axelar',
+    #     'keplr_name': 'bitcoin',
+    #     'precision': 8,
+    #     'prefix': 'axelar'
+    # },
     'weth-wei': {
         'chain_id': 'axelar-dojo-1',
         'ibc_channel': 'channel-208',

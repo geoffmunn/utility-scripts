@@ -5,17 +5,17 @@ import copy
 
 from getpass import getpass
 
-from utility_classes import (
-    divide_raw_balance,
+from classes.common import (
     check_version,
-    get_user_choice,
-    UserConfig,
-    Wallets,
-    Wallet
+    divide_raw_balance,
+    get_user_choice
 )
 
-from utility_constants import (
-    COIN_DIVISOR,
+from classes.user_config import UserConfig
+from classes.wallets import Wallets
+from classes.wallet import Wallet
+
+from constants.constants import (
     BASIC_COIN_LOOKUP,
     FULL_COIN_LOOKUP,
     ULUNA
@@ -81,7 +81,6 @@ def main():
 
         if delegations is not None:
             for validator in delegations:
-                
                 if validator not in validator_template:
                     if int(delegations[validator]['balance_amount']) > 0 and len(delegations[validator]['rewards']) > 0:
 
@@ -136,7 +135,7 @@ def main():
                     balance_coins.update({coin_denom: cur_wallets})
 
         # Get the delegations on this wallet
-        delegations = wallet.getDelegations()
+        delegations = wallet.delegations
 
         # Keep track of the current delegated amount
         delegated_amount = 0
