@@ -11,35 +11,17 @@ from constants.constants import (
 
 from classes.transaction_core import TransactionCore
 from classes.terra_instance import TerraInstance
-
-from terra_classic_sdk.client.lcd import LCDClient
-from terra_classic_sdk.client.lcd.api.distribution import Rewards
 from terra_classic_sdk.client.lcd.api.tx import (
     CreateTxOptions,
     Tx
 )
-from terra_classic_sdk.client.lcd.params import PaginationOptions
-from terra_classic_sdk.client.lcd.wallet import Wallet
-from terra_classic_sdk.core.bank import MsgSend
-from terra_classic_sdk.core.broadcast import BlockTxBroadcastResult
 from terra_classic_sdk.core.coin import Coin
-from terra_classic_sdk.core.coins import Coins
-from terra_classic_sdk.core.distribution.msgs import MsgWithdrawDelegatorReward
-from terra_classic_sdk.core.fee import Fee
-from terra_classic_sdk.core.ibc import Height
-from terra_classic_sdk.core.ibc_transfer import MsgTransfer
-from terra_classic_sdk.core.market.msgs import MsgSwap
-from terra_classic_sdk.core.osmosis import MsgSwapExactAmountIn, Pool, PoolAsset
 from terra_classic_sdk.core.staking import (
     MsgBeginRedelegate,
     MsgDelegate,
     MsgUndelegate,
-    UnbondingDelegation
 )
-from terra_classic_sdk.core.staking.data.delegation import Delegation
-from terra_classic_sdk.core.staking.data.validator import Validator
 from terra_classic_sdk.core.tx import Tx
-from terra_classic_sdk.core.wasm.msgs import MsgExecuteContract
 from terra_classic_sdk.exceptions import LCDResponseError
 from terra_classic_sdk.key.mnemonic import MnemonicKey
 
@@ -52,7 +34,6 @@ class DelegationTransaction(TransactionCore):
         self.delegated_uluna:int       = 0
         self.sender_address:str        = ''
         self.sender_prefix:str         = ''
-        #self.sequence:int              = None
         self.validator_address_old:str = ''
         self.validator_address:str     = ''
 
