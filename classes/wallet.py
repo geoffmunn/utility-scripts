@@ -511,6 +511,19 @@ class UserWallet:
 
         return self.delegations
     
+    def getDenomByPrefix(self, prefix:str) -> str:
+        """
+        Go through the supported chains to find the denom for the provided prefix
+        """
+
+        result = None
+        for key in CHAIN_DATA.keys():
+            if CHAIN_DATA[key]['prefix'] == prefix:
+                result = key
+                break
+            
+        return result
+    
     def getPrefix(self, address:str) -> str:
         """
         Get the first x (usually 4) letters of the address so we can figure out what network it is

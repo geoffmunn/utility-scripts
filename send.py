@@ -380,13 +380,14 @@ def main():
         send_tx.sender_prefix     = sender_prefix
         send_tx.wallet_denom      = wallet.denom
 
-        #if recipient_address_prefix != 'terra' or wallet.terra.chain_id != 'columbus-5':
-        if wallet.terra.chain_id == 'columbus-5':
+        send_tx.receiving_denom = wallet.getDenomByPrefix(recipient_address_prefix)
+        
+        if wallet.terra.chain_id == 'columbus-5' and recipient_address_prefix == 'terra':
             send_tx.is_on_chain = True
             send_tx.revision_number = 1
         else:
             send_tx.is_on_chain = False
-            send_tx.source_channel = CHAIN_DATA[wallet.denom]['ibc_channels'][denom]
+            send_tx.source_channel = CHAIN_DATA[wallet.denom]['ibc_channels'][send_tx.receiving_denom]
             if wallet.terra.chain_id == 'osmosis-1':
                 send_tx.revision_number = 6
             else:
@@ -434,7 +435,6 @@ def main():
                 result = send_tx.sendOffchain()
             
             if result == True:
-                
                 send_tx.broadcast()
 
                 if send_tx.broadcast_result is not None and send_tx.broadcast_result.code == 32:

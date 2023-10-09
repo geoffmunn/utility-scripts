@@ -43,6 +43,7 @@ class SendTransaction(TransactionCore):
         self.gas_limit:str         = 'auto'
         self.is_on_chain:bool      = True
         self.memo:str              = ''
+        self.receiving_denom:str   = ''
         self.recipient_address:str = ''
         self.recipient_prefix:str  = ''
         self.revision_number:int   = None
@@ -153,93 +154,98 @@ class SendTransaction(TransactionCore):
 
         send_amount = int(self.amount)
 
-        if self.tax is not None:
-            if self.fee_deductables is not None:
-                if int(send_amount + self.tax) > int(self.balances[self.denom]):
-                    send_amount = int(send_amount - self.fee_deductables)
+        if self.fee_deductables is not None:
+            if int(send_amount + self.tax) > int(self.balances[self.denom]):
+                send_amount = int(send_amount - self.fee_deductables)
 
-        try:
-            tx:Tx = None
+        #try:
+        tx:Tx = None
 
-            if self.sender_prefix == 'terra':
-                msg = MsgTransfer(
-                    source_port       = 'transfer',
-                    source_channel    = self.source_channel,
-                    token             = Coin(self.denom, send_amount),
-                    sender            = self.sender_address,
-                    receiver          = self.recipient_address,
-                    timeout_height    = Height(revision_number = self.revision_number, revision_height = self.block_height),                            
-                    timeout_timestamp = 0
-                )
-                
-                options = CreateTxOptions(
-                    fee        = self.fee,
-                    gas        = self.gas_limit,
-                    gas_prices = self.gas_list,
-                    memo       = self.memo,
-                    msgs       = [msg],
-                    sequence   = self.sequence
-                )
-            else:
-                # Send transactions from Osmosis to other wallets
-                ibc_value = sha256(f'transfer/{self.source_channel}/{self.denom}'.encode('utf-8')).hexdigest().upper()
-                send_denom = 'ibc/' + ibc_value
+        # if self.sender_prefix == 'terra':
+        #     msg = MsgTransfer(
+        #         source_port       = 'transfer',
+        #         source_channel    = self.source_channel,
+        #         token             = Coin(self.denom, send_amount),
+        #         sender            = self.sender_address,
+        #         receiver          = self.recipient_address,
+        #         timeout_height    = Height(revision_number = self.revision_number, revision_height = self.block_height),                            
+        #         timeout_timestamp = 0
+        #     )
+            
+        #     options = CreateTxOptions(
+        #         fee        = self.fee,
+        #         gas        = self.gas_limit,
+        #         gas_prices = self.gas_list,
+        #         memo       = self.memo,
+        #         msgs       = [msg],
+        #         sequence   = self.sequence
+        #     )
+        # else:
+        # Send transactions from Osmosis to other wallets
 
-                if self.fee is not None:
-                    print (self.fee)
-                    exit()
+        if self.terra.chain_id == 'columbus-5':
+            revision_number = 1
+        else:
+            revision_number = 6
 
-                msg = MsgTransfer(
-                    source_port       = 'transfer',
-                    source_channel    = self.source_channel,
-                    token = {
-                        "amount": str(send_amount),
-                        "denom": send_denom
-                    },
-                    sender            = self.sender_address,
-                    receiver          = self.recipient_address,
-                    timeout_height    = Height(revision_number = 6, revision_height = self.block_height),
-                    timeout_timestamp = 0
-                )
-                                    
-                options = CreateTxOptions(
-                    account_number = str(self.account_number),
-                    sequence       = str(self.sequence),
-                    msgs           = [msg],
-                    fee            = self.fee,
-                    #gas            = '7500',
-                    gas = self.gas_limit,
-                    fee_denoms     = ['uosmo', 'uluna']
-                )
+        if self.denom != self.wallet_denom:
+            ibc_value = sha256(f'transfer/{self.source_channel}/{self.denom}'.encode('utf-8')).hexdigest().upper()
+            send_denom = 'ibc/' + ibc_value
+            token = {
+                "amount": str(send_amount),
+                "denom": send_denom
+            }
+        else:
+            token = Coin(self.denom, send_amount)
 
-            # This process often generates sequence errors. If we get a response error, then
-            # bump up the sequence number by one and try again.
-            while True:
-                try:
-                    tx:Tx = self.current_wallet.create_and_sign_tx(options)
-                    break
-                except LCDResponseError as err:
-                    if 'account sequence mismatch' in err.message:
-                        self.sequence    = self.sequence + 1
-                        options.sequence = self.sequence
-                        print (' 🛎️  Boosting sequence number')
-                    else:
-                        print ('An unexpected error occurred in the send function:')
-                        print (err)
-                        break
-                except Exception as err:
-                    print (' 🛑 An unexpected error occurred in the send function:')
+        msg = MsgTransfer(
+            source_port       = 'transfer',
+            source_channel    = self.source_channel,
+            token = token,
+            sender            = self.sender_address,
+            receiver          = self.recipient_address,
+            timeout_height    = Height(revision_number = revision_number, revision_height = self.block_height),
+            timeout_timestamp = 0
+        )
+                            
+        options = CreateTxOptions(
+            account_number = str(self.account_number),
+            sequence       = str(self.sequence),
+            msgs           = [msg],
+            fee            = self.fee,
+            gas            = self.gas_limit,
+            gas_prices     = self.gas_list
+            #fee_denoms     = ['uosmo', 'uluna']
+        )
+
+        # This process often generates sequence errors. If we get a response error, then
+        # bump up the sequence number by one and try again.
+        while True:
+            try:
+                tx:Tx = self.current_wallet.create_and_sign_tx(options)
+                break
+            except LCDResponseError as err:
+                if 'account sequence mismatch' in err.message:
+                    self.sequence    = self.sequence + 1
+                    options.sequence = self.sequence
+                    print (' 🛎️  Boosting sequence number')
+                else:
+                    print ('An unexpected error occurred in the send function:')
                     print (err)
                     break
+            except Exception as err:
+                print (' 🛑 An unexpected error occurred in the send function:')
+                print (err)
+                break
 
-            # Store the transaction
-            self.transaction = tx
+        # Store the transaction
+        self.transaction = tx
 
-            return True
-        except Exception as err:
-            print (' 🛑 An unexpected error occurred in the send function:')
-            print (err)
-            return False
+        return True
+        # except Exception as err:
+        #     print (' 🛑 An unexpected error occurred in the send function:')
+        #     print (err)
+        #     return False
     
     def simulate(self) -> bool:
         """
@@ -321,18 +327,19 @@ class SendTransaction(TransactionCore):
 
         Outputs:
         self.fee - requested_fee object with fee + tax as separate coins (unless both are lunc)
-        self.tax - the tax component
+        self.tax - tax is zero for IBC transfers
         self.fee_deductables - the amount we need to deduct off the transferred amount
         """
 
-        if self.sequence is None:
-            self.sequence = self.current_wallet.sequence()
-
-        if self.account_number is None:
-            self.account_number = self.current_wallet.account_number()
+        # Reset these values in case this is a re-used object:
+        self.account_number  = self.current_wallet.account_number()
+        self.fee             = None
+        self.fee_deductables = None
+        self.tax             = None
+        self.sequence        = self.current_wallet.sequence()
 
         # Perform the swap as a simulation, with no fee details
-        self.send()
+        self.sendOffchain()
 
         # Store the transaction
         tx:Tx = self.transaction
@@ -341,50 +348,31 @@ class SendTransaction(TransactionCore):
             # Get the stub of the requested fee so we can adjust it
             requested_fee:Fee = tx.auth_info.fee
 
+            print ('requested fee raw:', requested_fee)
             # This will be used by the swap function next time we call it
             # We'll use uluna as the preferred fee currency just to keep things simple
             self.fee = self.calculateFee(requested_fee, ULUNA)
             
+            print ('calculated fee:', self.fee)
             # Figure out the fee structure
             fee_bit:Coin = Coin.from_str(str(requested_fee.amount))
             fee_amount   = fee_bit.amount
-            fee_denom    = fee_bit.denom
+            #fee_denom    = fee_bit.denom
         
-            if self.is_ibc_transfer == False:
-                
-                # Calculate the tax portion
-                if self.denom == UBASE:
-                    # No taxes for BASE transfers
-                    self.tax = 0
-                else:
-                    self.tax = int(math.ceil(self.amount * float(self.tax_rate['tax_rate'])))
-
-                # Build a fee object
-                if fee_denom == ULUNA and self.denom == ULUNA:
-                    new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount + self.tax))})
-                elif self.denom == UBASE:
-                    new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount))})
-                else:
-                    new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount)), Coin(self.denom, int(self.tax))})
-                    
-                requested_fee.amount = new_coin
-            else:
-                # No taxes for IBC transfers
-                self.tax = 0
-
+            self.tax = 0
             # This will be used by the swap function next time we call it
-            self.fee = requested_fee
+            #self.fee = requested_fee
         
             # Store this so we can deduct it off the total amount to swap.
             # If the fee denom is the same as what we're paying the tax in, then combine the two
             # Otherwise the deductible is just the tax value
             # This assumes that the tax is always the same denom as the transferred amount.
-            if fee_denom == self.denom:
-                self.fee_deductables = int(fee_amount + self.tax)
-            elif fee_denom == ULUNA and self.denom == UUSD:
-                self.fee_deductables = int(self.tax)
-            else:
-                self.fee_deductables = int(self.tax * 2)
+            #if fee_denom == self.denom:
+            self.fee_deductables = int(fee_amount)
+            #elif fee_denom == ULUNA and self.denom == UUSD:
+            #    self.fee_deductables = int(self.tax)
+            #else:
+            #    self.fee_deductables = int(self.tax * 2)
 
             return True
         else:

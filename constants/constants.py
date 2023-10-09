@@ -160,7 +160,7 @@ CHAIN_DATA = {
     'uluna': {
         'chain_id': 'columbus-5',
         'ibc_channels': {
-            'uluna': 'channel-1',
+            'uosmo': 'channel-1',
         },
         'lcd_urls': ['https://terra-classic-fcd.publicnode.com', 'https://rest.cosmos.directory/terra'],
         'name': 'terra',
@@ -170,7 +170,6 @@ CHAIN_DATA = {
     },
     'uosmo': {
         'chain_id': 'osmosis-1',
-        #'ibc_channel': 'channel-72',
         'ibc_channels': {
             'uluna': 'channel-72',
             'weth-wei': 'channel-208'
