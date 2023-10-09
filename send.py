@@ -331,29 +331,12 @@ def main():
         print (' 🛑 Exiting...\n')
         exit()
 
-    recipient_address_prefix:str = wallet.getPrefix(recipient_address)
-
     if recipient_address == USER_ACTION_QUIT:
         print (' 🛑 Exiting...\n')
         exit()
 
     # NOTE: I'm pretty sure the memo size is int64, but I've capped it at 255 so python doens't panic
     memo:str = get_user_text('Provide a memo (optional): ', 255, True)
-
-    # Get the custom gas limit (if necessary)
-    sender_address = wallet.address
-    sender_prefix = wallet.getPrefix(sender_address)
-    
-    #print ('sender address:', sender_address)
-    #print ('sender prefix:', sender_prefix)
-    #print ('recipient address:', recipient_address)
-    #print ('recipient prefix:', recipient_address_prefix)
-
-    # custom_gas = 0
-    # if denom != ULUNA and recipient_address_prefix == 'terra':
-    #     print (' 🛎️  To make this more likely to work, you need to specific a higher than normal gas limit.')
-    #     print (' 🛎️  200000 is a good number, but you can specify your own. Leave this blank if you want to accept the default.')
-    #     custom_gas:int = wallet.get_user_number('Gas limit: ', {'max_number': float(wallet.balances[ULUNA]), 'min_number': 0, 'empty_allowed': True, 'convert_to_uluna': False})
 
     # Convert the provided value into actual numbers:
     complete_transaction = get_user_choice(f"You are about to send {wallet.formatUluna(uluna_amount, denom)} {FULL_COIN_LOOKUP[denom]} to {recipient_address} - do you want to continue? (y/n) ", [])
@@ -375,14 +358,14 @@ def main():
         # Populate it with required details:
         send_tx.balances          = wallet.balances
         send_tx.recipient_address = recipient_address
-        send_tx.recipient_prefix  = recipient_address_prefix
-        send_tx.sender_address    = sender_address
-        send_tx.sender_prefix     = sender_prefix
+        send_tx.recipient_prefix  = wallet.getPrefix(recipient_address)
+        send_tx.sender_address    = wallet.address
+        send_tx.sender_prefix     = wallet.getPrefix(wallet.address)
         send_tx.wallet_denom      = wallet.denom
 
-        send_tx.receiving_denom = wallet.getDenomByPrefix(recipient_address_prefix)
+        send_tx.receiving_denom = wallet.getDenomByPrefix(send_tx.recipient_prefix)
         
-        if wallet.terra.chain_id == 'columbus-5' and recipient_address_prefix == 'terra':
+        if wallet.terra.chain_id == 'columbus-5' and send_tx.recipient_prefix == 'terra':
             send_tx.is_on_chain = True
             send_tx.revision_number = 1
         else:
