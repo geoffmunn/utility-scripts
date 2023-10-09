@@ -16,40 +16,21 @@ from constants.constants import (
     SEARCH_RETRY_COUNT,
     TAX_RATE_URI,
     ULUNA,
-    UUSD,
-    
+    UUSD
 )
 
+from classes.wallet import UserWallet
+
 from terra_classic_sdk.client.lcd import LCDClient
-from terra_classic_sdk.client.lcd.api.distribution import Rewards
 from terra_classic_sdk.client.lcd.api.tx import (
-    CreateTxOptions,
     Tx
 )
-from terra_classic_sdk.client.lcd.params import PaginationOptions
 from terra_classic_sdk.client.lcd.wallet import Wallet
-from terra_classic_sdk.core.bank import MsgSend
 from terra_classic_sdk.core.broadcast import BlockTxBroadcastResult
 from terra_classic_sdk.core.coin import Coin
 from terra_classic_sdk.core.coins import Coins
-from terra_classic_sdk.core.distribution.msgs import MsgWithdrawDelegatorReward
 from terra_classic_sdk.core.fee import Fee
-from terra_classic_sdk.core.ibc import Height
-from terra_classic_sdk.core.ibc_transfer import MsgTransfer
-from terra_classic_sdk.core.market.msgs import MsgSwap
-from terra_classic_sdk.core.osmosis import MsgSwapExactAmountIn, Pool, PoolAsset
-from terra_classic_sdk.core.staking import (
-    MsgBeginRedelegate,
-    MsgDelegate,
-    MsgUndelegate,
-    UnbondingDelegation
-)
-from terra_classic_sdk.core.staking.data.delegation import Delegation
-from terra_classic_sdk.core.staking.data.validator import Validator
 from terra_classic_sdk.core.tx import Tx
-from terra_classic_sdk.core.wasm.msgs import MsgExecuteContract
-from terra_classic_sdk.exceptions import LCDResponseError
-from terra_classic_sdk.key.mnemonic import MnemonicKey
 
 class TransactionCore():
     """
@@ -66,7 +47,6 @@ class TransactionCore():
         self.gas_list:json                           = None
         self.gas_price_url:str                       = None
         self.height:int                              = None
-        #self.seed:str                                = ''
         self.sequence:int                            = None
         self.tax_rate:json                           = None
         self.terra:LCDClient                         = None
@@ -243,8 +223,6 @@ class TransactionCore():
         to_price:float   = None
 
         # Get the chains that we are using
-        #from_id:dict = self.getChainByDenom(from_denom)
-        #to_id:dict   = self.getChainByDenom(to_denom)
         from_id:dict = CHAIN_DATA[from_denom]
         to_id:dict   = CHAIN_DATA[to_denom]
 
@@ -290,7 +268,7 @@ class TransactionCore():
                 amount = divide_raw_balance(fee_coin.amount, fee_coin.denom)
                 amount = ("%.6f" % (amount)).rstrip('0').rstrip('.')
 
-                wallet = Wallet()
+                wallet = UserWallet()
                 wallet.address = self.sender_address
                 wallet.denom = self.wallet_denom
 

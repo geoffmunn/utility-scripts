@@ -2,15 +2,9 @@
 # -*- coding: UTF-8 -*-
 
 import cryptocode
-from datetime import datetime, tzinfo
-from dateutil.tz import tz
-from hashlib import sha256
 import json
-import math
 import requests
-import sqlite3
 import time
-import yaml
 
 import traceback
 
@@ -18,7 +12,9 @@ from classes.common import (
     coin_list,
     divide_raw_balance,
     getPrecision,
+    get_user_choice,
     isDigit,
+    isPercentage,
     multiply_raw_balance,
 )
     
@@ -27,136 +23,44 @@ from constants.constants import (
     CHAIN_DATA,
     FULL_COIN_LOOKUP,
     UBASE,
+    USER_ACTION_CONTINUE,
+    USER_ACTION_QUIT,
     WITHDRAWAL_REMAINDER,
 )
 
-#from classes.delegations import Delegations
-from classes.delegation_transaction import DelegationTransaction
-from classes.send_transaction import SendTransaction
-from classes.withdrawal_transaction import WithdrawalTransaction
-from classes.swap_transaction import SwapTransaction
+#from classes.delegation_transaction import DelegationTransaction
+#from classes.send_transaction import SendTransaction
+#from classes.withdrawal_transaction import WithdrawalTransaction
+#from classes.swap_transaction import SwapTransaction
 from classes.terra_instance import TerraInstance
 from classes.undelegations import Undelegations
-
 from terra_classic_sdk.client.lcd import LCDClient
 from terra_classic_sdk.client.lcd.api.distribution import Rewards
-from terra_classic_sdk.client.lcd.api.tx import (
-    CreateTxOptions,
-    Tx
-)
 from terra_classic_sdk.client.lcd.params import PaginationOptions
 from terra_classic_sdk.client.lcd.wallet import Wallet
-from terra_classic_sdk.core.bank import MsgSend
-from terra_classic_sdk.core.broadcast import BlockTxBroadcastResult
-from terra_classic_sdk.core.coin import Coin
 from terra_classic_sdk.core.coins import Coins
-from terra_classic_sdk.core.distribution.msgs import MsgWithdrawDelegatorReward
-from terra_classic_sdk.core.fee import Fee
-from terra_classic_sdk.core.ibc import Height
-from terra_classic_sdk.core.ibc_transfer import MsgTransfer
-from terra_classic_sdk.core.market.msgs import MsgSwap
-from terra_classic_sdk.core.osmosis import MsgSwapExactAmountIn, Pool, PoolAsset
-from terra_classic_sdk.core.staking import (
-    MsgBeginRedelegate,
-    MsgDelegate,
-    MsgUndelegate,
-    UnbondingDelegation
-)
 from terra_classic_sdk.core.staking.data.delegation import Delegation
 from terra_classic_sdk.core.staking.data.validator import Validator
-from terra_classic_sdk.core.tx import Tx
-from terra_classic_sdk.core.wasm.msgs import MsgExecuteContract
 from terra_classic_sdk.exceptions import LCDResponseError
 from terra_classic_sdk.key.mnemonic import MnemonicKey
-    
-# class Delegations():
-
-#     def __init__(self):
-#         self.delegations:dict = {}
-
-#     def __iter_result__(self, terra:LCDClient, delegator:Delegation) -> dict:
-#         """
-#         An internal function which returns a dict object with validator details.
-#         """
-
-#         # Get the basic details about the delegator and validator etc
-#         delegator_address:str       = delegator.delegation.delegator_address
-#         validator_address:str       = delegator.delegation.validator_address
-#         validator_details:Validator = terra.staking.validator(validator_address)
-#         validator_name:str          = validator_details.description.moniker
-#         validator_commission:float  = float(validator_details.commission.commission_rates.rate)
-        
-#         # Get the delegated amount:
-#         balance_denom:str    = delegator.balance.denom
-#         balance_amount:float = delegator.balance.amount
-
-#         # Get any rewards
-#         rewards:Rewards   = terra.distribution.rewards(delegator_address)
-#         reward_coins:dict = coin_list(rewards.rewards[validator_address], {})
-        
-#         # Make the commission human-readable
-#         validator_commission = round(validator_commission * 100, 2)
-
-#         # Set up the object with the details we're interested in
-#         if balance_amount > 0:
-#             self.delegations[validator_name] = {'balance_amount': balance_amount, 'balance_denom': balance_denom, 'commission': validator_commission, 'delegator': delegator_address, 'rewards': reward_coins, 'validator': validator_address,  'validator_name': validator_name}
-        
-#     #def create(self, wallet_address:str) -> dict:
-#     def create(self, wallet) -> dict:
-#         """
-#         Create a dictionary of information about the delegations on this wallet.
-#         It may contain more than one validator.
-#         """
-
-#         #wallet:Wallet = Wallet()
-#         #prefix = wallet.getPrefix(wallet_address)
-#         prefix = wallet.prefix
-#         if prefix == 'terra':
-#             if len(self.delegations) == 0:
-#                 # Defaults to uluna/terra
-#                 terra = TerraInstance().create()
-
-#                 pagOpt:PaginationOptions = PaginationOptions(limit=50, count_total=True)
-#                 try:
-#                     result, pagination = terra.staking.delegations(delegator = wallet_address, params = pagOpt)
-
-#                     delegator:Delegation 
-#                     for delegator in result:
-#                         self.__iter_result__(terra, delegator)
-
-#                     while pagination['next_key'] is not None:
-
-#                         pagOpt.key         = pagination['next_key']
-#                         result, pagination = terra.staking.delegations(delegator = wallet_address, params = pagOpt)
-
-#                         delegator:Delegation 
-#                         for delegator in result:
-#                             self.__iter_result__(terra, delegator)
-#                 except:
-#                     print (' 🛎️  Network error: delegations could not be retrieved.')
-
-#         return self.delegations
-    
-class Wallet:
+class UserWallet:
     def __init__(self):
         self.address:str               = ''
-        #self.allow_swaps:bool          = False
         self.balances:dict             = None
-        self.delegateTx                = DelegationTransaction()
+        #self.delegateTx                = DelegationTransaction()
         self.delegations:dict          = {}
         self.delegation_details:dict   = None
         self.denom:str                 = ''
         self.denom_traces:dict         = {}
-        #self.has_delegations:bool      = False
         self.undelegation_details:dict = None
         self.name:str                  = ''
         self.prefix:str                = ''     # NOTE: might not be used anymore, replaced by self.denom
         self.seed:str                  = ''
-        self.sendTx                    = SendTransaction()
-        self.swapTx                    = SwapTransaction()
+        #self.sendTx                    = SendTransaction()
+        #self.swapTx                    = SwapTransaction()
         self.terra:LCDClient           = None
         self.validated: bool           = False
-        self.withdrawalTx              = WithdrawalTransaction()
+        #self.withdrawalTx              = WithdrawalTransaction()
     
     def __iter_result__(self, terra:LCDClient, delegator:Delegation) -> dict:
         """
@@ -365,6 +269,181 @@ class Wallet:
 
         return self.balances
     
+    #def get_coin_selection(question:str, coins:dict, only_active_coins:bool = True, estimation_against:dict = None, wallet:UserWallet = False):
+    def get_coin_selection(self, question:str, coins:dict, only_active_coins:bool = True, estimation_against:dict = None):
+        """
+        Return a selected coin based on the provided list.
+        """
+
+        label_widths = []
+
+        label_widths.append(len('Number'))
+        label_widths.append(len('Coin'))
+        label_widths.append(len('Balance'))
+
+        if estimation_against is not None:
+            label_widths.append(len('Estimation'))
+            swaps_tx = wallet.swap().create()
+
+        wallet:UserWallet = UserWallet()
+        coin_list     = []
+        coin_values   = {}
+
+        coin_list.append('')
+
+        for coin in FULL_COIN_LOOKUP:
+
+            if coin in coins:
+                coin_list.append(coin)
+            elif only_active_coins == False:
+                coin_list.append(coin)
+
+            coin_name = FULL_COIN_LOOKUP[coin]
+            if len(str(coin_name)) > label_widths[1]:
+                label_widths[1] = len(str(coin_name))
+
+            if coin in coins or only_active_coins == False:
+
+                if coin in coins:
+                    coin_val = wallet.formatUluna(coins[coin], coin)
+
+                    if len(str(coin_val)) > label_widths[2]:
+                        label_widths[2] = len(str(coin_val))
+
+                if estimation_against is not None:
+
+                    # Set up the swap details
+                    swaps_tx.swap_amount        = float(wallet.formatUluna(estimation_against['amount'], estimation_against['denom'], False))
+                    swaps_tx.swap_denom         = estimation_against['denom']
+                    swaps_tx.swap_request_denom = coin
+
+                    # Change the contract depending on what we're doing
+                    swaps_tx.setContract()
+                    
+                    if coin != estimation_against['denom']:
+                        estimated_value:float = swaps_tx.swapRate()
+
+                    else:
+                        estimated_value:str   = None
+                    
+                    coin_values[coin] = estimated_value
+                    
+                    if len(str(estimated_value)) > label_widths[3]:
+                        label_widths[3] = len(str(estimated_value))
+
+        padding_str   = ' ' * 100
+        header_string = ' Number |'
+
+        if label_widths[1] > len('Coin'):
+            header_string += ' Coin' + padding_str[0:label_widths[1] - len('Coin')] + ' |'
+        else:
+            header_string += ' Coin |'
+
+        if label_widths[2] > len('Balance'):
+            header_string += ' Balance ' + padding_str[0:label_widths[2] - len('Balance')] + '|'
+        else:
+            header_string += ' Balance |'
+
+        if estimation_against is not None:
+            if label_widths[3] > len('Estimation'):
+                header_string += ' Estimation ' + padding_str[0:label_widths[3] - len('Estimation')] + '|'
+            else:
+                header_string += ' Estimation |'
+
+        horizontal_spacer = '-' * len(header_string)
+
+        coin_to_use:str           = None
+        returned_estimation:float = None    
+        answer:str                = False
+        coin_index:dict           = {}
+
+        while True:
+
+            count:int = 0
+
+            print ('\n' + horizontal_spacer)
+            print (header_string)
+            print (horizontal_spacer)
+
+            for coin in FULL_COIN_LOOKUP:
+
+                if coin in coins or estimation_against is not None:
+                    count += 1
+                    coin_index[FULL_COIN_LOOKUP[coin].lower()] = count
+                
+                if coin_to_use == coin:
+                    glyph = '✅'
+                elif estimation_against is not None and estimation_against['denom'] == coin:
+                    glyph = '⚪'
+                else:
+                    glyph = '  '
+
+                count_str =  f' {count}' + padding_str[0:6 - (len(str(count)) + 2)]
+            
+                coin_name = FULL_COIN_LOOKUP[coin]
+                if label_widths[1] > len(coin_name):
+                    coin_name_str = coin_name + padding_str[0:label_widths[1] - len(coin_name)]
+                else:
+                    coin_name_str = coin_name
+
+                if coin in coins:
+                    coin_val = wallet.formatUluna(coins[coin], coin)
+
+                    if label_widths[2] > len(str(coin_val)):
+                        balance_str = coin_val + padding_str[0:label_widths[2] - len(coin_val)]
+                    else:
+                        balance_str = coin_val
+                else:
+                    coin_val    = ''
+                    balance_str = coin_val + padding_str[0:label_widths[2] - len(coin_val)]
+
+                if coin in coins or only_active_coins == False:
+                    if estimation_against is None:
+                        print (f"{count_str}{glyph} | {coin_name_str} | {balance_str}")
+                    else:
+                        if coin in coin_values:
+                            if coin_values[coin] is not None:
+                                estimated_str:str = str(("%.6f" % (coin_values[coin])).rstrip('0').rstrip('.'))
+                            else:
+                                estimated_str = '--'
+                        else:
+                            estimated_str = ''
+
+                        print (f"{count_str}{glyph} | {coin_name_str} | {balance_str} | {estimated_str}")
+        
+            print (horizontal_spacer + '\n')
+
+            answer = input(question).lower()
+            
+            # Check if a coin name was provided:
+            if answer in coin_index:
+                answer = str(coin_index[answer])
+
+            if answer.isdigit() and int(answer) > 0 and int(answer) <= count:
+                if estimation_against is not None and estimation_against['denom'] == coin_list[int(answer)]:
+                    print ('\nYou can\'t swap to the same coin!')
+                else:
+                
+                    returned_estimation:float = None
+                    coin_to_use:str           = coin_list[int(answer)] 
+
+                    if estimation_against is not None:
+                        returned_estimation = coin_values[coin_to_use]    
+                    
+                    if estimation_against is not None and returned_estimation is None:
+                        coin_to_use = None
+
+            if answer == USER_ACTION_CONTINUE:
+                if coin_to_use is not None:
+                    break
+                else:
+                    print ('\nPlease select a coin first.\n')
+
+            if answer == USER_ACTION_QUIT:
+                break
+
+        return coin_to_use, answer, returned_estimation
+    
     # def getDelegations(self) -> dict:
     #     """
     #     Get the delegations associated with this wallet address.
@@ -457,6 +536,124 @@ class Wallet:
 
         return self.undelegation_details
     
+    def get_user_number(self, question:str, params:dict):
+        """
+        Get ther user input - must be a number.
+        """ 
+        
+        empty_allowed:bool = False
+        if 'empty_allowed' in params:
+            empty_allowed = params['empty_allowed']
+
+        convert_to_uluna = True
+        if 'convert_to_uluna' in params:
+            convert_to_uluna = params['convert_to_uluna']
+
+        while True:    
+            answer = input(question).strip(' ')
+
+            if answer == USER_ACTION_QUIT:
+                break
+
+            if answer == '' and empty_allowed == False:
+                print (f' 🛎️  The value cannot be blank or empty')
+            else:
+
+                if answer == '' and empty_allowed == True:
+                    break
+
+                is_percentage = isPercentage(answer)
+
+                if 'percentages_allowed' in params and is_percentage == True:
+                    answer = answer[0:-1]
+
+                if isDigit(answer):
+
+                    if 'percentages_allowed' in params and is_percentage == True:
+                        if int(answer) > params['min_number'] and int(answer) <= 100:
+                            break
+                    elif 'max_number' in params:
+                        if 'min_equal_to' in params and (float(answer) >= params['min_number'] and float(answer) <= params['max_number']):
+                            break
+                        elif (float(answer) > params['min_number'] and float(answer) <= params['max_number']):
+                            break
+                    elif 'max_number' in params and float(answer) > params['max_number']:
+                        print (f" 🛎️  The amount must be less than {params['max_number']}")
+                    elif 'min_number' in params:
+                        
+                        if 'min_equal_to' in params:
+                            if float(answer) < params['min_number']:
+                                print (f" 🛎️  The amount must be greater than (or equal to) {params['min_number']}")
+                            else:
+                                break
+                        else:
+                            if float(answer) <= params['min_number']:
+                                print (f" 🛎️  The amount must be greater than {params['min_number']}")
+                            else:
+                                break
+                    else:
+                        # This is just a regular number that we'll accept
+                        if is_percentage == False:
+                            break
+
+        if answer != '' and answer != USER_ACTION_QUIT:
+            if 'percentages_allowed' in params and is_percentage == True:
+                if 'convert_percentages' in params and params['convert_percentages'] == True:
+                    wallet:UserWallet = UserWallet()
+                    answer = float(wallet.convertPercentage(answer, params['keep_minimum'], params['max_number'], params['target_denom']))
+                else:
+                    answer = answer + '%'
+            else:
+                if convert_to_uluna == True:
+                    answer = float(multiply_raw_balance(answer, params['target_denom']))
+
+        return answer
+    
+    #def get_user_recipient(question:str, wallet:UserWallet, user_config:dict):
+    def get_user_recipient(self, question:str, user_config:dict):
+        """
+        Get the recipient address that we are sending to.
+
+        If you don't need to check this against existing wallets, then provide an empty dict object for user_config.
+        """
+
+        while True:
+            answer:str = input(question)
+        
+            if answer == USER_ACTION_QUIT:
+                break
+
+            # We'll assume it was a terra address to start with (by default)
+            recipient_address = answer
+
+            if isDigit(answer):
+                # Check if this is a wallet number
+                if user_config['wallets'][int(answer)] is not None:
+                    recipient_address = user_config['wallets'][int(answer)]['address']
+
+            else:
+                # Check if this is a wallet name
+                if len(user_config) > 0:
+                    for user_wallet in user_config['wallets']:
+                        if user_wallet['wallet'].lower() == answer.lower():
+                            recipient_address = user_wallet['address']
+                            break
+
+            # Figure out if this wallet address is legit
+            is_valid, is_empty = self.validateAddress(recipient_address)
+
+            if is_valid == False and is_empty == True:
+                continue_action = get_user_choice('This wallet seems to be empty - do you want to continue? (y/n) ', [])
+                if continue_action == True:
+                    break
+
+            if is_valid == True:
+                break
+
+            print (' 🛎️  This is an invalid address - please check and try again.')
+
+        return recipient_address
+
     def newWallet(self):
         """
         Creates a new wallet and returns the seed and address
@@ -467,16 +664,16 @@ class Wallet:
         
         return mk.mnemonic, wallet.key.acc_address
 
-    def send(self):
-        """
-        Update the send class with the data it needs.
-        It will be created via the create() command.
-        """
+    # def send(self):
+    #     """
+    #     Update the send class with the data it needs.
+    #     It will be created via the create() command.
+    #     """
 
-        self.sendTx.seed     = self.seed
-        self.sendTx.balances = self.balances
+    #     self.sendTx.seed     = self.seed
+    #     self.sendTx.balances = self.balances
 
-        return self.sendTx
+    #     return self.sendTx
     
     def swap(self):
         """

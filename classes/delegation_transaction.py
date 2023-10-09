@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 
-from classes.common import (
-    CHAIN_DATA
-)
+# from classes.common import (
+#     CHAIN_DATA
+# )
 
 from constants.constants import (
     ULUNA

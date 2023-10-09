@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 
-from .wallet import Wallet
+from .wallet import UserWallet
 
-class Wallets:
+class UserWallets:
     def __init__(self):
         self.file           = None
         self.wallets:dict   = {}
@@ -13,7 +13,7 @@ class Wallets:
         #delegation_amount:str = ''
         #threshold:int         = 0
 
-        wallet_item:Wallet = Wallet().create(name = wallet['wallet'], address = wallet['address'], seed = wallet['seed'], password = user_password)
+        wallet_item:UserWallet = UserWallet().create(name = wallet['wallet'], address = wallet['address'], seed = wallet['seed'], password = user_password)
         # if 'delegations' in wallet:
         #     if 'redelegate' in wallet['delegations']:
         #         delegation_amount = wallet['delegations']['redelegate']
@@ -55,7 +55,7 @@ class Wallets:
                 #delegation_amount:str = ''
                 #threshold:int         = 0
 
-                wallet_item:Wallet = Wallet().create(name = wallet['wallet'], address = wallet['address'], seed = wallet['seed'], password = user_password)
+                wallet_item:UserWallet = UserWallet().create(name = wallet['wallet'], address = wallet['address'], seed = wallet['seed'], password = user_password)
 
                 # if 'delegations' in wallet:
                 #     if 'redelegate' in wallet['delegations']:
@@ -81,7 +81,7 @@ class Wallets:
             else:
                 # It's just an address - add it to the address list
                 if 'address' in wallet:
-                    wallet_item:Wallet = Wallet().create(name = wallet['wallet'], address = wallet['address'])
+                    wallet_item:UserWallet = UserWallet().create(name = wallet['wallet'], address = wallet['address'])
                     self.addresses[wallet['wallet']] = wallet_item
 
         return self
@@ -103,7 +103,7 @@ class Wallets:
         if validate == True:
             validated_wallets:dict = {}
             for wallet_name in self.wallets:
-                wallet:Wallet = self.wallets[wallet_name]
+                wallet:UserWallet = self.wallets[wallet_name]
                 
                 if wallet.validated == True:
                     validated_wallets[wallet_name] = wallet

@@ -1,20 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 
-import cryptocode
-from datetime import datetime, tzinfo
-from dateutil.tz import tz
 from hashlib import sha256
-import json
 import math
-import requests
-import sqlite3
-import time
-import yaml
-
-import traceback
 
 from classes.terra_instance import TerraInstance
+from classes.transaction_core import TransactionCore
 
 from constants.constants import (
     BASE_SMART_CONTRACT_ADDRESS,
@@ -24,38 +15,20 @@ from constants.constants import (
     UUSD
 )
 
-from terra_classic_sdk.client.lcd import LCDClient
-from terra_classic_sdk.client.lcd.api.distribution import Rewards
 from terra_classic_sdk.client.lcd.api.tx import (
     CreateTxOptions,
     Tx
 )
-from terra_classic_sdk.client.lcd.params import PaginationOptions
-from terra_classic_sdk.client.lcd.wallet import Wallet
 from terra_classic_sdk.core.bank import MsgSend
-from terra_classic_sdk.core.broadcast import BlockTxBroadcastResult
 from terra_classic_sdk.core.coin import Coin
 from terra_classic_sdk.core.coins import Coins
-from terra_classic_sdk.core.distribution.msgs import MsgWithdrawDelegatorReward
 from terra_classic_sdk.core.fee import Fee
 from terra_classic_sdk.core.ibc import Height
 from terra_classic_sdk.core.ibc_transfer import MsgTransfer
-from terra_classic_sdk.core.market.msgs import MsgSwap
-from terra_classic_sdk.core.osmosis import MsgSwapExactAmountIn, Pool, PoolAsset
-from terra_classic_sdk.core.staking import (
-    MsgBeginRedelegate,
-    MsgDelegate,
-    MsgUndelegate,
-    UnbondingDelegation
-)
-from terra_classic_sdk.core.staking.data.delegation import Delegation
-from terra_classic_sdk.core.staking.data.validator import Validator
 from terra_classic_sdk.core.tx import Tx
 from terra_classic_sdk.core.wasm.msgs import MsgExecuteContract
 from terra_classic_sdk.exceptions import LCDResponseError
 from terra_classic_sdk.key.mnemonic import MnemonicKey
-
-from .transaction_core import TransactionCore
 
 class SendTransaction(TransactionCore):
     def __init__(self, *args, **kwargs):
@@ -78,7 +51,7 @@ class SendTransaction(TransactionCore):
         self.source_channel:str    = None
         self.tax:float             = None
 
-    def create(self, denom:str = 'uluna'):
+    def create(self, seed:str, denom:str = 'uluna'):
         """
         Create a send object and set it up with the provided details.
         """
@@ -88,7 +61,7 @@ class SendTransaction(TransactionCore):
 
         # Create the wallet based on the calculated key
         prefix              = CHAIN_DATA[denom]['prefix']
-        current_wallet_key  = MnemonicKey(mnemonic = self.seed, prefix = prefix)
+        current_wallet_key  = MnemonicKey(mnemonic = seed, prefix = prefix)
         self.current_wallet = self.terra.wallet(current_wallet_key)
 
         # Get the gas prices and tax rate:

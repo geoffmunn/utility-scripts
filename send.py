@@ -3,28 +3,26 @@
 
 from getpass import getpass
 
-from utility_classes import (
+from classes.user_config import UserConfig
+from classes.wallet import UserWallet
+from classes.wallets import UserWallets
+from classes.send_transaction import SendTransaction
+
+from classes.common import (
     check_version,
-    get_coin_selection,
+    # get_coin_selection,
     get_user_choice,
-    get_user_number,
-    get_user_recipient,
-    get_user_text,
-    UserConfig,
-    Wallets,
-    Wallet
+    # get_user_number,
+    get_user_text
 )
 
-from utility_constants import (
+from constants.constants import (
     CHAIN_DATA,
     FULL_COIN_LOOKUP,
-    GAS_ADJUSTMENT_INCREMENT,
-    GAS_ADJUSTMENT_SEND,
-    MAX_GAS_ADJUSTMENT,
     ULUNA,
     USER_ACTION_CONTINUE,
     USER_ACTION_QUIT,
-    UUSD
+    UUSD,
 )
 
 def get_user_singlechoice(question:str, user_wallets:dict) -> dict|str:
@@ -109,7 +107,7 @@ def get_user_singlechoice(question:str, user_wallets:dict) -> dict|str:
         print (horizontal_spacer)
 
         for wallet_name in user_wallets:
-            wallet:Wallet  = user_wallets[wallet_name]
+            wallet:UserWallet  = user_wallets[wallet_name]
 
             count += 1
             wallet_numbers[count] = wallet
@@ -167,7 +165,7 @@ def get_user_singlechoice(question:str, user_wallets:dict) -> dict|str:
     
     return user_wallet, answer
 
-def get_send_to_address(user_wallets:Wallet):
+def get_send_to_address(user_wallets:UserWallet):
     """
     Show a simple list address from what is found in the user_config file
     """
@@ -208,7 +206,7 @@ def get_send_to_address(user_wallets:Wallet):
         print (horizontal_spacer)
 
         for wallet_name in user_wallets:
-            wallet:Wallet = user_wallets[wallet_name]
+            wallet:UserWallet = user_wallets[wallet_name]
 
             count += 1
             wallet_numbers[count] = wallet
@@ -264,7 +262,7 @@ def get_send_to_address(user_wallets:Wallet):
     # Get the first (and only) wallet from the list
     if len(wallets_to_use) > 0:
         for item in wallets_to_use:
-            user_wallet:Wallet = wallets_to_use[item]
+            user_wallet:UserWallet = wallets_to_use[item]
             recipient_address  = user_wallet.address
             break
     
@@ -291,7 +289,7 @@ def main():
     print ('Decrypting and validating wallets - please wait...\n')
 
     # Create the wallet object based on the user config file
-    wallet_obj       = Wallets().create(user_config, decrypt_password)
+    wallet_obj       = UserWallets().create(user_config, decrypt_password)
     decrypt_password = None
 
     # Get all the wallets
@@ -300,7 +298,7 @@ def main():
 
     # Get the balances on each wallet (for display purposes)
     for wallet_name in user_wallets:
-        wallet:Wallet = user_wallets[wallet_name]
+        wallet:UserWallet = user_wallets[wallet_name]
         wallet.getBalances()
 
     if len(user_wallets) > 0:
@@ -315,7 +313,8 @@ def main():
         print (" 🛑 This password couldn't decrypt any wallets. Make sure it is correct, or rebuild the wallet list by running the configure_user_wallet.py script again.\n")
         exit()
 
-    denom, answer, null_value = get_coin_selection(f"Select a coin number 1 - {str(len(FULL_COIN_LOOKUP))} that you want to send, 'X' to continue, or 'Q' to quit: ", wallet.balances)
+    #denom, answer, null_value = get_coin_selection(f"Select a coin number 1 - {str(len(FULL_COIN_LOOKUP))} that you want to send, 'X' to continue, or 'Q' to quit: ", wallet.balances)
+    denom, answer, null_value = wallet.get_coin_selection(f"Select a coin number 1 - {str(len(FULL_COIN_LOOKUP))} that you want to send, 'X' to continue, or 'Q' to quit: ", wallet.balances)
 
     if answer == USER_ACTION_QUIT:
         print (' 🛑 Exiting...\n')
@@ -323,7 +322,7 @@ def main():
 
     print (f"The {wallet.name} wallet holds {wallet.formatUluna(wallet.balances[denom], denom)} {FULL_COIN_LOOKUP[denom]}")
     print (f"NOTE: You can send the entire value of this wallet by typing '100%' - no minimum amount will be retained.")
-    uluna_amount:int  = get_user_number('How much are you sending? ', {'max_number': float(wallet.formatUluna(wallet.balances[denom], denom, False)), 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': True, 'keep_minimum': False, 'target_denom': denom})
+    uluna_amount:int  = wallet.get_user_number('How much are you sending? ', {'max_number': float(wallet.formatUluna(wallet.balances[denom], denom, False)), 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': True, 'keep_minimum': False, 'target_denom': denom})
 
     # Print a list of the addresses in the user_config.yml file:
     recipient_address, answer = get_send_to_address(user_addresses)
@@ -350,11 +349,11 @@ def main():
     #print ('recipient address:', recipient_address)
     #print ('recipient prefix:', recipient_address_prefix)
 
-    custom_gas = 0
-    if denom != ULUNA and recipient_address_prefix == 'terra':
-        print (' 🛎️  To make this more likely to work, you need to specific a higher than normal gas limit.')
-        print (' 🛎️  200000 is a good number, but you can specify your own. Leave this blank if you want to accept the default.')
-        custom_gas:int = get_user_number('Gas limit: ', {'max_number': float(wallet.balances[ULUNA]), 'min_number': 0, 'empty_allowed': True, 'convert_to_uluna': False})
+    # custom_gas = 0
+    # if denom != ULUNA and recipient_address_prefix == 'terra':
+    #     print (' 🛎️  To make this more likely to work, you need to specific a higher than normal gas limit.')
+    #     print (' 🛎️  200000 is a good number, but you can specify your own. Leave this blank if you want to accept the default.')
+    #     custom_gas:int = wallet.get_user_number('Gas limit: ', {'max_number': float(wallet.balances[ULUNA]), 'min_number': 0, 'empty_allowed': True, 'convert_to_uluna': False})
 
     # Convert the provided value into actual numbers:
     complete_transaction = get_user_choice(f"You are about to send {wallet.formatUluna(uluna_amount, denom)} {FULL_COIN_LOOKUP[denom]} to {recipient_address} - do you want to continue? (y/n) ", [])
@@ -370,20 +369,22 @@ def main():
         print (f'Sending {wallet.formatUluna(uluna_amount, denom)} {FULL_COIN_LOOKUP[denom]}')
 
         # Create the send tx object
-        send_tx = wallet.send().create(wallet.denom)
+        #send_tx = wallet.send().create(wallet.denom)
+        send_tx = SendTransaction().create(wallet.seed, wallet.denom)
         
         # Populate it with required details:
+        send_tx.balances          = wallet.balances
         send_tx.recipient_address = recipient_address
         send_tx.recipient_prefix  = recipient_address_prefix
         send_tx.sender_address    = sender_address
         send_tx.sender_prefix     = sender_prefix
         send_tx.wallet_denom      = wallet.denom
 
-        print ('wallet denom:', wallet.denom)
-        print ('denom:', denom)
-        print ('we want to use:', CHAIN_DATA[wallet.denom]['ibc_channels'][denom])
-
-        if recipient_address_prefix != 'terra' or wallet.terra.chain_id != 'columbus-5':
+        #if recipient_address_prefix != 'terra' or wallet.terra.chain_id != 'columbus-5':
+        if wallet.terra.chain_id == 'columbus-5':
+            send_tx.is_on_chain = True
+            send_tx.revision_number = 1
+        else:
             send_tx.is_on_chain = False
             send_tx.source_channel = CHAIN_DATA[wallet.denom]['ibc_channels'][denom]
             if wallet.terra.chain_id == 'osmosis-1':
@@ -391,16 +392,15 @@ def main():
             else:
                 send_tx.revision_number = 1
         
-        # Assign the details:
-        send_tx.recipient_address = recipient_address
+        # Assign the user provided details:
         send_tx.memo              = memo
         send_tx.amount            = int(uluna_amount)
         send_tx.denom             = denom
         send_tx.block_height      = send_tx.terra.tendermint.block_info()['block']['header']['height']
 
-        print ('chain id:', send_tx.terra.chain_id)
-        print ('send channel id:', send_tx.source_channel)
-        
+        #print ('chain id:', send_tx.terra.chain_id)
+        #print ('send channel id:', send_tx.source_channel)
+        #print ('is on chain?', send_tx.is_on_chain)
         # if denom != ULUNA:
             
         #     result = send_tx.simulate()
@@ -434,71 +434,15 @@ def main():
                 result = send_tx.sendOffchain()
             
             if result == True:
+                
                 send_tx.broadcast()
-
-                # if send_tx.broadcast_result is not None and send_tx.broadcast_result.code == 11:
-                #     while True:
-                #         #print (' 🛎️  Increasing the gas adjustment fee and trying again')
-                #         send_tx.terra.gas_adjustment += GAS_ADJUSTMENT_INCREMENT
-                #         print (f' 🛎️  Gas adjustment value is now {send_tx.terra.gas_adjustment}')
-                #         send_tx.simulate()
-                #         #print (send_tx.readableFee())
-                #         send_tx.send()
-                #         send_tx.broadcast()
-
-                #         if send_tx is None:
-                #             break
-
-                #         # Code 32 = account sequence mismatch
-                #         if send_tx.broadcast_result.code != 11:
-                #             break
-
-                #         if send_tx.terra.gas_adjustment >= MAX_GAS_ADJUSTMENT:
-                #             break
-
-                # if send_tx.broadcast_result.code == 13:
-                #     print ('Insufficient fee')
-
-                #     log:str = send_tx.broadcast_result.raw_log
-
-                #     fee, tax = get_fees_from_error(log, 'uluna')
-
-                #     new_fee:Fee = Fee
-                #     new_fee.gas_limit = send_tx.gas_limit
-                #     new_fee.amount = Coins({fee, tax})
-
-                #     send_tx.fee = new_fee
-                #     send_tx.tax = tax.amount
-                #     send_tx.fee_deductables = tax.amount * 2
-
-                #     new_result = send_tx.send()
-                #     print (new_result)
-
-                #     new_result = send_tx.broadcast()
-                #     print (new_result)
-                    
-
 
                 if send_tx.broadcast_result is not None and send_tx.broadcast_result.code == 32:
                     while True:
                         print (' 🛎️  Boosting sequence number and trying again...')
 
-                        #gas_used:int = int(send_tx.broadcast_result.gas_used)
-                        #gas_wanted:int = send_tx.broadcast_result.gas_wanted
-
-                        # print ('gas wanted:', gas_wanted)
-                        # print ('gas used:', gas_used)
-
-                        # gas_used = int(gas_used * 1.1)
-                        
-                        # send_tx.gas_limit = gas_used
-                        # print ('new gas limit:', send_tx.gas_limit)
-
                         send_tx.sequence = send_tx.sequence + 1
-                        #send_tx.terra.gas_adjustment += GAS_ADJUSTMENT_INCREMENT
                         send_tx.simulate()
-
-                        #print (send_tx.readableFee())
                         send_tx.send()
                         send_tx.broadcast()
 

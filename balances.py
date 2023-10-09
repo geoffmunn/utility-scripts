@@ -12,8 +12,8 @@ from classes.common import (
 )
 
 from classes.user_config import UserConfig
-from classes.wallets import Wallets
-from classes.wallet import Wallet
+from classes.wallets import UserWallets
+from classes.wallet import UserWallet
 
 from constants.constants import (
     BASIC_COIN_LOOKUP,
@@ -49,7 +49,7 @@ def main():
     print ('Decrypting and validating wallets - please wait...\n')
 
     # Create the wallet object based on the user config file
-    wallet_obj       = Wallets().create(user_config, decrypt_password)
+    wallet_obj       = UserWallets().create(user_config, decrypt_password)
     decrypt_password = None
 
     # Get all the wallets
@@ -75,7 +75,7 @@ def main():
     validator_template:dict = {'Available': '', 'Delegated': ''}
 
     for wallet_name in user_wallets:
-        wallet:Wallet = user_wallets[wallet_name]
+        wallet:UserWallet = user_wallets[wallet_name]
         
         delegations:dict = wallet.getDelegations()
 
@@ -91,7 +91,7 @@ def main():
 
     # Then, get all the coins we'll be charting (column 1)
     for wallet_name in user_wallets:
-        wallet:Wallet = user_wallets[wallet_name]
+        wallet:UserWallet = user_wallets[wallet_name]
         wallet.getBalances()
 
         # Update the wallet name column max width
