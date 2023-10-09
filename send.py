@@ -398,28 +398,14 @@ def main():
         send_tx.amount            = int(uluna_amount)
         send_tx.denom             = denom
         send_tx.block_height      = send_tx.terra.tendermint.block_info()['block']['header']['height']
-
-        #print ('chain id:', send_tx.terra.chain_id)
-        #print ('send channel id:', send_tx.source_channel)
-        #print ('is on chain?', send_tx.is_on_chain)
-        # if denom != ULUNA:
-            
-        #     result = send_tx.simulate()
-
-        #     if result == True:
-        #         if custom_gas == 0 or custom_gas == '':
-        #             custom_gas = send_tx.fee.gas_limit * 1.14
-        #             send_tx.gas_limit = custom_gas
-        #     else:
-        #         print (' 🛎️  The send simulation could not be completed')
             
         # Simulate it            
-        
         if send_tx.is_on_chain == True:
             result = send_tx.simulate()
         else:
             result = send_tx.simulateOffchain()
         
+        # Now complete it
         if result == True:
             print (send_tx.readableFee())
 

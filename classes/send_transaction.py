@@ -161,33 +161,13 @@ class SendTransaction(TransactionCore):
         #try:
         tx:Tx = None
 
-        # if self.sender_prefix == 'terra':
-        #     msg = MsgTransfer(
-        #         source_port       = 'transfer',
-        #         source_channel    = self.source_channel,
-        #         token             = Coin(self.denom, send_amount),
-        #         sender            = self.sender_address,
-        #         receiver          = self.recipient_address,
-        #         timeout_height    = Height(revision_number = self.revision_number, revision_height = self.block_height),                            
-        #         timeout_timestamp = 0
-        #     )
-            
-        #     options = CreateTxOptions(
-        #         fee        = self.fee,
-        #         gas        = self.gas_limit,
-        #         gas_prices = self.gas_list,
-        #         memo       = self.memo,
-        #         msgs       = [msg],
-        #         sequence   = self.sequence
-        #     )
-        # else:
-        # Send transactions from Osmosis to other wallets
-
         if self.terra.chain_id == 'columbus-5':
             revision_number = 1
         else:
             revision_number = 6
 
+        print ('self denom:', self.denom)
+        print ('wallet denom:', self.wallet_denom)
         if self.denom != self.wallet_denom:
             ibc_value = sha256(f'transfer/{self.source_channel}/{self.denom}'.encode('utf-8')).hexdigest().upper()
             send_denom = 'ibc/' + ibc_value
@@ -197,6 +177,9 @@ class SendTransaction(TransactionCore):
             }
         else:
             token = Coin(self.denom, send_amount)
+
+        print ('token:', token)
+        print ('fee:', self.fee)
 
         msg = MsgTransfer(
             source_port       = 'transfer',
@@ -218,6 +201,7 @@ class SendTransaction(TransactionCore):
             #fee_denoms     = ['uosmo', 'uluna']
         )
 
+        print (options)
         # This process often generates sequence errors. If we get a response error, then
         # bump up the sequence number by one and try again.
         while True:
@@ -276,7 +260,7 @@ class SendTransaction(TransactionCore):
 
             # This will be used by the swap function next time we call it
             # We'll use uluna as the preferred fee currency just to keep things simple
-            self.fee = self.calculateFee(requested_fee, ULUNA)
+            self.fee = self.calculateFee(requested_fee = requested_fee, convert_to_ibc = True)
             
             # Figure out the fee structure
             fee_bit:Coin = Coin.from_str(str(requested_fee.amount))
@@ -351,8 +335,13 @@ class SendTransaction(TransactionCore):
             print ('requested fee raw:', requested_fee)
             # This will be used by the swap function next time we call it
             # We'll use uluna as the preferred fee currency just to keep things simple
-            self.fee = self.calculateFee(requested_fee, ULUNA)
             
+            # If we are sending from an offChain network, then the fee needs to be converted to IBC values
+            if self.terra.chain_id != 'columbus-5':
+                self.fee = self.calculateFee(requested_fee, ULUNA, True)
+            else:
+                self.fee = self.calculateFee(requested_fee, ULUNA)    
+
             print ('calculated fee:', self.fee)
             # Figure out the fee structure
             fee_bit:Coin = Coin.from_str(str(requested_fee.amount))

@@ -4,6 +4,7 @@
 import json
 import requests
 import time
+from hashlib import sha256
 
 from classes.common import (
     divide_raw_balance
@@ -98,12 +99,14 @@ class TransactionCore():
 
         return self.broadcast_result
             
-    def calculateFee(self, requested_fee:Fee, specific_denom:str = '') -> Fee:
+    def calculateFee(self, requested_fee:Fee, specific_denom:str = '', convert_to_ibc:bool = False) -> Fee:
         """
         Calculate the fee based on the provided information and what coins are available.
         This function prefers to pay in minor coins first, followed by uluna, and then ustc.
 
         If desired, the fee can specifically be uusd.
+
+        convert_to_ibc only applies to the ULUNA value, if it is available
         """
 
         other_coin_list:list      = []
@@ -135,8 +138,15 @@ class TransactionCore():
                 requested_fee.amount = Coins({Coin(UUSD, has_uusd)})
 
             # Override the calculations if we've been told to use uusd or something else
-            if specific_denom != '':
-                requested_fee.amount = Coins({Coin(specific_denom, specific_denom_amount)})
+            if convert_to_ibc == True:
+                # NOTE: this assumes there is enough ULUNA to cover the fee
+                ibc_value = sha256(f'transfer/{self.source_channel}/{self.denom}'.encode('utf-8')).hexdigest().upper()
+                ibc_value = 'ibc/' + ibc_value
+                
+                requested_fee.amount = Coins({Coin(ibc_value, has_uluna)})
+            else:
+                if specific_denom != '':
+                    requested_fee.amount = Coins({Coin(specific_denom, specific_denom_amount)})
         else:
             print ('Not enough funds to pay for this transaction!')
 
