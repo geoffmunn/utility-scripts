@@ -428,8 +428,13 @@ def main():
                         print (' 🛎️  Boosting sequence number and trying again...')
 
                         send_tx.sequence = send_tx.sequence + 1
-                        send_tx.simulate()
-                        send_tx.send()
+                        if send_tx.is_on_chain == True:
+                            send_tx.simulate()
+                            send_tx.send()
+                        else:
+                            send_tx.simulateOffchain()
+                            send_tx.sendOffchain()
+                            
                         send_tx.broadcast()
 
                         if send_tx is None:

@@ -260,7 +260,7 @@ class SendTransaction(TransactionCore):
 
             # This will be used by the swap function next time we call it
             # We'll use uluna as the preferred fee currency just to keep things simple
-            self.fee = self.calculateFee(requested_fee = requested_fee, convert_to_ibc = True)
+            self.fee = self.calculateFee(requested_fee = requested_fee, specific_denom = ULUNA)
             
             # Figure out the fee structure
             fee_bit:Coin = Coin.from_str(str(requested_fee.amount))
@@ -332,7 +332,6 @@ class SendTransaction(TransactionCore):
             # Get the stub of the requested fee so we can adjust it
             requested_fee:Fee = tx.auth_info.fee
 
-            print ('requested fee raw:', requested_fee)
             # This will be used by the swap function next time we call it
             # We'll use uluna as the preferred fee currency just to keep things simple
             
@@ -342,27 +341,18 @@ class SendTransaction(TransactionCore):
             else:
                 self.fee = self.calculateFee(requested_fee, ULUNA)    
 
-            print ('calculated fee:', self.fee)
             # Figure out the fee structure
             fee_bit:Coin = Coin.from_str(str(requested_fee.amount))
             fee_amount   = fee_bit.amount
-            #fee_denom    = fee_bit.denom
         
             self.tax = 0
-            # This will be used by the swap function next time we call it
-            #self.fee = requested_fee
-        
+            
             # Store this so we can deduct it off the total amount to swap.
             # If the fee denom is the same as what we're paying the tax in, then combine the two
             # Otherwise the deductible is just the tax value
             # This assumes that the tax is always the same denom as the transferred amount.
-            #if fee_denom == self.denom:
             self.fee_deductables = int(fee_amount)
-            #elif fee_denom == ULUNA and self.denom == UUSD:
-            #    self.fee_deductables = int(self.tax)
-            #else:
-            #    self.fee_deductables = int(self.tax * 2)
-
+            
             return True
         else:
             return False
