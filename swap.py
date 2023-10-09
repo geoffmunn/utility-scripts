@@ -3,27 +3,25 @@
 
 from getpass import getpass
 
-from utility_classes import (
+from classes.common import (
     check_version,
-    get_coin_selection,
     get_user_choice,
-    get_user_number,
-    OFFCHAIN_COINS,
-    ULUNA,
-    UserConfig,
-    UUSD,
-    Wallets,
-    Wallet
 )
 
-from utility_constants import (
-    GAS_ADJUSTMENT_INCREMENT,
-    GAS_ADJUSTMENT_SWAPS,
+from constants.constants import (
     FULL_COIN_LOOKUP,
-    MAX_GAS_ADJUSTMENT,
+    GAS_ADJUSTMENT_SWAPS,
+    OFFCHAIN_COINS,
+    ULUNA,
     USER_ACTION_CONTINUE,
-    USER_ACTION_QUIT
+    USER_ACTION_QUIT,
+    UUSD,
 )
+
+from classes.swap_transaction import SwapTransaction
+from classes.user_config import UserConfig
+from classes.wallet import UserWallet
+from classes.wallets import UserWallets
 
 def get_user_singlechoice(question:str, user_wallets:dict):
     """
@@ -92,7 +90,7 @@ def get_user_singlechoice(question:str, user_wallets:dict):
         print (horizontal_spacer)
 
         for wallet_name in user_wallets:
-            wallet:Wallet  = user_wallets[wallet_name]
+            wallet:UserWallet  = user_wallets[wallet_name]
 
             count += 1
             wallet_numbers[count] = wallet
@@ -183,7 +181,7 @@ def main():
     print ('Decrypting and validating wallets - please wait...\n')
 
     # Create the wallet object based on the user config file
-    wallet_obj       = Wallets().create(user_config, decrypt_password)
+    wallet_obj       = UserWallets().create(user_config, decrypt_password)
     decrypt_password = None
 
     # Get all the wallets
@@ -191,7 +189,7 @@ def main():
     
     # Get the balances on each wallet (for display purposes)
     for wallet_name in user_wallets:
-        wallet:Wallet = user_wallets[wallet_name]
+        wallet:UserWallet = user_wallets[wallet_name]
         wallet.getBalances()
 
     if len(user_wallets) > 0:
@@ -208,7 +206,6 @@ def main():
 
     # List all the coins in this wallet, with the amounts available:
     print ('\nWhat coin do you want to swap FROM?')
-    #coin_from, answer, null_value = get_coin_selection("Select a coin number 1 - " + str(len(wallet.balances)) + ", 'X' to continue, or 'Q' to quit: ", wallet.balances)
     coin_from, answer, null_value = wallet.get_coin_selection("Select a coin number 1 - " + str(len(wallet.balances)) + ", 'X' to continue, or 'Q' to quit: ", wallet.balances)
 
     if answer == USER_ACTION_QUIT:
@@ -217,12 +214,11 @@ def main():
 
     available_balance:float = wallet.formatUluna(wallet.balances[coin_from], coin_from)
     print (f'This coin has a maximum of {available_balance} {FULL_COIN_LOOKUP[coin_from]} available.')
-    swap_uluna = get_user_number("How much do you want to swap? (Or type 'Q' to quit) ", {'max_number': float(available_balance), 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': True, 'keep_minimum': False, 'target_denom': coin_from})
+    swap_uluna = wallet.get_user_number("How much do you want to swap? (Or type 'Q' to quit) ", {'max_number': float(available_balance), 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': True, 'keep_minimum': False, 'target_denom': coin_from})
 
     if swap_uluna == USER_ACTION_QUIT:
         print (' 🛑 Exiting...\n')
         exit()
-
 
     print ('\nWhat coin do you want to swap TO?')
     #coin_to, answer, estimated_amount = get_coin_selection("Select a coin number 1 - " + str(len(wallet.balances)) + ", 'X' to continue, or 'Q' to quit: ", wallet.balances, False, {'denom':coin_from, 'amount':swap_uluna}, wallet)
@@ -242,67 +238,68 @@ def main():
         exit()
 
     # Create the swap object
-    swaps_tx = wallet.swap().create(denom = wallet.denom)
+    swap_tx = SwapTransaction().create(seed = wallet.seed, denom = wallet.denom)
 
     # Assign the details:
-    swaps_tx.swap_amount        = int(swap_uluna)
-    swaps_tx.swap_denom         = coin_from
-    swaps_tx.swap_request_denom = coin_to
-    swaps_tx.sender_address     = wallet.address
-    swaps_tx.sender_prefix      = wallet.getPrefix(wallet.address)
-    swaps_tx.wallet_denom       = wallet.denom
+    swap_tx.balances           = wallet.balances
+    swap_tx.swap_amount        = int(swap_uluna)
+    swap_tx.swap_denom         = coin_from
+    swap_tx.swap_request_denom = coin_to
+    swap_tx.sender_address     = wallet.address
+    swap_tx.sender_prefix      = wallet.getPrefix(wallet.address)
+    swap_tx.wallet_denom       = wallet.denom
 
     # Bump up the gas adjustment - it needs to be higher for swaps it turns out
-    swaps_tx.terra.gas_adjustment = float(GAS_ADJUSTMENT_SWAPS)
+    swap_tx.terra.gas_adjustment = float(GAS_ADJUSTMENT_SWAPS)
 
     # Set the contract based on what we've picked
     # As long as the swap_denom and swap_request_denom values are set, the correct contract should be picked
-    use_market_swap = swaps_tx.setContract()
+    use_market_swap = swap_tx.setContract()
     
     #if swaps_tx.swap_request_denom == UOSMO and swaps_tx.sender_prefix != 'terra':
-    if swaps_tx.swap_request_denom in OFFCHAIN_COINS or swaps_tx.swap_denom in OFFCHAIN_COINS:
+    if swap_tx.swap_request_denom in OFFCHAIN_COINS or swap_tx.swap_denom in OFFCHAIN_COINS:
         # This is an off-chain swap. Something like LUNC->OSMO
-        result = swaps_tx.offChainSimulate()
+        result = swap_tx.offChainSimulate()
 
         if result == True:
-            print (swaps_tx.readableFee())
+            print (swap_tx.readableFee())
                 
             user_choice = get_user_choice('Do you want to continue? (y/n) ', [])
 
             if user_choice == False:
                 exit()
 
-            result = swaps_tx.offChainSwap()
+            result = swap_tx.offChainSwap()
     else:
         if use_market_swap == True:
             # uluna -> umnt, uluna -> ujpy etc
             # This is for terra-native swaps ONLY
-            result = swaps_tx.marketSimulate()
+            result = swap_tx.marketSimulate()
             if result == True:
-                print (swaps_tx.readableFee())
+                print (swap_tx.readableFee())
                 
                 user_choice = get_user_choice('Do you want to continue? (y/n) ', [])
 
                 if user_choice == False:
                     exit()
 
-                result = swaps_tx.marketSwap()
+                result = swap_tx.marketSwap()
         else:
             # This is for uluna -> uusd swaps ONLY. We use the contract addresses to support this
-            result = swaps_tx.simulate()
+            result = swap_tx.simulate()
 
             if result == True:
-                print (swaps_tx.readableFee())
+                print (swap_tx.readableFee())
 
                 user_choice = get_user_choice('Do you want to continue? (y/n) ', [])
 
                 if user_choice == False:
                     exit()
 
-                result = swaps_tx.swap()
+                result = swap_tx.swap()
     
     if result == True:
-        swaps_tx.broadcast()
+        swap_tx.broadcast()
     
         # if swaps_tx.broadcast_result.code == 11:
         #     while True:
@@ -327,35 +324,35 @@ def main():
         #         if swaps_tx.terra.gas_adjustment >= MAX_GAS_ADJUSTMENT:
         #             break
 
-        if swaps_tx.broadcast_result is not None and swaps_tx.broadcast_result.code == 32:
+        if swap_tx.broadcast_result is not None and swap_tx.broadcast_result.code == 32:
             while True:
                 print (' 🛎️  Boosting sequence number and trying again...')
 
-                swaps_tx.sequence = swaps_tx.sequence + 1
-                swaps_tx.simulate()
-                print (swaps_tx.readableFee())
-                swaps_tx.swap()
-                swaps_tx.broadcast()
+                swap_tx.sequence = swap_tx.sequence + 1
+                swap_tx.simulate()
+                print (swap_tx.readableFee())
+                swap_tx.swap()
+                swap_tx.broadcast()
 
-                if swaps_tx is None:
+                if swap_tx is None:
                     break
 
                 # Code 32 = account sequence mismatch
-                if swaps_tx.broadcast_result.code != 32:
+                if swap_tx.broadcast_result.code != 32:
                     break
 
-        if swaps_tx.broadcast_result is None or swaps_tx.broadcast_result.is_tx_error():
-            if swaps_tx.broadcast_result is None:
+        if swap_tx.broadcast_result is None or swap_tx.broadcast_result.is_tx_error():
+            if swap_tx.broadcast_result is None:
                 print (' 🛎️  The swap transaction failed, no broadcast object was returned.')
             else:
                 print (' 🛎️  The swap transaction failed, an error occurred:')
-                if swaps_tx.broadcast_result.raw_log is not None:
-                    print (f' 🛎️  {swaps_tx.broadcast_result.raw_log}')
+                if swap_tx.broadcast_result.raw_log is not None:
+                    print (f' 🛎️  {swap_tx.broadcast_result.raw_log}')
                 else:
                     print ('No broadcast log was available.')
         else:
-            print (f' ✅ Swapped amount: {wallet.formatUluna(swaps_tx.swap_amount, swaps_tx.swap_denom)} {FULL_COIN_LOOKUP[swaps_tx.swap_denom]}')
-            print (f' ✅ Tx Hash: {swaps_tx.broadcast_result.txhash}')
+            print (f' ✅ Swapped amount: {wallet.formatUluna(swap_tx.swap_amount, swap_tx.swap_denom)} {FULL_COIN_LOOKUP[swap_tx.swap_denom]}')
+            print (f' ✅ Tx Hash: {swap_tx.broadcast_result.txhash}')
     else:
         print (' 🛎️  The swap transaction could not be completed')
             

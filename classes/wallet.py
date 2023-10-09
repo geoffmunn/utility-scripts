@@ -31,7 +31,7 @@ from constants.constants import (
 #from classes.delegation_transaction import DelegationTransaction
 #from classes.send_transaction import SendTransaction
 #from classes.withdrawal_transaction import WithdrawalTransaction
-#from classes.swap_transaction import SwapTransaction
+from classes.swap_transaction import SwapTransaction
 from classes.terra_instance import TerraInstance
 from classes.undelegations import Undelegations
 from terra_classic_sdk.client.lcd import LCDClient
@@ -269,7 +269,6 @@ class UserWallet:
 
         return self.balances
     
-    #def get_coin_selection(question:str, coins:dict, only_active_coins:bool = True, estimation_against:dict = None, wallet:UserWallet = False):
     def get_coin_selection(self, question:str, coins:dict, only_active_coins:bool = True, estimation_against:dict = None):
         """
         Return a selected coin based on the provided list.
@@ -283,9 +282,8 @@ class UserWallet:
 
         if estimation_against is not None:
             label_widths.append(len('Estimation'))
-            swaps_tx = wallet.swap().create()
+            swap_tx = SwapTransaction().create(self.seed, self.denom)
 
-        wallet:UserWallet = UserWallet()
         coin_list     = []
         coin_values   = {}
 
@@ -305,7 +303,7 @@ class UserWallet:
             if coin in coins or only_active_coins == False:
 
                 if coin in coins:
-                    coin_val = wallet.formatUluna(coins[coin], coin)
+                    coin_val = self.formatUluna(coins[coin], coin)
 
                     if len(str(coin_val)) > label_widths[2]:
                         label_widths[2] = len(str(coin_val))
@@ -313,15 +311,15 @@ class UserWallet:
                 if estimation_against is not None:
 
                     # Set up the swap details
-                    swaps_tx.swap_amount        = float(wallet.formatUluna(estimation_against['amount'], estimation_against['denom'], False))
-                    swaps_tx.swap_denom         = estimation_against['denom']
-                    swaps_tx.swap_request_denom = coin
+                    swap_tx.swap_amount        = float(self.formatUluna(estimation_against['amount'], estimation_against['denom'], False))
+                    swap_tx.swap_denom         = estimation_against['denom']
+                    swap_tx.swap_request_denom = coin
 
                     # Change the contract depending on what we're doing
-                    swaps_tx.setContract()
+                    swap_tx.setContract()
                     
                     if coin != estimation_against['denom']:
-                        estimated_value:float = swaps_tx.swapRate()
+                        estimated_value:float = swap_tx.swapRate()
 
                     else:
                         estimated_value:str   = None
@@ -387,7 +385,7 @@ class UserWallet:
                     coin_name_str = coin_name
 
                 if coin in coins:
-                    coin_val = wallet.formatUluna(coins[coin], coin)
+                    coin_val = self.formatUluna(coins[coin], coin)
 
                     if label_widths[2] > len(str(coin_val)):
                         balance_str = coin_val + padding_str[0:label_widths[2] - len(coin_val)]
@@ -688,16 +686,16 @@ class UserWallet:
 
     #     return self.sendTx
     
-    def swap(self):
-        """
-        Update the swap class with the data it needs.
-        It will be created via the create() command.
-        """
+    # def swap(self):
+    #     """
+    #     Update the swap class with the data it needs.
+    #     It will be created via the create() command.
+    #     """
 
-        self.swapTx.seed     = self.seed
-        self.swapTx.balances = self.balances
+    #     self.swapTx.seed     = self.seed
+    #     self.swapTx.balances = self.balances
 
-        return self.swapTx
+    #     return self.swapTx
     
     # def updateDelegation(self, amount:str, threshold:int) -> bool:
     #     """

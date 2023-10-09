@@ -30,7 +30,6 @@ from classes.common import (
 
 from classes.terra_instance import TerraInstance    
 from classes.transaction_core import TransactionCore
-from classes.wallet import UserWallet
 
 from terra_classic_sdk.client.lcd.api.tx import (
     CreateTxOptions,
@@ -113,7 +112,7 @@ class SwapTransaction(TransactionCore):
 
         return self.belief_price
     
-    def create(self, denom:str = 'uluna'):
+    def create(self, seed:str, denom:str = 'uluna'):
         """
         Create a swap object and set it up with the provided details.
         """
@@ -123,7 +122,7 @@ class SwapTransaction(TransactionCore):
 
         # Create the wallet based on the calculated key
         prefix              = CHAIN_DATA[denom]['prefix']
-        current_wallet_key  = MnemonicKey(mnemonic = self.seed, prefix = prefix)
+        current_wallet_key  = MnemonicKey(mnemonic = seed, prefix = prefix)
         self.current_wallet = self.terra.wallet(current_wallet_key)
 
         # Get the gas prices and tax rate:
@@ -323,20 +322,10 @@ class SwapTransaction(TransactionCore):
 
             # Get the token we want to swap to (what we expect to end up with for this route)
             print ('we need the token out denom from this route:', route)
-            #token_out_denom = self.osmosisDenomSwapTo(route['pool_id'], current_denom)
             token_out_denom = route['token_out_denom']
-            wallet = UserWallet()
-            wallet.address = self.sender_address
-            wallet.denom = current_denom
-            #wallet.denom = token_out_denom
-            #print ('current denom:', current_denom)
-            #print ('wallet address:', wallet.address)
-            #print ('token out denom:', token_out_denom)
-            ibc_denom = wallet.denomTrace(token_out_denom)
-            if ibc_denom != False:
-                token_out_denom = ibc_denom['base_denom']
+            token_out_denom = self.denomTrace(token_out_denom)
             
-            #print ('token out denom:', token_out_denom)
+            print ('token out denom:', token_out_denom)
             # Get the prices for the current denom and the output denom
             coin_prices:json = self.getPrices(current_denom, token_out_denom)
             
@@ -512,9 +501,6 @@ class SwapTransaction(TransactionCore):
         """
 
         result:Pool = None
-
-        print ('chain id:', self.terra.chain_id)
-        print ('url:', self.terra.url)
 
         if pool_id not in self.osmosis_pools:
             # Get this pool:
@@ -692,6 +678,9 @@ class SwapTransaction(TransactionCore):
             else:
                 fee_denom:str   = UUSD
 
+            print ('swap fee:', self.fee)
+            print ('fee denom:', fee_denom)
+            print ('self balances:', self.balances)
             if fee_denom in self.balances:
                 swap_amount = self.swap_amount
 
@@ -821,8 +810,9 @@ class SwapTransaction(TransactionCore):
             if self.swap_denom in OFFCHAIN_COINS + [ULUNA] and self.swap_request_denom in OFFCHAIN_COINS + [ULUNA]:
                 # Calculate the amount of OSMO we'll be getting:
                 # (lunc amount * lunc unit cost) / osmo price
-                prices:json            = self.getPrices(self.swap_denom, self.swap_request_denom)
-                estimated_amount:float = (self.swap_amount * float(prices['from']) / float(prices['to']))
+                if self.swap_denom in CHAIN_DATA and self.swap_request_denom in CHAIN_DATA:
+                    prices:json            = self.getPrices(self.swap_denom, self.swap_request_denom)
+                    estimated_amount:float = (self.swap_amount * float(prices['from']) / float(prices['to']))
             else:
                 # Market swaps between mntc -> ukrw etc
                 # NOTE: DOES NOT WORK AT THE MOMENT DUE TO A CHAIN CHANGE
