@@ -3,15 +3,12 @@
 
 import copy
 
-from getpass import getpass
-
 from classes.common import (
     check_version,
     divide_raw_balance,
     get_user_choice
 )
 
-from classes.user_config import UserConfig
 from classes.wallets import UserWallets
 from classes.wallet import UserWallet
 
