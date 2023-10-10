@@ -188,21 +188,3 @@ def get_user_choice(question:str, allowed_options:list):
 
     return result
 
-
-# def get_user_text(question:str, max_length:int, allow_blanks:bool) -> str:
-#     """
-#     Get a text string from the user - must be less than a definied length
-#     """
-
-#     while True:    
-#         answer = input(question).strip(' ')
-
-#         if len(answer) > max_length:
-#             print (f' 🛎️  The length must be less than {max_length}')
-#         elif len(answer) == 0 and allow_blanks == False:
-#             print (f' 🛎️  This value cannot be blank or empty')
-#         else:
-#             break
-
-#     return str(answer)
-

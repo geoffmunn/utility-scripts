@@ -6,6 +6,7 @@
 # )
 
 from constants.constants import (
+    CHAIN_DATA,
     ULUNA
 )
 

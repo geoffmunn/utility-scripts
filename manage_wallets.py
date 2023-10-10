@@ -3,24 +3,16 @@
 
 from getpass import getpass
 
-from utility_classes import (
+from classes.common import (
     check_version,
     get_user_choice,
     isPercentage,
-    multiply_raw_balance,
-    ULUNA,
-    UUSD,
-    UserConfig,
-    Wallets,
-    Wallet
+    multiply_raw_balance
 )
 
-from utility_constants import (
-    #ASTROPORT_UUSD_TO_ULUNA_ADDRESS,
-    COIN_DIVISOR,
-    GAS_ADJUSTMENT_INCREMENT,
-    MAX_GAS_ADJUSTMENT,
+from constants.constants import (
     TERRASWAP_UUSD_TO_ULUNA_ADDRESS,
+    ULUNA,
     USER_ACTION_ALL,
     USER_ACTION_CONTINUE,
     USER_ACTION_CLEAR,
@@ -30,8 +22,16 @@ from utility_constants import (
     USER_ACTION_SWAP_DELEGATE,
     USER_ACTION_WITHDRAW,
     USER_ACTION_WITHDRAW_DELEGATE,
+    UUSD,
     WITHDRAWAL_REMAINDER
 )
+
+from classes.delegation_transaction import DelegationTransaction
+from classes.swap_transaction import SwapTransaction
+from classes.user_config import UserConfig
+from classes.wallet import UserWallet
+from classes.wallets import UserWallets
+from classes.withdrawal_transaction import WithdrawalTransaction
 
 def get_user_multichoice(question:str, user_wallets:dict) -> dict|str:
     """
@@ -48,7 +48,7 @@ def get_user_multichoice(question:str, user_wallets:dict) -> dict|str:
     label_widths.append(len('Available'))
 
     for wallet_name in user_wallets:
-        wallet:Wallet = user_wallets[wallet_name]
+        wallet:UserWallet = user_wallets[wallet_name]
 
         # Get the delegations and balances for this wallet
         delegations = wallet.getDelegations()
@@ -117,9 +117,9 @@ def get_user_multichoice(question:str, user_wallets:dict) -> dict|str:
         print (horizontal_spacer)
 
         for wallet_name in user_wallets:
-            wallet:Wallet = user_wallets[wallet_name]
-            delegations   = wallet.getDelegations()
-            balances      = wallet.getBalances()
+            wallet:UserWallet = user_wallets[wallet_name]
+            delegations       = wallet.getDelegations()
+            balances          = wallet.getBalances()
 
             count += 1
             wallet_numbers[count] = wallet
@@ -236,7 +236,7 @@ def main():
     print ('Decrypting and validating wallets - please wait...\n')
 
     # Create the wallet object based on the user config file
-    wallet_obj       = Wallets().create(user_config, decrypt_password)
+    wallet_obj       = UserWallets().create(user_config, decrypt_password)
     decrypt_password = None
     
     # Get all the wallets
@@ -244,8 +244,8 @@ def main():
 
     # Get the balances on each wallet (for display purposes)
     for wallet_name in user_wallets:
-        wallet:Wallet = user_wallets[wallet_name]
-        delegations = wallet.getDelegations()
+        wallet:UserWallet = user_wallets[wallet_name]
+        delegations       = wallet.getDelegations()
         
     action_string = ''
     if user_action == USER_ACTION_WITHDRAW:
@@ -288,7 +288,7 @@ def main():
 
     # Now start doing stuff
     for wallet_name in user_wallets:
-        wallet:Wallet = user_wallets[wallet_name]
+        wallet:UserWallet = user_wallets[wallet_name]
 
         print ('####################################')
         print (f'Accessing the {wallet.name} wallet...')
@@ -315,9 +315,10 @@ def main():
                         wallet.getBalances(clear_cache = True)
                         
                         # Set up the withdrawal object
-                        withdrawal_tx = wallet.withdrawal().create(delegations[validator]['delegator'], delegations[validator]['validator'])
+                        withdrawal_tx = WithdrawalTransaction().create(delegator_address = delegations[validator]['delegator'], validator_address = delegations[validator]['validator'])
 
                         # We need to populate some details
+                        withdrawal_tx.balances       = wallet.balances
                         withdrawal_tx.sender_address = wallet.address
                         withdrawal_tx.sender_prefix  = wallet.getPrefix(wallet.address)
                         withdrawal_tx.wallet_denom   = wallet.denom
@@ -335,34 +336,21 @@ def main():
                             if result == True:
                                 withdrawal_tx.broadcast()
                             
-                                if withdrawal_tx.broadcast_result is not None and withdrawal_tx.broadcast_result.code == 11:
+                                if withdrawal_tx.broadcast_result is not None and withdrawal_tx.broadcast_result.code == 32:
                                     while True:
-                                        print (' 🛎️  Increasing the gas adjustment fee and trying again')
-                                        withdrawal_tx.terra.gas_adjustment += GAS_ADJUSTMENT_INCREMENT
-                                        print (f' 🛎️  Gas adjustment value is now {withdrawal_tx.terra.gas_adjustment}')
+                                        print (' 🛎️  Boosting sequence number and trying again...')
+
+                                        withdrawal_tx.sequence = withdrawal_tx.sequence + 1
+                                        
                                         withdrawal_tx.simulate()
-                                        print (withdrawal_tx.readableFee())
                                         withdrawal_tx.withdraw()
                                         withdrawal_tx.broadcast()
 
-                                        if withdrawal_tx.broadcast_result is None:
+                                        if withdrawal_tx is None:
                                             break
 
-                                        #if withdrawal_tx.broadcast_result.code != 11:
-                                        if withdrawal_tx.broadcast_result.code == 0:
-                                            break
-
-                                        # if withdrawal_tx.broadcast_result.code == 32:
-                                        #     withdrawal_tx.sequence = withdrawal_tx.sequence + 1
-                                        #     #self.sequence    = self.sequence + 1
-                                        #     #options.sequence = self.sequence
-                                        #     withdrawal_tx.
-                                        #     print (' 🛎️  Boosting sequence number')
-                                        # else:
-                                        #     print (err)
-                                        #     break
-
-                                        if withdrawal_tx.terra.gas_adjustment >= MAX_GAS_ADJUSTMENT:
+                                        # Code 32 = account sequence mismatch
+                                        if withdrawal_tx.broadcast_result.code != 32:
                                             break
                                         
                                 if withdrawal_tx.broadcast_result is None or withdrawal_tx.broadcast_result.is_tx_error():
@@ -383,82 +371,77 @@ def main():
             # Swap any uusd coins for uluna
             if user_action in [USER_ACTION_SWAP, USER_ACTION_SWAP_DELEGATE, USER_ACTION_ALL]:
 
-                if wallet.allow_swaps == True:
-                    print ('\n------------------------------------')
-                    print ('Starting swaps...')
+                print ('\n------------------------------------')
+                print ('Starting swaps...')
 
-                    # Update the balances so we know we have the correct amount
-                    wallet.getBalances(clear_cache = True)
-                    
-                    # We are only supporting swaps with uusd (USTC) at the moment
-                    if 'uusd' in wallet.balances:
-                        swap_amount = wallet.balances['uusd']
+                # Update the balances so we know we have the correct amount
+                wallet.getBalances(clear_cache = True)
+                
+                # We are only supporting swaps with uusd (USTC) at the moment
+                if 'uusd' in wallet.balances:
+                    swap_amount = wallet.balances['uusd']
 
-                        if swap_amount > 0:
-                            print (f'Swapping {wallet.formatUluna(swap_amount, UUSD, False)} USTC for LUNC')
+                    if swap_amount > 0:
+                        print (f'Swapping {wallet.formatUluna(swap_amount, UUSD, False)} USTC for LUNC')
 
-                            # Set up the basic swap object
-                            swaps_tx = wallet.swap().create()
+                        # Set up the basic swap object
+                        swap_tx = SwapTransaction().create(seed = wallet.seed, denom = ULUNA)
 
-                            # Populate the basic details.
-                            swaps_tx.swap_amount    = swap_amount
-                            swaps_tx.swap_denom     = 'uusd'
-                            #swaps_tx.contract      = ASTROPORT_UUSD_TO_ULUNA_ADDRESS
-                            swaps_tx.contract       = TERRASWAP_UUSD_TO_ULUNA_ADDRESS
-                            swaps_tx.sender_address = wallet.address
-                            swaps_tx.sender_prefix  = wallet.getPrefix(wallet.address)
-                            swaps_tx.wallet_denom   = wallet.denom
+                        # Populate the basic details.
+                        swap_tx.balances       = wallet.balances
+                        swap_tx.swap_amount    = swap_amount
+                        swap_tx.swap_denom     = UUSD
+                        #swap_tx.contract      = ASTROPORT_UUSD_TO_ULUNA_ADDRESS
+                        swap_tx.contract       = TERRASWAP_UUSD_TO_ULUNA_ADDRESS
+                        swap_tx.sender_address = wallet.address
+                        swap_tx.sender_prefix  = wallet.getPrefix(wallet.address)
+                        swap_tx.wallet_denom   = wallet.denom
 
-                            # Simulate it so we can get the fee
-                            result = swaps_tx.simulate()
+                        # Simulate it so we can get the fee
+                        result = swap_tx.simulate()
+
+                        if result == True:
+                        
+                            print (swap_tx.readableFee())
+                            
+                            result = swap_tx.swap()
 
                             if result == True:
-                            
-                                print (swaps_tx.readableFee())
-                                
-                                result = swaps_tx.swap()
+                                swap_tx.broadcast()
 
-                                if result == True:
-                                    swaps_tx.broadcast()
+                                if swap_tx.broadcast_result is not None and swap_tx.broadcast_result.code == 32:
+                                    while True:
+                                        print (' 🛎️  Boosting sequence number and trying again...')
 
-                                    if swaps_tx.broadcast_result is not None and swaps_tx.broadcast_result.code == 11:
-                                        while True:
-                                            print (' 🛎️  Increasing the gas adjustment fee and trying again')
-                                            swaps_tx.terra.gas_adjustment += GAS_ADJUSTMENT_INCREMENT
-                                            print (f' 🛎️  Gas adjustment value is now {swaps_tx.terra.gas_adjustment}')
-                                            swaps_tx.simulate()
-                                            print (swaps_tx.readableFee())
-                                            swaps_tx.swap()
-                                            swaps_tx.broadcast()
+                                        swap_tx.sequence = swap_tx.sequence + 1
 
-                                            if swaps_tx.broadcast_result is None:
-                                                break
+                                        swap_tx.simulate()
+                                        swap_tx.swap()
+                                        swap_tx.broadcast()
 
-                                            if swaps_tx.broadcast_result.code != 11:
-                                                break
+                                        if swap_tx is None:
+                                            break
 
-                                            if swaps_tx.terra.gas_adjustment >= MAX_GAS_ADJUSTMENT:
-                                                break
-                                            
-                                    if swaps_tx.broadcast_result is None or swaps_tx.broadcast_result.is_tx_error():
-                                        if swaps_tx.broadcast_result is None:
-                                            print (' 🛎️  The swap transaction failed, no broadcast object was returned.')
-                                        else:
-                                            print (' 🛎️ The swap failed, an error occurred:')
-                                            print (f' 🛎️  {swaps_tx.broadcast_result.raw_log}')
-                                
+                                        # Code 32 = account sequence mismatch
+                                        if swap_tx.broadcast_result.code != 32:
+                                            break
+                                        
+                                if swap_tx.broadcast_result is None or swap_tx.broadcast_result.is_tx_error():
+                                    if swap_tx.broadcast_result is None:
+                                        print (' 🛎️  The swap transaction failed, no broadcast object was returned.')
                                     else:
-                                        print (f' ✅ Swap successfully completed')
-                                        print (f' ✅ Tx Hash: {swaps_tx.broadcast_result.txhash}')
+                                        print (' 🛎️ The swap failed, an error occurred:')
+                                        print (f' 🛎️  {swap_tx.broadcast_result.raw_log}')
+                            
                                 else:
-                                    print (' 🛎️  Swap transaction could not be completed')
-                        else:
-                            print (' 🛎️  Swap amount is not greater than zero')
+                                    print (f' ✅ Swap successfully completed')
+                                    print (f' ✅ Tx Hash: {swap_tx.broadcast_result.txhash}')
+                            else:
+                                print (' 🛎️  Swap transaction could not be completed')
                     else:
-                        print (' 🛎️  No UST in the wallet to swap!')
+                        print (' 🛎️  Swap amount is not greater than zero')
                 else:
-                    print ('\n------------------------------------')
-                    print ('Swaps not allowed on this wallet')
+                    print (' 🛎️  No UST in the wallet to swap!')
 
             # Redelegate anything we might have
             if user_action in [USER_ACTION_DELEGATE, USER_ACTION_WITHDRAW_DELEGATE, USER_ACTION_SWAP_DELEGATE, USER_ACTION_ALL]:
@@ -480,7 +463,7 @@ def main():
                             uluna_balance = int(wallet.balances[ULUNA])
                             
                             if isPercentage(wallet.delegations['delegate']):
-                                percentage:int = int(str(wallet.delegations['delegate']).strip(' ')[0:-1]) / 100
+                                percentage:int      = int(str(wallet.delegations['delegate']).strip(' ')[0:-1]) / 100
                                 delegated_uluna:int = int(uluna_balance * percentage)
                             else:
                                 delegated_uluna:int = int(str(wallet.delegations['delegate']).strip(' '))
@@ -491,7 +474,7 @@ def main():
                                 print (f'Delegating {wallet.formatUluna(delegated_uluna, ULUNA, True)}')
 
                                 # Create the delegation object
-                                delegation_tx = wallet.delegate().create()
+                                delegation_tx = DelegationTransaction().create(denom = ULUNA)
 
                                 # Assign the details:
                                 delegation_tx.delegator_address = delegations[validator]['delegator']
@@ -514,23 +497,21 @@ def main():
                                     if result == True:
                                         delegation_tx.broadcast()
 
-                                        if delegation_tx.broadcast_result is not None and delegation_tx.broadcast_result.code == 11:
+                                        if delegation_tx.broadcast_result is not None and delegation_tx.broadcast_result.code == 32:
                                             while True:
-                                                print (' 🛎️  Increasing the gas adjustment fee and trying again')
-                                                delegation_tx.terra.gas_adjustment += GAS_ADJUSTMENT_INCREMENT
-                                                print (f' 🛎️  Gas adjustment value is now {delegation_tx.terra.gas_adjustment}')
-                                                delegation_tx.simulate(delegation_tx.delegate)
-                                                print (delegation_tx.readableFee())
-                                                delegation_tx.delegate()
+                                                print (' 🛎️  Boosting sequence number and trying again...')
+
+                                                delegation_tx.sequence = delegation_tx.sequence + 1
+
+                                                delegation_tx.simulate()
+                                                delegation_tx.swap()
                                                 delegation_tx.broadcast()
 
-                                                if delegation_tx.broadcast_result is None:
+                                                if delegation_tx is None:
                                                     break
 
-                                                if delegation_tx.broadcast_result.code != 11:
-                                                    break
-
-                                                if delegation_tx.terra.gas_adjustment >= MAX_GAS_ADJUSTMENT:
+                                                # Code 32 = account sequence mismatch
+                                                if delegation_tx.broadcast_result.code != 32:
                                                     break
                                             
                                         if delegation_tx.broadcast_result is None or delegation_tx.broadcast_result.is_tx_error():
