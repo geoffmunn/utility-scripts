@@ -196,42 +196,43 @@ class UserWallet:
         if clear_cache == True:
             self.balances = None
 
+        balances:dict = {}
         if self.balances is None:
-            # Default pagination options
-            pagOpt:PaginationOptions = PaginationOptions(limit=50, count_total=True)
+            if self.terra is not None:
+                # Default pagination options
+                pagOpt:PaginationOptions = PaginationOptions(limit=50, count_total=True)
 
-            # Get the current balance in this wallet
-            balances:dict = {}
-            result:Coins
-            try:
-                result, pagination = self.terra.bank.balance(address = self.address, params = pagOpt)
-
-                # Convert the result into a friendly list
-                for coin in result:
-                    denom_trace = self.denomTrace(coin.denom)
-                    if denom_trace == False:
-                        balances[coin.denom] = coin.amount
-                    else:
-                        balances[denom_trace['base_denom']] = coin.amount
-
-                # Go through the pagination (if any)
-                while pagination['next_key'] is not None:
-                    pagOpt.key         = pagination["next_key"]
+                # Get the current balance in this wallet
+                result:Coins
+                try:
                     result, pagination = self.terra.bank.balance(address = self.address, params = pagOpt)
-                    
-                    denom_trace = self.denomTrace(coin.denom)
-                    if  denom_trace == False:
-                        balances[coin.denom] = coin.amount
-                    else:
-                        balances[denom_trace['base_denom']] = coin.amount
-            except Exception as err:
-                print (f'Pagination error for {self.name}:', err)
 
-            # Add the extra coins (Base etc)
-            if self.terra.chain_id == 'columbus-5':
-                coin_balance = self.terra.wasm.contract_query(BASE_SMART_CONTRACT_ADDRESS, {'balance':{'address':self.address}})
-                if int(coin_balance['balance']) > 0:
-                    balances[UBASE] = coin_balance['balance']
+                    # Convert the result into a friendly list
+                    for coin in result:
+                        denom_trace = self.denomTrace(coin.denom)
+                        if denom_trace == False:
+                            balances[coin.denom] = coin.amount
+                        else:
+                            balances[denom_trace['base_denom']] = coin.amount
+
+                    # Go through the pagination (if any)
+                    while pagination['next_key'] is not None:
+                        pagOpt.key         = pagination["next_key"]
+                        result, pagination = self.terra.bank.balance(address = self.address, params = pagOpt)
+                        
+                        denom_trace = self.denomTrace(coin.denom)
+                        if  denom_trace == False:
+                            balances[coin.denom] = coin.amount
+                        else:
+                            balances[denom_trace['base_denom']] = coin.amount
+                except Exception as err:
+                    print (f'Pagination error for {self.name}:', err)
+
+                # Add the extra coins (Base etc)
+                if self.terra is not None and self.terra.chain_id == 'columbus-5':
+                    coin_balance = self.terra.wasm.contract_query(BASE_SMART_CONTRACT_ADDRESS, {'balance':{'address':self.address}})
+                    if int(coin_balance['balance']) > 0:
+                        balances[UBASE] = coin_balance['balance']
 
             self.balances = balances
 
@@ -416,24 +417,25 @@ class UserWallet:
         It may contain more than one validator.
         """
 
-        pagOpt:PaginationOptions = PaginationOptions(limit=50, count_total=True)
-        try:
-            result, pagination = self.terra.staking.delegations(delegator = self.address, params = pagOpt)
-
-            delegator:Delegation 
-            for delegator in result:
-                self.__iter_result__(self.terra, delegator)
-
-            while pagination['next_key'] is not None:
-
-                pagOpt.key         = pagination['next_key']
+        if self.terra is not None:
+            pagOpt:PaginationOptions = PaginationOptions(limit=50, count_total=True)
+            try:
                 result, pagination = self.terra.staking.delegations(delegator = self.address, params = pagOpt)
 
                 delegator:Delegation 
                 for delegator in result:
                     self.__iter_result__(self.terra, delegator)
-        except:
-            print (' 🛎️  Network error: delegations could not be retrieved.')
+
+                while pagination['next_key'] is not None:
+
+                    pagOpt.key         = pagination['next_key']
+                    result, pagination = self.terra.staking.delegations(delegator = self.address, params = pagOpt)
+
+                    delegator:Delegation 
+                    for delegator in result:
+                        self.__iter_result__(self.terra, delegator)
+            except:
+                print (' 🛎️  Network error: delegations could not be retrieved.')
 
         return self.delegations
     

@@ -26,12 +26,8 @@ def main():
     # Check if there is a new version we should be using
     check_version()
 
-    # Get the password that decrypts the user wallets
-    decrypt_password:str = getpass() # the secret password that encrypts the seed phrase
-
-    if decrypt_password == '':
-        print (' 🛑 Exiting...\n')
-        exit()
+    # Get the user wallets
+    user_wallets = UserWallets().loadUserWallets()
 
     just_main_coins:bool = get_user_choice('Show just LUNC and USTC? (y/n) ', [])
 
@@ -39,27 +35,6 @@ def main():
         coin_lookup = BASIC_COIN_LOOKUP
     else:
         coin_lookup = FULL_COIN_LOOKUP
-
-    # Get the user config file contents
-    user_config:str = UserConfig().contents()
-    if user_config == '':
-        print (' 🛑 The user_config.yml file could not be opened - please run configure_user_wallets.py before running this script.')
-        exit()
-
-    print ('Decrypting and validating wallets - please wait...\n')
-
-    # Create the wallet object based on the user config file
-    wallet_obj       = UserWallets().create(user_config, decrypt_password)
-    decrypt_password = None
-
-    # Get all the wallets
-    user_wallets = wallet_obj.getWallets(True)
-
-    if len(user_wallets) == 0:
-        print (" 🛑 This password couldn't decrypt any wallets. Make sure it is correct, or rebuild the wallet list by running the configure_user_wallet.py script again.\n")
-        exit()
-
-    # Now start doing stuff
 
     balance_coins = {}
     label_widths  = []

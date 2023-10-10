@@ -1,36 +1,20 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 
+import yaml
+
+from getpass import getpass
+from os.path import exists
 from .wallet import UserWallet
 
+from constants.constants import (
+    CONFIG_FILE_NAME
+)
 class UserWallets:
     def __init__(self):
         self.file           = None
         self.wallets:dict   = {}
         self.addresses:dict = {}
-
-    def getWallet(self, wallet, user_password):
-        #delegation_amount:str = ''
-        #threshold:int         = 0
-
-        wallet_item:UserWallet = UserWallet().create(name = wallet['wallet'], address = wallet['address'], seed = wallet['seed'], password = user_password)
-        # if 'delegations' in wallet:
-        #     if 'redelegate' in wallet['delegations']:
-        #         delegation_amount = wallet['delegations']['redelegate']
-        #         if 'threshold' in wallet['delegations']:
-        #             threshold = wallet['delegations']['threshold']
-
-        #     wallet_item.updateDelegation(delegation_amount, threshold)
-        #     wallet_item.has_delegations = True
-        # else:
-        #     wallet_item.has_delegations = False
-
-        #if 'allow_swaps' in wallet:
-        #    wallet_item.allow_swaps = bool(wallet['allow_swaps'])
-
-        wallet_item.validated = wallet_item.validateWallet()
-    
-        self.wallets[wallet['wallet']] = wallet_item
 
     def create(self, yml_file:dict, user_password:str):
         """
@@ -52,24 +36,7 @@ class UserWallets:
         for wallet in yml_file['wallets']:
 
             if 'seed' in wallet:
-                #delegation_amount:str = ''
-                #threshold:int         = 0
-
                 wallet_item:UserWallet = UserWallet().create(name = wallet['wallet'], address = wallet['address'], seed = wallet['seed'], password = user_password)
-
-                # if 'delegations' in wallet:
-                #     if 'redelegate' in wallet['delegations']:
-                #         delegation_amount = wallet['delegations']['redelegate']
-                #         if 'threshold' in wallet['delegations']:
-                #             threshold = wallet['delegations']['threshold']
-
-                #     wallet_item.updateDelegation(delegation_amount, threshold)
-                #     wallet_item.has_delegations = True
-                # else:
-                #     wallet_item.has_delegations = False
-
-                #if 'allow_swaps' in wallet:
-                #    wallet_item.allow_swaps = bool(wallet['allow_swaps'])
 
                 wallet_item.validated = wallet_item.validateWallet()
 
@@ -84,31 +51,48 @@ class UserWallets:
                     wallet_item:UserWallet = UserWallet().create(name = wallet['wallet'], address = wallet['address'])
                     self.addresses[wallet['wallet']] = wallet_item
 
-        return self
+        return self.wallets
     
     def getAddresses(self) -> dict:
         """
         Return the dictionary of addresses.
         No validation or anything fancy is done here.
+
+        This is used by the send.py file to show an address book of possible addresses
         """
 
         return self.addresses
-        
-    def getWallets(self, validate:bool) -> dict:
+    
+    def loadUserWallets(self) -> dict:
         """
-        Return the dictionary of wallets.
-        If validate = True, then only return validated wallets which are known to have a valid seed.
+        Request the decryption password off the user and load the user_config.yml file based on this
         """
 
-        if validate == True:
-            validated_wallets:dict = {}
-            for wallet_name in self.wallets:
-                wallet:UserWallet = self.wallets[wallet_name]
+        file_exists = exists(CONFIG_FILE_NAME)
+
+        result:dict = None
+
+        if file_exists:
+            decrypt_password:str = getpass() # the secret password that encrypts the seed phrase
+
+            if decrypt_password == '':
+                print (' 🛑 Exiting...\n')  
+                exit()
+
+            # Now open this file and get the contents
+            try:
+                with open(CONFIG_FILE_NAME, 'r') as file:
+                    user_config = yaml.safe_load(file)
+
+                    print ('Decrypting and validating wallets - please wait...\n')
+                    self.create(user_config, decrypt_password)
+                    result = self.wallets
                 
-                if wallet.validated == True:
-                    validated_wallets[wallet_name] = wallet
+            except:
+               print (' 🛑 The user_config.yml file could not be opened - please run configure_user_wallets.py before running this script.')
         else:
-            validated_wallets = self.wallets
-       
-        return validated_wallets
+            print (' 🛑 The user_config.yml does not exist - please run configure_user_wallets.py before running this script.')
+
+        return result
+    
     
