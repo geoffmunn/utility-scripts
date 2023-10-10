@@ -28,12 +28,10 @@ from constants.constants import (
     WITHDRAWAL_REMAINDER,
 )
 
-#from classes.delegation_transaction import DelegationTransaction
-#from classes.send_transaction import SendTransaction
-#from classes.withdrawal_transaction import WithdrawalTransaction
 from classes.swap_transaction import SwapTransaction
 from classes.terra_instance import TerraInstance
 from classes.undelegations import Undelegations
+
 from terra_classic_sdk.client.lcd import LCDClient
 from terra_classic_sdk.client.lcd.api.distribution import Rewards
 from terra_classic_sdk.client.lcd.params import PaginationOptions
@@ -47,7 +45,6 @@ class UserWallet:
     def __init__(self):
         self.address:str               = ''
         self.balances:dict             = None
-        #self.delegateTx                = DelegationTransaction()
         self.delegations:dict          = {}
         self.delegation_details:dict   = None
         self.denom:str                 = ''
@@ -56,12 +53,9 @@ class UserWallet:
         self.name:str                  = ''
         self.prefix:str                = ''     # NOTE: might not be used anymore, replaced by self.denom
         self.seed:str                  = ''
-        #self.sendTx                    = SendTransaction()
-        #self.swapTx                    = SwapTransaction()
         self.terra:LCDClient           = None
         self.validated: bool           = False
-        #self.withdrawalTx              = WithdrawalTransaction()
-    
+        
     def __iter_result__(self, terra:LCDClient, delegator:Delegation) -> dict:
         """
         An internal function which returns a dict object with validator details.
@@ -88,16 +82,6 @@ class UserWallet:
         # Set up the object with the details we're interested in
         if balance_amount > 0:
             self.delegations[validator_name] = {'balance_amount': balance_amount, 'balance_denom': balance_denom, 'commission': validator_commission, 'delegator': delegator_address, 'rewards': reward_coins, 'validator': validator_address,  'validator_name': validator_name}
-        
-
-    # def allowSwaps(self, allow_swaps:bool) -> bool:
-    #     """
-    #     Update the wallet with the allow_swaps status.
-    #     """
-
-    #     self.allow_swaps = allow_swaps
-        
-    #     return True
     
     def convertPercentage(self, percentage:float, keep_minimum:bool, target_amount:float, target_denom:str):
         """
@@ -141,17 +125,6 @@ class UserWallet:
 
         return self
     
-    # def delegate(self):
-    #     """
-    #     Update the delegate class with the data it needs
-    #     It will be created via the create() command
-    #     """
-
-    #     self.delegateTx.seed     = self.seed
-    #     self.delegateTx.balances = self.balances
-
-    #     return self.delegateTx
-    
     def denomTrace(self, ibc_address:str):
         """
         Based on the wallet prefix, get the IBC denom trace details for this IBC address
@@ -183,11 +156,10 @@ class UserWallet:
                         else:
                             break
                     except Exception as err:
-                        print (f'Denom trace error for {uri}:')
-                        print (err)
-
                         retry_count += 1
                         if retry_count == 10:
+                            print (f'Denom trace error for {uri}:')
+                            print (err)
                             retry = False
                             break
                         else:
@@ -255,12 +227,8 @@ class UserWallet:
             except Exception as err:
                 print (f'Pagination error for {self.name}:', err)
 
-            # Add the extra coins (Kuji etc)
+            # Add the extra coins (Base etc)
             if self.terra.chain_id == 'columbus-5':
-                #coin_balance = self.terra.wasm.contract_query(KUJI_SMART_CONTACT_ADDRESS, {'balance':{'address':self.address}})
-                #if int(coin_balance['balance']) > 0:
-                #    balances[UKUJI] = coin_balance['balance']
-
                 coin_balance = self.terra.wasm.contract_query(BASE_SMART_CONTRACT_ADDRESS, {'balance':{'address':self.address}})
                 if int(coin_balance['balance']) > 0:
                     balances[UBASE] = coin_balance['balance']
@@ -269,7 +237,7 @@ class UserWallet:
 
         return self.balances
     
-    def get_coin_selection(self, question:str, coins:dict, only_active_coins:bool = True, estimation_against:dict = None):
+    def getCoinSelection(self, question:str, coins:dict, only_active_coins:bool = True, estimation_against:dict = None):
         """
         Return a selected coin based on the provided list.
         """
@@ -442,18 +410,6 @@ class UserWallet:
 
         return coin_to_use, answer, returned_estimation
     
-    # def getDelegations(self) -> dict:
-    #     """
-    #     Get the delegations associated with this wallet address.
-    #     The results are cached so if the list is refreshed then it is much quicker.
-    #     """
-        
-    #     if self.has_delegations == True:
-    #         if self.delegation_details is None:
-    #             self.delegation_details = Delegations().create()
-
-    #     return self.delegation_details
-    
     def getDelegations(self) -> dict:
         """
         Create a dictionary of information about the delegations on this wallet.
@@ -478,34 +434,6 @@ class UserWallet:
                     self.__iter_result__(self.terra, delegator)
         except:
             print (' 🛎️  Network error: delegations could not be retrieved.')
-
-        #wallet:Wallet = Wallet()
-        #prefix = wallet.getPrefix(wallet_address)
-        
-        # prefix = wallet.prefix
-        # if prefix == 'terra':
-        #     if len(self.delegations) == 0:
-        #         # Defaults to uluna/terra
-        #         terra = TerraInstance().create()
-
-        #         pagOpt:PaginationOptions = PaginationOptions(limit=50, count_total=True)
-        #         try:
-        #             result, pagination = terra.staking.delegations(delegator = wallet_address, params = pagOpt)
-
-        #             delegator:Delegation 
-        #             for delegator in result:
-        #                 self.__iter_result__(terra, delegator)
-
-        #             while pagination['next_key'] is not None:
-
-        #                 pagOpt.key         = pagination['next_key']
-        #                 result, pagination = terra.staking.delegations(delegator = wallet_address, params = pagOpt)
-
-        #                 delegator:Delegation 
-        #                 for delegator in result:
-        #                     self.__iter_result__(terra, delegator)
-        #         except:
-        #             print (' 🛎️  Network error: delegations could not be retrieved.')
 
         return self.delegations
     
@@ -547,7 +475,7 @@ class UserWallet:
 
         return self.undelegation_details
     
-    def get_user_number(self, question:str, params:dict):
+    def getUserNumber(self, question:str, params:dict):
         """
         Get ther user input - must be a number.
         """ 
@@ -620,8 +548,7 @@ class UserWallet:
 
         return answer
     
-    #def get_user_recipient(question:str, wallet:UserWallet, user_config:dict):
-    def get_user_recipient(self, question:str, user_config:dict):
+    def getUserRecipient(self, question:str, user_config:dict):
         """
         Get the recipient address that we are sending to.
 
@@ -664,6 +591,23 @@ class UserWallet:
             print (' 🛎️  This is an invalid address - please check and try again.')
 
         return recipient_address
+    
+    def getUserText(self, question:str, max_length:int, allow_blanks:bool) -> str:
+        """
+        Get a text string from the user - must be less than a definied length.
+        """
+
+        while True:    
+            answer = input(question).strip(' ')
+
+            if len(answer) > max_length:
+                print (f' 🛎️  The length must be less than {max_length}')
+            elif len(answer) == 0 and allow_blanks == False:
+                print (f' 🛎️  This value cannot be blank or empty')
+            else:
+                break
+
+        return str(answer)
 
     def newWallet(self):
         """
@@ -674,37 +618,6 @@ class UserWallet:
         wallet:Wallet = self.terra.wallet(mk)
         
         return mk.mnemonic, wallet.key.acc_address
-
-    # def send(self):
-    #     """
-    #     Update the send class with the data it needs.
-    #     It will be created via the create() command.
-    #     """
-
-    #     self.sendTx.seed     = self.seed
-    #     self.sendTx.balances = self.balances
-
-    #     return self.sendTx
-    
-    # def swap(self):
-    #     """
-    #     Update the swap class with the data it needs.
-    #     It will be created via the create() command.
-    #     """
-
-    #     self.swapTx.seed     = self.seed
-    #     self.swapTx.balances = self.balances
-
-    #     return self.swapTx
-    
-    # def updateDelegation(self, amount:str, threshold:int) -> bool:
-    #     """
-    #     Update the delegation details with the amount and threshold details.
-    #     """
-
-    #     self.delegations = {'delegate': amount, 'threshold': threshold}
-
-    #     return True
     
     def validateAddress(self, address:str) -> bool:
         """
@@ -757,15 +670,4 @@ class UserWallet:
                 return False
         except:
             return False
-    
-    def withdrawal(self):
-        """
-        Update the withdrawal class with the data it needs.
-        It will be created via the create() command.
-        """
-
-        self.withdrawalTx.seed     = self.seed
-        self.withdrawalTx.balances = self.balances
-
-        return self.withdrawalTx
     

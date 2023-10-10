@@ -436,11 +436,11 @@ class SwapTransaction(TransactionCore):
         #print ('sender prefix:', self.sender_prefix)
         #print ('swap denom:', self.swap_denom)
         #chain = self.getChainByDenom(self.swap_denom)
-        chain = CHAIN_DATA[self.wallet_denom]
+        #chain = CHAIN_DATA[self.wallet_denom]
         #prefix = chain['prefix']
         #print ('prefix:', prefix)
         #channel_id = CHAIN_IDS[prefix]['ibc_channel']
-        channel_id = chain['ibc_channel']
+        channel_id = CHAIN_DATA[self.wallet_denom]['ibc_channels'][self.swap_denom]
         
         print ('channel id:', channel_id)
         print (f'hash: transfer/{channel_id}/{self.swap_denom}')
@@ -449,8 +449,7 @@ class SwapTransaction(TransactionCore):
         #print ('should look like this: ibc/57AA1A70A4BC9769C525EBF6386F7A21536E04A79D62E1981EFCEF9428EBB205')
         
         if self.swap_denom != 'uosmo':
-            ibc_value = sha256(f'transfer/{channel_id}/{self.swap_denom}'.encode('utf-8')).hexdigest().upper()
-            coin_denom = 'ibc/' + ibc_value
+            coin_denom = 'ibc/' + sha256(f'transfer/{channel_id}/{self.swap_denom}'.encode('utf-8')).hexdigest().upper()
         else:
             coin_denom = 'uosmo'
 

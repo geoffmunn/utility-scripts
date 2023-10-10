@@ -214,7 +214,7 @@ def main():
 
     available_balance:float = wallet.formatUluna(wallet.balances[coin_from], coin_from)
     print (f'This coin has a maximum of {available_balance} {FULL_COIN_LOOKUP[coin_from]} available.')
-    swap_uluna = wallet.get_user_number("How much do you want to swap? (Or type 'Q' to quit) ", {'max_number': float(available_balance), 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': True, 'keep_minimum': False, 'target_denom': coin_from})
+    swap_uluna = wallet.getUserNumber("How much do you want to swap? (Or type 'Q' to quit) ", {'max_number': float(available_balance), 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': True, 'keep_minimum': False, 'target_denom': coin_from})
 
     if swap_uluna == USER_ACTION_QUIT:
         print (' 🛑 Exiting...\n')

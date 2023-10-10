@@ -38,7 +38,7 @@ def main():
     if entire_wallet == False:
         wallet:Wallet   = Wallet().create()
         wallet_name:str = get_user_text('Wallet name: ', 255, False)
-        wallet_address  = get_user_recipient("What is the wallet address address? (or type 'Q' to quit) ", wallet, {})
+        wallet_address  = wallet.getUserRecipient("What is the wallet address address? (or type 'Q' to quit) ", wallet, {})
 
         if wallet_address == USER_ACTION_QUIT:
             print (' 🛑 Exiting...\n')

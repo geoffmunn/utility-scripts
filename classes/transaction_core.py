@@ -43,6 +43,7 @@ class TransactionCore():
         self.balances:dict                           = {}
         self.broadcast_result:BlockTxBroadcastResult = None
         self.current_wallet:Wallet                   = None # The generated wallet based on the provided details
+        self.denom_traces:dict                       = {}
         self.fee:Fee                                 = None
         self.gas_list:json                           = None
         self.gas_price_url:str                       = None
