@@ -160,7 +160,7 @@ class TransactionCore():
         if ibc_address[0:4] == 'ibc/':
             
             value      = ibc_address[4:]
-            chain_name = CHAIN_DATA[self.wallet_denom]['name']
+            chain_name = CHAIN_DATA[self.wallet_denom]['cosmos_name']
             uri:str    = f'https://rest.cosmos.directory/{chain_name}/ibc/apps/transfer/v1/denom_traces/{value}'
 
             if uri not in self.denom_traces:
@@ -232,7 +232,7 @@ class TransactionCore():
             retry_count += 1
 
             if retry_count <= SEARCH_RETRY_COUNT:
-                print ('Tx hash not found, giving it another go')
+                print ('Tx hash not found...')
                 time.sleep(1)
             else:
                 break
@@ -324,19 +324,7 @@ class TransactionCore():
                 amount = divide_raw_balance(fee_coin.amount, fee_coin.denom)
                 amount = ("%.6f" % (amount)).rstrip('0').rstrip('.')
 
-                #wallet = UserWallet()
-                #wallet.address = self.sender_address
-                #wallet.denom = self.wallet_denom
-
-                #print (f'TO CHECK: {wallet.address} should equal {self.sender_address}')
-                #print (f'TO CHECK: {wallet.denom} should equal {self.wallet_denom}')
-
                 denom = self.denomTrace(fee_coin.denom)
-
-                # if ibc_denom == False:
-                #     denom  = FULL_COIN_LOOKUP[fee_coin.denom]
-                # else:
-                #     denom = FULL_COIN_LOOKUP[ibc_denom['base_denom']]
 
                 if first == False:
                     fee_string += ', and ' + str(amount) + ' ' + denom
