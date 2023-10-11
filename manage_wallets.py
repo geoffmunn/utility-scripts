@@ -293,7 +293,7 @@ def main():
                         print (f'Withdrawing {wallet.formatUluna(uluna_reward, ULUNA, False)} rewards')
 
                         # Update the balances so we know what we have to pay the fee with
-                        wallet.getBalances(clear_cache = True)
+                        wallet.getBalances()
                         
                         # Set up the withdrawal object
                         withdrawal_tx = WithdrawalTransaction().create(delegator_address = delegations[validator]['delegator'], validator_address = delegations[validator]['validator'])
@@ -356,7 +356,7 @@ def main():
                 print ('Starting swaps...')
 
                 # Update the balances so we know we have the correct amount
-                wallet.getBalances(clear_cache = True)
+                wallet.getBalances()
                 
                 # We are only supporting swaps with uusd (USTC) at the moment
                 if 'uusd' in wallet.balances:
@@ -434,7 +434,7 @@ def main():
                     print ('Starting delegations...')
 
                     # Update the balances after having done withdrawals and swaps
-                    wallet.getBalances(clear_cache = True)
+                    wallet.getBalances()
                     
                     # Only proceed if this is an active validator with a non-zero balance
                     if delegations[validator]['balance_amount'] > 0:

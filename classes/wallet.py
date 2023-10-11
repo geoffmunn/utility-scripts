@@ -188,13 +188,12 @@ class UserWallet:
         
         return lunc
     
-    def getBalances(self, clear_cache:bool = False) -> dict:
+    def getBalances(self) -> dict:
         """
         Get the balances associated with this wallet.
-        """
 
-        if clear_cache == True:
-            self.balances = None
+        If you just want the previously fetched balances, use wallet.balances
+        """
 
         balances:dict = {}
         if self.balances is None:
@@ -283,6 +282,7 @@ class UserWallet:
                     swap_tx.swap_amount        = float(self.formatUluna(estimation_against['amount'], estimation_against['denom'], False))
                     swap_tx.swap_denom         = estimation_against['denom']
                     swap_tx.swap_request_denom = coin
+                    swap_tx.wallet_denom       = self.denom
 
                     # Change the contract depending on what we're doing
                     swap_tx.setContract()
@@ -427,7 +427,6 @@ class UserWallet:
                     self.__iter_result__(self.terra, delegator)
 
                 while pagination['next_key'] is not None:
-
                     pagOpt.key         = pagination['next_key']
                     result, pagination = self.terra.staking.delegations(delegator = self.address, params = pagOpt)
 
