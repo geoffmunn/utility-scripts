@@ -28,7 +28,6 @@ from constants.constants import (
 
 from classes.delegation_transaction import DelegationTransaction
 from classes.swap_transaction import SwapTransaction
-from classes.user_config import UserConfig
 from classes.wallet import UserWallet
 from classes.wallets import UserWallets
 from classes.withdrawal_transaction import WithdrawalTransaction
@@ -40,7 +39,6 @@ def get_user_multichoice(question:str, user_wallets:dict) -> dict|str:
     """
 
     label_widths = []
-
     label_widths.append(len('Number'))
     label_widths.append(len('Wallet name'))
     label_widths.append(len('LUNC'))
@@ -51,8 +49,8 @@ def get_user_multichoice(question:str, user_wallets:dict) -> dict|str:
         wallet:UserWallet = user_wallets[wallet_name]
 
         # Get the delegations and balances for this wallet
-        delegations = wallet.getDelegations()
-        balances    = wallet.getBalances()
+        delegations:dict = wallet.delegations
+        balances:dict    = wallet.balances
 
         # Initialise the reward values
         ulunc_reward:int = 0
@@ -80,9 +78,8 @@ def get_user_multichoice(question:str, user_wallets:dict) -> dict|str:
             if len(formatted_val) > label_widths[4]:
                 label_widths[4] = len(formatted_val)
 
-    padding_str = ' ' * 100
-
-    header_string = ' Number |'
+    padding_str:str   = ' ' * 100
+    header_string:str = ' Number |'
 
     if label_widths[1] > len('Wallet name'):
         header_string +=  ' Wallet name' + padding_str[0:label_widths[1] - len('Wallet name')] + ' '
@@ -106,11 +103,11 @@ def get_user_multichoice(question:str, user_wallets:dict) -> dict|str:
 
     horizontal_spacer = '-' * len(header_string)
 
-    wallets_to_use = {}
+    wallets_to_use:dict = {}
     while True:
 
-        count = 0
-        wallet_numbers = {}
+        count:int           = 0
+        wallet_numbers:dict = {}
 
         print (horizontal_spacer)
         print (header_string)
@@ -118,10 +115,12 @@ def get_user_multichoice(question:str, user_wallets:dict) -> dict|str:
 
         for wallet_name in user_wallets:
             wallet:UserWallet = user_wallets[wallet_name]
-            delegations       = wallet.getDelegations()
-            balances          = wallet.getBalances()
+                
+            delegations:dict = wallet.delegations
+            balances:dict    = wallet.balances
 
             count += 1
+            # Add this wallet to the lookup list
             wallet_numbers[count] = wallet
                 
             if wallet_name in wallets_to_use:
@@ -196,12 +195,8 @@ def main():
     # Check if there is a new version we should be using
     check_version()
 
-    # Get the password that decrypts the user wallets
-    decrypt_password:str = getpass() # the secret password that encrypts the seed phrase
-
-    if decrypt_password == '':
-        print (' 🛑 Exiting...\n')
-        exit()
+    # Get the user wallets
+    user_wallets = UserWallets().loadUserWallets()
 
     # Get the desired actions
     print ('\nWhat action do you want to take?\n')
@@ -226,27 +221,13 @@ def main():
     if user_action == USER_ACTION_QUIT:
         print (' 🛑 Exiting...\n')
         exit()
-        
-    # Get the user config file contents
-    user_config:str = UserConfig().contents()
-    if user_config == '':
-        print (' 🛑 The user_config.yml file could not be opened - please run configure_user_wallets.py before running this script.')
-        exit()
-
-    print ('Decrypting and validating wallets - please wait...\n')
-
-    # Create the wallet object based on the user config file
-    wallet_obj       = UserWallets().create(user_config, decrypt_password)
-    decrypt_password = None
-    
-    # Get all the wallets
-    user_wallets = wallet_obj.getWallets(True)
 
     # Get the balances on each wallet (for display purposes)
     for wallet_name in user_wallets:
         wallet:UserWallet = user_wallets[wallet_name]
-        delegations       = wallet.getDelegations()
-        
+        wallet.getDelegations()
+        wallet.getBalances()
+
     action_string = ''
     if user_action == USER_ACTION_WITHDRAW:
         action_string = 'withdraw rewards'
@@ -289,11 +270,11 @@ def main():
     # Now start doing stuff
     for wallet_name in user_wallets:
         wallet:UserWallet = user_wallets[wallet_name]
-
+        
         print ('####################################')
         print (f'Accessing the {wallet.name} wallet...')
 
-        delegations = wallet.getDelegations()
+        delegations = wallet.delegations
         for validator in delegations:
 
             if ULUNA in delegations[validator]['rewards']:
