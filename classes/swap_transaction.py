@@ -432,66 +432,66 @@ class SwapTransaction(TransactionCore):
         If fee is None then it will be a simulation.
         """
 
-        #try:
-        #print ('sender prefix:', self.sender_prefix)
-        #print ('swap denom:', self.swap_denom)
-        #chain = self.getChainByDenom(self.swap_denom)
-        #chain = CHAIN_DATA[self.wallet_denom]
-        #prefix = chain['prefix']
-        #print ('prefix:', prefix)
-        #channel_id = CHAIN_IDS[prefix]['ibc_channel']
-        channel_id = CHAIN_DATA[self.wallet_denom]['ibc_channels'][self.swap_denom]
-        
-        print ('channel id:', channel_id)
-        print (f'hash: transfer/{channel_id}/{self.swap_denom}')
-        print ('hash result:', sha256(f'transfer/{channel_id}/{self.swap_denom}'.encode('utf-8')).hexdigest().upper())
-        #print ('should look like this:', IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['token_in'])
-        #print ('should look like this: ibc/57AA1A70A4BC9769C525EBF6386F7A21536E04A79D62E1981EFCEF9428EBB205')
-        
-        if self.swap_denom != 'uosmo':
-            coin_denom = 'ibc/' + sha256(f'transfer/{channel_id}/{self.swap_denom}'.encode('utf-8')).hexdigest().upper()
-        else:
-            coin_denom = 'uosmo'
+        try:
+            #print ('sender prefix:', self.sender_prefix)
+            #print ('swap denom:', self.swap_denom)
+            #chain = self.getChainByDenom(self.swap_denom)
+            #chain = CHAIN_DATA[self.wallet_denom]
+            #prefix = chain['prefix']
+            #print ('prefix:', prefix)
+            #channel_id = CHAIN_IDS[prefix]['ibc_channel']
+            channel_id = CHAIN_DATA[self.wallet_denom]['ibc_channels'][self.swap_denom]
+            
+            #print ('channel id:', channel_id)
+            #print (f'hash: transfer/{channel_id}/{self.swap_denom}')
+            #print ('hash result:', sha256(f'transfer/{channel_id}/{self.swap_denom}'.encode('utf-8')).hexdigest().upper())
+            #print ('should look like this:', IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['token_in'])
+            #print ('should look like this: ibc/57AA1A70A4BC9769C525EBF6386F7A21536E04A79D62E1981EFCEF9428EBB205')
+            
+            if self.swap_denom != 'uosmo':
+                coin_denom = 'ibc/' + sha256(f'transfer/{channel_id}/{self.swap_denom}'.encode('utf-8')).hexdigest().upper()
+            else:
+                coin_denom = 'uosmo'
 
-        #print ('we will be using', coin_denom)
+            #print ('we will be using', coin_denom)
 
-        token_in:Coin = Coin(coin_denom, self.swap_amount)
+            token_in:Coin = Coin(coin_denom, self.swap_amount)
 
-        #old:Coin = Coin(IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['token_in'], self.swap_amount)
-        #print (f"old coin: {self.swap_denom}/{self.swap_request_denom} returns {IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['token_in']}")
-        #print ('old denom:', old.denom)
+            #old:Coin = Coin(IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['token_in'], self.swap_amount)
+            #print (f"old coin: {self.swap_denom}/{self.swap_request_denom} returns {IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['token_in']}")
+            #print ('old denom:', old.denom)
 
-        #token_in:Coin = Coin(IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['token_in'], self.swap_amount)
+            #token_in:Coin = Coin(IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['token_in'], self.swap_amount)
 
-        tx_msg = MsgSwapExactAmountIn(
-            sender               = self.sender_address,
-            routes               = self.ibc_routes,
-            token_in             = str(token_in),
-            token_out_min_amount = str(self.min_out)
-        )
+            tx_msg = MsgSwapExactAmountIn(
+                sender               = self.sender_address,
+                routes               = self.ibc_routes,
+                token_in             = str(token_in),
+                token_out_min_amount = str(self.min_out)
+            )
 
-        options = CreateTxOptions(
-            account_number = self.account_number,
-            fee            = self.fee,
-            gas            = self.gas_limit,
-            #gas_adjustment = IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['gas_adjustment'],
-            gas_adjustment = 1.5,
-            msgs           = [tx_msg],
-            sequence       = self.sequence
-        )
+            options = CreateTxOptions(
+                account_number = self.account_number,
+                fee            = self.fee,
+                gas            = self.gas_limit,
+                #gas_adjustment = IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['gas_adjustment'],
+                gas_adjustment = 1.5,
+                msgs           = [tx_msg],
+                sequence       = self.sequence
+            )
 
-        print (self.terra.chain_id)
-        print (self.terra.url)
-        print ('options:')
-        print (options)
+            #print (self.terra.chain_id)
+            #print (self.terra.url)
+            #print ('options:')
+            #print (options)
 
-        tx:Tx = self.current_wallet.create_and_sign_tx(options)
-        
-        self.transaction = tx
+            tx:Tx = self.current_wallet.create_and_sign_tx(options)
+            
+            self.transaction = tx
 
-        return True
-        #except:
-        #    return False
+            return True
+        except:
+            return False
 
     def osmosisPoolByID(self, pool_id:int) -> Pool:
         """
