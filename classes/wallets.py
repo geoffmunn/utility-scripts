@@ -16,7 +16,7 @@ class UserWallets:
         self.wallets:dict   = {}
         self.addresses:dict = {}
 
-    def create(self, yml_file:dict, user_password:str):
+    def create(self, yml_file:dict, user_password:str) -> dict:
         """
         Create a dictionary of wallets. Each wallet is a Wallet object.
         """
@@ -40,11 +40,12 @@ class UserWallets:
 
                 wallet_item.validated = wallet_item.validateWallet()
 
-                # Add this completed wallet to the list
-                self.wallets[wallet['wallet']] = wallet_item
+                if wallet_item.validated == True:
+                    # Add this completed wallet to the list
+                    self.wallets[wallet['wallet']] = wallet_item
 
-                # Add this to the address list as well
-                self.addresses[wallet['wallet']] = wallet_item
+                    # Add this to the address list as well
+                    self.addresses[wallet['wallet']] = wallet_item
             else:
                 # It's just an address - add it to the address list
                 if 'address' in wallet:
