@@ -116,7 +116,7 @@ class UserWallet:
         if denom == '':
             prefix = self.getPrefix(self.address)
             for chain_key in [*CHAIN_DATA]:
-                if CHAIN_DATA[chain_key]['prefix'] == prefix:
+                if CHAIN_DATA[chain_key]['bech32_prefix'] == prefix:
                     denom = chain_key
 
         self.denom = denom
@@ -135,7 +135,7 @@ class UserWallet:
         if ibc_address[0:4] == 'ibc/':
             
             value      = ibc_address[4:]
-            chain_name = CHAIN_DATA[self.denom]['name']
+            chain_name = CHAIN_DATA[self.denom]['cosmos_name']
             uri:str    = f'https://rest.cosmos.directory/{chain_name}/ibc/apps/transfer/v1/denom_traces/{value}'
 
             if uri not in self.denom_traces:
@@ -445,7 +445,7 @@ class UserWallet:
 
         result = None
         for key in CHAIN_DATA.keys():
-            if CHAIN_DATA[key]['prefix'] == prefix:
+            if CHAIN_DATA[key]['bech32_prefix'] == prefix:
                 result = key
                 break
             
