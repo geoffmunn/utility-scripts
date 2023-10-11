@@ -809,7 +809,7 @@ class SwapTransaction(TransactionCore):
             if self.swap_denom in OFFCHAIN_COINS + [ULUNA] and self.swap_request_denom in OFFCHAIN_COINS + [ULUNA]:
                 # Calculate the amount of OSMO we'll be getting:
                 # (lunc amount * lunc unit cost) / osmo price
-                if self.swap_denom in CHAIN_DATA and self.swap_request_denom in CHAIN_DATA:
+                if self.wallet_denom in CHAIN_DATA and self.swap_request_denom in CHAIN_DATA[self.wallet_denom]['ibc_channels']:
                     prices:json            = self.getPrices(self.swap_denom, self.swap_request_denom)
                     estimated_amount:float = (self.swap_amount * float(prices['from']) / float(prices['to']))
             else:
