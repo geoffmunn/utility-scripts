@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 
-from getpass import getpass
-
-from classes.user_config import UserConfig
 from classes.wallet import UserWallet
 from classes.wallets import UserWallets
 from classes.send_transaction import SendTransaction
@@ -270,28 +267,10 @@ def main():
     # Check if there is a new version we should be using
     check_version()
 
-    # Get the password that decrypts the user wallets
-    decrypt_password:str = getpass() # the secret password that encrypts the seed phrase
-
-    if decrypt_password == '':
-        print (' 🛑 Exiting...\n')
-        exit()
-
-    # Get the user config file contents
-    user_config:str = UserConfig().contents()
-    if user_config == '':
-        print (' 🛑 The user_config.yml file could not be opened - please run configure_user_wallets.py before running this script.')
-        exit()
-
-    print ('Decrypting and validating wallets - please wait...\n')
-
-    # Create the wallet object based on the user config file
-    wallet_obj       = UserWallets().create(user_config, decrypt_password)
-    decrypt_password = None
-
-    # Get all the wallets
-    user_wallets = wallet_obj.getWallets(True)
-    user_addresses = wallet_obj.getAddresses()
+    wallet_obj:UserWallets = UserWallets()
+    wallet_obj.loadUserWallets()
+    user_wallets:dict = wallet_obj.wallets
+    user_addresses:dict = wallet_obj.addresses
 
     # Get the balances on each wallet (for display purposes)
     for wallet_name in user_wallets:
