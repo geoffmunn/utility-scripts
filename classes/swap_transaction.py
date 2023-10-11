@@ -79,29 +79,30 @@ class SwapTransaction(TransactionCore):
         if self.contract is not None:
             try:
                 if self.swap_denom != UBASE and self.swap_request_denom != UBASE:
-                    parts:dict          = {}
                     contract_swaps:list = [ULUNA, UKRW, UUSD]
+                    # Contract swaps must be on the columbus-5 chain
+                    if self.terra.chain_id == CHAIN_DATA[ULUNA]['chain_id']:
+                        if self.swap_denom in contract_swaps and self.swap_request_denom in contract_swaps:
+                            # Get the pool details
+                            parts:dict          = {}
+                            result = self.terra.wasm.contract_query(self.contract, {"pool": {}})
+                            if 'native_token' in result['assets'][0]['info']:
+                                parts[result['assets'][0]['info']['native_token']['denom']] = int(result['assets'][0]['amount'])
 
-                    # Get the pool details
-                    result = self.terra.wasm.contract_query(self.contract, {"pool": {}})
-                    if 'native_token' in result['assets'][0]['info']:
-                        parts[result['assets'][0]['info']['native_token']['denom']] = int(result['assets'][0]['amount'])
+                            parts[result['assets'][1]['info']['native_token']['denom']] = int(result['assets'][1]['amount'])
 
-                    parts[result['assets'][1]['info']['native_token']['denom']] = int(result['assets'][1]['amount'])
-
-                    if self.swap_denom in contract_swaps and self.swap_request_denom in contract_swaps:
-                        # Just about all swap types will use this approach:
-                        belief_price:float = parts[self.swap_denom] / parts[self.swap_request_denom]
+                            belief_price:float = parts[self.swap_denom] / parts[self.swap_request_denom]
                         
                 else:
                     # UBASE does something different
-                    result           = self.terra.wasm.contract_query(self.contract, {"curve_info": {}})
-                    spot_price:float = float(result['spot_price'])
+                    if self.terra.chain_id == CHAIN_DATA[ULUNA]['chain_id']:
+                        result           = self.terra.wasm.contract_query(self.contract, {"curve_info": {}})
+                        spot_price:float = float(result['spot_price'])
 
-                    if self.swap_request_denom == UBASE:
-                        belief_price:float = divide_raw_balance((spot_price * 1.053), UBASE)
-                    else:
-                        belief_price:float = divide_raw_balance((spot_price - (spot_price * 0.048)), UBASE)
+                        if self.swap_request_denom == UBASE:
+                            belief_price:float = divide_raw_balance((spot_price * 1.053), UBASE)
+                        else:
+                            belief_price:float = divide_raw_balance((spot_price - (spot_price * 0.048)), UBASE)
 
             except Exception as err:
                 print (' 🛑 A connection error has occurred:')
@@ -511,26 +512,7 @@ class SwapTransaction(TransactionCore):
             result = pool        
             
         return result
-    
-    # def osmosisDenomSwapTo(self, pool_id:int, from_denom:str):
-    #     """
-    #     """
 
-    #     pool:Pool = self.osmosisPoolByID(pool_id)
-        
-    #     if pool is not None:
-    #         swap_to:Coin = None
-
-    #         assets = pool.pool_assets
-    #         asset:PoolAsset
-    #         for asset in assets:
-    #             if asset.token.denom != from_denom:
-    #                 swap_to = asset.token
-
-    #         return swap_to.denom
-    #     else:
-    #         print (' 🛑 Osmosis pool details could not be retrieved')
-    #         exit()
     
     def setContract(self) -> bool:
         """
@@ -544,7 +526,6 @@ class SwapTransaction(TransactionCore):
         contract_swaps:list  = [ULUNA, UKRW, UUSD, UBASE]
 
         if self.swap_denom in contract_swaps and self.swap_request_denom in contract_swaps:
-
             use_market_swap = False
 
             if self.swap_denom == ULUNA:
@@ -677,9 +658,6 @@ class SwapTransaction(TransactionCore):
             else:
                 fee_denom:str   = UUSD
 
-            print ('swap fee:', self.fee)
-            print ('fee denom:', fee_denom)
-            print ('self balances:', self.balances)
             if fee_denom in self.balances:
                 swap_amount = self.swap_amount
 
