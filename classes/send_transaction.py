@@ -158,78 +158,72 @@ class SendTransaction(TransactionCore):
             if int(send_amount + self.tax) > int(self.balances[self.denom]):
                 send_amount = int(send_amount - self.fee_deductables)
 
-        #try:
-        tx:Tx = None
+        try:
+            tx:Tx = None
 
-        if self.terra.chain_id == 'columbus-5':
-            revision_number = 1
-        else:
-            revision_number = 6
+            if self.terra.chain_id == 'columbus-5':
+                revision_number = 1
+            else:
+                revision_number = 6
 
-        print ('self denom:', self.denom)
-        print ('wallet denom:', self.wallet_denom)
-        if self.denom != self.wallet_denom:
-            ibc_value = sha256(f'transfer/{self.source_channel}/{self.denom}'.encode('utf-8')).hexdigest().upper()
-            send_denom = 'ibc/' + ibc_value
-            token = {
-                "amount": str(send_amount),
-                "denom": send_denom
-            }
-        else:
-            token = Coin(self.denom, send_amount)
+            if self.denom != self.wallet_denom:
+                ibc_value = sha256(f'transfer/{self.source_channel}/{self.denom}'.encode('utf-8')).hexdigest().upper()
+                send_denom = 'ibc/' + ibc_value
+                token = {
+                    "amount": str(send_amount),
+                    "denom": send_denom
+                }
+            else:
+                token = Coin(self.denom, send_amount)
 
-        print ('token:', token)
-        print ('fee:', self.fee)
+            msg = MsgTransfer(
+                source_port       = 'transfer',
+                source_channel    = self.source_channel,
+                token = token,
+                sender            = self.sender_address,
+                receiver          = self.recipient_address,
+                timeout_height    = Height(revision_number = revision_number, revision_height = self.block_height),
+                timeout_timestamp = 0
+            )
+                                
+            options = CreateTxOptions(
+                account_number = str(self.account_number),
+                sequence       = str(self.sequence),
+                msgs           = [msg],
+                fee            = self.fee,
+                gas            = self.gas_limit,
+                gas_prices     = self.gas_list
+                #fee_denoms     = ['uosmo', 'uluna']
+            )
 
-        msg = MsgTransfer(
-            source_port       = 'transfer',
-            source_channel    = self.source_channel,
-            token = token,
-            sender            = self.sender_address,
-            receiver          = self.recipient_address,
-            timeout_height    = Height(revision_number = revision_number, revision_height = self.block_height),
-            timeout_timestamp = 0
-        )
-                            
-        options = CreateTxOptions(
-            account_number = str(self.account_number),
-            sequence       = str(self.sequence),
-            msgs           = [msg],
-            fee            = self.fee,
-            gas            = self.gas_limit,
-            gas_prices     = self.gas_list
-            #fee_denoms     = ['uosmo', 'uluna']
-        )
-
-        print (options)
-        # This process often generates sequence errors. If we get a response error, then
-        # bump up the sequence number by one and try again.
-        while True:
-            try:
-                tx:Tx = self.current_wallet.create_and_sign_tx(options)
-                break
-            except LCDResponseError as err:
-                if 'account sequence mismatch' in err.message:
-                    self.sequence    = self.sequence + 1
-                    options.sequence = self.sequence
-                    print (' 🛎️  Boosting sequence number')
-                else:
-                    print ('An unexpected error occurred in the send function:')
+            # This process often generates sequence errors. If we get a response error, then
+            # bump up the sequence number by one and try again.
+            while True:
+                try:
+                    tx:Tx = self.current_wallet.create_and_sign_tx(options)
+                    break
+                except LCDResponseError as err:
+                    if 'account sequence mismatch' in err.message:
+                        self.sequence    = self.sequence + 1
+                        options.sequence = self.sequence
+                        print (' 🛎️  Boosting sequence number')
+                    else:
+                        print ('An unexpected error occurred in the send function:')
+                        print (err)
+                        break
+                except Exception as err:
+                    print (' 🛑 An unexpected error occurred in the send function:')
                     print (err)
                     break
-            except Exception as err:
-                print (' 🛑 An unexpected error occurred in the send function:')
-                print (err)
-                break
 
-        # Store the transaction
-        self.transaction = tx
+            # Store the transaction
+            self.transaction = tx
 
-        return True
-        # except Exception as err:
-        #     print (' 🛑 An unexpected error occurred in the send function:')
-        #     print (err)
-        #     return False
+            return True
+        except Exception as err:
+            print (' 🛑 An unexpected error occurred in the send function:')
+            print (err)
+            return False
     
     def simulate(self) -> bool:
         """
