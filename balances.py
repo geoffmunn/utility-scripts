@@ -48,8 +48,7 @@ def main():
 
     for wallet_name in user_wallets:
         wallet:UserWallet = user_wallets[wallet_name]
-        
-        delegations:dict = wallet.getDelegations()
+        delegations:dict  = wallet.getDelegations()
 
         if delegations is not None:
             for validator in delegations:
@@ -73,10 +72,7 @@ def main():
         for denom in wallet.balances:
             
             raw_amount = divide_raw_balance(wallet.balances[denom], denom)
-            ibc_denom  = wallet.denomTrace(denom)
-
-            if ibc_denom != False:     
-                denom = ibc_denom['base_denom']
+            denom  = wallet.denomTrace(denom)
 
             amount = ("%.6f" % (raw_amount)).rstrip('0').rstrip('.')
 
