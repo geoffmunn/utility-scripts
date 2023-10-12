@@ -4,9 +4,7 @@
 import sqlite3
 from datetime import datetime
 
-from utility_classes import (
-    Wallet
-)
+from classes.wallet import UserWallet
 
 from terra_classic_sdk.core.osmosis import Pool, PoolAsset
 
@@ -24,7 +22,7 @@ add_asset = "INSERT INTO asset (pool_id, denom, readable_denom, amount, weight) 
 
 all_pool_ids = "SELECT pool_id FROM pool ORDER BY pool_id ASC;"
 
-wallet:Wallet = Wallet().create(denom = 'uosmo')
+wallet:UserWallet = UserWallet().create(denom = 'uosmo')
 
 cursor = conn.execute(delete_pool_table)
 cursor = conn.execute(delete_asset_table)
@@ -43,11 +41,7 @@ for pool in pools:
     
     pool_asset:PoolAsset
     for pool_asset in pool.pool_assets:
-        denom_trace = wallet.denomTrace(pool_asset.token.denom)
-        if denom_trace == False:
-            readable_denom = pool_asset.token.denom
-        else:
-            readable_denom = denom_trace['base_denom']
+        readable_denom = wallet.denomTrace(pool_asset.token.denom)
             
         if pool_asset.token.denom == 'ibc/785AFEC6B3741100D15E7AF01374E3C4C36F24888E96479B1C33F5C71F364EF9':
             readable_denom = 'uluna2'
@@ -63,7 +57,7 @@ for row in cursor.fetchall():
     existing_ids.append(row[0])
     max_id = row[0]
 
-for i in range(max_id):
+for i in range(1,max_id):
     if i not in existing_ids:
         try:
             print (f'adding missing pool {i}')
@@ -73,11 +67,7 @@ for i in range(max_id):
             
             pool_asset:PoolAsset
             for pool_asset in pool.pool_assets:
-                denom_trace = wallet.denomTrace(pool_asset.token.denom)
-                if denom_trace == False:
-                    readable_denom = pool_asset.token.denom
-                else:
-                    readable_denom = denom_trace['base_denom']
+                readable_denom = wallet.denomTrace(pool_asset.token.denom)
                     
                 if pool_asset.token.denom == 'ibc/785AFEC6B3741100D15E7AF01374E3C4C36F24888E96479B1C33F5C71F364EF9':
                     readable_denom = 'uluna2'
@@ -86,7 +76,7 @@ for i in range(max_id):
                 
             conn.commit()
         except Exception as err:
-            print (err)
+           print (err)
 
 conn.close()
 exit()
