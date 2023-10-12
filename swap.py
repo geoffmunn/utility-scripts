@@ -150,9 +150,9 @@ def get_user_singlechoice(question:str, user_wallets:dict):
 def main():
 
     # for i in range(2000):
-    #     test = f'transfer/channel-{i}/wbtc-satoshi'.encode('utf-8')
+    #     test = f'transfer/channel-{i}/basecro'.encode('utf-8')
     #     hashed =  sha256(test).hexdigest()
-    #     if hashed.upper() == 'D1542AA8762DB13087D8364F3EA6509FD6F009A34F00426AF9E4F9FA85CBBF1F':
+    #     if hashed.upper() == 'E6931F78057F7CC5DA0FD6CEF82FF39373A6E0452BF1FD76910B93292CF356C1':
     #         print ('found on channel', i)
     #         print (hashed)
     #         exit
@@ -184,7 +184,7 @@ def main():
 
     # List all the coins in this wallet, with the amounts available:
     print ('\nWhat coin do you want to swap FROM?')
-    coin_from, answer, null_value = wallet.get_coin_selection("Select a coin number 1 - " + str(len(wallet.balances)) + ", 'X' to continue, or 'Q' to quit: ", wallet.balances)
+    coin_from, answer, null_value = wallet.getCoinSelection("Select a coin number 1 - " + str(len(wallet.balances)) + ", 'X' to continue, or 'Q' to quit: ", wallet.balances)
 
     if answer == USER_ACTION_QUIT:
         print (' 🛑 Exiting...\n')
@@ -199,8 +199,7 @@ def main():
         exit()
 
     print ('\nWhat coin do you want to swap TO?')
-    #coin_to, answer, estimated_amount = get_coin_selection("Select a coin number 1 - " + str(len(wallet.balances)) + ", 'X' to continue, or 'Q' to quit: ", wallet.balances, False, {'denom':coin_from, 'amount':swap_uluna}, wallet)
-    coin_to, answer, estimated_amount = wallet.get_coin_selection("Select a coin number 1 - " + str(len(wallet.balances)) + ", 'X' to continue, or 'Q' to quit: ", wallet.balances, False, {'denom':coin_from, 'amount':swap_uluna})
+    coin_to, answer, estimated_amount = wallet.getCoinSelection("Select a coin number 1 - " + str(len(wallet.balances)) + ", 'X' to continue, or 'Q' to quit: ", wallet.balances, False, {'denom':coin_from, 'amount':swap_uluna})
 
     if answer == USER_ACTION_QUIT:
         print (' 🛑 Exiting...\n')
@@ -216,8 +215,9 @@ def main():
         exit()
 
     # Create the swap object
+    print ('wallet denom:', wallet.denom)
     swap_tx = SwapTransaction().create(seed = wallet.seed, denom = wallet.denom)
-
+    print ('chain id:', swap_tx.terra.chain_id)
     # Assign the details:
     swap_tx.balances           = wallet.balances
     swap_tx.swap_amount        = int(swap_uluna)
@@ -233,10 +233,13 @@ def main():
     # Set the contract based on what we've picked
     # As long as the swap_denom and swap_request_denom values are set, the correct contract should be picked
     use_market_swap = swap_tx.setContract()
-    
-    #if swaps_tx.swap_request_denom == UOSMO and swaps_tx.sender_prefix != 'terra':
+
+    print (swap_tx.swap_request_denom)
+    print (swap_tx.swap_denom)
+    print ('use market_swap?', use_market_swap)
+
     if swap_tx.swap_request_denom in OFFCHAIN_COINS or swap_tx.swap_denom in OFFCHAIN_COINS:
-        # This is an off-chain swap. Something like LUNC->OSMO
+        # This is an off-chain swap. Something like LUNC(terra)->OSMO or LUNC(Osmosis) -> wETH
         result = swap_tx.offChainSimulate()
 
         if result == True:
