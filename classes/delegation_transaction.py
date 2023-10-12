@@ -49,7 +49,7 @@ class DelegationTransaction(TransactionCore):
         self.terra = TerraInstance().create(denom)
 
         # Create the wallet based on the calculated key
-        prefix              = CHAIN_DATA[denom]['prefix']
+        prefix              = CHAIN_DATA[denom]['bech32_prefix']
         current_wallet_key  = MnemonicKey(mnemonic = self.seed, prefix = prefix)
         self.current_wallet = self.terra.wallet(current_wallet_key)
 
