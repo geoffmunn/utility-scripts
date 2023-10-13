@@ -285,8 +285,16 @@ class TransactionCore():
         if from_id != False and to_id != False:
             while retry == True:
                 try:
-                    uri:str = f"https://api-indexer.keplr.app/v1/price?ids={from_id['keplr_name']},{to_id['keplr_name']}&vs_currencies=usd"
-                    prices:json = requests.get(uri).json()
+                    #uri:str = f"https://api-indexer.keplr.app/v1/price?ids={from_id['keplr_name']},{to_id['keplr_name']}&vs_currencies=usd"
+                    #prices:json = requests.get(uri).json()
+
+                    uri:str     = 'https://api.coingecko.com/api/v3/simple/price'
+                    params:dict = {  
+                        'ids': f"{from_id['coingecko_id']},{to_id['coingecko_id']}",
+                        'vs_currencies': 'USD'
+                    }
+
+                    prices = requests.get(uri, params = params).json()
 
                     # Exit the loop if this hasn't returned an error
                     retry = False
@@ -302,8 +310,10 @@ class TransactionCore():
                     else:
                         time.sleep(1)
 
-            from_price:float = prices[from_id['keplr_name']]['usd']
-            to_price:float   = prices[to_id['keplr_name']]['usd']
+            #from_price:float = prices[from_id['keplr_name']]['usd']
+            #to_price:float   = prices[to_id['keplr_name']]['usd']
+            from_price:float = prices[from_id['coingecko_id']]['usd']
+            to_price:float   = prices[to_id['coingecko_id']]['usd']
         
         return {'from':from_price, 'to': to_price}
         
