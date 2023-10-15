@@ -26,6 +26,10 @@ def main():
     # Get the user wallets
     user_wallets = UserWallets().loadUserWallets()
 
+    if len(user_wallets) == 0:
+        print (" 🛑 This password couldn't decrypt any wallets. Make sure it is correct, or rebuild the wallet list by running the configure_user_wallet.py script again.\n")
+        exit()
+
     just_main_coins:bool = get_user_choice('Show just LUNC and USTC? (y/n) ', [])
 
     if just_main_coins == True:
