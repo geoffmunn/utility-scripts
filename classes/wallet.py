@@ -6,6 +6,9 @@ import json
 import requests
 import time
 
+from datetime import datetime
+from dateutil.tz import tz
+
 import traceback
 
 from classes.common import (
@@ -30,7 +33,7 @@ from constants.constants import (
 
 from classes.swap_transaction import SwapTransaction
 from classes.terra_instance import TerraInstance
-from classes.undelegations import Undelegations
+from terra_classic_sdk.core.staking import UnbondingDelegation
 
 from terra_classic_sdk.client.lcd import LCDClient
 from terra_classic_sdk.client.lcd.api.distribution import Rewards
@@ -46,17 +49,16 @@ class UserWallet:
         self.address:str               = ''
         self.balances:dict             = None
         self.delegations:dict          = {}
-        self.delegation_details:dict   = None
         self.denom:str                 = ''
         self.denom_traces:dict         = {}
-        self.undelegation_details:dict = None
+        self.undelegations:dict        = {}
         self.name:str                  = ''
-        self.prefix:str                = ''     # NOTE: might not be used anymore, replaced by self.denom
+        self.prefix:str                = ''
         self.seed:str                  = ''
         self.terra:LCDClient           = None
         self.validated: bool           = False
         
-    def __iter_result__(self, terra:LCDClient, delegator:Delegation) -> dict:
+    def __iter_delegator_result__(self, delegator:Delegation) -> dict:
         """
         An internal function which returns a dict object with validator details.
         """
@@ -64,7 +66,7 @@ class UserWallet:
         # Get the basic details about the delegator and validator etc
         delegator_address:str       = delegator.delegation.delegator_address
         validator_address:str       = delegator.delegation.validator_address
-        validator_details:Validator = terra.staking.validator(validator_address)
+        validator_details:Validator = self.terra.staking.validator(validator_address)
         validator_name:str          = validator_details.description.moniker
         validator_commission:float  = float(validator_details.commission.commission_rates.rate)
         
@@ -73,7 +75,7 @@ class UserWallet:
         balance_amount:float = delegator.balance.amount
 
         # Get any rewards
-        rewards:Rewards   = terra.distribution.rewards(delegator_address)
+        rewards:Rewards   = self.terra.distribution.rewards(delegator_address)
         reward_coins:dict = coin_list(rewards.rewards[validator_address], {})
         
         # Make the commission human-readable
@@ -82,6 +84,27 @@ class UserWallet:
         # Set up the object with the details we're interested in
         if balance_amount > 0:
             self.delegations[validator_name] = {'balance_amount': balance_amount, 'balance_denom': balance_denom, 'commission': validator_commission, 'delegator': delegator_address, 'rewards': reward_coins, 'validator': validator_address,  'validator_name': validator_name}
+
+    def __iter_undelegation_result__(self, undelegation:UnbondingDelegation) -> dict:
+        """
+        An internal function which returns a dict object with validator details.
+        """
+
+        # Get the basic details about the delegator and validator etc
+        delegator_address:str = undelegation.delegator_address
+        validator_address:str = undelegation.validator_address
+        entries:list          = []
+
+        for entry in undelegation.entries:
+            entries.append({'balance': entry.balance, 'completion_time': entry.completion_time.strftime('%m/%d/%Y')})
+       
+        # Get the total balance from all the entries
+        balance_total:int = 0
+        for entry in entries:
+            balance_total += entry['balance']
+
+        # Set up the object with the details we're interested in
+        self.undelegations[validator_address] = {'balance_amount': balance_total, 'delegator_address': delegator_address, 'validator_address': validator_address, 'entries': entries}
     
     def convertPercentage(self, percentage:float, keep_minimum:bool, target_amount:float, target_denom:str):
         """
@@ -106,8 +129,8 @@ class UserWallet:
         Create a wallet object based on the provided details.
         """
 
-        self.name    = name
-        self.address = address
+        self.name:str    = name
+        self.address:str = address
 
         if seed != '' and password != '':
             self.seed = cryptocode.decrypt(seed, password)
@@ -134,10 +157,10 @@ class UserWallet:
 
         if ibc_address[0:4] == 'ibc/':
             
-            value      = ibc_address[4:]
-            chain_name = CHAIN_DATA[self.denom]['cosmos_name']
-            uri:str    = f'https://rest.cosmos.directory/{chain_name}/ibc/apps/transfer/v1/denom_traces/{value}'
-
+            value:str      = ibc_address[4:]
+            chain_name:str = CHAIN_DATA[self.denom]['cosmos_name']
+            uri:str        = f'https://rest.cosmos.directory/{chain_name}/ibc/apps/transfer/v1/denom_traces/{value}'
+            
             if uri not in self.denom_traces:
 
                 retry_count:int = 0
@@ -168,9 +191,9 @@ class UserWallet:
                 result = self.denom_traces[uri]
         
         if len(result) == 0:
-            return False
+            return ibc_address # Not an IBC address we could resolve
         else:
-            return result
+            return result['base_denom']
     
     def formatUluna(self, uluna:float, denom:str, add_suffix:bool = False):
         """
@@ -180,8 +203,8 @@ class UserWallet:
         precision:int = getPrecision(denom)
         lunc:float    = round(float(divide_raw_balance(uluna, denom)), precision)
 
-        target = '%.' + str(precision) + 'f'
-        lunc   = (target % (lunc)).rstrip('0').rstrip('.')
+        target:str = '%.' + str(precision) + 'f'
+        lunc:str   = (target % (lunc)).rstrip('0').rstrip('.')
 
         if add_suffix:
             lunc = str(lunc) + ' ' + FULL_COIN_LOOKUP[denom]
@@ -196,44 +219,38 @@ class UserWallet:
         """
 
         balances:dict = {}
-        if self.balances is None:
-            if self.terra is not None:
-                # Default pagination options
-                pagOpt:PaginationOptions = PaginationOptions(limit=50, count_total=True)
+        if self.terra is not None:
+            # Default pagination options
+            pagOpt:PaginationOptions = PaginationOptions(limit=50, count_total=True)
 
-                # Get the current balance in this wallet
-                result:Coins
-                try:
+            # Get the current balance in this wallet
+            result:Coins
+            try:
+                result, pagination = self.terra.bank.balance(address = self.address, params = pagOpt)
+
+                # Convert the result into a friendly list
+                for coin in result:
+                    denom_trace = self.denomTrace(coin.denom)
+                    balances[denom_trace] = coin.amount
+                    
+                # Go through the pagination (if any)
+                while pagination['next_key'] is not None:
+                    pagOpt.key         = pagination["next_key"]
                     result, pagination = self.terra.bank.balance(address = self.address, params = pagOpt)
+                    
+                    denom_trace = self.denomTrace(coin.denom)
+                    balances[denom_trace] = coin.amount
+                
+            except Exception as err:
+                print (f'Pagination error for {self.name}:', err)
 
-                    # Convert the result into a friendly list
-                    for coin in result:
-                        denom_trace = self.denomTrace(coin.denom)
-                        if denom_trace == False:
-                            balances[coin.denom] = coin.amount
-                        else:
-                            balances[denom_trace['base_denom']] = coin.amount
+            # Add the extra coins (Base etc)
+            if self.terra is not None and self.terra.chain_id == 'columbus-5':
+                coin_balance = self.terra.wasm.contract_query(BASE_SMART_CONTRACT_ADDRESS, {'balance':{'address':self.address}})
+                if int(coin_balance['balance']) > 0:
+                    balances[UBASE] = coin_balance['balance']
 
-                    # Go through the pagination (if any)
-                    while pagination['next_key'] is not None:
-                        pagOpt.key         = pagination["next_key"]
-                        result, pagination = self.terra.bank.balance(address = self.address, params = pagOpt)
-                        
-                        denom_trace = self.denomTrace(coin.denom)
-                        if  denom_trace == False:
-                            balances[coin.denom] = coin.amount
-                        else:
-                            balances[denom_trace['base_denom']] = coin.amount
-                except Exception as err:
-                    print (f'Pagination error for {self.name}:', err)
-
-                # Add the extra coins (Base etc)
-                if self.terra is not None and self.terra.chain_id == 'columbus-5':
-                    coin_balance = self.terra.wasm.contract_query(BASE_SMART_CONTRACT_ADDRESS, {'balance':{'address':self.address}})
-                    if int(coin_balance['balance']) > 0:
-                        balances[UBASE] = coin_balance['balance']
-
-            self.balances = balances
+        self.balances = balances
 
         return self.balances
     
@@ -242,7 +259,7 @@ class UserWallet:
         Return a selected coin based on the provided list.
         """
 
-        label_widths = []
+        label_widths:list = []
 
         label_widths.append(len('Number'))
         label_widths.append(len('Coin'))
@@ -252,8 +269,8 @@ class UserWallet:
             label_widths.append(len('Estimation'))
             swap_tx = SwapTransaction().create(self.seed, self.denom)
 
-        coin_list     = []
-        coin_values   = {}
+        coin_list:list   = []
+        coin_values:dict = {}
 
         coin_list.append('')
 
@@ -298,8 +315,8 @@ class UserWallet:
                     if len(str(estimated_value)) > label_widths[3]:
                         label_widths[3] = len(str(estimated_value))
 
-        padding_str   = ' ' * 100
-        header_string = ' Number |'
+        padding_str:str   = ' ' * 100
+        header_string:str = ' Number |'
 
         if label_widths[1] > len('Coin'):
             header_string += ' Coin' + padding_str[0:label_widths[1] - len('Coin')] + ' |'
@@ -380,7 +397,7 @@ class UserWallet:
         
             print (horizontal_spacer + '\n')
 
-            answer = input(question).lower()
+            answer:str = input(question).lower()
             
             # Check if a coin name was provided:
             if answer in coin_index:
@@ -424,7 +441,7 @@ class UserWallet:
 
                 delegator:Delegation 
                 for delegator in result:
-                    self.__iter_result__(self.terra, delegator)
+                    self.__iter_delegator_result__(delegator)
 
                 while pagination['next_key'] is not None:
                     pagOpt.key         = pagination['next_key']
@@ -432,7 +449,7 @@ class UserWallet:
 
                     delegator:Delegation 
                     for delegator in result:
-                        self.__iter_result__(self.terra, delegator)
+                        self.__iter_delegator_result__(delegator)
             except:
                 print (' 🛎️  Network error: delegations could not be retrieved.')
 
@@ -465,16 +482,90 @@ class UserWallet:
 
         return prefix.lower()
     
+    def getUbaseUndelegations(self, wallet_address:str) -> list:
+        """
+        Get the undelegations that are in progress for BASE.
+
+        This returns a list of the active undelegations.
+        """
+
+        result:json  = requests.get('https://raw.githubusercontent.com/lbunproject/BASEswap-api-price/main/public/unstaked_plus_hashes.json').json()
+        results:list = []
+        today        = datetime.now()
+
+        for undelegation in result:
+            if datetime.strptime(undelegation['releaseDate'], '%m/%d/%Y') > today:
+                if undelegation['sendTo'] == wallet_address:
+                    results.append(undelegation)
+            else:
+                break
+
+        return results
+    
     def getUndelegations(self) -> dict:
         """
-        Get the undelegations associated with this wallet address.
-        The results are cached so if the list is refreshed then it is much quicker.
+        Create a dictionary of information about the delegations on this wallet.
+        It may contain more than one validator.
         """
 
-        if self.undelegation_details is None:
-            self.undelegation_details = Undelegations().create(self.address, self.balances)
+        prefix = self.getPrefix(self.address)
+        
+        if prefix == 'terra':
+            if len(self.undelegations) == 0:
+                pagOpt:PaginationOptions = PaginationOptions(limit=50, count_total=True)
+                try:
+                
+                    result, pagination = self.terra.staking.unbonding_delegations(delegator = self.address, params = pagOpt)
 
-        return self.undelegation_details
+                    unbonding:UnbondingDelegation
+                    for unbonding in result:
+
+                        self.__iter_result__(unbonding)
+
+                    while pagination['next_key'] is not None:
+
+                        pagOpt.key         = pagination['next_key']
+                        result, pagination = self.terra.staking.unbonding_delegations(delegator = self.address, params = pagOpt)
+
+                        unbonding:UnbondingDelegation
+                        for unbonding in result:
+                            self.__iter_undelegation_result__(unbonding)
+
+                except Exception as err:
+                    print (' 🛎️  Network error: undelegations could not be retrieved.')
+                    print (err)
+                    
+
+        # Get any BASE undelegations currently in progress
+        if 'ubase' in self.balances:
+            base_undelegations       = self.getUbaseUndelegations(self.address)
+            undelegated_amount:float = 0
+            entries:list             = []
+            
+            utc_zone = tz.gettz('UTC')
+            base_zone = tz.gettz('US/Eastern')
+
+            for base_item in base_undelegations:
+                undelegated_amount += base_item['luncNetReleased']
+
+                # Convert the BASE date to a UTC format
+                # First, we need to swap it to a d/m/y format
+                release_date_bits = base_item['releaseDate'].split('/')
+                release_date      = f"{release_date_bits[1]}/{release_date_bits[0]}/{release_date_bits[2]}" 
+                base_time         = datetime.strptime(release_date, '%d/%m/%Y')
+
+                # Now give it the timezone that BASE works in
+                base_time = base_time.replace(tzinfo = base_zone)
+                # Convert time to UTC
+                utc_time = base_time.astimezone(utc_zone)
+                # Generate UTC time string
+                utc_string = utc_time.strftime('%d/%m/%Y')
+
+                entries.append({'balance': multiply_raw_balance(base_item['luncNetReleased'], UBASE), 'completion_time': utc_string})
+            
+            self.undelegations['base'] = {'balance_amount': multiply_raw_balance(undelegated_amount, UBASE), 'entries': entries}
+
+        return self.undelegations
     
     def getUserNumber(self, question:str, params:dict):
         """
@@ -626,7 +717,7 @@ class UserWallet:
         This only applies to addresses which look like terra addresses.
         """
 
-        prefix = self.getPrefix(address)
+        prefix:str = self.getPrefix(address)
 
         # If this is an Osmosis address (or something like that) then we'll just accept it
         if prefix != 'terra':
