@@ -20,139 +20,14 @@ from classes.swap_transaction import SwapTransaction
 from classes.wallet import UserWallet
 from classes.wallets import UserWallets
 
-def get_user_singlechoice(question:str, user_wallets:dict):
-    """
-    Get a single user selection from a list.
-    This is a custom function because the options are specific to this list.
-    """
-
-    label_widths = []
-
-    label_widths.append(len('Number'))
-    label_widths.append(len('Wallet name'))
-    label_widths.append(len('LUNC'))
-    label_widths.append(len('USTC'))
-
-    for wallet_name in user_wallets:
-        if len(wallet_name) > label_widths[1]:
-            label_widths[1] = len(wallet_name)
-
-        if ULUNA in user_wallets[wallet_name].balances:
-            uluna_val = user_wallets[wallet_name].formatUluna(user_wallets[wallet_name].balances[ULUNA], ULUNA)
-        else:
-            uluna_val = ''
-            
-        if UUSD in user_wallets[wallet_name].balances:
-            ustc_val = user_wallets[wallet_name].formatUluna(user_wallets[wallet_name].balances[UUSD], UUSD)
-        else:
-            ustc_val = ''
-
-        if len(str(uluna_val)) > label_widths[2]:
-            label_widths[2] = len(str(uluna_val))
-
-        if len(str(ustc_val)) > label_widths[3]:
-            label_widths[3] = len(str(ustc_val))
-
-    padding_str = ' ' * 100
-
-    header_string = ' Number |'
-
-    if label_widths[1] > len('Wallet name'):
-        header_string +=  ' Wallet name' + padding_str[0:label_widths[1] - len('Wallet name')] + ' '
-    else:
-        header_string +=  ' Wallet name '
-
-    if label_widths[2] > len('LUNC'):
-        header_string += '| LUNC' + padding_str[0:label_widths[2] - len('LUNC')] + ' '
-    else:
-        header_string += '| LUNC '
-
-    if label_widths[3] > len('USTC'):
-        header_string += '| USTC'  + padding_str[0:label_widths[3] - len('USTC')] + ' '
-    else:
-        header_string += '| USTC '
-
-    horizontal_spacer = '-' * len(header_string)
-
-    wallets_to_use = {}
-    user_wallet    = {}
-    
-    while True:
-
-        count = 0
-        wallet_numbers = {}
-
-        print (horizontal_spacer)
-        print (header_string)
-        print (horizontal_spacer)
-
-        for wallet_name in user_wallets:
-            wallet:UserWallet  = user_wallets[wallet_name]
-
-            count += 1
-            wallet_numbers[count] = wallet
-                
-            if wallet_name in wallets_to_use:
-                glyph = '✅'
-            else:
-                glyph = '  '
-
-            count_str =  f' {count}' + padding_str[0:6 - (len(str(count)) + 2)]
-            
-            wallet_name_str = wallet_name + padding_str[0:label_widths[1] - len(wallet_name)]
-
-            if ULUNA in wallet.balances:
-                lunc_str = wallet.formatUluna(wallet.balances[ULUNA], ULUNA, False)
-            else: 
-                lunc_str = ''
-
-            lunc_str = lunc_str + padding_str[0:label_widths[2] - len(lunc_str)]
-            
-            if UUSD in wallet.balances:
-                ustc_str = wallet.formatUluna(wallet.balances[UUSD], UUSD, False)
-            else:
-                ustc_str = ' '
-            
-            print (f"{count_str}{glyph} | {wallet_name_str} | {lunc_str} | {ustc_str}")
-            
-        print (horizontal_spacer + '\n')
-
-        answer = input(question).lower()
-        
-        if answer.isdigit() and int(answer) in wallet_numbers:
-
-            wallets_to_use = {}
-
-            key = wallet_numbers[int(answer)].name
-            if key not in wallets_to_use:
-                wallets_to_use[key] = wallet_numbers[int(answer)]
-            else:
-                wallets_to_use.pop(key)
-            
-        if answer == USER_ACTION_CONTINUE:
-            if len(wallets_to_use) > 0:
-                break
-            else:
-                print ('\nPlease select a wallet first.\n')
-
-        if answer == USER_ACTION_QUIT:
-            break
-
-    # Get the first (and only) validator from the list
-    for item in wallets_to_use:
-        user_wallet = wallets_to_use[item]
-        break
-    
-    return user_wallet, answer
-
 #from hashlib import sha256
 
 def main():
 
     # for i in range(2000):
-    #     test = f'transfer/channel-{i}/basecro'.encode('utf-8')
+    #     test = f'transfer/channel-{i}/cosmos'.encode('utf-8')
     #     hashed =  sha256(test).hexdigest()
-    #     if hashed.upper() == 'E6931F78057F7CC5DA0FD6CEF82FF39373A6E0452BF1FD76910B93292CF356C1':
+    #     if hashed.upper() == '27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2':
     #         print ('found on channel', i)
     #         print (hashed)
     #         exit
@@ -163,8 +38,13 @@ def main():
     check_version()
     
     # Get the user wallets
-    user_wallets = UserWallets().loadUserWallets()
+    wallets = UserWallets()
+    user_wallets = wallets.loadUserWallets()
 
+    if user_wallets is None:  
+        print (" 🛑 This password couldn't decrypt any wallets. Make sure it is correct, or rebuild the wallet list by running the configure_user_wallet.py script again.\n")
+        exit()
+    
     # Get the balances on each wallet (for display purposes)
     for wallet_name in user_wallets:
         wallet:UserWallet = user_wallets[wallet_name]
@@ -173,7 +53,7 @@ def main():
     if len(user_wallets) > 0:
         print (f'You can make swaps on the following wallets:')
 
-        wallet, answer = get_user_singlechoice("Select a wallet number 1 - " + str(len(user_wallets)) + ", 'X' to continue, or 'Q' to quit: ", user_wallets)
+        wallet, answer = wallets.getUserSinglechoice("Select a wallet number 1 - " + str(len(user_wallets)) + ", 'X' to continue, or 'Q' to quit: ")
 
         if answer == USER_ACTION_QUIT:
             print (' 🛑 Exiting...\n')
@@ -215,9 +95,7 @@ def main():
         exit()
 
     # Create the swap object
-    print ('wallet denom:', wallet.denom)
     swap_tx = SwapTransaction().create(seed = wallet.seed, denom = wallet.denom)
-    print ('chain id:', swap_tx.terra.chain_id)
     # Assign the details:
     swap_tx.balances           = wallet.balances
     swap_tx.swap_amount        = int(swap_uluna)
@@ -233,10 +111,6 @@ def main():
     # Set the contract based on what we've picked
     # As long as the swap_denom and swap_request_denom values are set, the correct contract should be picked
     use_market_swap = swap_tx.setContract()
-
-    print (swap_tx.swap_request_denom)
-    print (swap_tx.swap_denom)
-    print ('use market_swap?', use_market_swap)
 
     if swap_tx.swap_request_denom in OFFCHAIN_COINS or swap_tx.swap_denom in OFFCHAIN_COINS:
         # This is an off-chain swap. Something like LUNC(terra)->OSMO or LUNC(Osmosis) -> wETH
