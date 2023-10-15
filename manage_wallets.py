@@ -275,7 +275,6 @@ def main():
                 # Update the balances after having done withdrawals and swaps
                 wallet.getBalances()
                 
-                print (wallet.balances)
                 # Only proceed if this is an active validator with a non-zero balance
                 if delegations[validator]['balance_amount'] > 0:
                     if ULUNA in wallet.balances:     
@@ -284,6 +283,8 @@ def main():
                         # Adjust this so we have the desired amount still remaining
                         delegated_uluna = int(uluna_balance - multiply_raw_balance(WITHDRAWAL_REMAINDER, ULUNA))
 
+                        print (f'About to delegate {delegated_uluna}...')
+                        
                         if delegated_uluna > 0 and delegated_uluna <= wallet.balances[ULUNA]:
                             print (f'Delegating {wallet.formatUluna(delegated_uluna, ULUNA, True)}')
 
