@@ -31,164 +31,6 @@ from classes.swap_transaction import SwapTransaction
 from classes.wallet import UserWallet
 from classes.wallets import UserWallets
 from classes.withdrawal_transaction import WithdrawalTransaction
-
-def get_user_multichoice(question:str, user_wallets:dict) -> dict|str:
-    """
-    Get multiple user selections from a list.
-    This is a custom function because the options are specific to this list.
-    """
-
-    label_widths = []
-    label_widths.append(len('Number'))
-    label_widths.append(len('Wallet name'))
-    label_widths.append(len('LUNC'))
-    label_widths.append(len('USTC'))
-    label_widths.append(len('Available'))
-
-    for wallet_name in user_wallets:
-        wallet:UserWallet = user_wallets[wallet_name]
-
-        # Get the delegations and balances for this wallet
-        delegations:dict = wallet.delegations
-        balances:dict    = wallet.balances
-
-        # Initialise the reward values
-        ulunc_reward:int = 0
-        ustc_reward:int  = 0
-
-        if delegations is not None:
-            for validator in delegations:
-                if ULUNA in delegations[validator]['rewards']:
-                    ulunc_reward += float(wallet.formatUluna(delegations[validator]['rewards'][ULUNA], ULUNA, False))
-                                        
-                if UUSD in delegations[validator]['rewards']:
-                    ustc_reward += float(wallet.formatUluna(delegations[validator]['rewards'][UUSD], UUSD, False))
-
-        if len(wallet_name) > label_widths[1]:
-            label_widths[1] = len(wallet_name)
-
-        if len(str(ulunc_reward)) > label_widths[2]:
-            label_widths[2] = len(str(ulunc_reward))
-
-        if len(str(ustc_reward)) > label_widths[3]:
-            label_widths[3] = len(str(ustc_reward))
-
-        if ULUNA in balances:
-            formatted_val = str(wallet.formatUluna(balances[ULUNA], ULUNA, False))
-            if len(formatted_val) > label_widths[4]:
-                label_widths[4] = len(formatted_val)
-
-    padding_str:str   = ' ' * 100
-    header_string:str = ' Number |'
-
-    if label_widths[1] > len('Wallet name'):
-        header_string +=  ' Wallet name' + padding_str[0:label_widths[1] - len('Wallet name')] + ' '
-    else:
-        header_string +=  ' Wallet name '
-
-    if label_widths[4] > len('Available'):
-        header_string += '| Available' + padding_str[0:label_widths[4] - len('Available')] + ' '
-    else:
-        header_string += '| Available '
-
-    if label_widths[2] > len('LUNC'):
-        header_string += '| LUNC' + padding_str[0:label_widths[2] - len('LUNC')] + ' '
-    else:
-        header_string += '| LUNC'
-
-    if label_widths[3] > len('USTC'):
-        header_string += '| USTC' + padding_str[0:label_widths[3] - len('USTC')] + ' '
-    else:
-        header_string += '| USTC '
-
-    horizontal_spacer = '-' * len(header_string)
-
-    wallets_to_use:dict = {}
-    while True:
-
-        count:int           = 0
-        wallet_numbers:dict = {}
-
-        print (horizontal_spacer)
-        print (header_string)
-        print (horizontal_spacer)
-
-        for wallet_name in user_wallets:
-            wallet:UserWallet = user_wallets[wallet_name]
-                
-            delegations:dict = wallet.delegations
-            balances:dict    = wallet.balances
-
-            count += 1
-            # Add this wallet to the lookup list
-            wallet_numbers[count] = wallet
-                
-            if wallet_name in wallets_to_use:
-                glyph = '✅'
-            else:
-                glyph = '  '
-
-            count_str =  f' {count}' + padding_str[0:6 - (len(str(count)) + 2)]
-            
-            wallet_name_str = wallet_name + padding_str[0:label_widths[1] - len(wallet_name)]  
-
-            uluna_reward:int  = 0
-            uluna_balance:int = 0
-            ustc_reward:int   = 0
-            
-            if delegations is not None:
-                for validator in delegations:
-                    if ULUNA in delegations[validator]['rewards']:
-                        uluna_reward += delegations[validator]['rewards'][ULUNA]
-                    if UUSD in delegations[validator]['rewards']:
-                        ustc_reward += delegations[validator]['rewards'][UUSD]
-
-            lunc_str = str(wallet.formatUluna(uluna_reward, ULUNA, False))
-            if label_widths[2] - len(str(lunc_str)) > 0:
-                lunc_str += padding_str[0:(label_widths[2] - (len(str(lunc_str))))]
-            
-            if ULUNA in wallet.balances:
-                uluna_balance = str(wallet.formatUluna(wallet.balances[ULUNA], ULUNA, False))
-                if label_widths[4] - len(str(uluna_balance)) > 0:
-                    uluna_balance += padding_str[0:(label_widths[4] - (len(str(uluna_balance))))]
-            else:
-                uluna_balance = padding_str[0:label_widths[4]]
-
-            if UUSD in wallet.balances:
-                ustc_str = str(wallet.formatUluna(ustc_reward, UUSD, False))
-                if label_widths[3] - len(str(ustc_str)) > 0:
-                    ustc_str += padding_str[0:(label_widths[3] - (len(str(ustc_str))))]
-            else:
-                ustc_str = padding_str[0:label_widths[3]]
-
-            print (f"{count_str}{glyph} | {wallet_name_str} | {uluna_balance} | {lunc_str} | {ustc_str}")
-            
-        print (horizontal_spacer + '\n')
-            
-        answer = input(question).lower()
-        
-        if answer.isdigit() and int(answer) in wallet_numbers:
-            key = wallet_numbers[int(answer)].name
-            if key not in wallets_to_use:
-                wallets_to_use[key] = wallet_numbers[int(answer)]
-            else:
-                wallets_to_use.pop(key)
-            
-        if answer == USER_ACTION_CLEAR:
-            wallets_to_use = {}
-        
-        if answer == USER_ACTION_ALL:
-            wallets_to_use = {}
-            for wallet_name in user_wallets:
-                wallets_to_use[wallet_name] = user_wallets[wallet_name]
-
-        if answer == USER_ACTION_CONTINUE:
-            break
-
-        if answer == USER_ACTION_QUIT:
-            break
-
-    return wallets_to_use, answer
     
 def main():
     
@@ -196,7 +38,8 @@ def main():
     check_version()
 
     # Get the user wallets
-    user_wallets = UserWallets().loadUserWallets()
+    wallets = UserWallets()
+    user_wallets = wallets.loadUserWallets()
 
     # Get the desired actions
     print ('\nWhat action do you want to take?\n')
@@ -249,7 +92,7 @@ def main():
     if len(user_wallets) > 0:
         print (f'You can {action_string} on the following wallets:')
 
-        user_wallets,answer = get_user_multichoice(f"Select a wallet number 1 - {str(len(user_wallets))}, or 'A' to add all of them, 'C' to clear the list, 'X' to continue, or 'Q' to quit: ", user_wallets)
+        user_wallets,answer = wallets.getUserMultiChoice(f"Select a wallet number 1 - {str(len(user_wallets))}, or 'A' to add all of them, 'C' to clear the list, 'X' to continue, or 'Q' to quit: ")
 
         if answer == USER_ACTION_QUIT:
             print (' 🛑 Exiting...\n')
@@ -274,7 +117,7 @@ def main():
         print ('####################################')
         print (f'Accessing the {wallet.name} wallet...')
 
-        delegations = wallet.delegations
+        delegations:dict = wallet.delegations
         for validator in delegations:
 
             if ULUNA in delegations[validator]['rewards']:
@@ -288,15 +131,14 @@ def main():
                     uluna_reward:int = delegations[validator]['rewards'][ULUNA]
 
                     # Only withdraw the staking rewards if the rewards exceed the threshold (if any)
-                    if uluna_reward > wallet.delegations['threshold'] and uluna_reward > multiply_raw_balance(1, ULUNA):
-
+                    if uluna_reward > multiply_raw_balance(1, ULUNA):
                         print (f'Withdrawing {wallet.formatUluna(uluna_reward, ULUNA, False)} rewards')
 
                         # Update the balances so we know what we have to pay the fee with
                         wallet.getBalances()
                         
                         # Set up the withdrawal object
-                        withdrawal_tx = WithdrawalTransaction().create(delegator_address = delegations[validator]['delegator'], validator_address = delegations[validator]['validator'])
+                        withdrawal_tx = WithdrawalTransaction().create(seed = wallet.seed, delegator_address = delegations[validator]['delegator'], validator_address = delegations[validator]['validator'])
 
                         # We need to populate some details
                         withdrawal_tx.balances       = wallet.balances
@@ -455,7 +297,7 @@ def main():
                                 print (f'Delegating {wallet.formatUluna(delegated_uluna, ULUNA, True)}')
 
                                 # Create the delegation object
-                                delegation_tx = DelegationTransaction().create(denom = ULUNA)
+                                delegation_tx = DelegationTransaction().create(seed = wallet.seed, denom = ULUNA)
 
                                 # Assign the details:
                                 delegation_tx.delegator_address = delegations[validator]['delegator']
