@@ -12,6 +12,7 @@ from classes.common import (
 
 from constants.constants import (
     CHAIN_DATA,
+    FULL_COIN_LOOKUP,
     GAS_PRICE_URI,
     SEARCH_RETRY_COUNT,
     TAX_RATE_URI,
@@ -336,6 +337,9 @@ class TransactionCore():
 
                 denom = self.denomTrace(fee_coin.denom)
 
+                if denom in FULL_COIN_LOOKUP:
+                    denom = FULL_COIN_LOOKUP[denom]
+                    
                 if first == False:
                     fee_string += ', and ' + str(amount) + ' ' + denom
                 else:
