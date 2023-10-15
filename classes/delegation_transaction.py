@@ -185,7 +185,7 @@ class DelegationTransaction(TransactionCore):
             requested_fee = tx.auth_info.fee
 
             # This will be used by the swap function next time we call it
-            self.fee = self.calculateFee(requested_fee)
+            self.fee = self.calculateFee(requested_fee, ULUNA)
 
             return True
         else:
