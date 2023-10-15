@@ -4,11 +4,11 @@
 import json
 import requests
 
+import traceback
+
 from constants.constants import (
     CHAIN_DATA,
     CHECK_FOR_UPDATES,
-    COIN_DIVISOR,
-    COIN_DIVISOR_ETH,
     VERSION_URI
 )
 from terra_classic_sdk.core.coin import Coin
@@ -88,14 +88,9 @@ def divide_raw_balance(amount:float, denom:str) -> float:
     Return a human-readable amount depending on what type of coin this is.
     """
 
-    result:float  = 0
     precision:int = getPrecision(denom)
-
-    if precision == 6:
-        result = float(amount) / COIN_DIVISOR
-    else:
-        result = float(amount) / COIN_DIVISOR_ETH
-
+    result:float  = float(amount) / (10 ** precision)
+    
     return result
 
 def getPrecision(denom:str) -> int:
@@ -105,7 +100,7 @@ def getPrecision(denom:str) -> int:
     Be default, it returns 6 digits
     """
 
-    precision = 6
+    precision:int = 6
 
     if denom in CHAIN_DATA:
         precision = CHAIN_DATA[denom]['precision']
@@ -135,19 +130,16 @@ def isPercentage(value:str) -> bool:
     else:
         return False
     
-def multiply_raw_balance(amount:int, denom:str):
+def multiply_raw_balance(amount:int, denom:str) -> float:
     """
     Return a human-readable amount depending on what type of coin this is.
     """
-    result:float = 0
 
-    if denom == 'weth-wei':
-        result = float(amount) * COIN_DIVISOR_ETH
-    else:
-        result = float(amount) * COIN_DIVISOR
+    precision:int = getPrecision(denom)
+    result:float  = float(amount) * (10 ** precision)
 
     return result
-    
+
 def strtobool(val):
     """
     Convert a string representation of truth to true (1) or false (0).
