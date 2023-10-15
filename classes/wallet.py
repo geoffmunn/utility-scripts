@@ -238,7 +238,7 @@ class UserWallet:
                     pagOpt.key         = pagination["next_key"]
                     result, pagination = self.terra.bank.balance(address = self.address, params = pagOpt)
                     
-                    denom_trace = self.denomTrace(coin.denom)
+                    denom_trace           = self.denomTrace(coin.denom)
                     balances[denom_trace] = coin.amount
                 
             except Exception as err:
@@ -306,9 +306,8 @@ class UserWallet:
                     
                     if coin != estimation_against['denom']:
                         estimated_value:float = swap_tx.swapRate()
-
                     else:
-                        estimated_value:str   = None
+                        estimated_value:str = None
                     
                     coin_values[coin] = estimated_value
                     
