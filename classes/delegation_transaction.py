@@ -40,7 +40,7 @@ class DelegationTransaction(TransactionCore):
 
         super(DelegationTransaction, self).__init__(*args, **kwargs)
         
-    def create(self, denom:str = 'uluna'):
+    def create(self, seed:str, denom:str = 'uluna'):
         """
         Create a delegation object and set it up with the provided details.
         """
@@ -50,7 +50,7 @@ class DelegationTransaction(TransactionCore):
 
         # Create the wallet based on the calculated key
         prefix              = CHAIN_DATA[denom]['bech32_prefix']
-        current_wallet_key  = MnemonicKey(mnemonic = self.seed, prefix = prefix)
+        current_wallet_key  = MnemonicKey(mnemonic = seed, prefix = prefix)
         self.current_wallet = self.terra.wallet(current_wallet_key)
 
         # Get the gas prices and tax rate:
