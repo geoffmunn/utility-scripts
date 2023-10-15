@@ -57,7 +57,7 @@ class WithdrawalTransaction(TransactionCore):
         self.delegator_address:str = ''
         self.validator_address:str = ''
 
-    def create(self, delegator_address:str, validator_address:str):
+    def create(self, seed:str, delegator_address:str, validator_address:str):
         """
         Create a withdrawal object and set it up with the provided details.
         """
@@ -66,7 +66,7 @@ class WithdrawalTransaction(TransactionCore):
         self.terra = TerraInstance().create()
         
         # Create the wallet based on the calculated key
-        current_wallet_key  = MnemonicKey(self.seed)
+        current_wallet_key  = MnemonicKey(seed)
         self.current_wallet = self.terra.wallet(current_wallet_key)
 
         # Get the gas prices and tax rate:
