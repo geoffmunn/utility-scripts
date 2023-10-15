@@ -1,31 +1,19 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 
-from getpass import getpass
-
-from utility_classes import (
-    check_version,
-    get_user_choice,
-    get_user_number,
-    UBASE,
-    ULUNA,
-    UUSD,
-    UserConfig,
-    Validators,
-    Wallets,
-    Wallet
-)
-
 from datetime import datetime, timezone
 
-#import utility_constants
-from utility_constants import (
+from classes.common import (
+    check_version,
+    get_user_choice,
+)
+
+from constants.constants import (
     GAS_ADJUSTMENT_INCREMENT,
     MAX_GAS_ADJUSTMENT,
     MAX_VALIDATOR_COUNT,
-    USER_ACTION_ALL,
-    USER_ACTION_CLEAR,
-    USER_ACTION_CONTINUE,
+    UBASE,
+    ULUNA,
     USER_ACTION_QUIT,
     USER_ACTION_VALIDATOR_DELEGATE,
     USER_ACTION_VALIDATOR_LIST_UNDELEGATIONS,
@@ -34,229 +22,9 @@ from utility_constants import (
     WITHDRAWAL_REMAINDER
 )
 
-def get_user_multichoice(question:str, user_wallets:dict):
-    """
-    Get multiple user selections from a list.
-    This is a custom function because the options are specific to this list.
-    """
-
-    wallets_to_use = {}
-    while True:
-
-        count = 0
-        wallet_numbers = {}
-
-        for wallet_name in user_wallets:
-            count += 1
-            wallet_numbers[count] = user_wallets[wallet_name]
-                
-            if wallet_name in wallets_to_use:
-                glyph = '✅'
-            else:
-                glyph = ''
-
-            print (f"  ({count}) {glyph} {wallet_name}")
-            
-        answer = input(question).lower()
-        
-        if answer.isdigit() and int(answer) in wallet_numbers:
-            key = wallet_numbers[int(answer)].name
-            if key not in wallets_to_use:
-                wallets_to_use[key] = wallet_numbers[int(answer)]
-            else:
-                wallets_to_use.pop(key)
-            
-        if answer == USER_ACTION_CLEAR:
-            wallets_to_use = {}
-        
-        if answer == USER_ACTION_ALL:
-            wallets_to_use = {}
-            for wallet_name in user_wallets:
-                wallets_to_use[wallet_name] = user_wallets[wallet_name]
-
-        if answer == USER_ACTION_CONTINUE:
-            break
-
-        if answer == USER_ACTION_QUIT:
-            break
-
-    return wallets_to_use, answer
-
-def get_user_singlechoice(question:str, user_wallets:dict):
-    """
-    Get a single user selection from a list.
-    This is a custom function because the options are specific to this list.
-    """
-
-    label_widths = []
-
-    label_widths.append(len('Number'))
-    label_widths.append(len('Wallet name'))
-    label_widths.append(len('LUNC'))
-    label_widths.append(len('USTC'))
-    label_widths.append(len('Delegations'))
-    label_widths.append(len('Undelegations'))
-
-    for wallet_name in user_wallets:
-
-        wallet:Wallet = user_wallets[wallet_name]
-
-        if len(wallet_name) > label_widths[1]:
-            label_widths[1] = len(wallet_name)
-
-        if ULUNA in wallet.balances:
-            uluna_val = wallet.formatUluna(wallet.balances[ULUNA], ULUNA)
-        else:
-            uluna_val = ''
-            
-        if UUSD in wallet.balances:
-            ustc_val = wallet.formatUluna(wallet.balances[UUSD], UUSD)
-        else:
-            ustc_val = ''
-
-        if len(str(uluna_val)) > label_widths[2]:
-            label_widths[2] = len(str(uluna_val))
-
-        if len(str(ustc_val)) > label_widths[3]:
-            label_widths[3] = len(str(ustc_val))
-
-        # Calculate the delegations and undelegations
-        delegations = wallet.getDelegations()
-
-        if delegations is not None:
-            for delegation in delegations:
-                if len(str(wallet.formatUluna(delegations[delegation]['balance_amount'], ULUNA, False))) > label_widths[4]:
-                    label_widths[4] = len(str(wallet.formatUluna(delegations[delegation]['balance_amount'], ULUNA, False)))
-
-        undelegations = wallet.getUndelegations()
-        for undelegation in undelegations:
-            if len(str(wallet.formatUluna(undelegations[undelegation]['balance_amount'], ULUNA, False))) > label_widths[5]:
-                label_widths[5] = len(str(wallet.formatUluna(undelegations[undelegation]['balance_amount'], ULUNA, False)))
-
-    padding_str = ' ' * 100
-
-    header_string = ' Number |'
-
-    if label_widths[1] > len('Wallet name'):
-        header_string +=  ' Wallet name' + padding_str[0:label_widths[1] - len('Wallet name')] + ' '
-    else:
-        header_string +=  ' Wallet name '
-
-    if label_widths[2] > len('LUNC'):
-        header_string += '| LUNC' + padding_str[0:label_widths[2] - len('LUNC')] + ' '
-    else:
-        header_string += '| LUNC '
-
-    if label_widths[3] > len('USTC'):
-        header_string += '| USTC'  + padding_str[0:label_widths[3] - len('USTC')] + ' '
-    else:
-        header_string += '| USTC '
-
-    if label_widths[4] > len('Delegations'):
-        header_string += '| Delegations'  + padding_str[0:label_widths[4] - len('Delegations')] + ' '
-    else:
-        header_string += '| Delegations '
-
-    if label_widths[5] > len('Undelegations'):
-        header_string += '| Undelegations'  + padding_str[0:label_widths[5] - len('Undelegations')] + ' '
-    else:
-        header_string += '| Undelegations '
-
-    horizontal_spacer = '-' * len(header_string)
-
-    wallets_to_use = {}
-    user_wallet    = {}
-
-    while True:
-
-        count = 0
-        wallet_numbers = {}
-
-        print (horizontal_spacer)
-        print (header_string)
-        print (horizontal_spacer)
-
-        for wallet_name in user_wallets:
-            wallet:Wallet  = user_wallets[wallet_name]
-
-            count += 1
-            wallet_numbers[count] = wallet
-                
-            if wallet_name in wallets_to_use:
-                glyph = '✅'
-            else:
-                glyph = '  '
-
-            count_str =  f' {count}' + padding_str[0:6 - (len(str(count)) + 2)]
-            
-            wallet_name_str = wallet_name + padding_str[0:label_widths[1] - len(wallet_name)]
-
-            if ULUNA in wallet.balances:
-                lunc_str = wallet.formatUluna(wallet.balances[ULUNA], ULUNA, False)
-            else: 
-                lunc_str = ''
-
-            lunc_str = lunc_str + padding_str[0:label_widths[2] - len(lunc_str)]
-            
-            if UUSD in wallet.balances:
-                ustc_str = wallet.formatUluna(wallet.balances[UUSD], UUSD, False)
-            else:
-                ustc_str = ' '
-
-            ustc_str = ustc_str + padding_str[0:label_widths[3] - len(ustc_str)]
-
-            delegations_balance:float   = 0
-            undelegations_balance:float = 0
-            delegations_str:str = ''
-            undelegations_str:str = ''
-
-            delegations   = wallet.getDelegations()
-            undelegations = wallet.getUndelegations()
-            
-            if delegations is not None:
-                for delegation in delegations:
-                    delegations_balance += int(delegations[delegation]['balance_amount'])
-
-            delegations_str = str(wallet.formatUluna(delegations_balance, ULUNA, False))
-            delegations_str = delegations_str + padding_str[0:label_widths[4] - len(delegations_str)]
-
-            for undelegation in undelegations:
-                undelegations_balance += float(undelegations[undelegation]['balance_amount'])
-                
-            undelegations_str = str(wallet.formatUluna(undelegations_balance, ULUNA, False))
-            undelegations_str = undelegations_str + padding_str[0:label_widths[5] - len(undelegations_str)]
-
-            print (f"{count_str}{glyph} | {wallet_name_str} | {lunc_str} | {ustc_str} | {delegations_str} | {undelegations_str}")
-            
-        print (horizontal_spacer + '\n')
-
-        answer = input(question).lower()
-        
-        if answer.isdigit() and int(answer) in wallet_numbers:
-
-            wallets_to_use = {}
-
-            key = wallet_numbers[int(answer)].name
-            if key not in wallets_to_use:
-                wallets_to_use[key] = wallet_numbers[int(answer)]
-            else:
-                wallets_to_use.pop(key)
-            
-        if answer == USER_ACTION_CONTINUE:
-            if len(wallets_to_use) > 0:
-                break
-            else:
-                print ('\nPlease select a wallet first.\n')
-
-        if answer == USER_ACTION_QUIT:
-            break
-
-    # Get the first (and only) validator from the list
-    for item in wallets_to_use:
-        user_wallet = wallets_to_use[item]
-        break
-    
-    return user_wallet, answer
+from classes.wallet import UserWallet
+from classes.wallets import UserWallets
+from classes.validators import Validators
 
 def get_validator_singlechoice(question:str, validators:dict, filter_list:list, delegations:dict):
     """
@@ -265,10 +33,10 @@ def get_validator_singlechoice(question:str, validators:dict, filter_list:list, 
     """
 
     # We need a wallet object so we can format LUNC values
-    wallet = Wallet()
+    wallet = UserWallet()
 
     # Get the longest validator name:
-    label_widths = []
+    label_widths:list = []
 
     label_widths.append(len('Number'))
     label_widths.append(len('Commission'))
@@ -284,9 +52,8 @@ def get_validator_singlechoice(question:str, validators:dict, filter_list:list, 
         if len(validator_name) > label_widths[4]:
             label_widths[4] = len(validator_name)
 
-    padding_str = ' ' * 100
-
-    header_string = ' Number |'
+    padding_str:str   = ' ' * 100
+    header_string:str = ' Number |'
 
     if label_widths[3] > len('Delegated'):
         header_string +=  ' Commission | Voting power | Delegated' + padding_str[0:label_widths[3]-len('Delegated')]
@@ -298,15 +65,15 @@ def get_validator_singlechoice(question:str, validators:dict, filter_list:list, 
     else:
         header_string +=  ' | Validator name'
 
-    horizontal_spacer = '-' * len(header_string)
+    horizontal_spacer:str = '-' * len(header_string)
 
-    validators_to_use = {}
-    user_validator    = {}
+    validators_to_use:dict = {}
+    user_validator:dict    = {}
 
     while True:
 
-        count = 0
-        validator_numbers = {}
+        count:int              = 0
+        validator_numbers:dict = {}
 
         print (horizontal_spacer)
         print (header_string)
@@ -323,14 +90,12 @@ def get_validator_singlechoice(question:str, validators:dict, filter_list:list, 
                 else:
                     glyph = '  '
 
-                voting_power = str(round(validators[validator_name]['voting_power'],2)) + '%'
-                commission = str(validators[validator_name]['commission']) + '%'
+                voting_power:str = str(round(validators[validator_name]['voting_power'],2)) + '%'
+                commission:str   = str(validators[validator_name]['commission']) + '%'
 
-                count_str =  f' {count}' + padding_str[0:6 - (len(str(count)) + 2)]
-                
-                commission_str = commission + padding_str[0:label_widths[1] - len(commission)]
-
-                voting_power_str = ' ' + voting_power + padding_str[0:label_widths[2] - len(voting_power)]
+                count_str:str        =  f' {count}' + padding_str[0:6 - (len(str(count)) + 2)]
+                commission_str:str   = commission + padding_str[0:label_widths[1] - len(commission)]
+                voting_power_str:str = ' ' + voting_power + padding_str[0:label_widths[2] - len(voting_power)]
 
                 if validator_name in delegations:
                     delegated_lunc = wallet.formatUluna(delegations[validator_name]['balance_amount'], ULUNA, False)
@@ -347,11 +112,11 @@ def get_validator_singlechoice(question:str, validators:dict, filter_list:list, 
             
         print (horizontal_spacer + '\n')
 
-        answer = input(question).lower()
+        answer:str = input(question).lower()
         
         if answer.isdigit() and int(answer) in validator_numbers:
 
-            validators_to_use = {}
+            validators_to_use:dict = {}
 
             key = validator_numbers[int(answer)]['moniker']
             if key not in validators_to_use:
@@ -375,9 +140,6 @@ def get_validator_singlechoice(question:str, validators:dict, filter_list:list, 
 
     return user_validator, answer
 
-#def remove_exponent(num):
-#    return num.to_integral() if num == num.to_integral() else num.normalize()
-
 def main():
 
     # today = datetime.now()
@@ -393,38 +155,20 @@ def main():
     # Check if there is a new version we should be using
     check_version()
 
-    # Get the password that decrypts the user wallets
-    decrypt_password:str = getpass() # the secret password that encrypts the seed phrase
-
-    if decrypt_password == '':
-        print (' 🛑 Exiting...\n')
-        exit()
-
-    # Get the user config file contents
-    user_config:str = UserConfig().contents()
-    if user_config == '':
-        print (' 🛑 The user_config.yml file could not be opened - please run configure_user_wallets.py before running this script.')
-        exit()
-
-    print ('Decrypting and validating wallets - please wait...\n')
-
-    # Create the wallet object based on the user config file
-    wallet_obj       = Wallets().create(user_config, decrypt_password)
-    decrypt_password = None
-
-    # Get all the wallets
-    user_wallets = wallet_obj.getWallets(True)
+    # Get the user wallets
+    wallets      = UserWallets()
+    user_wallets = wallets.loadUserWallets()
 
     # Get the balances on each wallet (for display purposes)
     for wallet_name in user_wallets:
-        wallet:Wallet = user_wallets[wallet_name]
+        wallet:UserWallet = user_wallets[wallet_name]
         wallet.getBalances()
         wallet.getDelegations()
 
     if len(user_wallets) > 0:
         print (f'You have these wallets available:')
 
-        wallet, answer = get_user_singlechoice("Select a wallet number 1 - " + str(len(user_wallets)) + ", 'X' to continue, or 'Q' to quit: ", user_wallets)
+        wallet, answer = wallets.getUserSinglechoice("Select a wallet number 1 - " + str(len(user_wallets)) + ", 'X' to continue, or 'Q' to quit: ", True)
 
         if answer == USER_ACTION_QUIT:
             print (' 🛑 Exiting...\n')
@@ -464,7 +208,7 @@ def main():
         print (' 🛑 No validators could be retrieved - perhaps there are network issues?')
         exit()
 
-    delegations = wallet.getDelegations()
+    delegations:dict = wallet.getDelegations()
 
     if user_action == USER_ACTION_VALIDATOR_DELEGATE:
 
@@ -482,7 +226,7 @@ def main():
 
         print (f"The {wallet.name} wallet holds {wallet.formatUluna(wallet.balances[ULUNA], ULUNA, True)}")
         print (f"NOTE: A minimum amount of {WITHDRAWAL_REMAINDER} LUNC will be retained for future transactions.")
-        delegated_uluna:float = get_user_number('How much are you delegating? ', {'max_number': float(wallet.formatUluna(wallet.balances[ULUNA], ULUNA)), 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': True, 'keep_minimum': True})
+        delegated_uluna:float = wallet.getUserNumber('How much are you delegating? ', {'max_number': float(wallet.formatUluna(wallet.balances[ULUNA], ULUNA)), 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': True, 'keep_minimum': True})
                 
         if delegated_uluna == 0:
             print (' 🛑 Delegated amount is zero, exiting...\n')
@@ -552,7 +296,6 @@ def main():
         print (f'Select a validator to undelegate from:')
 
         # Get the validators currently being used
-        
         filter_list:list = []
 
         for validator in delegations:
@@ -568,7 +311,7 @@ def main():
 
         print (f"The {wallet.name} wallet has {wallet.formatUluna(available_undelegation_uluna, ULUNA, True)} available to be undelegated.")
         print (f"NOTE: You can send the entire value of this delegation by typing '100%' - no minimum amount will be retained.")
-        undelegated_uluna:str = get_user_number('How much are you undelegating? ', {'max_number': float(wallet.formatUluna(available_undelegation_uluna, ULUNA, False)), 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': True, 'keep_minimum': False})
+        undelegated_uluna:str = wallet.getUserNumber('How much are you undelegating? ', {'max_number': float(wallet.formatUluna(available_undelegation_uluna, ULUNA, False)), 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': True, 'keep_minimum': False})
         
         print (f"You are about to undelegate {wallet.formatUluna(undelegated_uluna, ULUNA, True)} from {user_validator['moniker']}.")
         print (' 🛎️  Undelegated funds will not be available for 21 days.')
@@ -658,7 +401,7 @@ def main():
         total_delegated_uluna = delegations[from_validator['moniker']]['balance_amount']
         print (f"The {from_validator['moniker']} wallet holds {wallet.formatUluna(total_delegated_uluna, ULUNA, True)}")
         print (f"NOTE: You can switch the entire value of this delegation by typing '100%' - no minimum amount will be retained.")
-        switched_uluna:float = get_user_number('How much are you switching? ', {'max_number': float(wallet.formatUluna(total_delegated_uluna, ULUNA, False)), 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': True, 'keep_minimum': False, 'target_denom': ULUNA})
+        switched_uluna:float = wallet.getUserNumber('How much are you switching? ', {'max_number': float(wallet.formatUluna(total_delegated_uluna, ULUNA, False)), 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': True, 'keep_minimum': False, 'target_denom': ULUNA})
         
         print (f"You are about to switch {wallet.formatUluna(switched_uluna, ULUNA, True)} from {from_validator['moniker']} and move it to {to_validator['moniker']}.")
         complete_transaction = get_user_choice('Do you want to continue? (y/n) ', [])
@@ -729,7 +472,7 @@ def main():
         undelegations:dict  = wallet.getUndelegations()
         
         # Use today's date. 
-        today = datetime.now()
+        today:datetime = datetime.now()
 
         print ('')
 
