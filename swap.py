@@ -10,10 +10,7 @@ from constants.constants import (
     FULL_COIN_LOOKUP,
     GAS_ADJUSTMENT_SWAPS,
     OFFCHAIN_COINS,
-    ULUNA,
-    USER_ACTION_CONTINUE,
-    USER_ACTION_QUIT,
-    UUSD,
+    USER_ACTION_QUIT
 )
 
 from classes.swap_transaction import SwapTransaction
@@ -110,9 +107,10 @@ def main():
 
     # Set the contract based on what we've picked
     # As long as the swap_denom and swap_request_denom values are set, the correct contract should be picked
-    use_market_swap = swap_tx.setContract()
+    use_market_swap:bool = swap_tx.setContract()
+    is_offchain_swap:bool = swap_tx.isOffChainSwap()
 
-    if swap_tx.swap_request_denom in OFFCHAIN_COINS or swap_tx.swap_denom in OFFCHAIN_COINS:
+    if is_offchain_swap == True:
         # This is an off-chain swap. Something like LUNC(terra)->OSMO or LUNC(Osmosis) -> wETH
         result = swap_tx.offChainSimulate()
 
