@@ -29,8 +29,13 @@ Current functionality includes:
    * BASE token swapping and sending
  * Support for swapping of non-Terra coins via Osmosis
    * Atom
+   * Kava
    * Kujira
    * Osmosis
+   * Secret
+   * USTC
+   * Whale
+   * Wrapped Bitcoin
    * Wrapped Ethereum
 
  ## Why should you use these scripts?
