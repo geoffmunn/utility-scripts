@@ -175,14 +175,6 @@ def main():
     # NOTE: I'm pretty sure the memo size is int64, but I've capped it at 255 so python doens't panic
     memo:str = wallet.getUserText('Provide a memo (optional): ', 255, True)
 
-    # Convert the provided value into actual numbers:
-    complete_transaction = get_user_choice(f"You are about to send {wallet.formatUluna(uluna_amount, denom)} {FULL_COIN_LOOKUP[denom]} to {recipient_address} - do you want to continue? (y/n) ", [])
-
-    if complete_transaction == False:
-        print (' 🛑 Exiting...\n')
-        exit()
-
-    # Now start doing stuff
     print (f'\nAccessing the {wallet.name} wallet...')
 
     if ULUNA in wallet.balances:
@@ -227,6 +219,8 @@ def main():
         
         # Now complete it
         if result == True:
+            print(f'You are about to send {wallet.formatUluna(uluna_amount, denom)} {FULL_COIN_LOOKUP[denom]} to {recipient_address}')
+
             print (send_tx.readableFee())
 
             user_choice = get_user_choice('Do you want to continue? (y/n) ', [])

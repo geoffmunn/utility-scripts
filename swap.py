@@ -84,13 +84,6 @@ def main():
 
     estimated_amount = str(("%.6f" % (estimated_amount)).rstrip('0').rstrip('.'))
 
-    print (f'You will be swapping {wallet.formatUluna(swap_uluna, coin_from, False)} {FULL_COIN_LOOKUP[coin_from]} for approximately {estimated_amount} {FULL_COIN_LOOKUP[coin_to]}')
-    complete_transaction = get_user_choice('Do you want to continue? (y/n) ', [])
-
-    if complete_transaction == False:
-        print (' 🛑 Exiting...\n')
-        exit()
-
     # Create the swap object
     swap_tx = SwapTransaction().create(seed = wallet.seed, denom = wallet.denom)
     # Assign the details:
@@ -115,8 +108,9 @@ def main():
         result = swap_tx.offChainSimulate()
 
         if result == True:
+
+            print (f'You will be swapping {wallet.formatUluna(swap_uluna, coin_from, False)} {FULL_COIN_LOOKUP[coin_from]} for approximately {estimated_amount} {FULL_COIN_LOOKUP[coin_to]}')
             print (swap_tx.readableFee())
-                
             user_choice = get_user_choice('Do you want to continue? (y/n) ', [])
 
             if user_choice == False:
@@ -129,8 +123,8 @@ def main():
             # This is for terra-native swaps ONLY
             result = swap_tx.marketSimulate()
             if result == True:
+                print (f'You will be swapping {wallet.formatUluna(swap_uluna, coin_from, False)} {FULL_COIN_LOOKUP[coin_from]} for approximately {estimated_amount} {FULL_COIN_LOOKUP[coin_to]}')
                 print (swap_tx.readableFee())
-                
                 user_choice = get_user_choice('Do you want to continue? (y/n) ', [])
 
                 if user_choice == False:
@@ -142,8 +136,8 @@ def main():
             result = swap_tx.simulate()
 
             if result == True:
+                print (f'You will be swapping {wallet.formatUluna(swap_uluna, coin_from, False)} {FULL_COIN_LOOKUP[coin_from]} for approximately {estimated_amount} {FULL_COIN_LOOKUP[coin_to]}')
                 print (swap_tx.readableFee())
-
                 user_choice = get_user_choice('Do you want to continue? (y/n) ', [])
 
                 if user_choice == False:
@@ -161,6 +155,7 @@ def main():
                 swap_tx.sequence = swap_tx.sequence + 1
                 swap_tx.simulate()
                 print (swap_tx.readableFee())
+                
                 swap_tx.swap()
                 swap_tx.broadcast()
 
