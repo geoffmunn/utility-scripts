@@ -78,15 +78,20 @@ Please take a look at the security section below for details on how your seed ph
 
 You will be prompted for the following details:
 
+- **Wallet name**: A unique identifier for your reference. If you use the same name as an existing entry, it will overwrite the existing values
+
  - **Are you adding an entire wallet?** If you are just adding an address that you want to send funds to, then say 'No'.
- - **Wallet name**: A unique identifier for your reference. If you use the same name as an existing entry, it will overwrite the existing values
- - **Do you want to generate a new wallet address?** Yes or no - if you say 'yes' then a new address and seed phrase will be displayed and used for this wallet.
- - **Terra address**: If you said 'no' to the previous prompt, then you provide the address of the wallet here - it starts with 'terra'.
- - **Wallet seed**: If you said 'no' to creating a new wallet, then you provide the secret seed phrase to generate the wallet here. This is the ONLY time you'll need to provide this - see the security section below.
- - **Do you want to withdraw or delegate anything?**: Optional - if you're staking coins then say 'yes'.
- - **Delegation amount**: You can provide a percentage (usually 100%), or a fixed number (in LUNC). This percentage or number comes from the balance in the wallet at the time, unrelated to the withdrawn amount.
- - **Withdrawal threshold**: The amount of LUNC that must be available as a staking reward before it is withdrawn. If you want to always withdraw everything, enter '0'.
- - **Allow swaps?**: Yes or no - if you say 'no' then the swaps function will not apply to this wallet.
+ 
+ - **If you said no - just add an address:**
+   - **What is the wallet address address?** Provide the address of the wallet here - it starts with 'terra'.
+   - Finished!
+
+ - **If you said yes - add an entire wallet:**
+   - **Secret password (do not forget what this is)** A password to decrypt the seed value. For improved security, please make this a complex password.
+    - **Do you want to generate a new wallet address?** Yes or no - if you say 'yes' then a new address and seed phrase will be displayed and used for this wallet.
+    - **Terra address**: Provide the address of the wallet here - it starts with 'terra'.
+    - **Wallet seed**: Provide the secret seed phrase to generate the wallet here. This is the ONLY time you'll need to provide this - see the security section below.
+    - Finished!
 
 This script will create a file called ```user_config.yml```.
 You can edit this file if you need to, but do not modify the encrypted seed string.
