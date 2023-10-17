@@ -28,6 +28,7 @@ from constants.constants import (
     UBASE,
     USER_ACTION_CONTINUE,
     USER_ACTION_QUIT,
+    UUSD,
     WITHDRAWAL_REMAINDER,
 )
 
@@ -139,8 +140,9 @@ class UserWallet:
         if denom == '':
             prefix = self.getPrefix(self.address)
             for chain_key in [*CHAIN_DATA]:
-                if CHAIN_DATA[chain_key]['bech32_prefix'] == prefix:
-                    denom = chain_key
+                if chain_key != UUSD:
+                    if CHAIN_DATA[chain_key]['bech32_prefix'] == prefix:
+                        denom = chain_key
 
         self.denom = denom
         
