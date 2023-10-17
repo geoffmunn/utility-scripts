@@ -119,7 +119,6 @@ You use ```transaction.py``` to send LUNC to another address, from wallets in th
 Two points to remember:
  - Memos are optional
  - You should keep a minimum amount of LUNC in reserve for payment of fees for future operations
- - Gas fees can be hard to predict if this is not a LUNC -> LUNC transaction. If the transaction fails, then you can specifiy a higher gas fee.
 
  ### validators.py
 
@@ -178,14 +177,12 @@ If this was an Osmosis swap (probably to or from Ethereum) then increase the max
 
 ## Gas adjustment
 
-By default, the gas adjustment value starts at 1. This is a very low amount, and will usually fail. When it fails, the script will increase the value by 0.1 and try again. This will keep repeating until the gas adjustment value reaches 4, and then fail if it hasn't successfully finished at this point.
-
-Currently it seems that a successful gas adjustment value is 1.1. If you don't want to try the initial value, then you can change the default to 1.1.
+Currently it seems that a successful gas adjustment value is 3.6. If you don't want to try the initial value, then you can change the default to to something else.
 
 You can change the values in the ```constants/constants.py``` file:
 
 ```
-GAS_ADJUSTMENT           = 1
+GAS_ADJUSTMENT           = 3.6
 GAS_ADJUSTMENT_INCREMENT = 0.1
 MAX_GAS_ADJUSTMENT       = 4
 ```
