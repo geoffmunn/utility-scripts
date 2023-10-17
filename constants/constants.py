@@ -215,7 +215,7 @@ CHAIN_DATA = {
         'bech32_prefix': 'kujira'
     },
     'umars': {
-        'coingecko_id': 'mars',
+        'coingecko_id': 'mars-protocol-a7fcbcfb-fd61-4017-92f0-7ee9f9cc6da3',
         'cosmos_name': 'mars',
         'keplr_name': 'mars',
         'precision': 6,
