@@ -98,7 +98,7 @@ You can edit this file if you need to, but do not modify the encrypted seed stri
 
 If this file is corrupted or you forget the password then you can delete it and start again.
 
-### get_balances.py
+### balances.py
 
 This will return the balances for each coin type on all of your wallets. You provide the same password as you used in the configuration step, and say 'yes' or 'no' to just getting the LUNC and USTC summaries.
 
@@ -112,9 +112,9 @@ To automatically update your wallets, you need to run ```manage_wallets.py```. P
 
  **Special note about delegations**: delegating will also withdraw all existing rewards (which are not part of the delegation), so your balance afterwards might also reflect the withdrawals.
 
-### send_transaction.py
+### send.py
 
-You use ```send_transaction.py``` to send LUNC to another address, from wallets in the ```user_config.yml``` file. Provide the same password you used in the configuration step.
+You use ```transaction.py``` to send LUNC to another address, from wallets in the ```user_config.yml``` file. Provide the same password you used in the configuration step.
 
 Two points to remember:
  - Memos are optional
@@ -136,15 +136,15 @@ After pressing 'X' to continue, you will can then choose what you want to swap y
 
 ## Osmosis usage
 
-You can swap to other non-Terra coins by using the Osmosis exchange functionality. Support for other coins needs to be specifically added to the list in the utility_contants.py file.
+You can swap to other non-Terra coins by using the Osmosis exchange functionality. Support for other coins needs to be specifically added to the list in the ```constants.py``` file.
 
-Fees are kept as low as possible, and slippage defaults to 1% but some transactions (LUNC -> ETH) seem to require a 3% slippage in order to work reliably.
+Fees are kept as low as possible, and slippage defaults to 1%. The swap paths are calculated automatically to use the lowest swap fee pool, and also required a pool with a significantly larger liquidity amount than what is being swapped.
 
 To use this, you need to send an amount of LUNC to your Osmosis address (starting with 'terra'). Once you have some funds there, you can swap them to other coins as well as using them for paying fees.
 
 For the sake of simplicity, LUNC is used as the fee payment option.
 
-Transfers are usually instantaneous - by the time you have run the ```get_balances.py``` script, you should see them in your balance list. However, it can sometimes take longer - even hours for a transfer to appear. If transaction reported success and the hash showes up in the explorer, then it will eventually appear.
+Transfers are usually instantaneous - by the time you have run the ```balances.py``` script, you should see them in your balance list. However, it can sometimes take longer - even hours for a transfer to appear. If transaction reported success and the hash showes up in the explorer, then it will eventually appear.
 
 ## BASE usage
 
@@ -158,7 +158,7 @@ Examples of errors and what they might mean:
 
 **The script is stuck on 'Starting delegations' and isn't doing anything**
 
-Sometimes it seems to timeout and nothing will happen for many minutes. In these cases you can press 'control+C' (on the Mac) to quit the script. You can run ```python3 get_balances.py``` to check where your coins currently sit, and re-run the ```manage_wallets.py``` script to start again.
+Sometimes it seems to timeout and nothing will happen for many minutes. In these cases you can press 'control+C' (on the Mac) to quit the script. You can run ```python3 balances.py``` to check where your coins currently sit, and re-run the ```manage_wallets.py``` script to start again.
 
 **LCD Response Error Status 400 - failed to execute message; message index: 0: Operation exceeds max spread limit: execute wasm contract failed: invalid request**
 
@@ -182,7 +182,7 @@ By default, the gas adjustment value starts at 1. This is a very low amount, and
 
 Currently it seems that a successful gas adjustment value is 1.1. If you don't want to try the initial value, then you can change the default to 1.1.
 
-You can change the values in the ```utility_constants.py``` file:
+You can change the values in the ```constants/constants.py``` file:
 
 ```
 GAS_ADJUSTMENT           = 1
