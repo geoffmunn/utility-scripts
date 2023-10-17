@@ -252,6 +252,18 @@ class SwapTransaction(TransactionCore):
                         current_option['swap_amount'] = swap_amount
                 
         return current_option
+    
+    def isOffChainSwap(self):
+        """
+        Figure out if this swap is based on off-chain (non-terra) coins.
+        You can swap from lunc to osmo from columbus-5, and swap lunc to wBTC on osmosis-1
+        """
+        if self.swap_request_denom in OFFCHAIN_COINS or self.swap_denom in OFFCHAIN_COINS:
+            is_offchain_swap:bool = True
+        else:
+            is_offchain_swap:bool = False
+
+        return is_offchain_swap
 
     def offChainSimulate(self):
         """
@@ -770,7 +782,9 @@ class SwapTransaction(TransactionCore):
         """
         
         estimated_amount:float = None
-        if self.use_market_swap == False:
+        is_offchain_swap:bool  = self.isOffChainSwap()
+
+        if self.use_market_swap == False and is_offchain_swap == False:
 
             if self.swap_denom == UBASE:
                 if self.swap_request_denom == ULUNA:
@@ -784,6 +798,9 @@ class SwapTransaction(TransactionCore):
                     estimated_amount = float(self.swap_amount / swap_price)
                     
         else:
+            #print ('swap denom:', self.swap_denom)
+            #print ('wallet denom:', self.wallet_denom)
+            #print ('request denom:', self.swap_request_denom)
             if self.swap_denom in OFFCHAIN_COINS + [ULUNA] and self.swap_request_denom in OFFCHAIN_COINS + [ULUNA]:
                 # Calculate the amount of OSMO (or whatever) we'll be getting:
                 # (lunc amount * lunc unit cost) / osmo price
