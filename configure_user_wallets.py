@@ -30,11 +30,11 @@ def main():
     print ('If you send funds to an address on a frequent basis, adding just an address is useful for extra convienience.')
     print ('*************************************************************************************************************\n')
 
-    entire_wallet:bool = get_user_choice('Are you adding an entire wallet? (y/n) ', [])
-
     # Create the basic wallet object
     wallet:UserWallet  = UserWallet().create(denom = ULUNA)
+
     wallet_name:str    = wallet.getUserText('Wallet name: ', 255, False)
+    entire_wallet:bool = get_user_choice('Are you adding an entire wallet? (y/n) ', [])
 
     if entire_wallet == False:
         wallet_address:str = wallet.getUserRecipient("What is the wallet address address? (or type 'Q' to quit) ", {})
