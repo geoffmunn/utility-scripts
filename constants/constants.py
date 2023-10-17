@@ -71,6 +71,7 @@ UMARS = 'umars'
 UOSMO = 'uosmo'
 USCRT = 'uscrt'
 UUSD  = 'uusd'
+UUSTC = 'uusdc'
 UWHALE = 'uwhale'
 WBTC  = 'wbtc-satoshi'
 WETH  = 'weth-wei'
@@ -126,6 +127,7 @@ OFFCHAIN_COINS = [
     UOSMO,
     UMARS,
     USCRT,
+    UUSD,
     UWHALE,
     WBTC,
     WETH
@@ -172,6 +174,7 @@ CHAIN_DATA = {
             'umars': 'channel-557',
             'uosmo': 'channel-1',
             'uscrt': 'channel-88',
+            'uusd': 'channel-72',
             'uwhale': 'channel-84',
             'wbtc-satoshi': 'channel-208',
             'weth-wei': 'channel-208'
@@ -224,6 +227,13 @@ CHAIN_DATA = {
         'keplr_name': 'secret',
         'precision': 6,
         'bech32_prefix': 'secret'
+    },
+    'uusd': {
+        'coingecko_id': 'terrausd',
+        'cosmos_name': 'terra',
+        'keplr_name': 'terrausd',
+        'precision': 6,
+        'bech32_prefix': 'terra'
     },
     'uwhale': {
         'coingecko_id': 'white-whale',
