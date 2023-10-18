@@ -298,7 +298,9 @@ class TransactionCore():
                     }
 
                     self.prices = requests.get(uri, params = params).json()
-                    
+                    retry = False
+                    break
+
                 except Exception as err:
                     retry_count += 1
                     if retry_count == 10:
