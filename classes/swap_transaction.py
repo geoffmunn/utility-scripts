@@ -277,6 +277,7 @@ class SwapTransaction(TransactionCore):
         self.gas_limit      = 'auto'
         self.ibc_routes     = []
         self.min_out        = None
+        self.prices         = None
         self.transaction    = None
         self.sequence       = self.current_wallet.sequence()
         
@@ -589,6 +590,7 @@ class SwapTransaction(TransactionCore):
         self.gas_limit      = 'auto'
         self.ibc_routes     = []
         self.min_out        = None
+        self.prices         = None
         self.transaction    = None
         self.sequence       = self.current_wallet.sequence()
 

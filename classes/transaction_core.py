@@ -49,6 +49,7 @@ class TransactionCore():
         self.gas_list:json                           = None
         self.gas_price_url:str                       = None
         self.height:int                              = None
+        self.prices:dict                             = None
         self.sequence:int                            = None
         self.tax_rate:json                           = None
         self.terra:LCDClient                         = None
@@ -206,7 +207,7 @@ class TransactionCore():
         """
 
         # Store the current block here - needed for transaction searches
-        self.height = self.terra.tendermint.block_info()['block']['header']['height']
+        self.height:int = int(self.terra.tendermint.block_info()['block']['header']['height']) - 1
 
         transaction_found:bool = False
 
@@ -234,6 +235,7 @@ class TransactionCore():
 
             if retry_count <= SEARCH_RETRY_COUNT:
                 print ('Tx hash not found...')
+                print (result)
                 time.sleep(1)
             else:
                 break
@@ -275,31 +277,28 @@ class TransactionCore():
 
         retry_count:int  = 0
         retry:bool       = True
-        prices:json      = {}
         from_price:float = None
         to_price:float   = None
 
-        # Get the chains that we are using
-        from_id:dict = CHAIN_DATA[from_denom]
-        to_id:dict   = CHAIN_DATA[to_denom]
-
-        if from_id != False and to_id != False:
+        if self.prices is None:
             while retry == True:
                 try:
-                    #uri:str = f"https://api-indexer.keplr.app/v1/price?ids={from_id['keplr_name']},{to_id['keplr_name']}&vs_currencies=usd"
-                    #prices:json = requests.get(uri).json()
+                    # Get all the prices we are interested in and cache them so we don't get rate limited by Coingecko
+                    id_str:str = ''
+                    for denom in CHAIN_DATA:
+                        id_str += CHAIN_DATA[denom]['coingecko_id'] + ','
 
+                    #uri:str = f"https://api-indexer.keplr.app/v1/price?ids={id_str}&vs_currencies=usd"
+                    #print (uri)
+                    #prices:json = requests.get(uri).json()
                     uri:str     = 'https://api.coingecko.com/api/v3/simple/price'
                     params:dict = {  
-                        'ids': f"{from_id['coingecko_id']},{to_id['coingecko_id']}",
+                        'ids': id_str,
                         'vs_currencies': 'USD'
                     }
 
-                    prices = requests.get(uri, params = params).json()
-
-                    # Exit the loop if this hasn't returned an error
-                    retry = False
-
+                    self.prices = requests.get(uri, params = params).json()
+                    
                 except Exception as err:
                     retry_count += 1
                     if retry_count == 10:
@@ -311,10 +310,14 @@ class TransactionCore():
                     else:
                         time.sleep(1)
 
-            #from_price:float = prices[from_id['keplr_name']]['usd']
-            #to_price:float   = prices[to_id['keplr_name']]['usd']
-            from_price:float = prices[from_id['coingecko_id']]['usd']
-            to_price:float   = prices[to_id['coingecko_id']]['usd']
+        if from_denom != False and to_denom != False:
+            from_id:dict = CHAIN_DATA[from_denom]
+            to_id:dict   = CHAIN_DATA[to_denom]
+
+        #from_price:float = prices[from_id['keplr_name']]['usd']
+        #to_price:float   = prices[to_id['keplr_name']]['usd']
+        from_price:float = self.prices[from_id['coingecko_id']]['usd']
+        to_price:float   = self.prices[to_id['coingecko_id']]['usd']
         
         return {'from':from_price, 'to': to_price}
         

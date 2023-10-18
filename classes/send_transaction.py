@@ -128,11 +128,11 @@ class SendTransaction(TransactionCore):
                         options.sequence = self.sequence
                         print (' 🛎️  Boosting sequence number')
                     else:
-                        print ('An unexpected error occurred in the send function:')
+                        print (' 🛑 An unexpected error occurred in the on-chain send function:')
                         print (err)
                         break
                 except Exception as err:
-                    print (' 🛑 An unexpected error occurred in the send function:')
+                    print (' 🛑 An unexpected error occurred in the on-chain send function:')
                     print (err)
                     break
 
@@ -142,7 +142,7 @@ class SendTransaction(TransactionCore):
             return True
         
         except Exception as err:
-            print (' 🛑 An unexpected error occurred in the send function:')
+            print (' 🛑 An unexpected error occurred in the on-chain send function:')
             print (err)
             return False
         
@@ -179,7 +179,7 @@ class SendTransaction(TransactionCore):
             msg = MsgTransfer(
                 source_port       = 'transfer',
                 source_channel    = self.source_channel,
-                token = token,
+                token             = token,
                 sender            = self.sender_address,
                 receiver          = self.recipient_address,
                 timeout_height    = Height(revision_number = revision_number, revision_height = self.block_height),
@@ -208,11 +208,11 @@ class SendTransaction(TransactionCore):
                         options.sequence = self.sequence
                         print (' 🛎️  Boosting sequence number')
                     else:
-                        print ('An unexpected error occurred in the send function:')
+                        print (' 🛑 An unexpected error occurred in the off-chain send function:')
                         print (err)
                         break
                 except Exception as err:
-                    print (' 🛑 An unexpected error occurred in the send function:')
+                    print (' 🛑 An unexpected error occurred in the off-chain send function:')
                     print (err)
                     break
 
@@ -221,7 +221,7 @@ class SendTransaction(TransactionCore):
 
             return True
         except Exception as err:
-            print (' 🛑 An unexpected error occurred in the send function:')
+            print (' 🛑 An unexpected error occurred in the off-chain send function:')
             print (err)
             return False
     
@@ -239,6 +239,7 @@ class SendTransaction(TransactionCore):
         self.account_number  = self.current_wallet.account_number()
         self.fee             = None
         self.fee_deductables = None
+        self.prices          = None
         self.tax             = None
         self.sequence        = self.current_wallet.sequence()
 
@@ -313,6 +314,7 @@ class SendTransaction(TransactionCore):
         self.account_number  = self.current_wallet.account_number()
         self.fee             = None
         self.fee_deductables = None
+        self.prices          = None
         self.tax             = None
         self.sequence        = self.current_wallet.sequence()
 
