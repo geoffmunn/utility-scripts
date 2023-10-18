@@ -60,6 +60,7 @@ COIN_DIVISOR        = 1000000
 MAX_VALIDATOR_COUNT = 130
 
 # Coin constants:
+AFET  = 'afet'
 CRO   = 'basecro'
 UATOM = 'uatom'
 UBASE = 'ubase'
@@ -78,13 +79,14 @@ WETH  = 'weth-wei'
 
 # Coin keys and display values:
 FULL_COIN_LOOKUP = {
+    'afet': 'FETCHAI',
+    'basecro': 'CRO',
     'uaud':  'AUTC',
     'uatom': 'ATOM',
     'ubase': 'BASE',
     'ucad':  'CATC',
     'uchf':  'CHTC',
     'ucny':  'CNTC',
-    'basecro': 'CRO',
     'udkk':  'DKTC',
     'ueur':  'EUTC',
     'ugbp':  'GBTC',
@@ -120,6 +122,7 @@ BASIC_COIN_LOOKUP = {
 }
 
 OFFCHAIN_COINS = [
+    AFET,
     CRO,
     UATOM,
     UKAVA,
@@ -135,13 +138,14 @@ OFFCHAIN_COINS = [
 
 # To add a coin to the Osmosis swap options, we need 5 things:
 # 1: the denom for this coin, found here: https://cosmos.directory/cronos/chain
-# 2: the cosmos name that goes into this url: https://rest.cosmos.directory/osmosis/ibc/apps/transfer/v1/denom_traces/IBC_VALUE_MINUS_IBC
-#    To get the IBC value, run this query in osmosis.db: SELECT * FROM asset WHERE readable_denom = 'denom'
-# 3: the keplr name, that goes into this url: https://api-indexer.keplr.app/v1/price?ids=terra-luna,KEPLR_NAME&vs_currencies=usd
+# 2: the cosmos name is listed in the REST proxy value in step 1
+# 3: the Coingecko id, also listed in step 1 or on the Coingecko page for this coin
 # 4: the precision, as found here: https://cosmos.directory/cronos/chain (use the correct chain)
 # 5: the bech32 prefix, as found here: https://cosmos.directory/cronos/chain (use the correct chain)
 
-# 6: the channel id (also found in step 1)
+# 6: the channel id - found in this result: https://rest.cosmos.directory/osmosis/ibc/apps/transfer/v1/denom_traces/IBC_VALUE_MINUS_IBC
+#    To get the IBC value, run this query in osmosis.db: SELECT * FROM asset WHERE readable_denom = 'denom'
+
 ###
 # 'Step 1': {
 #     'cosmos_name': 'Step 2',
@@ -166,6 +170,7 @@ CHAIN_DATA = {
     'uosmo': {
         'chain_id': 'osmosis-1',
         'ibc_channels': {
+            'afet': 'channel-229',
             'basecro': 'channel-5',
             'uatom': 'channel-0',
             'ukava': 'channel-143',
@@ -185,6 +190,13 @@ CHAIN_DATA = {
         'keplr_name': 'osmosis',
         'precision': 6,
         'bech32_prefix': 'osmo'
+    },
+    'afet': {
+        'coingecko_id': 'fetch-ai',
+        'cosmos_name': 'fetchhub',
+        'keplr_name': 'fetchhub',
+        'precision': 18,
+        'bech32_prefix': 'fetch'
     },
     'basecro': {
         'coingecko_id': 'crypto-com-chain',
@@ -258,24 +270,7 @@ CHAIN_DATA = {
     }
 }
 
-# CHAIN_IDS = {
-#     'secret': {
-#         'chain_id': 'osmosis-1',
-#         #'chain_id': 'secret-4',
-#         'denom': 'uscrt',
-#         'display_name': 'Luna Classic',
-#         'ibc_channel': 'channel-88',
-#         'lcd_urls': ['https://lcd.osmosis.zone'],
-#         #'lcd_urls': ['https://lcd.secret.express'],
-#         'name': 'secret',
-#         'name2': 'secret',
-#         'precision': 6,
-#         'prefix': 'secret'
-#     },
-# }
-
 # Injective
-# Fetch.ai
 # Akash Network
 # Band Protocol
 # Stride
@@ -297,7 +292,6 @@ CHAIN_DATA = {
 # Sentinel
 # Carbon Protocol
 # Regen
-# Mars Protocol
 # COMDEX
 # Chihuahua Chain
 # Lambda
