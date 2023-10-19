@@ -64,6 +64,7 @@ AFET  = 'afet'
 CRO   = 'basecro'
 UATOM = 'uatom'
 UBASE = 'ubase'
+UJUNO = 'ujuno'
 UKAVA = 'ukava'
 UKRW  = 'ukrw'
 UKUJI = 'ukuji'
@@ -79,21 +80,22 @@ WETH  = 'weth-wei'
 
 # Coin keys and display values:
 FULL_COIN_LOOKUP = {
-    'afet': 'FETCHAI',
-    'basecro': 'CRO',
     'uaud':  'AUTC',
     'uatom': 'ATOM',
     'ubase': 'BASE',
     'ucad':  'CATC',
     'uchf':  'CHTC',
     'ucny':  'CNTC',
+    'basecro': 'CRO',
     'udkk':  'DKTC',
     'ueur':  'EUTC',
+    'afet': 'FETCH.AI',
     'ugbp':  'GBTC',
     'uhkd':  'HKTC',
     'uidr':  'IDTC',
     'uinr':  'INTC',
     'ujpy':  'JPTC',
+    'ujuno': 'JUNO',
     'ukava': 'KAVA',
     'ukrw':  'KRTC',
     'ukuji': 'KUJI',
@@ -125,6 +127,7 @@ OFFCHAIN_COINS = [
     AFET,
     CRO,
     UATOM,
+    UJUNO,
     UKAVA,
     UKUJI,
     UOSMO,
@@ -154,16 +157,18 @@ OFFCHAIN_COINS = [
 #     'bech32_prefix': 'Step 5'
 # },
 ###
+
 CHAIN_DATA = {
     'uluna': {
         'chain_id': 'columbus-5',
         'ibc_channels': {
+            'uatom': 'channel-41',
             'uosmo': 'channel-1',
         },
         'lcd_urls': ['https://terra-classic-fcd.publicnode.com', 'https://rest.cosmos.directory/terra'],
         'coingecko_id': 'terra-luna',
         'cosmos_name': 'terra',
-        'keplr_name': 'terra-luna',
+        'display_name': 'LUNC',
         'precision': 6,
         'bech32_prefix': 'terra'
     },
@@ -173,6 +178,7 @@ CHAIN_DATA = {
             'afet': 'channel-229',
             'basecro': 'channel-5',
             'uatom': 'channel-0',
+            'ujuno': 'channel-42',
             'ukava': 'channel-143',
             'ukuji': 'channel-259',
             'uluna': 'channel-72',
@@ -187,88 +193,99 @@ CHAIN_DATA = {
         'lcd_urls': ['https://lcd.osmosis.zone'],
         'coingecko_id': 'osmosis',
         'cosmos_name': 'osmosis',
-        'keplr_name': 'osmosis',
+        'display_name': 'OSMO',
         'precision': 6,
         'bech32_prefix': 'osmo'
     },
     'afet': {
         'coingecko_id': 'fetch-ai',
         'cosmos_name': 'fetchhub',
-        'keplr_name': 'fetchhub',
+        'display_name': 'FETCH.AI',
         'precision': 18,
         'bech32_prefix': 'fetch'
     },
     'basecro': {
         'coingecko_id': 'crypto-com-chain',
         'cosmos_name': 'cronos',
-        'keplr_name': 'cronos',
+        'display_name': 'CRO',
         'precision': 8,
-        'bech32_prefix': 'basecro'
+        'bech32_prefix': 'cro'
     },
     'uatom': {
         'coingecko_id': 'cosmos',
         'cosmos_name': 'cosmos',
-        'keplr_name': 'cosmos',
+        'display_name': 'ATOM',
         'precision': 6,
         'bech32_prefix': 'cosmos'
+    },
+    'ujuno': {
+        'coingecko_id': 'juno-network',
+        'cosmos_name': 'juno',
+        'display_name': 'Juno',
+        'precision': 6,
+        'bech32_prefix': 'juno'
     },
     'ukava': {
         'coingecko_id': 'kava',
         'cosmos_name': 'kava',
-        'keplr_name': 'kava',
+        'display_name': 'KAVA',
         'precision': 6,
         'bech32_prefix': 'kava'
     },
     'ukuji': {
         'coingecko_id': 'kujira',
         'cosmos_name': 'kujira',
-        'keplr_name': 'kujira',
+        'display_name': 'KUJI',
         'precision': 6,
         'bech32_prefix': 'kujira'
     },
     'umars': {
         'coingecko_id': 'mars-protocol-a7fcbcfb-fd61-4017-92f0-7ee9f9cc6da3',
         'cosmos_name': 'mars',
-        'keplr_name': 'mars',
+        'display_name': 'MARS',
         'precision': 6,
         'bech32_prefix': 'mars'
     },
     'uscrt': {
         'coingecko_id': 'secret',
         'cosmos_name': 'secret',
-        'keplr_name': 'secret',
+        'display_name': 'SCRT',
         'precision': 6,
         'bech32_prefix': 'secret'
     },
     'uusd': {
         'coingecko_id': 'terrausd',
         'cosmos_name': 'terra',
-        'keplr_name': 'terrausd',
+        'display_name': 'USDC',
         'precision': 6,
         'bech32_prefix': 'terra'
     },
     'uwhale': {
         'coingecko_id': 'white-whale',
         'cosmos_name': 'whale',
-        'keplr_name': 'whale',
+        'display_name': 'WHALE',
         'precision': 6,
         'bech32_prefix': 'migaloo'
     },
     'wbtc-satoshi': {
         'coingecko_id': 'bitcoin',
         'cosmos_name': 'axelar',
-        'keplr_name': 'bitcoin',
+        'display_name': 'wBTC',
         'precision': 8,
         'bech32_prefix': 'axelar'
     },
     'weth-wei': {
         'coingecko_id': 'ethereum',
         'cosmos_name': 'axelar',
-        'keplr_name': 'weth',
+        'display_name': 'wETH',
         'precision': 18,
         'bech32_prefix': 'axelar'
     }
 }
+
+# Add these to the full coin list:
+# for denom in CHAIN_DATA:
+#     FULL_COIN_LOOKUP[denom] = CHAIN_DATA[denom]['display_name']
 
 # Injective
 # Akash Network
