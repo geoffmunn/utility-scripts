@@ -16,7 +16,6 @@ from constants.constants import (
     ULUNA,
     USER_ACTION_CONTINUE,
     USER_ACTION_QUIT,
-    UUSD,
 )
 
 def get_send_to_address(user_wallets:UserWallet):
@@ -100,7 +99,8 @@ def get_send_to_address(user_wallets:UserWallet):
         else:
             # check if this is an address we support:
             prefix = wallet.getPrefix(answer)
-            if prefix in ['terra', 'osmo']:
+
+            if prefix in wallet.getSupportedPrefixes():
                 recipient_address = answer
                 break
             

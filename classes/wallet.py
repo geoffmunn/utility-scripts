@@ -483,6 +483,17 @@ class UserWallet:
 
         return prefix.lower()
     
+    def getSupportedPrefixes(self) -> list:
+        """
+        Return a list of all the supported prefixes, based on what we can find in the CHAIN_DATA dictionary
+        """
+
+        result:list = []
+        for denom in CHAIN_DATA:
+            result.append(CHAIN_DATA[denom]['bech32_prefix'])
+
+        return result
+
     def getUbaseUndelegations(self, wallet_address:str) -> list:
         """
         Get the undelegations that are in progress for BASE.
