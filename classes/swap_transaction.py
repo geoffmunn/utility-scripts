@@ -218,40 +218,58 @@ class SwapTransaction(TransactionCore):
             return False
     
     def getRoute(self, denom_in:str, denom_out:str, initial_amount:float):
-        path_query:str = "SELECT pool.pool_id, denom, readable_denom, swap_fee FROM pool INNER JOIN asset ON pool.pool_id=asset.pool_id WHERE pool.pool_id IN (SELECT pool_id FROM asset WHERE readable_denom = ?) AND readable_denom=? ORDER BY swap_fee ASC;"
+        """
+        Get the recommended route for this this swap combination.
+        We will pick the lowest fee while still having a good level of liquidity
+        """
+
+        path_query:str      = "SELECT pool.pool_id, denom, readable_denom, swap_fee FROM pool INNER JOIN asset ON pool.pool_id=asset.pool_id WHERE pool.pool_id IN (SELECT pool_id FROM asset WHERE readable_denom = ?) AND readable_denom=? ORDER BY swap_fee ASC;"
         liquidity_query:str = "SELECT readable_denom, amount FROM asset WHERE pool_id = ?;"
 
-        conn = sqlite3.connect('osmosis.db')
-        cursor = conn.execute(path_query, [denom_in, denom_out])
-        rows = cursor.fetchall()
+        conn      = sqlite3.connect('osmosis.db')
+        cursor    = conn.execute(path_query, [denom_in, denom_out])
+        rows:list = cursor.fetchall()
+
+        # This is the base option we will be returning
         current_option:dict = {'pool_id': None, 'denom': None, 'swap_fee': 1}
+
+        self.cachePrices()
 
         # Go and check for single pool swaps. The origin is swap_denom and the exit is swap_request_denom
         for row in rows:
             cursor.execute(liquidity_query, (row[0],))
 
-            origin_liquidity = []
-            exit_liquidity = []
+            origin_liquidity:list = []
+            exit_liquidity:list   = []
             for row2 in cursor.fetchall():
                 if row2[0] == denom_in:
                     origin_liquidity = row2
+                    
                 if row2[0] == denom_out:
                     exit_liquidity = row2
-                    
+                    exit_liquidity_value:float = divide_raw_balance(exit_liquidity[1], denom_out) * float(self.prices[CHAIN_DATA[denom_out]['coingecko_id']]['usd'])
+
+            print (f'pool id: {row[0]}')
+            print (f'origin liquidity: ({denom_in}) = {origin_liquidity}')
+            print (f'exit liquidity: ({denom_out}) = {exit_liquidity}')
+            print ('converted liquidity:', divide_raw_balance(exit_liquidity[1], denom_out))
+            print ('value:', self.prices[CHAIN_DATA[denom_out]['coingecko_id']]['usd'])
+            print (f'exit liquidity value: {exit_liquidity_value}')
+            
             # Now we have the origin and exit options, check that the liquidity amounts are sufficient
-            swap_amount = initial_amount
-            if origin_liquidity[1] > float(swap_amount * 10):
-                prices:json            = self.getPrices(denom_in, denom_out)
+            swap_amount:float = initial_amount
+            if origin_liquidity[1] > float(swap_amount * 10) and exit_liquidity_value >= 100:
+                prices:json       = self.getPrices(denom_in, denom_out)
                 swap_amount:float = (initial_amount * float(prices['from']) / float(prices['to']))
 
                 swap_amount = multiply_raw_balance(divide_raw_balance(swap_amount, denom_in), denom_out)
                 if exit_liquidity[1] > float(swap_amount * 10):
                     if row[3] < current_option['swap_fee']:
-                        current_option['pool_id'] = row[0]
+                        current_option['pool_id']         = row[0]
                         current_option['token_out_denom'] = row[1]
-                        current_option['denom'] = row[2]
-                        current_option['swap_fee'] = row[3]
-                        current_option['swap_amount'] = swap_amount
+                        current_option['denom']           = row[2]
+                        current_option['swap_fee']        = row[3]
+                        current_option['swap_amount']     = swap_amount
                 
         return current_option
     
@@ -260,6 +278,7 @@ class SwapTransaction(TransactionCore):
         Figure out if this swap is based on off-chain (non-terra) coins.
         You can swap from lunc to osmo from columbus-5, and swap lunc to wBTC on osmosis-1
         """
+
         if self.swap_request_denom in OFFCHAIN_COINS or self.swap_denom in OFFCHAIN_COINS:
             is_offchain_swap:bool = True
         else:
@@ -338,7 +357,7 @@ class SwapTransaction(TransactionCore):
         for route in self.ibc_routes:
 
             # Get the token we want to swap to (what we expect to end up with for this route)
-            print ('we need the token out denom from this route:', route)
+            #print ('we need the token out denom from this route:', route)
             token_out_denom = route['token_out_denom']
             token_out_denom = self.denomTrace(token_out_denom)
             
