@@ -201,18 +201,20 @@ class SwapTransaction(TransactionCore):
                         options.sequence = self.sequence
                         print (' 🛎️  Boosting sequence number')
                     else:
-                        print ('An unexpected error occurred in the marketSwap function:')
+                        print ('An unexpected error occurred in the market swap function:')
                         print (err)
                         break
                 except Exception as err:
-                    print (' 🛑 An unexpected error occurred in the marketSwap function:')
+                    print (' 🛑 An unexpected error occurred in the market swap function:')
                     print (err)
                     break
 
             self.transaction = tx
 
             return True
-        except:
+        except Exception as err:
+            print (' 🛑 An unexpected error occurred in the market swap function:')
+            print (err)
             return False
     
     def getRoute(self, denom_in:str, denom_out:str, initial_amount:float):
@@ -315,7 +317,8 @@ class SwapTransaction(TransactionCore):
         self.ibc_routes = routes
 
         print ('******************')
-        print (routes)
+        for route in routes:
+            print (f"{route['token_out_denom']} (#{route['pool_id']})")
         print ('******************')
         max_spread:float = self.max_spread
         #if 'max_spread' in IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]:
@@ -504,7 +507,9 @@ class SwapTransaction(TransactionCore):
             self.transaction = tx
 
             return True
-        except:
+        except Exception as err:
+            print (' 🛑 An unexpected error occurred in the off-chain swap function:')
+            print (err)
             return False
 
     def osmosisPoolByID(self, pool_id:int) -> Pool:
@@ -763,7 +768,6 @@ class SwapTransaction(TransactionCore):
                         print (err)
                         break
                     except Exception as err:
-                        
                         print (' 🛑 An unexpected error occurred in the swap function:')
                         print (err)
                         break
