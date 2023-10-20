@@ -60,23 +60,24 @@ COIN_DIVISOR        = 1000000
 MAX_VALIDATOR_COUNT = 130
 
 # Coin constants:
-AFET  = 'afet'
-CRO   = 'basecro'
-UATOM = 'uatom'
-UBASE = 'ubase'
-UJUNO = 'ujuno'
-UKAVA = 'ukava'
-UKRW  = 'ukrw'
-UKUJI = 'ukuji'
-ULUNA = 'uluna'
-UMARS = 'umars'
-UOSMO = 'uosmo'
-USCRT = 'uscrt'
-UUSD  = 'uusd'
-UUSTC = 'uusdc'
-UWHALE = 'uwhale'
-WBTC  = 'wbtc-satoshi'
-WETH  = 'weth-wei'
+AFET    = 'afet'
+CRO     = 'basecro'
+INJ     = 'inj'
+UATOM   = 'uatom'
+UBASE   = 'ubase'
+UHUAHUA = 'uhuahua'
+UJUNO   = 'ujuno'
+UKAVA   = 'ukava'
+UKRW    = 'ukrw'
+UKUJI   = 'ukuji'
+ULUNA   = 'uluna'
+UMARS   = 'umars'
+UOSMO   = 'uosmo'
+USCRT   = 'uscrt'
+UUSD    = 'uusd'
+UWHALE  = 'uwhale'
+WBTC    = 'wbtc-satoshi'
+WETH    = 'weth-wei'
 
 # Coin keys and display values:
 FULL_COIN_LOOKUP = {
@@ -92,7 +93,9 @@ FULL_COIN_LOOKUP = {
     'afet': 'FETCH.AI',
     'ugbp':  'GBTC',
     'uhkd':  'HKTC',
+    'uhuahua': 'HUAHUA',
     'uidr':  'IDTC',
+    'inj': 'INJECTIVE',
     'uinr':  'INTC',
     'ujpy':  'JPTC',
     'ujuno': 'JUNO',
@@ -126,7 +129,9 @@ BASIC_COIN_LOOKUP = {
 OFFCHAIN_COINS = [
     AFET,
     CRO,
+    INJ,
     UATOM,
+    UHUAHUA,
     UJUNO,
     UKAVA,
     UKUJI,
@@ -140,7 +145,7 @@ OFFCHAIN_COINS = [
 ]
 
 # To add a coin to the Osmosis swap options, we need 5 things:
-# 1: the denom for this coin, found here: https://cosmos.directory/cronos/chain
+# 1: the denom for this coin, found here: https://cosmos.directory/NAME_HERE/chain
 # 2: the cosmos name is listed in the REST proxy value in step 1
 # 3: the Coingecko id, also listed in step 1 or on the Coingecko page for this coin
 # 4: the precision, as found here: https://cosmos.directory/cronos/chain (use the correct chain)
@@ -177,7 +182,9 @@ CHAIN_DATA = {
         'ibc_channels': {
             'afet': 'channel-229',
             'basecro': 'channel-5',
+            'inj': 'channel-122',
             'uatom': 'channel-0',
+            'uhuahua': 'channel-113',
             'ujuno': 'channel-42',
             'ukava': 'channel-143',
             'ukuji': 'channel-259',
@@ -211,12 +218,25 @@ CHAIN_DATA = {
         'precision': 8,
         'bech32_prefix': 'cro'
     },
+    'inj': {
+        'coingecko_id': 'injective-protocol',
+        'cosmos_name': 'injective',
+        'display_name': 'INJECTIVE',
+        'precision': 18,
+        'bech32_prefix': 'inj'
+    },
     'uatom': {
         'coingecko_id': 'cosmos',
         'cosmos_name': 'cosmos',
         'display_name': 'ATOM',
         'precision': 6,
         'bech32_prefix': 'cosmos'
+    },
+    'uhuahua': {
+        'coingecko_id': 'chihuahua-token',
+        'cosmos_name': 'chihuahua',
+        'precision': 6,
+        'bech32_prefix': 'chihuahua'
     },
     'ujuno': {
         'coingecko_id': 'juno-network',
@@ -287,7 +307,6 @@ CHAIN_DATA = {
 # for denom in CHAIN_DATA:
 #     FULL_COIN_LOOKUP[denom] = CHAIN_DATA[denom]['display_name']
 
-# Injective
 # Akash Network
 # Band Protocol
 # Stride
@@ -303,14 +322,12 @@ CHAIN_DATA = {
 # Stargaze
 # KI
 # Umee
-# Juno
 # Cheqd Network
 # Ion
 # Sentinel
 # Carbon Protocol
 # Regen
 # COMDEX
-# Chihuahua Chain
 # Lambda
 # Planq
 # LikeCoin
@@ -326,5 +343,4 @@ CHAIN_DATA = {
 # Sifchain
 # Vidulum
 # Microtick
-# Arable Protocol
 # Bidao
