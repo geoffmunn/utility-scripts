@@ -14,8 +14,8 @@ print ("Opened database successfully")
 # Create a terra object and get the Osmosis pools
 delete_pool_table  = "DROP TABLE IF EXISTS pool;"
 delete_asset_table = "DROP TABLE IF EXISTS asset;"
-create_pool_table  = "CREATE TABLE pool (ID INTEGER PRIMARY KEY AUTOINCREMENT, pool_id INTEGER NOT NULL, type TEXT NOT NULL, address TEXT NOT NULL, swap_fee FLOAT NOT NULL, exit_fee FLOAT NOT NULL, total_weight INTEGER NOT NULL);"
-create_asset_table = "CREATE TABLE asset (ID INTEGER PRIMARY KEY AUTOINCREMENT, pool_id INTEGER NOT NULL, denom TEXT NOT NULL, readable_denom TEXT NOT NULL, amount INTEGER NOT NULL, weight INTEGER NOT NULL);"
+create_pool_table  = "CREATE TABLE pool (ID INTEGER PRIMARY KEY AUTOINCREMENT, date_added DATETIME DEFAULT current_timestamp, pool_id INTEGER NOT NULL, type TEXT NOT NULL, address TEXT NOT NULL, swap_fee FLOAT NOT NULL, exit_fee FLOAT NOT NULL, total_weight INTEGER NOT NULL);"
+create_asset_table = "CREATE TABLE asset (ID INTEGER PRIMARY KEY AUTOINCREMENT, date_added DATETIME DEFAULT current_timestamp, pool_id INTEGER NOT NULL, denom TEXT NOT NULL, readable_denom TEXT NOT NULL, amount INTEGER NOT NULL, weight INTEGER NOT NULL);"
 
 add_pool  = "INSERT INTO pool (pool_id, type, address, swap_fee, exit_fee, total_weight) VALUES (?, ?, ?, ?, ?, ?);"
 add_asset = "INSERT INTO asset (pool_id, denom, readable_denom, amount, weight) VALUES (?, ?, ?, ?, ?);"
