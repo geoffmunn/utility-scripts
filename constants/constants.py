@@ -77,6 +77,7 @@ ULUNA   = 'uluna'
 UMARS   = 'umars'
 UOSMO   = 'uosmo'
 USCRT   = 'uscrt'
+USTRD   = 'ustrd'
 UUSD    = 'uusd'
 UWHALE  = 'uwhale'
 WBTC    = 'wbtc-satoshi'
@@ -120,6 +121,7 @@ FULL_COIN_LOOKUP = {
     'usdr':  'SDTC',
     'usek':  'SETC',
     'usgd':  'SGTC',
+    'ustrd': 'STRIDE',
     'uthb':  'THTC',
     'utwd':  'TWTC',
     'uusd':  'USTC',
@@ -148,6 +150,7 @@ OFFCHAIN_COINS = [
     UOSMO,
     UMARS,
     USCRT,
+    USTRD,
     UUSD,
     UWHALE,
     WBTC,
@@ -204,6 +207,7 @@ CHAIN_DATA = {
             'umars': 'channel-557',
             'uosmo': 'channel-1',
             'uscrt': 'channel-88',
+            'ustrd': 'channel-326',
             'uusd': 'channel-72',
             'uwhale': 'channel-84',
             'wbtc-satoshi': 'channel-208',
@@ -292,6 +296,12 @@ CHAIN_DATA = {
         'cosmos_name': 'secret',
         'precision': 6,
         'bech32_prefix': 'secret'
+    },
+    'ustrd': {
+        'coingecko_id': 'stride',
+        'cosmos_name': 'stride',
+        'precision': 6,
+        'bech32_prefix': 'stride'
     },
     'uusd': {
         'coingecko_id': 'terrausd',
