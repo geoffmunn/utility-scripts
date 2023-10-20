@@ -100,6 +100,45 @@ class TransactionCore():
                     print (err)
 
         return self.broadcast_result
+    
+    def cachePrices(self):
+        """
+        Load all the coin prices into a dictionary we can use later
+        """
+
+        retry_count:int  = 0
+        retry:bool       = True
+        
+        if self.prices is None:
+            while retry == True:
+                try:
+                    # Get all the prices we are interested in and cache them so we don't get rate limited by Coingecko
+                    id_str:str = ''
+                    for denom in CHAIN_DATA:
+                        id_str += CHAIN_DATA[denom]['coingecko_id'] + ','
+
+                    uri:str     = 'https://api.coingecko.com/api/v3/simple/price'
+                    params:dict = {  
+                        'ids': id_str,
+                        'vs_currencies': 'USD'
+                    }
+
+                    self.prices = requests.get(uri, params = params).json()
+                    retry = False
+                    break
+
+                except Exception as err:
+                    retry_count += 1
+                    if retry_count == 10:
+                        print (' 🛑 Error getting coin prices')
+                        print (err)
+
+                        retry = False
+                        exit()
+                    else:
+                        time.sleep(1)
+
+        return True
             
     def calculateFee(self, requested_fee:Fee, specific_denom:str = '', convert_to_ibc:bool = False) -> Fee:
         """
@@ -273,52 +312,19 @@ class TransactionCore():
         From: swap_denom
         To: request_denom
 
-        If the link doesn't work, we'll try 10 times
+        If the prices aren't present already, we'll go and get them.
         """
 
-        retry_count:int  = 0
-        retry:bool       = True
         from_price:float = None
         to_price:float   = None
 
         if self.prices is None:
-            while retry == True:
-                try:
-                    # Get all the prices we are interested in and cache them so we don't get rate limited by Coingecko
-                    id_str:str = ''
-                    for denom in CHAIN_DATA:
-                        id_str += CHAIN_DATA[denom]['coingecko_id'] + ','
-
-                    #uri:str = f"https://api-indexer.keplr.app/v1/price?ids={id_str}&vs_currencies=usd"
-                    #print (uri)
-                    #prices:json = requests.get(uri).json()
-                    uri:str     = 'https://api.coingecko.com/api/v3/simple/price'
-                    params:dict = {  
-                        'ids': id_str,
-                        'vs_currencies': 'USD'
-                    }
-
-                    self.prices = requests.get(uri, params = params).json()
-                    retry = False
-                    break
-
-                except Exception as err:
-                    retry_count += 1
-                    if retry_count == 10:
-                        print (' 🛑 Error getting coin prices')
-                        print (err)
-
-                        retry = False
-                        exit()
-                    else:
-                        time.sleep(1)
+            self.cachePrices()
 
         if from_denom != False and to_denom != False:
             from_id:dict = CHAIN_DATA[from_denom]
             to_id:dict   = CHAIN_DATA[to_denom]
 
-        #from_price:float = prices[from_id['keplr_name']]['usd']
-        #to_price:float   = prices[to_id['keplr_name']]['usd']
         from_price:float = self.prices[from_id['coingecko_id']]['usd']
         to_price:float   = self.prices[to_id['coingecko_id']]['usd']
         
