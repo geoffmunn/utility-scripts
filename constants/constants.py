@@ -60,6 +60,7 @@ COIN_DIVISOR        = 1000000
 MAX_VALIDATOR_COUNT = 130
 
 # Coin constants:
+AEVMOS  = 'aevmos'
 AFET    = 'afet'
 CRO     = 'basecro'
 INJ     = 'inj'
@@ -82,6 +83,7 @@ WBTC    = 'wbtc-satoshi'
 WETH    = 'weth-wei'
 
 # Coin keys and display values:
+# NOTE: This is in display order, not sorted by key
 FULL_COIN_LOOKUP = {
     'uakt':  'AKASH',
     'uaud':  'AUTC',
@@ -94,6 +96,7 @@ FULL_COIN_LOOKUP = {
     'basecro': 'CRO',
     'udkk':  'DKTC',
     'ueur':  'EUTC',
+    'aevmos': 'EVMOS',
     'afet': 'FETCH.AI',
     'ugbp':  'GBTC',
     'uhkd':  'HKTC',
@@ -131,6 +134,7 @@ BASIC_COIN_LOOKUP = {
 }
 
 OFFCHAIN_COINS = [
+    AEVMOS,
     AFET,
     UBAND,
     CRO,
@@ -169,7 +173,6 @@ OFFCHAIN_COINS = [
 # },
 ###
 
-
 CHAIN_DATA = {
     'uluna': {
         'chain_id': 'columbus-5',
@@ -186,6 +189,7 @@ CHAIN_DATA = {
     'uosmo': {
         'chain_id': 'osmosis-1',
         'ibc_channels': {
+            'aevmos': 'channel-204',
             'afet': 'channel-229',
             'basecro': 'channel-5',
             'inj': 'channel-122',
@@ -210,6 +214,12 @@ CHAIN_DATA = {
         'cosmos_name': 'osmosis',
         'precision': 6,
         'bech32_prefix': 'osmo'
+    },
+    'aevmos': {
+        'coingecko_id': 'evmos',
+        'cosmos_name': 'evmos',
+        'precision': 18,
+        'bech32_prefix': 'evmos'
     },
     'afet': {
         'coingecko_id': 'fetch-ai',
@@ -317,7 +327,6 @@ CHAIN_DATA = {
 # Medibloc
 # Bluzelle
 # Shentu
-# Evmos
 # Sommelier
 # Persistence
 # IRISnet
