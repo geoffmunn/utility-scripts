@@ -57,6 +57,7 @@ USER_ACTION_VALIDATOR_SWITCH             = 's'
 MAX_VALIDATOR_COUNT = 130
 
 # Coin constants:
+ACUDOS  = 'acudos'
 AEVMOS  = 'aevmos'
 AFET    = 'afet'
 CRO     = 'basecro'
@@ -103,6 +104,7 @@ FULL_COIN_LOOKUP = {
     'uchf':  'CHTC',
     'ucny':  'CNTC',
     'basecro': 'CRO',
+    'acudos': 'Cudos',
     'udkk':  'DKTC',
     'ueur':  'EUTC',
     'aevmos': 'Evmos',
@@ -151,6 +153,7 @@ BASIC_COIN_LOOKUP = {
 }
 
 OFFCHAIN_COINS = [
+    ACUDOS,
     AEVMOS,
     AFET,
     UBAND,
@@ -220,6 +223,7 @@ CHAIN_DATA = {
     'uosmo': {
         'chain_id': 'osmosis-1',
         'ibc_channels': {
+            'acudos': 'channel-298',
             'aevmos': 'channel-204',
             'afet': 'channel-229',
             'basecro': 'channel-5',
@@ -255,6 +259,12 @@ CHAIN_DATA = {
         'cosmos_name': 'osmosis',
         'precision': 6,
         'bech32_prefix': 'osmo'
+    },
+    'acudos': {
+        'coingecko_id': 'cudos',
+        'cosmos_name': 'cudos',
+        'precision': 18,
+        'bech32_prefix': 'cudos'
     },
     'aevmos': {
         'coingecko_id': 'evmos',
@@ -420,8 +430,6 @@ CHAIN_DATA = {
     }
 }
 
-# Oraichain
-# Cudos
 # Stargaze
 # KI
 # Cheqd Network
