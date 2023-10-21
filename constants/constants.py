@@ -53,9 +53,6 @@ USER_ACTION_VALIDATOR_LIST_UNDELEGATIONS = 'l'
 USER_ACTION_VALIDATOR_UNDELEGATE         = 'u'
 USER_ACTION_VALIDATOR_SWITCH             = 's'
 
-# Precision values
-COIN_DIVISOR        = 1000000
-
 # Max number of validators that Luna Classic allows
 MAX_VALIDATOR_COUNT = 130
 
@@ -68,6 +65,8 @@ UAKT    = 'uakt'
 UATOM   = 'uatom'
 UBAND   = 'uband'
 UBASE   = 'ubase'
+UBNT    = 'ubnt'
+UCTK    = 'uctk'
 UHUAHUA = 'uhuahua'
 UJUNO   = 'ujuno'
 UKAVA   = 'ukava'
@@ -84,6 +83,7 @@ USTRD   = 'ustrd'
 UUMEE   = 'uumee'
 UUSD    = 'uusd'
 UWHALE  = 'uwhale'
+UXPRT   = 'uxprt'
 WBTC    = 'wbtc-satoshi'
 WETH    = 'weth-wei'
 
@@ -91,10 +91,12 @@ WETH    = 'weth-wei'
 # NOTE: This is in display order, not sorted by key
 FULL_COIN_LOOKUP = {
     'uakt':  'Akash',
+    'umntl': 'AssetMantle',
     'uaud':  'AUTC',
     'uatom': 'Atom',
     'uband': 'Band Protocol',
     'ubase': 'BASE',
+    'ubnt': 'Bluzelle',
     'ucad':  'CATC',
     'uchf':  'CHTC',
     'ucny':  'CNTC',
@@ -118,15 +120,16 @@ FULL_COIN_LOOKUP = {
     'umars': 'Mars Protocol',
     'umed': 'Medibloc',
     'umnt':  'MNTC',
-    'umntl': 'AssetMantle',
     'umyr':  'MYTC',
     'unok':  'NOTC',
     'uosmo': 'OSMO',
+    'uxprt': 'Persistance',
     'uphp':  'PHTC',
     'uscrt': 'Secret',
     'usdr':  'SDTC',
     'usek':  'SETC',
     'usgd':  'SGTC',
+    'uctk': 'Shentu',
     'usomm': 'Sommelier',
     'ustrd': 'Stride',
     'uthb':  'THTC',
@@ -147,10 +150,12 @@ OFFCHAIN_COINS = [
     AEVMOS,
     AFET,
     UBAND,
+    UBNT,
     CRO,
     INJ,
     UAKT,
     UATOM,
+    UCTK,
     UHUAHUA,
     UJUNO,
     UKAVA,
@@ -165,6 +170,7 @@ OFFCHAIN_COINS = [
     UUMEE,
     UUSD,
     UWHALE,
+    UXPRT,
     WBTC,
     WETH
 ]
@@ -215,6 +221,8 @@ CHAIN_DATA = {
             'uakt': 'channel-1',
             'uatom': 'channel-0',
             'uband': 'channel-148',
+            'ubnt': 'channel-763',
+            'uctk': 'channel-146',
             'uhuahua': 'channel-113',
             'ujuno': 'channel-42',
             'ukava': 'channel-143',
@@ -230,6 +238,7 @@ CHAIN_DATA = {
             'ustrd': 'channel-326',
             'uusd': 'channel-72',
             'uwhale': 'channel-84',
+            'uxprt': 'channel-4',
             'wbtc-satoshi': 'channel-208',
             'weth-wei': 'channel-208'
         },
@@ -280,6 +289,18 @@ CHAIN_DATA = {
         'cosmos_name': 'bandchain',
         'precision': 6,
         'bech32_prefix': 'band'
+    },
+    'ubnt': {
+        'coingecko_id': 'bluzelle',
+        'cosmos_name': 'bluzelle',
+        'precision': 6,
+        'bech32_prefix': 'bluzelle'
+    },
+    'uctk': {
+        'coingecko_id': 'certik',
+        'cosmos_name': 'shentu',
+        'precision': 6,
+        'bech32_prefix': 'shentu'
     },
     'uhuahua': {
         'coingecko_id': 'chihuahua-token',
@@ -359,6 +380,12 @@ CHAIN_DATA = {
         'precision': 6,
         'bech32_prefix': 'migaloo'
     },
+    'uxprt': {
+        'coingecko_id': 'persistence',
+        'cosmos_name': 'persistence',
+        'precision': 6,
+        'bech32_prefix': 'persistence'
+    },
     'wbtc-satoshi': {
         'coingecko_id': 'bitcoin',
         'cosmos_name': 'axelar',
@@ -373,8 +400,6 @@ CHAIN_DATA = {
     }
 }
 
-# Bluzelle
-# Shentu
 # Persistence
 # IRISnet
 # Oraichain
