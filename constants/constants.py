@@ -77,6 +77,7 @@ ULUNA   = 'uluna'
 UMARS   = 'umars'
 UOSMO   = 'uosmo'
 USCRT   = 'uscrt'
+USOMM   = 'usomm'
 USTRD   = 'ustrd'
 UUSD    = 'uusd'
 UWHALE  = 'uwhale'
@@ -121,6 +122,7 @@ FULL_COIN_LOOKUP = {
     'usdr':  'SDTC',
     'usek':  'SETC',
     'usgd':  'SGTC',
+    'usomm': 'SOMM',
     'ustrd': 'STRIDE',
     'uthb':  'THTC',
     'utwd':  'TWTC',
@@ -150,6 +152,7 @@ OFFCHAIN_COINS = [
     UOSMO,
     UMARS,
     USCRT,
+    USOMM,
     USTRD,
     UUSD,
     UWHALE,
@@ -207,6 +210,7 @@ CHAIN_DATA = {
             'umars': 'channel-557',
             'uosmo': 'channel-1',
             'uscrt': 'channel-88',
+            'usomm': 'channel-165',
             'ustrd': 'channel-326',
             'uusd': 'channel-72',
             'uwhale': 'channel-84',
@@ -297,6 +301,12 @@ CHAIN_DATA = {
         'precision': 6,
         'bech32_prefix': 'secret'
     },
+    'usomm': {
+        'coingecko_id': 'sommelier',
+        'cosmos_name': 'sommelier',
+        'precision': 6,
+        'bech32_prefix': 'somm'
+    },
     'ustrd': {
         'coingecko_id': 'stride',
         'cosmos_name': 'stride',
@@ -333,7 +343,6 @@ CHAIN_DATA = {
 # for denom in CHAIN_DATA:
 #     FULL_COIN_LOOKUP[denom] = CHAIN_DATA[denom]['display_name']
 
-# Stride
 # Medibloc
 # Bluzelle
 # Shentu
