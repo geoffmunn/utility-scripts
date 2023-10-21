@@ -75,12 +75,13 @@ UKRW    = 'ukrw'
 UKUJI   = 'ukuji'
 ULUNA   = 'uluna'
 UMARS   = 'umars'
-UUMEE   = 'uumee'
+UMED    = 'umed'
 UMNTL   = 'umntl'
 UOSMO   = 'uosmo'
 USCRT   = 'uscrt'
 USOMM   = 'usomm'
 USTRD   = 'ustrd'
+UUMEE   = 'uumee'
 UUSD    = 'uusd'
 UWHALE  = 'uwhale'
 WBTC    = 'wbtc-satoshi'
@@ -115,6 +116,7 @@ FULL_COIN_LOOKUP = {
     'ukuji': 'KUJI',
     'uluna': 'LUNC',
     'umars': 'Mars Protocol',
+    'umed': 'Medibloc',
     'umnt':  'MNTC',
     'umntl': 'AssetMantle',
     'umyr':  'MYTC',
@@ -155,6 +157,7 @@ OFFCHAIN_COINS = [
     UKUJI,
     UOSMO,
     UMARS,
+    UMED,
     UMNTL,
     USCRT,
     USOMM,
@@ -183,6 +186,11 @@ OFFCHAIN_COINS = [
 #     'precision': Step 4,
 #     'bech32_prefix': 'Step 5'
 # },
+#
+#'uosmo': {
+#        'chain_id': 'osmosis-1',
+#        'ibc_channels': {
+#            'Step 1': 'Step 6',
 ###
 
 CHAIN_DATA = {
@@ -213,6 +221,7 @@ CHAIN_DATA = {
             'ukuji': 'channel-259',
             'uluna': 'channel-72',
             'umars': 'channel-557',
+            'umed': 'channel-82',
             'umntl': 'channel-232',
             'uumee': 'channel-184',
             'uosmo': 'channel-1',
@@ -302,11 +311,11 @@ CHAIN_DATA = {
         'precision': 6,
         'bech32_prefix': 'mars'
     },
-    'uumee': {
-        'coingecko_id': 'umee',
-        'cosmos_name': 'umee',
+    'umed': {
+        'coingecko_id': 'medibloc',
+        'cosmos_name': 'panacea',
         'precision': 6,
-        'bech32_prefix': 'umee'
+        'bech32_prefix': 'panacea'
     },
     'umntl': {
         'coingecko_id': 'assetmantle',
@@ -331,6 +340,12 @@ CHAIN_DATA = {
         'cosmos_name': 'stride',
         'precision': 6,
         'bech32_prefix': 'stride'
+    },
+    'uumee': {
+        'coingecko_id': 'umee',
+        'cosmos_name': 'umee',
+        'precision': 6,
+        'bech32_prefix': 'umee'
     },
     'uusd': {
         'coingecko_id': 'terrausd',
@@ -358,11 +373,6 @@ CHAIN_DATA = {
     }
 }
 
-# Add these to the full coin list:
-# for denom in CHAIN_DATA:
-#     FULL_COIN_LOOKUP[denom] = CHAIN_DATA[denom]['display_name']
-
-# Medibloc
 # Bluzelle
 # Shentu
 # Persistence
