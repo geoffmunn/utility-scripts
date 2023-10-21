@@ -61,6 +61,7 @@ AEVMOS  = 'aevmos'
 AFET    = 'afet'
 CRO     = 'basecro'
 INJ     = 'inj'
+ORAI    = 'orai'
 UAKT    = 'uakt'
 UATOM   = 'uatom'
 UBAND   = 'uband'
@@ -124,6 +125,7 @@ FULL_COIN_LOOKUP = {
     'umnt':  'MNTC',
     'umyr':  'MYTC',
     'unok':  'NOTC',
+    'orai': 'Oraichain',
     'uosmo': 'OSMO',
     'uxprt': 'Persistance',
     'uphp':  'PHTC',
@@ -155,6 +157,7 @@ OFFCHAIN_COINS = [
     UBNT,
     CRO,
     INJ,
+    ORAI,
     UAKT,
     UATOM,
     UCTK,
@@ -221,6 +224,7 @@ CHAIN_DATA = {
             'afet': 'channel-229',
             'basecro': 'channel-5',
             'inj': 'channel-122',
+            'orai': 'channel-216',
             'uakt': 'channel-1',
             'uatom': 'channel-0',
             'uband': 'channel-148',
@@ -275,6 +279,12 @@ CHAIN_DATA = {
         'cosmos_name': 'injective',
         'precision': 18,
         'bech32_prefix': 'inj'
+    },
+    'orai': {
+        'coingecko_id': 'oraichain-token',
+        'cosmos_name': 'oraichain',
+        'precision': 6,
+        'bech32_prefix': 'orai'
     },
     'uakt': {
         'coingecko_id': 'akash-network',
@@ -410,7 +420,6 @@ CHAIN_DATA = {
     }
 }
 
-# IRISnet
 # Oraichain
 # Cudos
 # Stargaze
