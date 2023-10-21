@@ -75,6 +75,7 @@ UKRW    = 'ukrw'
 UKUJI   = 'ukuji'
 ULUNA   = 'uluna'
 UMARS   = 'umars'
+UMNTL   = 'umntl'
 UOSMO   = 'uosmo'
 USCRT   = 'uscrt'
 USOMM   = 'usomm'
@@ -114,6 +115,7 @@ FULL_COIN_LOOKUP = {
     'uluna': 'LUNC',
     'umars': 'MARS',
     'umnt':  'MNTC',
+    'umntl': 'AssetMantle',
     'umyr':  'MYTC',
     'unok':  'NOTC',
     'uosmo': 'OSMO',
@@ -151,6 +153,7 @@ OFFCHAIN_COINS = [
     UKUJI,
     UOSMO,
     UMARS,
+    UMNTL,
     USCRT,
     USOMM,
     USTRD,
@@ -183,7 +186,6 @@ CHAIN_DATA = {
     'uluna': {
         'chain_id': 'columbus-5',
         'ibc_channels': {
-            'uatom': 'channel-41',
             'uosmo': 'channel-1',
         },
         'lcd_urls': ['https://terra-classic-fcd.publicnode.com', 'https://rest.cosmos.directory/terra'],
@@ -208,6 +210,7 @@ CHAIN_DATA = {
             'ukuji': 'channel-259',
             'uluna': 'channel-72',
             'umars': 'channel-557',
+            'umntl': 'channel-232',
             'uosmo': 'channel-1',
             'uscrt': 'channel-88',
             'usomm': 'channel-165',
@@ -295,6 +298,12 @@ CHAIN_DATA = {
         'precision': 6,
         'bech32_prefix': 'mars'
     },
+    'umntl': {
+        'coingecko_id': 'assetmantle',
+        'cosmos_name': 'assetmantle',
+        'precision': 6,
+        'bech32_prefix': 'mantle'
+    },
     'uscrt': {
         'coingecko_id': 'secret',
         'cosmos_name': 'secret',
@@ -346,7 +355,6 @@ CHAIN_DATA = {
 # Medibloc
 # Bluzelle
 # Shentu
-# Sommelier
 # Persistence
 # IRISnet
 # Oraichain
@@ -364,7 +372,6 @@ CHAIN_DATA = {
 # Planq
 # LikeCoin
 # Bitsong
-# AssetMantle
 # Graviton
 # Desmos
 # IXO
