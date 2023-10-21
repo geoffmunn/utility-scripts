@@ -82,6 +82,7 @@ UMNTL   = 'umntl'
 UOSMO   = 'uosmo'
 USCRT   = 'uscrt'
 USOMM   = 'usomm'
+USTARS  = 'ustars'
 USTRD   = 'ustrd'
 UUMEE   = 'uumee'
 UUSD    = 'uusd'
@@ -137,6 +138,7 @@ FULL_COIN_LOOKUP = {
     'usgd':  'SGTC',
     'uctk': 'Shentu',
     'usomm': 'Sommelier',
+    'ustars': 'Stargaze',
     'ustrd': 'Stride',
     'uthb':  'THTC',
     'utwd':  'TWTC',
@@ -175,6 +177,7 @@ OFFCHAIN_COINS = [
     UMNTL,
     USCRT,
     USOMM,
+    USTARS,
     USTRD,
     UUMEE,
     UUSD,
@@ -247,6 +250,7 @@ CHAIN_DATA = {
             'uosmo': 'channel-1',
             'uscrt': 'channel-88',
             'usomm': 'channel-165',
+            'ustars': 'channel-75',
             'ustrd': 'channel-326',
             'uusd': 'channel-72',
             'uwhale': 'channel-84',
@@ -385,6 +389,12 @@ CHAIN_DATA = {
         'cosmos_name': 'sommelier',
         'precision': 6,
         'bech32_prefix': 'somm'
+    },
+    'ustars': {
+        'coingecko_id': 'stargaze',
+        'cosmos_name': 'stargaze',
+        'precision': 6,
+        'bech32_prefix': 'stars'
     },
     'ustrd': {
         'coingecko_id': 'stride',
