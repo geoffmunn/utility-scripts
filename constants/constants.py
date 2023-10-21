@@ -75,6 +75,7 @@ UKRW    = 'ukrw'
 UKUJI   = 'ukuji'
 ULUNA   = 'uluna'
 UMARS   = 'umars'
+UUMEE   = 'uumee'
 UMNTL   = 'umntl'
 UOSMO   = 'uosmo'
 USCRT   = 'uscrt'
@@ -88,10 +89,10 @@ WETH    = 'weth-wei'
 # Coin keys and display values:
 # NOTE: This is in display order, not sorted by key
 FULL_COIN_LOOKUP = {
-    'uakt':  'AKASH',
+    'uakt':  'Akash',
     'uaud':  'AUTC',
-    'uatom': 'ATOM',
-    'uband': 'BAND',
+    'uatom': 'Atom',
+    'uband': 'Band Protocol',
     'ubase': 'BASE',
     'ucad':  'CATC',
     'uchf':  'CHTC',
@@ -99,37 +100,38 @@ FULL_COIN_LOOKUP = {
     'basecro': 'CRO',
     'udkk':  'DKTC',
     'ueur':  'EUTC',
-    'aevmos': 'EVMOS',
-    'afet': 'FETCH.AI',
+    'aevmos': 'Evmos',
+    'afet': 'Fetch.ai',
     'ugbp':  'GBTC',
     'uhkd':  'HKTC',
-    'uhuahua': 'HUAHUA',
+    'uhuahua': 'Chihuahua',
     'uidr':  'IDTC',
-    'inj': 'INJECTIVE',
+    'inj': 'Injective',
     'uinr':  'INTC',
     'ujpy':  'JPTC',
-    'ujuno': 'JUNO',
+    'ujuno': 'Juno',
     'ukava': 'KAVA',
     'ukrw':  'KRTC',
     'ukuji': 'KUJI',
     'uluna': 'LUNC',
-    'umars': 'MARS',
+    'umars': 'Mars Protocol',
     'umnt':  'MNTC',
     'umntl': 'AssetMantle',
     'umyr':  'MYTC',
     'unok':  'NOTC',
     'uosmo': 'OSMO',
     'uphp':  'PHTC',
-    'uscrt': 'SCRT',
+    'uscrt': 'Secret',
     'usdr':  'SDTC',
     'usek':  'SETC',
     'usgd':  'SGTC',
-    'usomm': 'SOMM',
-    'ustrd': 'STRIDE',
+    'usomm': 'Sommelier',
+    'ustrd': 'Stride',
     'uthb':  'THTC',
     'utwd':  'TWTC',
+    'uumee': 'Umee',
     'uusd':  'USTC',
-    'uwhale': 'WHALE',
+    'uwhale': 'Whale',
     'wbtc-satoshi': 'wBTC',
     'weth-wei': 'wETH'
 }
@@ -157,6 +159,7 @@ OFFCHAIN_COINS = [
     USCRT,
     USOMM,
     USTRD,
+    UUMEE,
     UUSD,
     UWHALE,
     WBTC,
@@ -211,6 +214,7 @@ CHAIN_DATA = {
             'uluna': 'channel-72',
             'umars': 'channel-557',
             'umntl': 'channel-232',
+            'uumee': 'channel-184',
             'uosmo': 'channel-1',
             'uscrt': 'channel-88',
             'usomm': 'channel-165',
@@ -298,6 +302,12 @@ CHAIN_DATA = {
         'precision': 6,
         'bech32_prefix': 'mars'
     },
+    'uumee': {
+        'coingecko_id': 'umee',
+        'cosmos_name': 'umee',
+        'precision': 6,
+        'bech32_prefix': 'umee'
+    },
     'umntl': {
         'coingecko_id': 'assetmantle',
         'cosmos_name': 'assetmantle',
@@ -361,7 +371,6 @@ CHAIN_DATA = {
 # Cudos
 # Stargaze
 # KI
-# Umee
 # Cheqd Network
 # Ion
 # Sentinel
