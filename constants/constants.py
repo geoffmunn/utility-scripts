@@ -87,6 +87,7 @@ USTRD   = 'ustrd'
 UUMEE   = 'uumee'
 UUSD    = 'uusd'
 UWHALE  = 'uwhale'
+UXKI    = 'uxki'
 UXPRT   = 'uxprt'
 WBTC    = 'wbtc-satoshi'
 WETH    = 'weth-wei'
@@ -120,6 +121,7 @@ FULL_COIN_LOOKUP = {
     'ujpy':  'JPTC',
     'ujuno': 'Juno',
     'ukava': 'KAVA',
+    'uxki': 'Kichain',
     'ukrw':  'KRTC',
     'ukuji': 'KUJI',
     'uluna': 'LUNC',
@@ -182,6 +184,7 @@ OFFCHAIN_COINS = [
     UUMEE,
     UUSD,
     UWHALE,
+    UXKI,
     UXPRT,
     WBTC,
     WETH
@@ -254,6 +257,7 @@ CHAIN_DATA = {
             'ustrd': 'channel-326',
             'uusd': 'channel-72',
             'uwhale': 'channel-84',
+            'uxki': 'channel-77',
             'uxprt': 'channel-4',
             'wbtc-satoshi': 'channel-208',
             'weth-wei': 'channel-208'
@@ -420,6 +424,12 @@ CHAIN_DATA = {
         'precision': 6,
         'bech32_prefix': 'migaloo'
     },
+    'uxki': {
+        'coingecko_id': 'ki',
+        'cosmos_name': 'kichain',
+        'precision': 6,
+        'bech32_prefix': 'ki'
+    },
     'uxprt': {
         'coingecko_id': 'persistence',
         'cosmos_name': 'persistence',
@@ -440,8 +450,6 @@ CHAIN_DATA = {
     }
 }
 
-# Stargaze
-# KI
 # Cheqd Network
 # Ion
 # Sentinel
