@@ -316,6 +316,11 @@ class SwapTransaction(TransactionCore):
             #print ('denom in:', current_option1)
             #print ('denom out:', current_option2)
 
+            if current_option2['pool_id'] is None:
+                print (' 🛑 No pool could be found that supported this swap pair.')
+                print ('Exiting...')    
+                exit()
+
             routes = [
                 {
                     "pool_id": str(current_option1['pool_id']),
@@ -824,9 +829,6 @@ class SwapTransaction(TransactionCore):
                     estimated_amount = float(self.swap_amount / swap_price)
                     
         else:
-            #print ('swap denom:', self.swap_denom)
-            #print ('wallet denom:', self.wallet_denom)
-            #print ('request denom:', self.swap_request_denom)
             if self.swap_denom in OFFCHAIN_COINS + [ULUNA] and self.swap_request_denom in OFFCHAIN_COINS + [ULUNA]:
                 # Calculate the amount of OSMO (or whatever) we'll be getting:
                 # (lunc amount * lunc unit cost) / osmo price
