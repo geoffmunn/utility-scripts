@@ -62,6 +62,7 @@ AEVMOS  = 'aevmos'
 AFET    = 'afet'
 CRO     = 'basecro'
 INJ     = 'inj'
+NCHEQ   = 'ncheq'
 ORAI    = 'orai'
 UAKT    = 'uakt'
 UATOM   = 'uatom'
@@ -103,6 +104,7 @@ FULL_COIN_LOOKUP = {
     'ubase': 'BASE',
     'ubnt': 'Bluzelle',
     'ucad':  'CATC',
+    'ncheq': 'Cheqd',
     'uchf':  'CHTC',
     'ucny':  'CNTC',
     'basecro': 'CRO',
@@ -164,6 +166,7 @@ OFFCHAIN_COINS = [
     UBNT,
     CRO,
     INJ,
+    NCHEQ,
     ORAI,
     UAKT,
     UATOM,
@@ -234,6 +237,7 @@ CHAIN_DATA = {
             'afet': 'channel-229',
             'basecro': 'channel-5',
             'inj': 'channel-122',
+            'ncheq': 'channel-108',
             'orai': 'channel-216',
             'uakt': 'channel-1',
             'uatom': 'channel-0',
@@ -297,6 +301,12 @@ CHAIN_DATA = {
         'cosmos_name': 'injective',
         'precision': 18,
         'bech32_prefix': 'inj'
+    },
+    'ncheq': {
+        'coingecko_id': 'cheqd-network',
+        'cosmos_name': 'cheqd',
+        'precision': 9,
+        'bech32_prefix': 'cheqd'
     },
     'orai': {
         'coingecko_id': 'oraichain-token',
