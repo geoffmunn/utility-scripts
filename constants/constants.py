@@ -68,6 +68,7 @@ UBASE   = 'ubase'
 UBNT    = 'ubnt'
 UCTK    = 'uctk'
 UHUAHUA = 'uhuahua'
+UIRIS   = 'uiris'
 UJUNO   = 'ujuno'
 UKAVA   = 'ukava'
 UKRW    = 'ukrw'
@@ -111,6 +112,7 @@ FULL_COIN_LOOKUP = {
     'uidr':  'IDTC',
     'inj': 'Injective',
     'uinr':  'INTC',
+    'uiris': 'IRISnet',
     'ujpy':  'JPTC',
     'ujuno': 'Juno',
     'ukava': 'KAVA',
@@ -157,6 +159,7 @@ OFFCHAIN_COINS = [
     UATOM,
     UCTK,
     UHUAHUA,
+    UIRIS,
     UJUNO,
     UKAVA,
     UKUJI,
@@ -175,9 +178,9 @@ OFFCHAIN_COINS = [
     WETH
 ]
 
-# To add a coin to the Osmosis swap options, we need 5 things:
+# To add a coin to the Osmosis swap options, we need 6 things:
 # 1: the denom for this coin, found here: https://cosmos.directory/NAME_HERE/chain
-# 2: the cosmos name is listed in the REST proxy value in step 1
+# 2: the cosmos name is listed in the URL: https://cosmos.directory/THIS_NAME/chain
 # 3: the Coingecko id, also listed in step 1 or on the Coingecko page for this coin
 # 4: the precision, as found here: https://cosmos.directory/cronos/chain (use the correct chain)
 # 5: the bech32 prefix, as found here: https://cosmos.directory/cronos/chain (use the correct chain)
@@ -224,6 +227,7 @@ CHAIN_DATA = {
             'ubnt': 'channel-763',
             'uctk': 'channel-146',
             'uhuahua': 'channel-113',
+            'uiris': 'channel-6',
             'ujuno': 'channel-42',
             'ukava': 'channel-143',
             'ukuji': 'channel-259',
@@ -307,6 +311,12 @@ CHAIN_DATA = {
         'cosmos_name': 'chihuahua',
         'precision': 6,
         'bech32_prefix': 'chihuahua'
+    },
+    'uiris': {
+        'coingecko_id': 'iris-network',
+        'cosmos_name': 'irisnet',
+        'precision': 6,
+        'bech32_prefix': 'iaa'
     },
     'ujuno': {
         'coingecko_id': 'juno-network',
@@ -400,7 +410,6 @@ CHAIN_DATA = {
     }
 }
 
-# Persistence
 # IRISnet
 # Oraichain
 # Cudos
