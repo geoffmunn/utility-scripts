@@ -57,117 +57,119 @@ USER_ACTION_VALIDATOR_SWITCH             = 's'
 MAX_VALIDATOR_COUNT = 130
 
 # Coin constants:
-ACUDOS  = 'acudos'
-AEVMOS  = 'aevmos'
-AFET    = 'afet'
-APLANQ  = 'aplanq'
-CRO     = 'basecro'
-INJ     = 'inj'
-NCHEQ   = 'ncheq'
-ORAI    = 'orai'
-SWTH    = 'swth'
-UAKT    = 'uakt'
-UATOM   = 'uatom'
-UBAND   = 'uband'
-UBASE   = 'ubase'
-UBNT    = 'ubnt'
-UCMDX   = 'ucmdx'
-UCTK    = 'uctk'
-UDVPN   = 'udvpn'
-UHUAHUA = 'uhuahua'
-UIRIS   = 'uiris'
-UJUNO   = 'ujuno'
-UKAVA   = 'ukava'
-UKRW    = 'ukrw'
-UKUJI   = 'ukuji'
-ULAMB   = 'ulamb'
-ULUNA   = 'uluna'
-UMARS   = 'umars'
-UMED    = 'umed'
-UMNTL   = 'umntl'
-UOSMO   = 'uosmo'
-UREGEN  = 'uregen'
-USCRT   = 'uscrt'
-USOMM   = 'usomm'
-USTARS  = 'ustars'
-USTRD   = 'ustrd'
-UUMEE   = 'uumee'
-UUSD    = 'uusd'
-UWHALE  = 'uwhale'
-UXKI    = 'uxki'
-UXPRT   = 'uxprt'
-WBTC    = 'wbtc-satoshi'
-WETH    = 'weth-wei'
+ACUDOS   = 'acudos'
+AEVMOS   = 'aevmos'
+AFET     = 'afet'
+APLANQ   = 'aplanq'
+BASECRO  = 'basecro'
+INJ      = 'inj'
+NANOLIKE = 'nanolike'
+NCHEQ    = 'ncheq'
+ORAI     = 'orai'
+SWTH     = 'swth'
+UAKT     = 'uakt'
+UATOM    = 'uatom'
+UBAND    = 'uband'
+UBASE    = 'ubase'
+UBNT     = 'ubnt'
+UCMDX    = 'ucmdx'
+UCTK     = 'uctk'
+UDVPN    = 'udvpn'
+UHUAHUA  = 'uhuahua'
+UIRIS    = 'uiris'
+UJUNO    = 'ujuno'
+UKAVA    = 'ukava'
+UKRW     = 'ukrw'
+UKUJI    = 'ukuji'
+ULAMB    = 'ulamb'
+ULUNA    = 'uluna'
+UMARS    = 'umars'
+UMED     = 'umed'
+UMNTL    = 'umntl'
+UOSMO    = 'uosmo'
+UREGEN   = 'uregen'
+USCRT    = 'uscrt'
+USOMM    = 'usomm'
+USTARS   = 'ustars'
+USTRD    = 'ustrd'
+UUMEE    = 'uumee'
+UUSD     = 'uusd'
+UWHALE   = 'uwhale'
+UXKI     = 'uxki'
+UXPRT    = 'uxprt'
+WBTC     = 'wbtc-satoshi'
+WETH     = 'weth-wei'
 
 # Coin keys and display values:
 # NOTE: This is in display order, not sorted by key
 FULL_COIN_LOOKUP = {
-    UAKT:  'Akash',
-    UMNTL: 'AssetMantle',
-    'uaud':  'AUTC',
-    UATOM: 'Atom',
-    UBAND: 'Band Protocol',
-    UBASE: 'BASE',
-    UBNT: 'Bluzelle',
-    SWTH: 'Carbon',
-    'ucad':  'CATC',
-    NCHEQ: 'Cheqd',
-    'uchf':  'CHTC',
-    UCMDX: 'Comdex',
-    'ucny':  'CNTC',
-    CRO: 'CRO',
-    ACUDOS: 'Cudos',
-    'udkk':  'DKTC',
-    'ueur':  'EUTC',
-    AEVMOS: 'Evmos',
-    AFET: 'Fetch.ai',
-    'ugbp':  'GBTC',
-    'uhkd':  'HKTC',
-    UHUAHUA: 'Chihuahua',
-    'uidr':  'IDTC',
-    INJ: 'Injective',
-    'uinr':  'INTC',
-    UIRIS: 'IRISnet',
-    'ujpy':  'JPTC',
-    UJUNO: 'Juno',
-    UKAVA: 'KAVA',
-    UXKI: 'Kichain',
-    'ukrw':  'KRTC',
-    UKUJI: 'KUJI',
-    ULAMB: 'Lambda',
-    ULUNA: 'LUNC',
-    UMARS: 'Mars Protocol',
-    UMED: 'Medibloc',
-    'umnt':  'MNTC',
-    'umyr':  'MYTC',
-    'unok':  'NOTC',
-    ORAI: 'Oraichain',
-    UOSMO: 'OSMO',
-    UXPRT: 'Persistance',
-    'uphp':  'PHTC',
-    APLANQ: 'Planq',
-    UREGEN: 'Regen',
-    USCRT: 'Secret',
-    'usdr':  'SDTC',
-    UDVPN: 'Sentinel',
-    'usek':  'SETC',
-    'usgd':  'SGTC',
-    UCTK: 'Shentu',
-    USOMM: 'Sommelier',
-    USTARS: 'Stargaze',
-    USTRD: 'Stride',
-    'uthb':  'THTC',
-    'utwd':  'TWTC',
-    UUMEE: 'Umee',
-    UUSD:  'USTC',
-    UWHALE: 'Whale',
-    WBTC: 'wBTC',
-    WETH: 'wETH'
+    UAKT:     'Akash',
+    UMNTL:    'AssetMantle',
+    'uaud':   'AUTC',
+    UATOM:    'Atom',
+    UBAND:    'Band Protocol',
+    UBASE:    'BASE',
+    UBNT:     'Bluzelle',
+    SWTH:     'Carbon',
+    'ucad':   'CATC',
+    NCHEQ:    'Cheqd',
+    UHUAHUA:  'Chihuahua',
+    'uchf':   'CHTC',
+    UCMDX:    'Comdex',
+    'ucny':   'CNTC',
+    BASECRO:  'CRO',
+    ACUDOS:   'Cudos',
+    'udkk':   'DKTC',
+    'ueur':   'EUTC',
+    AEVMOS:   'Evmos',
+    AFET:     'Fetch.ai',
+    'ugbp':   'GBTC',
+    'uhkd':   'HKTC',
+    'uidr':   'IDTC',
+    INJ:      'Injective',
+    'uinr':   'INTC',
+    UIRIS:    'IRISnet',
+    'ujpy':   'JPTC',
+    UJUNO:    'Juno',
+    UKAVA:    'KAVA',
+    UXKI:     'Kichain',
+    'ukrw':   'KRTC',
+    UKUJI:    'KUJI',
+    ULAMB:    'Lambda',
+    NANOLIKE: 'Likecoin',
+    ULUNA:    'LUNC',
+    UMARS:    'Mars Protocol',
+    UMED:     'Medibloc',
+    'umnt':   'MNTC',
+    'umyr':   'MYTC',
+    'unok':   'NOTC',
+    ORAI:     'Oraichain',
+    UOSMO:    'OSMO',
+    UXPRT:    'Persistance',
+    'uphp':   'PHTC',
+    APLANQ:   'Planq',
+    UREGEN:   'Regen',
+    USCRT:    'Secret',
+    'usdr':   'SDTC',
+    UDVPN:    'Sentinel',
+    'usek':   'SETC',
+    'usgd':   'SGTC',
+    UCTK:     'Shentu',
+    USOMM:    'Sommelier',
+    USTARS:   'Stargaze',
+    USTRD:    'Stride',
+    'uthb':   'THTC',
+    'utwd':   'TWTC',
+    UUMEE:    'Umee',
+    UUSD:     'USTC',
+    UWHALE:   'Whale',
+    WBTC:     'wBTC',
+    WETH:     'wETH'
 }
 
 BASIC_COIN_LOOKUP = {
-    'uluna': 'LUNC',
-    'uusd':  'USTC'
+    ULUNA: 'LUNC',
+    UUSD:  'USTC'
 }
 
 OFFCHAIN_COINS = [
@@ -177,8 +179,9 @@ OFFCHAIN_COINS = [
     APLANQ,
     UBAND,
     UBNT,
-    CRO,
+    BASECRO,
     INJ,
+    NANOLIKE,
     NCHEQ,
     ORAI,
     SWTH,
@@ -237,290 +240,296 @@ OFFCHAIN_COINS = [
 
 CHAIN_DATA = {
     'uluna': {
-        'chain_id': 'columbus-5',
-        'ibc_channels': {
+        'chain_id':      'columbus-5',
+        'ibc_channels':  {
             'uosmo': 'channel-1',
         },
-        'lcd_urls': ['https://terra-classic-fcd.publicnode.com', 'https://rest.cosmos.directory/terra'],
-        'coingecko_id': 'terra-luna',
-        'cosmos_name': 'terra',
-        'precision': 6,
+        'lcd_urls':      ['https://terra-classic-fcd.publicnode.com', 'https://rest.cosmos.directory/terra'],
+        'coingecko_id':  'terra-luna',
+        'cosmos_name':   'terra',
+        'precision':     6,
         'bech32_prefix': 'terra'
     },
     'uosmo': {
-        'chain_id': 'osmosis-1',
-        'ibc_channels': {
-            'acudos': 'channel-298',
-            'aevmos': 'channel-204',
-            'afet': 'channel-229',
-            APLANQ: 'channel-492',
-            'basecro': 'channel-5',
-            'inj': 'channel-122',
-            'ncheq': 'channel-108',
-            'orai': 'channel-216',
-            'swth': 'channel-188',
-            'uakt': 'channel-1',
-            'uatom': 'channel-0',
-            'uband': 'channel-148',
-            'ubnt': 'channel-763',
-            'ucmdx': 'channel-87',
-            'uctk': 'channel-146',
-            'udvpn': 'channel-2',
-            'uhuahua': 'channel-113',
-            'uiris': 'channel-6',
-            'ujuno': 'channel-42',
-            'ukava': 'channel-143',
-            'ukuji': 'channel-259',
-            'ulamb': 'channel-378',
-            'uluna': 'channel-72',
-            'umars': 'channel-557',
-            'umed': 'channel-82',
-            'umntl': 'channel-232',
-            'uumee': 'channel-184',
-            'uosmo': 'channel-1',
-            'uregen': 'channel-8',
-            'uscrt': 'channel-88',
-            'usomm': 'channel-165',
-            'ustars': 'channel-75',
-            'ustrd': 'channel-326',
-            'uusd': 'channel-72',
-            'uwhale': 'channel-84',
-            'uxki': 'channel-77',
-            'uxprt': 'channel-4',
-            'wbtc-satoshi': 'channel-208',
-            'weth-wei': 'channel-208'
+        'chain_id':      'osmosis-1',
+        'ibc_channels':  {
+            ACUDOS:   'channel-298',
+            AEVMOS:   'channel-204',
+            AFET:     'channel-229',
+            APLANQ:   'channel-492',
+            BASECRO:  'channel-5',
+            INJ:      'channel-122',
+            NANOLIKE: 'channel-53',
+            NCHEQ:    'channel-108',
+            ORAI:     'channel-216',
+            SWTH:     'channel-188',
+            UAKT:     'channel-1',
+            UATOM:    'channel-0',
+            UBAND:    'channel-148',
+            UBNT:     'channel-763',
+            UCMDX:    'channel-87',
+            UCTK:     'channel-146',
+            UDVPN:    'channel-2',
+            UHUAHUA:  'channel-113',
+            UIRIS:    'channel-6',
+            UJUNO:    'channel-42',
+            UKAVA:    'channel-143',
+            UKUJI:    'channel-259',
+            ULAMB:    'channel-378',
+            ULUNA:    'channel-72',
+            UMARS:    'channel-557',
+            UMED:     'channel-82',
+            UMNTL:    'channel-232',
+            UUMEE:    'channel-184',
+            UOSMO:    'channel-1',
+            UREGEN:   'channel-8',
+            USCRT:    'channel-88',
+            USOMM:    'channel-165',
+            USTARS:   'channel-75',
+            USTRD:    'channel-326',
+            UUSD:     'channel-72',
+            UWHALE:   'channel-84',
+            UXKI:     'channel-77',
+            UXPRT:    'channel-4',
+            WBTC:     'channel-208',
+            WETH:     'channel-208'
         },
-        'lcd_urls': ['https://lcd.osmosis.zone'],
-        'coingecko_id': 'osmosis',
-        'cosmos_name': 'osmosis',
-        'precision': 6,
+        'lcd_urls':      ['https://lcd.osmosis.zone'],
+        'coingecko_id':  'osmosis',
+        'cosmos_name':   'osmosis',
+        'precision':     6,
         'bech32_prefix': 'osmo'
     },
     'acudos': {
-        'coingecko_id': 'cudos',
-        'cosmos_name': 'cudos',
-        'precision': 18,
+        'coingecko_id':  'cudos',
+        'cosmos_name':   'cudos',
+        'precision':     18,
         'bech32_prefix': 'cudos'
     },
     'aevmos': {
-        'coingecko_id': 'evmos',
-        'cosmos_name': 'evmos',
-        'precision': 18,
+        'coingecko_id':  'evmos',
+        'cosmos_name':   'evmos',
+        'precision':     18,
         'bech32_prefix': 'evmos'
     },
     'afet': {
-        'coingecko_id': 'fetch-ai',
-        'cosmos_name': 'fetchhub',
-        'precision': 18,
+        'coingecko_id':  'fetch-ai',
+        'cosmos_name':   'fetchhub',
+        'precision':     18,
         'bech32_prefix': 'fetch'
     },
     'aplanq': {
-        'coingecko_id': 'planq',
-        'cosmos_name': 'planq',
-        'precision': 18,
+        'coingecko_id':  'planq',
+        'cosmos_name':   'planq',
+        'precision':     18,
         'bech32_prefix': 'plq'
     },
     'basecro': {
-        'coingecko_id': 'crypto-com-chain',
-        'cosmos_name': 'cronos',
-        'precision': 8,
+        'coingecko_id':  'crypto-com-chain',
+        'cosmos_name':   'cronos',
+        'precision':     8,
         'bech32_prefix': 'cro'
     },
     'inj': {
-        'coingecko_id': 'injective-protocol',
-        'cosmos_name': 'injective',
-        'precision': 18,
+        'coingecko_id':  'injective-protocol',
+        'cosmos_name':   'injective',
+        'precision':     18,
         'bech32_prefix': 'inj'
     },
+    'nanolike': {
+        'coingecko_id':  'likecoin',
+        'cosmos_name':   'likecoin',
+        'precision':     9,
+        'bech32_prefix': 'like'
+    },
     'ncheq': {
-        'coingecko_id': 'cheqd-network',
-        'cosmos_name': 'cheqd',
-        'precision': 9,
+        'coingecko_id':  'cheqd-network',
+        'cosmos_name':   'cheqd',
+        'precision':     9,
         'bech32_prefix': 'cheqd'
     },
     'orai': {
-        'coingecko_id': 'oraichain-token',
-        'cosmos_name': 'oraichain',
-        'precision': 6,
+        'coingecko_id':  'oraichain-token',
+        'cosmos_name':   'oraichain',
+        'precision':     6,
         'bech32_prefix': 'orai'
     },
     'swth': {
-        'coingecko_id': 'switcheo',
-        'cosmos_name': 'carbon',
-        'precision': 8,
+        'coingecko_id':  'switcheo',
+        'cosmos_name':   'carbon',
+        'precision':     8,
         'bech32_prefix': 'swth'
     },
     'uakt': {
-        'coingecko_id': 'akash-network',
-        'cosmos_name': 'akash',
-        'precision': 6,
+        'coingecko_id':  'akash-network',
+        'cosmos_name':   'akash',
+        'precision':     6,
         'bech32_prefix': 'akash'
     },
     'uatom': {
-        'coingecko_id': 'cosmos',
-        'cosmos_name': 'cosmos',
-        'precision': 6,
+        'coingecko_id':  'cosmos',
+        'cosmos_name':   'cosmos',
+        'precision':     6,
         'bech32_prefix': 'cosmos'
     },
     'uband': {
-        'coingecko_id': 'band-protocol',
-        'cosmos_name': 'bandchain',
-        'precision': 6,
+        'coingecko_id':  'band-protocol',
+        'cosmos_name':   'bandchain',
+        'precision':     6,
         'bech32_prefix': 'band'
     },
     'ubnt': {
-        'coingecko_id': 'bluzelle',
-        'cosmos_name': 'bluzelle',
-        'precision': 6,
+        'coingecko_id':  'bluzelle',
+        'cosmos_name':   'bluzelle',
+        'precision':     6,
         'bech32_prefix': 'bluzelle'
     },
     'ucmdx': {
-        'coingecko_id': 'comdex',
-        'cosmos_name': 'comdex',
-        'precision': 6,
+        'coingecko_id':  'comdex',
+        'cosmos_name':   'comdex',
+        'precision':     6,
         'bech32_prefix': 'comdex'
     },
     'uctk': {
-        'coingecko_id': 'certik',
-        'cosmos_name': 'shentu',
-        'precision': 6,
+        'coingecko_id':  'certik',
+        'cosmos_name':   'shentu',
+        'precision':     6,
         'bech32_prefix': 'shentu'
     },
     'udvpn': {
-        'coingecko_id': 'sentinel',
-        'cosmos_name': 'sentinel',
-        'precision': 6,
+        'coingecko_id':  'sentinel',
+        'cosmos_name':   'sentinel',
+        'precision':     6,
         'bech32_prefix': 'sent'
     },
     'uhuahua': {
-        'coingecko_id': 'chihuahua-token',
-        'cosmos_name': 'chihuahua',
-        'precision': 6,
+        'coingecko_id':  'chihuahua-token',
+        'cosmos_name':   'chihuahua',
+        'precision':     6,
         'bech32_prefix': 'chihuahua'
     },
     'uiris': {
-        'coingecko_id': 'iris-network',
-        'cosmos_name': 'irisnet',
-        'precision': 6,
+        'coingecko_id':  'iris-network',
+        'cosmos_name':   'irisnet',
+        'precision':     6,
         'bech32_prefix': 'iaa'
     },
     'ujuno': {
-        'coingecko_id': 'juno-network',
-        'cosmos_name': 'juno',
-        'precision': 6,
+        'coingecko_id':  'juno-network',
+        'cosmos_name':   'juno',
+        'precision':     6,
         'bech32_prefix': 'juno'
     },
     'ukava': {
-        'coingecko_id': 'kava',
-        'cosmos_name': 'kava',
-        'precision': 6,
+        'coingecko_id':  'kava',
+        'cosmos_name':   'kava',
+        'precision':     6,
         'bech32_prefix': 'kava'
     },
     'ukuji': {
-        'coingecko_id': 'kujira',
-        'cosmos_name': 'kujira',
-        'precision': 6,
+        'coingecko_id':  'kujira',
+        'cosmos_name':   'kujira',
+        'precision':     6,
         'bech32_prefix': 'kujira'
     },
     'ulamb': {
-        'coingecko_id': 'lambda',
-        'cosmos_name': 'lambda',
-        'precision': 18,
+        'coingecko_id':  'lambda',
+        'cosmos_name':   'lambda',
+        'precision':     18,
         'bech32_prefix': 'lamb'
     },
     'umars': {
-        'coingecko_id': 'mars-protocol-a7fcbcfb-fd61-4017-92f0-7ee9f9cc6da3',
-        'cosmos_name': 'mars',
-        'precision': 6,
+        'coingecko_id':  'mars-protocol-a7fcbcfb-fd61-4017-92f0-7ee9f9cc6da3',
+        'cosmos_name':   'mars',
+        'precision':     6,
         'bech32_prefix': 'mars'
     },
     'umed': {
-        'coingecko_id': 'medibloc',
-        'cosmos_name': 'panacea',
-        'precision': 6,
+        'coingecko_id':  'medibloc',
+        'cosmos_name':   'panacea',
+        'precision':     6,
         'bech32_prefix': 'panacea'
     },
     'umntl': {
-        'coingecko_id': 'assetmantle',
-        'cosmos_name': 'assetmantle',
-        'precision': 6,
+        'coingecko_id':  'assetmantle',
+        'cosmos_name':   'assetmantle',
+        'precision':     6,
         'bech32_prefix': 'mantle'
     },
     'uregen': {
-        'coingecko_id': 'regen',
-        'cosmos_name': 'regen',
-        'precision': 6,
+        'coingecko_id':  'regen',
+        'cosmos_name':   'regen',
+        'precision':     6,
         'bech32_prefix': 'regen'
     },
     'uscrt': {
-        'coingecko_id': 'secret',
-        'cosmos_name': 'secret',
-        'precision': 6,
+        'coingecko_id':  'secret',
+        'cosmos_name':   'secret',
+        'precision':     6,
         'bech32_prefix': 'secret'
     },
     'usomm': {
-        'coingecko_id': 'sommelier',
-        'cosmos_name': 'sommelier',
-        'precision': 6,
+        'coingecko_id':  'sommelier',
+        'cosmos_name':   'sommelier',
+        'precision':     6,
         'bech32_prefix': 'somm'
     },
     'ustars': {
-        'coingecko_id': 'stargaze',
-        'cosmos_name': 'stargaze',
-        'precision': 6,
+        'coingecko_id':  'stargaze',
+        'cosmos_name':   'stargaze',
+        'precision':     6,
         'bech32_prefix': 'stars'
     },
     'ustrd': {
-        'coingecko_id': 'stride',
-        'cosmos_name': 'stride',
-        'precision': 6,
+        'coingecko_id':  'stride',
+        'cosmos_name':   'stride',
+        'precision':     6,
         'bech32_prefix': 'stride'
     },
     'uumee': {
-        'coingecko_id': 'umee',
-        'cosmos_name': 'umee',
-        'precision': 6,
+        'coingecko_id':  'umee',
+        'cosmos_name':   'umee',
+        'precision':     6,
         'bech32_prefix': 'umee'
     },
     'uusd': {
-        'coingecko_id': 'terrausd',
-        'cosmos_name': 'terra',
-        'precision': 6,
+        'coingecko_id':  'terrausd',
+        'cosmos_name':   'terra',
+        'precision':     6,
         'bech32_prefix': 'terra'
     },
     'uwhale': {
-        'coingecko_id': 'white-whale',
-        'cosmos_name': 'whale',
-        'precision': 6,
+        'coingecko_id':  'white-whale',
+        'cosmos_name':   'whale',
+        'precision':     6,
         'bech32_prefix': 'migaloo'
     },
     'uxki': {
-        'coingecko_id': 'ki',
-        'cosmos_name': 'kichain',
-        'precision': 6,
+        'coingecko_id':  'ki',
+        'cosmos_name':   'kichain',
+        'precision':     6,
         'bech32_prefix': 'ki'
     },
     'uxprt': {
-        'coingecko_id': 'persistence',
-        'cosmos_name': 'persistence',
-        'precision': 6,
+        'coingecko_id':  'persistence',
+        'cosmos_name':   'persistence',
+        'precision':     6,
         'bech32_prefix': 'persistence'
     },
     'wbtc-satoshi': {
-        'coingecko_id': 'bitcoin',
-        'cosmos_name': 'axelar',
-        'precision': 8,
+        'coingecko_id':  'bitcoin',
+        'cosmos_name':   'axelar',
+        'precision':     8,
         'bech32_prefix': 'axelar'
     },
     'weth-wei': {
-        'coingecko_id': 'ethereum',
-        'cosmos_name': 'axelar',
-        'precision': 18,
+        'coingecko_id':  'ethereum',
+        'cosmos_name':   'axelar',
+        'precision':     18,
         'bech32_prefix': 'axelar'
     }
 }
 
-# Planq
 # LikeCoin
 # Bitsong
 # Graviton
