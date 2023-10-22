@@ -80,6 +80,7 @@ UDVPN     = 'udvpn'
 UGRAVITON = 'ugraviton'
 UHUAHUA   = 'uhuahua'
 UIRIS     = 'uiris'
+UIXO      = 'uixo'
 UJUNO     = 'ujuno'
 UKAVA     = 'ukava'
 UKRW      = 'ukrw'
@@ -135,6 +136,7 @@ FULL_COIN_LOOKUP = {
     INJ:       'Injective',
     'uinr':    'INTC',
     UIRIS:     'IRISnet',
+    UIXO:      'Ixo Protocol',
     'ujpy':    'JPTC',
     UJUNO:     'Juno',
     UKAVA:     'KAVA',
@@ -244,6 +246,7 @@ BASIC_COIN_LOOKUP = {
 #            'Step 1': 'Step 6',
 ###
 
+
 CHAIN_DATA = {
     ULUNA: {
         'chain_id':      'columbus-5',
@@ -281,6 +284,7 @@ CHAIN_DATA = {
             UGRAVITON: 'channel-144',
             UHUAHUA:   'channel-113',
             UIRIS:     'channel-6',
+            UIXO:      'channel-38',
             UJUNO:     'channel-42',
             UKAVA:     'channel-143',
             UKUJI:     'channel-259',
@@ -441,6 +445,12 @@ CHAIN_DATA = {
         'precision':     6,
         'bech32_prefix': 'iaa'
     },
+    UIXO: {
+        'coingecko_id':  'ixo',
+        'cosmos_name':   'impacthub',
+        'precision':     6,
+        'bech32_prefix': 'ixo'
+    },
     UJUNO: {
         'coingecko_id':  'juno-network',
         'cosmos_name':   'juno',
@@ -562,7 +572,6 @@ for item in CHAIN_DATA[UOSMO]['ibc_channels'].keys():
     if item != ULUNA:
         OFFCHAIN_COINS.append(item)
 
-# IXO
 # e-Money
 # Decentr
 # Odin Protocol
