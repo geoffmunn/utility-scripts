@@ -64,12 +64,14 @@ CRO     = 'basecro'
 INJ     = 'inj'
 NCHEQ   = 'ncheq'
 ORAI    = 'orai'
+SWTH    = 'swth'
 UAKT    = 'uakt'
 UATOM   = 'uatom'
 UBAND   = 'uband'
 UBASE   = 'ubase'
 UBNT    = 'ubnt'
 UCTK    = 'uctk'
+UDVPN   = 'udvpn'
 UHUAHUA = 'uhuahua'
 UIRIS   = 'uiris'
 UJUNO   = 'ujuno'
@@ -103,6 +105,7 @@ FULL_COIN_LOOKUP = {
     'uband': 'Band Protocol',
     'ubase': 'BASE',
     'ubnt': 'Bluzelle',
+    'swth': 'Carbon',
     'ucad':  'CATC',
     'ncheq': 'Cheqd',
     'uchf':  'CHTC',
@@ -138,6 +141,7 @@ FULL_COIN_LOOKUP = {
     'uphp':  'PHTC',
     'uscrt': 'Secret',
     'usdr':  'SDTC',
+    'udvpn': 'Sentinel',
     'usek':  'SETC',
     'usgd':  'SGTC',
     'uctk': 'Shentu',
@@ -168,9 +172,11 @@ OFFCHAIN_COINS = [
     INJ,
     NCHEQ,
     ORAI,
+    SWTH,
     UAKT,
     UATOM,
     UCTK,
+    UDVPN,
     UHUAHUA,
     UIRIS,
     UJUNO,
@@ -239,11 +245,13 @@ CHAIN_DATA = {
             'inj': 'channel-122',
             'ncheq': 'channel-108',
             'orai': 'channel-216',
+            'swth': 'channel-188',
             'uakt': 'channel-1',
             'uatom': 'channel-0',
             'uband': 'channel-148',
             'ubnt': 'channel-763',
             'uctk': 'channel-146',
+            'udvpn': 'channel-2',
             'uhuahua': 'channel-113',
             'uiris': 'channel-6',
             'ujuno': 'channel-42',
@@ -314,6 +322,12 @@ CHAIN_DATA = {
         'precision': 6,
         'bech32_prefix': 'orai'
     },
+    'swth': {
+        'coingecko_id': 'switcheo',
+        'cosmos_name': 'carbon',
+        'precision': 8,
+        'bech32_prefix': 'swth'
+    },
     'uakt': {
         'coingecko_id': 'akash-network',
         'cosmos_name': 'akash',
@@ -343,6 +357,12 @@ CHAIN_DATA = {
         'cosmos_name': 'shentu',
         'precision': 6,
         'bech32_prefix': 'shentu'
+    },
+    'udvpn': {
+        'coingecko_id': 'sentinel',
+        'cosmos_name': 'sentinel',
+        'precision': 6,
+        'bech32_prefix': 'sent'
     },
     'uhuahua': {
         'coingecko_id': 'chihuahua-token',
@@ -460,9 +480,6 @@ CHAIN_DATA = {
     }
 }
 
-# Cheqd Network
-# Ion
-# Sentinel
 # Carbon Protocol
 # Regen
 # COMDEX
