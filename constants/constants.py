@@ -101,6 +101,7 @@ USCRT     = 'uscrt'
 USOMM     = 'usomm'
 USTARS    = 'ustars'
 USTRD     = 'ustrd'
+UTICK     = 'utick'
 UUMEE     = 'uumee'
 UUSD      = 'uusd'
 UVDL      = 'uvdl'
@@ -156,6 +157,7 @@ FULL_COIN_LOOKUP = {
     ULUNA:     'LUNC',
     UMARS:     'Mars Protocol',
     UMED:      'Medibloc',
+    UTICK:     'Microtick',
     'umnt':    'MNTC',
     'umyr':    'MYTC',
     'unok':    'NOTC',
@@ -315,6 +317,7 @@ CHAIN_DATA = {
             USOMM:     'channel-165',
             USTARS:    'channel-75',
             USTRD:     'channel-326',
+            UTICK:     'channel-39',
             UUMEE:     'channel-184',
             UUSD:      'channel-72',
             UVDL:      'channel-124',
@@ -570,6 +573,12 @@ CHAIN_DATA = {
         'precision':     6,
         'bech32_prefix': 'stride'
     },
+    UTICK: {
+        'coingecko_id':  'microtick',
+        'cosmos_name':   'microtick',
+        'precision':     6,
+        'bech32_prefix': 'micro'
+    },
     UUMEE: {
         'coingecko_id':  'umee',
         'cosmos_name':   'umee',
@@ -625,6 +634,5 @@ for item in CHAIN_DATA[UOSMO]['ibc_channels'].keys():
     if item != ULUNA:
         OFFCHAIN_COINS.append(item)
 
-# Vidulum
 # Microtick
 # Bidao
