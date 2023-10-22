@@ -75,6 +75,7 @@ UBNT      = 'ubnt'
 UBTSG     = 'ubtsg'
 UCMDX     = 'ucmdx'
 UCTK      = 'uctk'
+UDSM      = 'udsm'
 UDVPN     = 'udvpn'
 UGRAVITON = 'ugraviton'
 UHUAHUA   = 'uhuahua'
@@ -122,6 +123,7 @@ FULL_COIN_LOOKUP = {
     'ucny':    'CNTC',
     BASECRO:   'CRO',
     ACUDOS:    'Cudos',
+    UDSM:      'Desmos',
     'udkk':    'DKTC',
     'ueur':    'EUTC',
     AEVMOS:    'Evmos',
@@ -274,6 +276,7 @@ CHAIN_DATA = {
             UBTSG:     'channel-73',
             UCMDX:     'channel-87',
             UCTK:      'channel-146',
+            UDSM:      'channel-135',
             UDVPN:     'channel-2',
             UGRAVITON: 'channel-144',
             UHUAHUA:   'channel-113',
@@ -407,6 +410,12 @@ CHAIN_DATA = {
         'cosmos_name':   'shentu',
         'precision':     6,
         'bech32_prefix': 'shentu'
+    },
+    UDSM: {
+        'coingecko_id':  'desmos',
+        'cosmos_name':   'desmos',
+        'precision':     6,
+        'bech32_prefix': 'desmos'
     },
     UDVPN: {
         'coingecko_id':  'sentinel',
@@ -553,8 +562,6 @@ for item in CHAIN_DATA[UOSMO]['ibc_channels'].keys():
     if item != ULUNA:
         OFFCHAIN_COINS.append(item)
 
-# Graviton
-# Desmos
 # IXO
 # e-Money
 # Decentr
