@@ -79,6 +79,7 @@ UJUNO   = 'ujuno'
 UKAVA   = 'ukava'
 UKRW    = 'ukrw'
 UKUJI   = 'ukuji'
+ULAMB   = 'ulamb'
 ULUNA   = 'uluna'
 UMARS   = 'umars'
 UMED    = 'umed'
@@ -132,6 +133,7 @@ FULL_COIN_LOOKUP = {
     UXKI: 'Kichain',
     'ukrw':  'KRTC',
     UKUJI: 'KUJI',
+    ULAMB: 'Lambda',
     ULUNA: 'LUNC',
     UMARS: 'Mars Protocol',
     UMED: 'Medibloc',
@@ -187,6 +189,7 @@ OFFCHAIN_COINS = [
     UJUNO,
     UKAVA,
     UKUJI,
+    ULAMB,
     UOSMO,
     UMARS,
     UMED,
@@ -264,6 +267,7 @@ CHAIN_DATA = {
             'ujuno': 'channel-42',
             'ukava': 'channel-143',
             'ukuji': 'channel-259',
+            'ulamb': 'channel-378',
             'uluna': 'channel-72',
             'umars': 'channel-557',
             'umed': 'channel-82',
@@ -408,6 +412,12 @@ CHAIN_DATA = {
         'precision': 6,
         'bech32_prefix': 'kujira'
     },
+    'ulamb': {
+        'coingecko_id': 'lambda',
+        'cosmos_name': 'lambda',
+        'precision': 18,
+        'bech32_prefix': 'lamb'
+    },
     'umars': {
         'coingecko_id': 'mars-protocol-a7fcbcfb-fd61-4017-92f0-7ee9f9cc6da3',
         'cosmos_name': 'mars',
@@ -500,7 +510,6 @@ CHAIN_DATA = {
     }
 }
 
-# COMDEX
 # Lambda
 # Planq
 # LikeCoin
