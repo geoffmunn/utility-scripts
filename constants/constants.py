@@ -72,6 +72,7 @@ UATOM    = 'uatom'
 UBAND    = 'uband'
 UBASE    = 'ubase'
 UBNT     = 'ubnt'
+UBTSG    = 'ubtsg'
 UCMDX    = 'ucmdx'
 UCTK     = 'uctk'
 UDVPN    = 'udvpn'
@@ -109,6 +110,7 @@ FULL_COIN_LOOKUP = {
     UATOM:    'Atom',
     UBAND:    'Band Protocol',
     UBASE:    'BASE',
+    UBTSG:    'Bitsong',
     UBNT:     'Bluzelle',
     SWTH:     'Carbon',
     'ucad':   'CATC',
@@ -172,7 +174,7 @@ BASIC_COIN_LOOKUP = {
     UUSD:  'USTC'
 }
 
-# OFFCHAIN_COINS = [
+# OFFCHAIN_COINS_old = [
 #     ACUDOS,
 #     AEVMOS,
 #     AFET,
@@ -267,6 +269,7 @@ CHAIN_DATA = {
             UATOM:    'channel-0',
             UBAND:    'channel-148',
             UBNT:     'channel-763',
+            UBTSG:    'channel-73',
             UCMDX:    'channel-87',
             UCTK:     'channel-146',
             UDVPN:    'channel-2',
@@ -383,6 +386,12 @@ CHAIN_DATA = {
         'cosmos_name':   'bluzelle',
         'precision':     6,
         'bech32_prefix': 'bluzelle'
+    },
+    UBTSG: {
+        'coingecko_id':  'bitsong',
+        'cosmos_name':   'bitsong',
+        'precision':     6,
+        'bech32_prefix': 'bitsong'
     },
     UCMDX: {
         'coingecko_id':  'comdex',
@@ -532,9 +541,9 @@ CHAIN_DATA = {
 
 OFFCHAIN_COINS = []
 for item in CHAIN_DATA[UOSMO]['ibc_channels'].keys():
-    OFFCHAIN_COINS.append(item)
+    if item != ULUNA:
+        OFFCHAIN_COINS.append(item)
 
-# Bitsong
 # Graviton
 # Desmos
 # IXO
