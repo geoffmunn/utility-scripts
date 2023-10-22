@@ -67,6 +67,7 @@ LOKI      = 'loki'
 NANOLIKE  = 'nanolike'
 NCHEQ     = 'ncheq'
 ORAI      = 'orai'
+ROWAN     = 'rowan'
 SWTH      = 'swth'
 UAKT      = 'uakt'
 UATOM     = 'uatom'
@@ -81,6 +82,7 @@ UDSM      = 'udsm'
 UDVPN     = 'udvpn'
 UGRAVITON = 'ugraviton'
 UHUAHUA   = 'uhuahua'
+UIOV      = 'uiov'
 UIRIS     = 'uiris'
 UIXO      = 'uixo'
 UJUNO     = 'ujuno'
@@ -169,8 +171,10 @@ FULL_COIN_LOOKUP = {
     'usek':    'SETC',
     'usgd':    'SGTC',
     UCTK:      'Shentu',
+    ROWAN:     'Sifchain',
     USOMM:     'Sommelier',
     USTARS:    'Stargaze',
+    UIOV:      'Starname',
     USTRD:     'Stride',
     'uthb':    'THTC',
     'utwd':    'TWTC',
@@ -277,6 +281,7 @@ CHAIN_DATA = {
             NANOLIKE:  'channel-53',
             NCHEQ:     'channel-108',
             ORAI:      'channel-216',
+            ROWAN:     'channel-47',
             SWTH:      'channel-188',
             UAKT:      'channel-1',
             UATOM:     'channel-0',
@@ -290,6 +295,7 @@ CHAIN_DATA = {
             UDVPN:     'channel-2',
             UGRAVITON: 'channel-144',
             UHUAHUA:   'channel-113',
+            UIOV:      'channel-15',
             UIRIS:     'channel-6',
             UIXO:      'channel-38',
             UJUNO:     'channel-42',
@@ -381,6 +387,12 @@ CHAIN_DATA = {
         'precision':     6,
         'bech32_prefix': 'orai'
     },
+    ROWAN: {
+        'coingecko_id':  'sifchain',
+        'cosmos_name':   'sifchain',
+        'precision':     18,
+        'bech32_prefix': 'sif'
+    },
     SWTH: {
         'coingecko_id':  'switcheo',
         'cosmos_name':   'carbon',
@@ -458,6 +470,12 @@ CHAIN_DATA = {
         'cosmos_name':   'chihuahua',
         'precision':     6,
         'bech32_prefix': 'chihuahua'
+    },
+    UIOV: {
+        'coingecko_id':  'starname',
+        'cosmos_name':   'starname',
+        'precision':     6,
+        'bech32_prefix': 'star'
     },
     UIRIS: {
         'coingecko_id':  'iris-network',
@@ -598,9 +616,6 @@ for item in CHAIN_DATA[UOSMO]['ibc_channels'].keys():
     if item != ULUNA:
         OFFCHAIN_COINS.append(item)
 
-# Odin Protocol
-# Starname
-# Sifchain
 # Vidulum
 # Microtick
 # Bidao
