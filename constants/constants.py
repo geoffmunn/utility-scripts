@@ -103,6 +103,7 @@ USTARS    = 'ustars'
 USTRD     = 'ustrd'
 UUMEE     = 'uumee'
 UUSD      = 'uusd'
+UVDL      = 'uvdl'
 UWHALE    = 'uwhale'
 UXKI      = 'uxki'
 UXPRT     = 'uxprt'
@@ -180,6 +181,7 @@ FULL_COIN_LOOKUP = {
     'utwd':    'TWTC',
     UUMEE:     'Umee',
     UUSD:      'USTC',
+    UVDL:      'Vidulum',
     UWHALE:    'Whale',
     WBTC:      'wBTC',
     WETH:      'wETH'
@@ -315,6 +317,7 @@ CHAIN_DATA = {
             USTRD:     'channel-326',
             UUMEE:     'channel-184',
             UUSD:      'channel-72',
+            UVDL:      'channel-124',
             UWHALE:    'channel-84',
             UXKI:      'channel-77',
             UXPRT:     'channel-4',
@@ -578,6 +581,12 @@ CHAIN_DATA = {
         'cosmos_name':   'terra',
         'precision':     6,
         'bech32_prefix': 'terra'
+    },
+    UVDL: {
+        'coingecko_id':  'vidulum',
+        'cosmos_name':   'vidulum',
+        'precision':     6,
+        'bech32_prefix': 'vdl'
     },
     UWHALE: {
         'coingecko_id':  'white-whale',
