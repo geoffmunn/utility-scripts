@@ -70,6 +70,7 @@ UATOM   = 'uatom'
 UBAND   = 'uband'
 UBASE   = 'ubase'
 UBNT    = 'ubnt'
+UCMDX   = 'ucmdx'
 UCTK    = 'uctk'
 UDVPN   = 'udvpn'
 UHUAHUA = 'uhuahua'
@@ -99,64 +100,65 @@ WETH    = 'weth-wei'
 # Coin keys and display values:
 # NOTE: This is in display order, not sorted by key
 FULL_COIN_LOOKUP = {
-    'uakt':  'Akash',
-    'umntl': 'AssetMantle',
+    UAKT:  'Akash',
+    UMNTL: 'AssetMantle',
     'uaud':  'AUTC',
-    'uatom': 'Atom',
-    'uband': 'Band Protocol',
-    'ubase': 'BASE',
-    'ubnt': 'Bluzelle',
-    'swth': 'Carbon',
+    UATOM: 'Atom',
+    UBAND: 'Band Protocol',
+    UBASE: 'BASE',
+    UBNT: 'Bluzelle',
+    SWTH: 'Carbon',
     'ucad':  'CATC',
-    'ncheq': 'Cheqd',
+    NCHEQ: 'Cheqd',
     'uchf':  'CHTC',
+    UCMDX: 'Comdex',
     'ucny':  'CNTC',
-    'basecro': 'CRO',
-    'acudos': 'Cudos',
+    CRO: 'CRO',
+    ACUDOS: 'Cudos',
     'udkk':  'DKTC',
     'ueur':  'EUTC',
-    'aevmos': 'Evmos',
-    'afet': 'Fetch.ai',
+    AEVMOS: 'Evmos',
+    AFET: 'Fetch.ai',
     'ugbp':  'GBTC',
     'uhkd':  'HKTC',
-    'uhuahua': 'Chihuahua',
+    UHUAHUA: 'Chihuahua',
     'uidr':  'IDTC',
-    'inj': 'Injective',
+    INJ: 'Injective',
     'uinr':  'INTC',
-    'uiris': 'IRISnet',
+    UIRIS: 'IRISnet',
     'ujpy':  'JPTC',
-    'ujuno': 'Juno',
-    'ukava': 'KAVA',
-    'uxki': 'Kichain',
+    UJUNO: 'Juno',
+    UKAVA: 'KAVA',
+    UXKI: 'Kichain',
     'ukrw':  'KRTC',
-    'ukuji': 'KUJI',
-    'uluna': 'LUNC',
-    'umars': 'Mars Protocol',
-    'umed': 'Medibloc',
+    UKUJI: 'KUJI',
+    ULUNA: 'LUNC',
+    UMARS: 'Mars Protocol',
+    UMED: 'Medibloc',
     'umnt':  'MNTC',
     'umyr':  'MYTC',
     'unok':  'NOTC',
-    'orai': 'Oraichain',
-    'uosmo': 'OSMO',
-    'uxprt': 'Persistance',
+    ORAI: 'Oraichain',
+    UOSMO: 'OSMO',
+    UXPRT: 'Persistance',
     'uphp':  'PHTC',
     UREGEN: 'Regen',
-    'uscrt': 'Secret',
+    USCRT: 'Secret',
     'usdr':  'SDTC',
-    'udvpn': 'Sentinel',
+    UDVPN: 'Sentinel',
     'usek':  'SETC',
     'usgd':  'SGTC',
-    'uctk': 'Shentu',
-    'usomm': 'Sommelier',
-    'ustars': 'Stargaze',
-    'ustrd': 'Stride',
+    UCTK: 'Shentu',
+    USOMM: 'Sommelier',
+    USTARS: 'Stargaze',
+    USTRD: 'Stride',
     'uthb':  'THTC',
     'utwd':  'TWTC',
-    'uumee': 'Umee',
-    'uusd':  'USTC',
-    'uwhale': 'Whale',
-    'wbtc-satoshi': 'wBTC',
-    'weth-wei': 'wETH'
+    UUMEE: 'Umee',
+    UUSD:  'USTC',
+    UWHALE: 'Whale',
+    WBTC: 'wBTC',
+    WETH: 'wETH'
 }
 
 BASIC_COIN_LOOKUP = {
@@ -177,6 +179,7 @@ OFFCHAIN_COINS = [
     SWTH,
     UAKT,
     UATOM,
+    UCMDX,
     UCTK,
     UDVPN,
     UHUAHUA,
@@ -253,6 +256,7 @@ CHAIN_DATA = {
             'uatom': 'channel-0',
             'uband': 'channel-148',
             'ubnt': 'channel-763',
+            'ucmdx': 'channel-87',
             'uctk': 'channel-146',
             'udvpn': 'channel-2',
             'uhuahua': 'channel-113',
@@ -355,6 +359,12 @@ CHAIN_DATA = {
         'cosmos_name': 'bluzelle',
         'precision': 6,
         'bech32_prefix': 'bluzelle'
+    },
+    'ucmdx': {
+        'coingecko_id': 'comdex',
+        'cosmos_name': 'comdex',
+        'precision': 6,
+        'bech32_prefix': 'comdex'
     },
     'uctk': {
         'coingecko_id': 'certik',
@@ -490,7 +500,6 @@ CHAIN_DATA = {
     }
 }
 
-# Regen
 # COMDEX
 # Lambda
 # Planq
