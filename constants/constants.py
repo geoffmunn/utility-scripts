@@ -90,6 +90,7 @@ ULUNA     = 'uluna'
 UMARS     = 'umars'
 UMED      = 'umed'
 UMNTL     = 'umntl'
+UNGM      = 'ungm'
 UOSMO     = 'uosmo'
 UREGEN    = 'uregen'
 USCRT     = 'uscrt'
@@ -126,6 +127,7 @@ FULL_COIN_LOOKUP = {
     ACUDOS:    'Cudos',
     UDSM:      'Desmos',
     'udkk':    'DKTC',
+    UNGM:      'e-Money',
     'ueur':    'EUTC',
     AEVMOS:    'Evmos',
     AFET:      'Fetch.ai',
@@ -246,7 +248,6 @@ BASIC_COIN_LOOKUP = {
 #            'Step 1': 'Step 6',
 ###
 
-
 CHAIN_DATA = {
     ULUNA: {
         'chain_id':      'columbus-5',
@@ -293,13 +294,14 @@ CHAIN_DATA = {
             UMARS:     'channel-557',
             UMED:      'channel-82',
             UMNTL:     'channel-232',
-            UUMEE:     'channel-184',
+            UNGM:      'channel-37',
             UOSMO:     'channel-1',
             UREGEN:    'channel-8',
             USCRT:     'channel-88',
             USOMM:     'channel-165',
             USTARS:    'channel-75',
             USTRD:     'channel-326',
+            UUMEE:     'channel-184',
             UUSD:      'channel-72',
             UWHALE:    'channel-84',
             UXKI:      'channel-77',
@@ -493,6 +495,12 @@ CHAIN_DATA = {
         'precision':     6,
         'bech32_prefix': 'mantle'
     },
+    UNGM: {
+        'coingecko_id':  'e-money',
+        'cosmos_name':   'emoney',
+        'precision':     6,
+        'bech32_prefix': 'emoney'
+    },
     UREGEN: {
         'coingecko_id':  'regen',
         'cosmos_name':   'regen',
@@ -572,7 +580,6 @@ for item in CHAIN_DATA[UOSMO]['ibc_channels'].keys():
     if item != ULUNA:
         OFFCHAIN_COINS.append(item)
 
-# e-Money
 # Decentr
 # Odin Protocol
 # Starname
