@@ -196,48 +196,6 @@ BASIC_COIN_LOOKUP = {
     UUSD:  'USTC'
 }
 
-# OFFCHAIN_COINS_old = [
-#     ACUDOS,
-#     AEVMOS,
-#     AFET,
-#     APLANQ,
-#     UBAND,
-#     UBNT,
-#     BASECRO,
-#     INJ,
-#     NANOLIKE,
-#     NCHEQ,
-#     ORAI,
-#     SWTH,
-#     UAKT,
-#     UATOM,
-#     UCMDX,
-#     UCTK,
-#     UDVPN,
-#     UHUAHUA,
-#     UIRIS,
-#     UJUNO,
-#     UKAVA,
-#     UKUJI,
-#     ULAMB,
-#     UOSMO,
-#     UMARS,
-#     UMED,
-#     UMNTL,
-#     UREGEN,
-#     USCRT,
-#     USOMM,
-#     USTARS,
-#     USTRD,
-#     UUMEE,
-#     UUSD,
-#     UWHALE,
-#     UXKI,
-#     UXPRT,
-#     WBTC,
-#     WETH
-# ]
-
 # To add a coin to the Osmosis swap options, we need 6 things:
 # 1: the denom for this coin, found here: https://cosmos.directory/NAME_HERE/chain
 # 2: the cosmos name is listed in the URL: https://cosmos.directory/THIS_NAME/chain
