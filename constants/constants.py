@@ -63,6 +63,7 @@ AFET      = 'afet'
 APLANQ    = 'aplanq'
 BASECRO   = 'basecro'
 INJ       = 'inj'
+LOKI      = 'loki'
 NANOLIKE  = 'nanolike'
 NCHEQ     = 'ncheq'
 ORAI      = 'orai'
@@ -75,6 +76,7 @@ UBNT      = 'ubnt'
 UBTSG     = 'ubtsg'
 UCMDX     = 'ucmdx'
 UCTK      = 'uctk'
+UDEC      = 'udec'
 UDSM      = 'udsm'
 UDVPN     = 'udvpn'
 UGRAVITON = 'ugraviton'
@@ -125,6 +127,7 @@ FULL_COIN_LOOKUP = {
     'ucny':    'CNTC',
     BASECRO:   'CRO',
     ACUDOS:    'Cudos',
+    UDEC:      'Decentr',
     UDSM:      'Desmos',
     'udkk':    'DKTC',
     UNGM:      'e-Money',
@@ -153,6 +156,7 @@ FULL_COIN_LOOKUP = {
     'umnt':    'MNTC',
     'umyr':    'MYTC',
     'unok':    'NOTC',
+    LOKI:      'Odin protocol',
     ORAI:      'Oraichain',
     UOSMO:     'OSMO',
     UXPRT:     'Persistance',
@@ -269,6 +273,7 @@ CHAIN_DATA = {
             APLANQ:    'channel-492',
             BASECRO:   'channel-5',
             INJ:       'channel-122',
+            LOKI:      'channel-258',
             NANOLIKE:  'channel-53',
             NCHEQ:     'channel-108',
             ORAI:      'channel-216',
@@ -280,6 +285,7 @@ CHAIN_DATA = {
             UBTSG:     'channel-73',
             UCMDX:     'channel-87',
             UCTK:      'channel-146',
+            UDEC:      'channel-181',
             UDSM:      'channel-135',
             UDVPN:     'channel-2',
             UGRAVITON: 'channel-144',
@@ -351,6 +357,12 @@ CHAIN_DATA = {
         'precision':     18,
         'bech32_prefix': 'inj'
     },
+    LOKI: {
+        'coingecko_id':  'odin-protocol',
+        'cosmos_name':   'odin',
+        'precision':     6,
+        'bech32_prefix': 'odin'
+    },
     NANOLIKE: {
         'coingecko_id':  'likecoin',
         'cosmos_name':   'likecoin',
@@ -416,6 +428,12 @@ CHAIN_DATA = {
         'cosmos_name':   'shentu',
         'precision':     6,
         'bech32_prefix': 'shentu'
+    },
+    UDEC: {
+        'coingecko_id':  'decentr',
+        'cosmos_name':   'decentr',
+        'precision':     6,
+        'bech32_prefix': 'decentr'
     },
     UDSM: {
         'coingecko_id':  'desmos',
@@ -580,7 +598,6 @@ for item in CHAIN_DATA[UOSMO]['ibc_channels'].keys():
     if item != ULUNA:
         OFFCHAIN_COINS.append(item)
 
-# Decentr
 # Odin Protocol
 # Starname
 # Sifchain
