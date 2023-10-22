@@ -60,6 +60,7 @@ MAX_VALIDATOR_COUNT = 130
 ACUDOS  = 'acudos'
 AEVMOS  = 'aevmos'
 AFET    = 'afet'
+APLANQ  = 'aplanq'
 CRO     = 'basecro'
 INJ     = 'inj'
 NCHEQ   = 'ncheq'
@@ -144,6 +145,7 @@ FULL_COIN_LOOKUP = {
     UOSMO: 'OSMO',
     UXPRT: 'Persistance',
     'uphp':  'PHTC',
+    APLANQ: 'Planq',
     UREGEN: 'Regen',
     USCRT: 'Secret',
     'usdr':  'SDTC',
@@ -172,6 +174,7 @@ OFFCHAIN_COINS = [
     ACUDOS,
     AEVMOS,
     AFET,
+    APLANQ,
     UBAND,
     UBNT,
     CRO,
@@ -250,6 +253,7 @@ CHAIN_DATA = {
             'acudos': 'channel-298',
             'aevmos': 'channel-204',
             'afet': 'channel-229',
+            APLANQ: 'channel-492',
             'basecro': 'channel-5',
             'inj': 'channel-122',
             'ncheq': 'channel-108',
@@ -309,6 +313,12 @@ CHAIN_DATA = {
         'cosmos_name': 'fetchhub',
         'precision': 18,
         'bech32_prefix': 'fetch'
+    },
+    'aplanq': {
+        'coingecko_id': 'planq',
+        'cosmos_name': 'planq',
+        'precision': 18,
+        'bech32_prefix': 'plq'
     },
     'basecro': {
         'coingecko_id': 'crypto-com-chain',
@@ -510,7 +520,6 @@ CHAIN_DATA = {
     }
 }
 
-# Lambda
 # Planq
 # LikeCoin
 # Bitsong
