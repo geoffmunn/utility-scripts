@@ -172,47 +172,47 @@ BASIC_COIN_LOOKUP = {
     UUSD:  'USTC'
 }
 
-OFFCHAIN_COINS = [
-    ACUDOS,
-    AEVMOS,
-    AFET,
-    APLANQ,
-    UBAND,
-    UBNT,
-    BASECRO,
-    INJ,
-    NANOLIKE,
-    NCHEQ,
-    ORAI,
-    SWTH,
-    UAKT,
-    UATOM,
-    UCMDX,
-    UCTK,
-    UDVPN,
-    UHUAHUA,
-    UIRIS,
-    UJUNO,
-    UKAVA,
-    UKUJI,
-    ULAMB,
-    UOSMO,
-    UMARS,
-    UMED,
-    UMNTL,
-    UREGEN,
-    USCRT,
-    USOMM,
-    USTARS,
-    USTRD,
-    UUMEE,
-    UUSD,
-    UWHALE,
-    UXKI,
-    UXPRT,
-    WBTC,
-    WETH
-]
+# OFFCHAIN_COINS = [
+#     ACUDOS,
+#     AEVMOS,
+#     AFET,
+#     APLANQ,
+#     UBAND,
+#     UBNT,
+#     BASECRO,
+#     INJ,
+#     NANOLIKE,
+#     NCHEQ,
+#     ORAI,
+#     SWTH,
+#     UAKT,
+#     UATOM,
+#     UCMDX,
+#     UCTK,
+#     UDVPN,
+#     UHUAHUA,
+#     UIRIS,
+#     UJUNO,
+#     UKAVA,
+#     UKUJI,
+#     ULAMB,
+#     UOSMO,
+#     UMARS,
+#     UMED,
+#     UMNTL,
+#     UREGEN,
+#     USCRT,
+#     USOMM,
+#     USTARS,
+#     USTRD,
+#     UUMEE,
+#     UUSD,
+#     UWHALE,
+#     UXKI,
+#     UXPRT,
+#     WBTC,
+#     WETH
+# ]
 
 # To add a coin to the Osmosis swap options, we need 6 things:
 # 1: the denom for this coin, found here: https://cosmos.directory/NAME_HERE/chain
@@ -239,7 +239,7 @@ OFFCHAIN_COINS = [
 ###
 
 CHAIN_DATA = {
-    'uluna': {
+    ULUNA: {
         'chain_id':      'columbus-5',
         'ibc_channels':  {
             'uosmo': 'channel-1',
@@ -250,7 +250,7 @@ CHAIN_DATA = {
         'precision':     6,
         'bech32_prefix': 'terra'
     },
-    'uosmo': {
+    UOSMO: {
         'chain_id':      'osmosis-1',
         'ibc_channels':  {
             ACUDOS:   'channel-298',
@@ -300,229 +300,229 @@ CHAIN_DATA = {
         'precision':     6,
         'bech32_prefix': 'osmo'
     },
-    'acudos': {
+    ACUDOS: {
         'coingecko_id':  'cudos',
         'cosmos_name':   'cudos',
         'precision':     18,
         'bech32_prefix': 'cudos'
     },
-    'aevmos': {
+    AEVMOS: {
         'coingecko_id':  'evmos',
         'cosmos_name':   'evmos',
         'precision':     18,
         'bech32_prefix': 'evmos'
     },
-    'afet': {
+    AFET: {
         'coingecko_id':  'fetch-ai',
         'cosmos_name':   'fetchhub',
         'precision':     18,
         'bech32_prefix': 'fetch'
     },
-    'aplanq': {
+    APLANQ: {
         'coingecko_id':  'planq',
         'cosmos_name':   'planq',
         'precision':     18,
         'bech32_prefix': 'plq'
     },
-    'basecro': {
+    BASECRO: {
         'coingecko_id':  'crypto-com-chain',
         'cosmos_name':   'cronos',
         'precision':     8,
         'bech32_prefix': 'cro'
     },
-    'inj': {
+    INJ: {
         'coingecko_id':  'injective-protocol',
         'cosmos_name':   'injective',
         'precision':     18,
         'bech32_prefix': 'inj'
     },
-    'nanolike': {
+    NANOLIKE: {
         'coingecko_id':  'likecoin',
         'cosmos_name':   'likecoin',
         'precision':     9,
         'bech32_prefix': 'like'
     },
-    'ncheq': {
+    NCHEQ: {
         'coingecko_id':  'cheqd-network',
         'cosmos_name':   'cheqd',
         'precision':     9,
         'bech32_prefix': 'cheqd'
     },
-    'orai': {
+    ORAI: {
         'coingecko_id':  'oraichain-token',
         'cosmos_name':   'oraichain',
         'precision':     6,
         'bech32_prefix': 'orai'
     },
-    'swth': {
+    SWTH: {
         'coingecko_id':  'switcheo',
         'cosmos_name':   'carbon',
         'precision':     8,
         'bech32_prefix': 'swth'
     },
-    'uakt': {
+    UAKT: {
         'coingecko_id':  'akash-network',
         'cosmos_name':   'akash',
         'precision':     6,
         'bech32_prefix': 'akash'
     },
-    'uatom': {
+    UATOM: {
         'coingecko_id':  'cosmos',
         'cosmos_name':   'cosmos',
         'precision':     6,
         'bech32_prefix': 'cosmos'
     },
-    'uband': {
+    UBAND: {
         'coingecko_id':  'band-protocol',
         'cosmos_name':   'bandchain',
         'precision':     6,
         'bech32_prefix': 'band'
     },
-    'ubnt': {
+    UBNT: {
         'coingecko_id':  'bluzelle',
         'cosmos_name':   'bluzelle',
         'precision':     6,
         'bech32_prefix': 'bluzelle'
     },
-    'ucmdx': {
+    UCMDX: {
         'coingecko_id':  'comdex',
         'cosmos_name':   'comdex',
         'precision':     6,
         'bech32_prefix': 'comdex'
     },
-    'uctk': {
+    UCTK: {
         'coingecko_id':  'certik',
         'cosmos_name':   'shentu',
         'precision':     6,
         'bech32_prefix': 'shentu'
     },
-    'udvpn': {
+    UDVPN: {
         'coingecko_id':  'sentinel',
         'cosmos_name':   'sentinel',
         'precision':     6,
         'bech32_prefix': 'sent'
     },
-    'uhuahua': {
+    UHUAHUA: {
         'coingecko_id':  'chihuahua-token',
         'cosmos_name':   'chihuahua',
         'precision':     6,
         'bech32_prefix': 'chihuahua'
     },
-    'uiris': {
+    UIRIS: {
         'coingecko_id':  'iris-network',
         'cosmos_name':   'irisnet',
         'precision':     6,
         'bech32_prefix': 'iaa'
     },
-    'ujuno': {
+    UJUNO: {
         'coingecko_id':  'juno-network',
         'cosmos_name':   'juno',
         'precision':     6,
         'bech32_prefix': 'juno'
     },
-    'ukava': {
+    UKAVA: {
         'coingecko_id':  'kava',
         'cosmos_name':   'kava',
         'precision':     6,
         'bech32_prefix': 'kava'
     },
-    'ukuji': {
+    UKUJI: {
         'coingecko_id':  'kujira',
         'cosmos_name':   'kujira',
         'precision':     6,
         'bech32_prefix': 'kujira'
     },
-    'ulamb': {
+    ULAMB: {
         'coingecko_id':  'lambda',
         'cosmos_name':   'lambda',
         'precision':     18,
         'bech32_prefix': 'lamb'
     },
-    'umars': {
+    UMARS: {
         'coingecko_id':  'mars-protocol-a7fcbcfb-fd61-4017-92f0-7ee9f9cc6da3',
         'cosmos_name':   'mars',
         'precision':     6,
         'bech32_prefix': 'mars'
     },
-    'umed': {
+    UMED: {
         'coingecko_id':  'medibloc',
         'cosmos_name':   'panacea',
         'precision':     6,
         'bech32_prefix': 'panacea'
     },
-    'umntl': {
+    UMNTL: {
         'coingecko_id':  'assetmantle',
         'cosmos_name':   'assetmantle',
         'precision':     6,
         'bech32_prefix': 'mantle'
     },
-    'uregen': {
+    UREGEN: {
         'coingecko_id':  'regen',
         'cosmos_name':   'regen',
         'precision':     6,
         'bech32_prefix': 'regen'
     },
-    'uscrt': {
+    USCRT: {
         'coingecko_id':  'secret',
         'cosmos_name':   'secret',
         'precision':     6,
         'bech32_prefix': 'secret'
     },
-    'usomm': {
+    USOMM: {
         'coingecko_id':  'sommelier',
         'cosmos_name':   'sommelier',
         'precision':     6,
         'bech32_prefix': 'somm'
     },
-    'ustars': {
+    USTARS: {
         'coingecko_id':  'stargaze',
         'cosmos_name':   'stargaze',
         'precision':     6,
         'bech32_prefix': 'stars'
     },
-    'ustrd': {
+    USTRD: {
         'coingecko_id':  'stride',
         'cosmos_name':   'stride',
         'precision':     6,
         'bech32_prefix': 'stride'
     },
-    'uumee': {
+    UUMEE: {
         'coingecko_id':  'umee',
         'cosmos_name':   'umee',
         'precision':     6,
         'bech32_prefix': 'umee'
     },
-    'uusd': {
+    UUSD: {
         'coingecko_id':  'terrausd',
         'cosmos_name':   'terra',
         'precision':     6,
         'bech32_prefix': 'terra'
     },
-    'uwhale': {
+    UWHALE: {
         'coingecko_id':  'white-whale',
         'cosmos_name':   'whale',
         'precision':     6,
         'bech32_prefix': 'migaloo'
     },
-    'uxki': {
+    UXKI: {
         'coingecko_id':  'ki',
         'cosmos_name':   'kichain',
         'precision':     6,
         'bech32_prefix': 'ki'
     },
-    'uxprt': {
+    UXPRT: {
         'coingecko_id':  'persistence',
         'cosmos_name':   'persistence',
         'precision':     6,
         'bech32_prefix': 'persistence'
     },
-    'wbtc-satoshi': {
+    WBTC: {
         'coingecko_id':  'bitcoin',
         'cosmos_name':   'axelar',
         'precision':     8,
         'bech32_prefix': 'axelar'
     },
-    'weth-wei': {
+    WETH: {
         'coingecko_id':  'ethereum',
         'cosmos_name':   'axelar',
         'precision':     18,
@@ -530,7 +530,10 @@ CHAIN_DATA = {
     }
 }
 
-# LikeCoin
+OFFCHAIN_COINS = []
+for item in CHAIN_DATA[UOSMO]['ibc_channels'].keys():
+    OFFCHAIN_COINS.append(item)
+
 # Bitsong
 # Graviton
 # Desmos
