@@ -108,6 +108,7 @@ UVDL      = 'uvdl'
 UWHALE    = 'uwhale'
 UXKI      = 'uxki'
 UXPRT     = 'uxprt'
+WAVAX     = 'wavax-wei'
 WBTC      = 'wbtc-satoshi'
 WETH      = 'weth-wei'
 
@@ -185,6 +186,7 @@ FULL_COIN_LOOKUP = {
     UUSD:      'USTC',
     UVDL:      'Vidulum',
     UWHALE:    'Whale',
+    WAVAX:     'wAVAX',
     WBTC:      'wBTC',
     WETH:      'wETH'
 }
@@ -324,6 +326,7 @@ CHAIN_DATA = {
             UWHALE:    'channel-84',
             UXKI:      'channel-77',
             UXPRT:     'channel-4',
+            WAVAX:     'channel-208',
             WBTC:      'channel-208',
             WETH:      'channel-208'
         },
@@ -615,6 +618,12 @@ CHAIN_DATA = {
         'precision':     6,
         'bech32_prefix': 'persistence'
     },
+    WAVAX: {
+        'coingecko_id':  'avalanche-2',
+        'cosmos_name':   'axelar',
+        'precision':     8,
+        'bech32_prefix': 'axelar'
+    },
     WBTC: {
         'coingecko_id':  'bitcoin',
         'cosmos_name':   'axelar',
@@ -634,5 +643,17 @@ for item in CHAIN_DATA[UOSMO]['ibc_channels'].keys():
     if item != ULUNA:
         OFFCHAIN_COINS.append(item)
 
-# Microtick
-# Bidao
+# AXL
+# USDC
+# USDT
+# DAI
+# DOT
+# BNB
+# Matic
+# BUSD
+# FTM
+# Frax
+# Arb
+# Link
+
+
