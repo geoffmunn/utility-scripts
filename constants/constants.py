@@ -83,6 +83,7 @@ UMARS   = 'umars'
 UMED    = 'umed'
 UMNTL   = 'umntl'
 UOSMO   = 'uosmo'
+UREGEN  = 'uregen'
 USCRT   = 'uscrt'
 USOMM   = 'usomm'
 USTARS  = 'ustars'
@@ -139,6 +140,7 @@ FULL_COIN_LOOKUP = {
     'uosmo': 'OSMO',
     'uxprt': 'Persistance',
     'uphp':  'PHTC',
+    UREGEN: 'Regen',
     'uscrt': 'Secret',
     'usdr':  'SDTC',
     'udvpn': 'Sentinel',
@@ -186,6 +188,7 @@ OFFCHAIN_COINS = [
     UMARS,
     UMED,
     UMNTL,
+    UREGEN,
     USCRT,
     USOMM,
     USTARS,
@@ -263,6 +266,7 @@ CHAIN_DATA = {
             'umntl': 'channel-232',
             'uumee': 'channel-184',
             'uosmo': 'channel-1',
+            'uregen': 'channel-8',
             'uscrt': 'channel-88',
             'usomm': 'channel-165',
             'ustars': 'channel-75',
@@ -412,6 +416,12 @@ CHAIN_DATA = {
         'precision': 6,
         'bech32_prefix': 'mantle'
     },
+    'uregen': {
+        'coingecko_id': 'regen',
+        'cosmos_name': 'regen',
+        'precision': 6,
+        'bech32_prefix': 'regen'
+    },
     'uscrt': {
         'coingecko_id': 'secret',
         'cosmos_name': 'secret',
@@ -480,7 +490,6 @@ CHAIN_DATA = {
     }
 }
 
-# Carbon Protocol
 # Regen
 # COMDEX
 # Lambda
