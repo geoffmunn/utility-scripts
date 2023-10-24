@@ -324,19 +324,22 @@ class SwapTransaction(TransactionCore):
             routes = [
                 {
                     "pool_id": str(current_option1['pool_id']),
-                    "token_out_denom": current_option1['token_out_denom']
+                    "token_out_denom": current_option1['token_out_denom'],
+                    'swap_fee': float(current_option1['swap_fee'])
                 },
                 {
                     "pool_id": str(current_option2['pool_id']),
-                    "token_out_denom": current_option2['token_out_denom']
+                    "token_out_denom": current_option2['token_out_denom'],
+                    'swap_fee': float(current_option2['swap_fee'])
                 },
             ]
         else:
             # We have a candidate pool to use in a single transfer
 
             routes = [{
-                "pool_id": str(current_option['pool_id']),
-                "token_out_denom": current_option['token_out_denom']
+                'pool_id': str(current_option['pool_id']),
+                'token_out_denom': current_option['token_out_denom'],
+                'swap_fee': float(current_option['swap_fee'])
             }]
 
         self.ibc_routes = routes
@@ -417,8 +420,6 @@ class SwapTransaction(TransactionCore):
         current_amount = round(current_amount, precision)
         self.min_out   = math.floor(current_amount)
         
-        #print ('min out:', self.min_out)
-        #print ('getting swap details:')
         self.offChainSwap()
 
         # Get the transaction result
