@@ -49,6 +49,7 @@ class TransactionCore():
         self.gas_list:json                           = None
         self.gas_price_url:str                       = None
         self.height:int                              = None
+        self.ibc_routes:list                         = None # Only used by swaps
         self.prices:dict                             = None
         self.sequence:int                            = None
         self.tax_rate:json                           = None
@@ -124,6 +125,8 @@ class TransactionCore():
                     }
 
                     self.prices = requests.get(uri, params = params).json()
+
+                    # Exit this loop
                     retry = False
                     break
 
@@ -333,29 +336,58 @@ class TransactionCore():
     def readableFee(self) -> str:
         """
         Return a description of the fee for the current transaction.
+        If the IBC routes have been populated (ie, this is a swap)l then show them too.
         """
         
+        routes:list = self.ibc_routes
+        if routes is not None:
+            route_messages:list = []
+            max_length:int = 0
+            current_denom = FULL_COIN_LOOKUP[self.swap_denom]
+            for route in routes:
+                denom:str = FULL_COIN_LOOKUP[self.denomTrace(route['token_out_denom'])]
+                swap_fee:str = str(route['swap_fee'] * 100) + '%'
+                msg = f"Converting {current_denom} to {denom} (#{route['pool_id']}) with a swap fee of {swap_fee}."
+                route_messages.append(msg)
+                if len(msg) > max_length:
+                    max_length = len(msg)
+
+                current_denom = denom
+
+            first:bool = True
+            print ('\n')
+            print ('*' * max_length)
+            for route_message in route_messages:
+                if first == False:
+                    print (' ' * (int(max_length / 2) - 3),'⇩')
+                print (route_message)
+
+                first = False
+
+            print ('*' * max_length,'\n')
+
         fee_string:str = ''
         if self.fee is not None and self.fee.amount is not None:
             fee_coins:Coins = self.fee.amount
 
             # Build a human-readable fee description:
-            fee_string = 'The fee is '
-            first      = True
+            fee_string:str = 'The fee is '
+            first:bool     = True
             for fee_coin in fee_coins.to_list():
 
-                amount = divide_raw_balance(fee_coin.amount, fee_coin.denom)
-                amount = ("%.6f" % (amount)).rstrip('0').rstrip('.')
+                amount:float   = divide_raw_balance(fee_coin.amount, fee_coin.denom)
+                amount_str:str = ("%.6f" % (amount)).rstrip('0').rstrip('.')
 
-                denom = self.denomTrace(fee_coin.denom)
+                # Get the readable denom if this is an IBC token
+                denom:str = self.denomTrace(fee_coin.denom)
 
                 if denom in FULL_COIN_LOOKUP:
                     denom = FULL_COIN_LOOKUP[denom]
                     
                 if first == False:
-                    fee_string += ', and ' + str(amount) + ' ' + denom
+                    fee_string += ', and ' + amount_str + ' ' + denom
                 else:
-                    fee_string += str(amount) + ' ' + denom
+                    fee_string += amount_str + ' ' + denom
 
                 first = False
 
