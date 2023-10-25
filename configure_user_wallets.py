@@ -8,6 +8,8 @@ from classes.common import (
 )
 
 from constants.constants import (
+    CHAIN_OSMO,
+    CHAIN_TERRA,
     CONFIG_FILE_NAME,
     ULUNA,
     USER_ACTION_QUIT
@@ -48,8 +50,15 @@ def main():
         user_password:str  = getpass('Secret password (do not forget what this is):')
         is_new_wallet:bool = get_user_choice('You want to generate a new wallet address? (y/n) ', [])
         
+        chain:str = get_user_choice('Is this a Terra Classic address (T) or an Osmosis address (O)? (T/O) ', [CHAIN_TERRA, CHAIN_OSMO])
+
+        if chain == CHAIN_TERRA:
+            prefix:str = 'terra'
+        else:
+            prefix:str = 'osmo'
+
         if is_new_wallet == True:
-            wallet_seed, wallet_address = wallet.newWallet()
+            wallet_seed, wallet_address = wallet.newWallet(prefix)
 
             print (f'Your seed and address for the new wallet "{wallet_name}" are about to be displayed on the screen')
             wallet_continue:bool = get_user_choice('Do you want to continue? (y/n) ', [])

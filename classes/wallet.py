@@ -713,12 +713,12 @@ class UserWallet:
 
         return str(answer)
 
-    def newWallet(self):
+    def newWallet(self, prefix:str):
         """
         Creates a new wallet and returns the seed and address
         """
 
-        mk            = MnemonicKey()
+        mk            = MnemonicKey(prefix = prefix)
         wallet:Wallet = self.terra.wallet(mk)
         
         return mk.mnemonic, wallet.key.acc_address
