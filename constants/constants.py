@@ -47,6 +47,10 @@ USER_ACTION_SWAP_DELEGATE     = 'sd'
 USER_ACTION_WITHDRAW          = 'w'
 USER_ACTION_WITHDRAW_DELEGATE = 'wd'
 
+# Create wallet constants:
+CHAIN_TERRA = 't'
+CHAIN_OSMO  = 'o'
+
 # Validator management constants:
 USER_ACTION_VALIDATOR_DELEGATE           = 'd'
 USER_ACTION_VALIDATOR_LIST_UNDELEGATIONS = 'l'
