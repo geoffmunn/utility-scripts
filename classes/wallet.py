@@ -5,11 +5,10 @@ import cryptocode
 import json
 import requests
 import time
+import traceback
 
 from datetime import datetime
 from dateutil.tz import tz
-
-import traceback
 
 from classes.common import (
     coin_list,
@@ -18,7 +17,7 @@ from classes.common import (
     get_user_choice,
     isDigit,
     isPercentage,
-    multiply_raw_balance,
+    multiply_raw_balance
 )
     
 from constants.constants import (

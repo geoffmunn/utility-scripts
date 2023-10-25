@@ -1,10 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 
-from classes.wallet import UserWallet
-from classes.wallets import UserWallets
-from classes.send_transaction import SendTransaction
-
 from classes.common import (
     check_version,
     get_user_choice
@@ -17,6 +13,10 @@ from constants.constants import (
     USER_ACTION_CONTINUE,
     USER_ACTION_QUIT,
 )
+
+from classes.wallet import UserWallet
+from classes.wallets import UserWallets
+from classes.send_transaction import SendTransaction
 
 def get_send_to_address(user_wallets:UserWallet):
     """

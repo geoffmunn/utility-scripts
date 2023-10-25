@@ -2,17 +2,17 @@ import cryptocode
 from getpass import getpass
 from os.path import exists
 
-from classes.common import (
-    check_version,
-    get_user_choice
-)
-
 from constants.constants import (
     CHAIN_OSMO,
     CHAIN_TERRA,
     CONFIG_FILE_NAME,
     ULUNA,
     USER_ACTION_QUIT
+)
+
+from classes.common import (
+    check_version,
+    get_user_choice
 )
 
 from classes.wallet import UserWallet

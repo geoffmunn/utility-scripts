@@ -4,9 +4,6 @@
 from hashlib import sha256
 import math
 
-from classes.terra_instance import TerraInstance
-from classes.transaction_core import TransactionCore
-
 from constants.constants import (
     BASE_SMART_CONTRACT_ADDRESS,
     CHAIN_DATA,
@@ -14,6 +11,9 @@ from constants.constants import (
     ULUNA,
     UUSD
 )
+
+from classes.terra_instance import TerraInstance
+from classes.transaction_core import TransactionCore
 
 from terra_classic_sdk.client.lcd.api.tx import (
     CreateTxOptions,

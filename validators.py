@@ -1,12 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 
-from datetime import datetime, timezone
-
-from classes.common import (
-    check_version,
-    get_user_choice,
-)
+from datetime import datetime
 
 from constants.constants import (
     GAS_ADJUSTMENT_INCREMENT,
@@ -20,6 +15,11 @@ from constants.constants import (
     USER_ACTION_VALIDATOR_UNDELEGATE,
     USER_ACTION_VALIDATOR_SWITCH,
     WITHDRAWAL_REMAINDER
+)
+
+from classes.common import (
+    check_version,
+    get_user_choice,
 )
 
 from classes.wallet import UserWallet

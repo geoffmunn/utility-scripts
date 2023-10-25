@@ -3,6 +3,12 @@
 
 import copy
 
+from constants.constants import (
+    BASIC_COIN_LOOKUP,
+    FULL_COIN_LOOKUP,
+    ULUNA
+)
+
 from classes.common import (
     check_version,
     divide_raw_balance,
@@ -11,12 +17,6 @@ from classes.common import (
 
 from classes.wallets import UserWallets
 from classes.wallet import UserWallet
-
-from constants.constants import (
-    BASIC_COIN_LOOKUP,
-    FULL_COIN_LOOKUP,
-    ULUNA
-)
 
 def main():
     

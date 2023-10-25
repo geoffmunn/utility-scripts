@@ -5,7 +5,6 @@ import yaml
 
 from getpass import getpass
 from os.path import exists
-from .wallet import UserWallet
 
 from constants.constants import (
     CONFIG_FILE_NAME,
@@ -16,6 +15,8 @@ from constants.constants import (
     USER_ACTION_QUIT,
     UUSD
 )
+
+from classes.wallet import UserWallet
 class UserWallets:
     def __init__(self):
         self.file           = None
