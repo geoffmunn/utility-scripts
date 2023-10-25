@@ -7,7 +7,8 @@ WITHDRAWAL_REMAINDER = 250   # This is the amount of Lunc we want to keep after 
 SEARCH_RETRY_COUNT   = 30    # This is the number of times we will check for a transaction to appear in the chain before deciding it didn't work.
 
 # System settings - these can be changed, but shouldn't be necessary
-GAS_PRICE_URI            = 'https://terra-classic-fcd.publicnode.com/v1/txs/gas_prices'
+#GAS_PRICE_URI            = 'https://terra-classic-fcd.publicnode.com/v1/txs/gas_prices'
+GAS_PRICE_URI            = 'https://rest.cosmos.directory/terra/v1/txs/gas_prices'
 TAX_RATE_URI             = 'https://terra-classic-lcd.publicnode.com/terra/treasury/v1beta1/tax_rate'
 TOKEN_LIST               = 'https://assets.terrarebels.net/cw20/tokens.json'
 CONFIG_FILE_NAME         = 'user_config.yml'
@@ -75,6 +76,7 @@ ROWAN     = 'rowan'
 SWTH      = 'swth'
 UAKT      = 'uakt'
 UATOM     = 'uatom'
+UAXL      = 'uaxl'
 UBAND     = 'uband'
 UBASE     = 'ubase'
 UBNT      = 'ubnt'
@@ -116,11 +118,13 @@ UXPRT     = 'uxprt'
 WAVAX     = 'wavax-wei'
 WBTC      = 'wbtc-satoshi'
 WETH      = 'weth-wei'
+WLINK     = 'link-wei'
 
 # Coin keys and display values:
 # NOTE: This is in display order, not sorted by key
 FULL_COIN_LOOKUP = {
     UAKT:      'Akash',
+    UAXL:      'Axelar',
     UMNTL:     'AssetMantle',
     'uaud':    'AUTC',
     UATOM:     'Atom',
@@ -194,7 +198,8 @@ FULL_COIN_LOOKUP = {
     UWHALE:    'Whale',
     WAVAX:     'wAVAX',
     WBTC:      'wBTC',
-    WETH:      'wETH'
+    WETH:      'wETH',
+    WLINK:     'wLINK'
 }
 
 BASIC_COIN_LOOKUP = {
@@ -232,7 +237,7 @@ CHAIN_DATA = {
         'ibc_channels':  {
             'uosmo': 'channel-1',
         },
-        'lcd_urls':      ['https://terra-classic-fcd.publicnode.com', 'https://rest.cosmos.directory/terra'],
+        'lcd_urls':      ['https://rest.cosmos.directory/terra', 'https://terra-classic-fcd.publicnode.com'],
         'coingecko_id':  'terra-luna',
         'cosmos_name':   'terra',
         'precision':     6,
@@ -254,6 +259,7 @@ CHAIN_DATA = {
             ROWAN:     'channel-47',
             SWTH:      'channel-188',
             UAKT:      'channel-1',
+            UAXL:      'channel-208',
             UATOM:     'channel-0',
             UBAND:     'channel-148',
             UBNT:      'channel-763',
@@ -293,7 +299,8 @@ CHAIN_DATA = {
             UXPRT:     'channel-4',
             WAVAX:     'channel-208',
             WBTC:      'channel-208',
-            WETH:      'channel-208'
+            WETH:      'channel-208',
+            WLINK:     'channel-208'
         },
         'lcd_urls':      ['https://lcd.osmosis.zone'],
         'coingecko_id':  'osmosis',
@@ -384,6 +391,12 @@ CHAIN_DATA = {
         'cosmos_name':   'cosmos',
         'precision':     6,
         'bech32_prefix': 'cosmos'
+    },
+    UAXL: {
+        'coingecko_id':  'axelar',
+        'cosmos_name':   'axelar',
+        'precision':     6,
+        'bech32_prefix': 'axelar'
     },
     UBAND: {
         'coingecko_id':  'band-protocol',
@@ -606,6 +619,12 @@ CHAIN_DATA = {
         'cosmos_name':   'axelar',
         'precision':     18,
         'bech32_prefix': 'axelar'
+    },
+    WLINK: {
+        'coingecko_id':  'chainlink',
+        'cosmos_name':   'axelar',
+        'precision':     8,
+        'bech32_prefix': 'axelar'
     }
 }
 
@@ -614,8 +633,6 @@ for item in CHAIN_DATA[UOSMO]['ibc_channels'].keys():
     if item != ULUNA:
         OFFCHAIN_COINS.append(item)
 
-# AXL
-# USDC
 # USDT
 # DAI
 # DOT
@@ -625,6 +642,5 @@ for item in CHAIN_DATA[UOSMO]['ibc_channels'].keys():
 # FTM
 # Frax
 # Arb
-# Link
 
 
