@@ -56,7 +56,6 @@ class SwapTransaction(TransactionCore):
         self.contract               = None
         self.fee_deductables:float  = None
         self.gas_limit:str          = 'auto'
-        self.ibc_routes:list        = []
         self.max_spread:float       = 0.01
         self.min_out:int            = None
         self.osmosis_pools:dict     = {}
@@ -344,16 +343,9 @@ class SwapTransaction(TransactionCore):
 
         self.ibc_routes = routes
 
-        print ('******************')
-        for route in routes:
-            print (f"{route['token_out_denom']} (#{route['pool_id']})")
-        print ('******************')
         max_spread:float = self.max_spread
-        #if 'max_spread' in IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]:
-        #    max_spread = float(IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['max_spread'])
-
+        
         # Figure out the minimum expected coins for this swap:
-        #fee_multiplier:float = float(IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['fee_multiplier'])
         fee_multiplier:float = 1.1
         
         current_amount:int = self.swap_amount
