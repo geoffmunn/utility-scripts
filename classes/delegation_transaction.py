@@ -1,10 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 
-# from classes.common import (
-#     CHAIN_DATA
-# )
-
 from constants.constants import (
     CHAIN_DATA,
     ULUNA
@@ -12,6 +8,7 @@ from constants.constants import (
 
 from classes.transaction_core import TransactionCore
 from classes.terra_instance import TerraInstance
+
 from terra_classic_sdk.client.lcd.api.tx import (
     CreateTxOptions,
     Tx

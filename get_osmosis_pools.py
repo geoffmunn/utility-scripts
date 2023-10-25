@@ -2,8 +2,6 @@
 #!/usr/bin/python
 
 import sqlite3
-from datetime import datetime
-
 from classes.wallet import UserWallet
 
 from terra_classic_sdk.core.osmosis import Pool, PoolAsset

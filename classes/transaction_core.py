@@ -20,8 +20,6 @@ from constants.constants import (
     UUSD
 )
 
-#from classes.wallet import UserWallet
-
 from terra_classic_sdk.client.lcd import LCDClient
 from terra_classic_sdk.client.lcd.api.tx import (
     Tx

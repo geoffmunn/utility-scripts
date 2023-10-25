@@ -9,7 +9,6 @@ from classes.common import (
 from constants.constants import (
     FULL_COIN_LOOKUP,
     GAS_ADJUSTMENT_SWAPS,
-    OFFCHAIN_COINS,
     USER_ACTION_QUIT
 )
 
@@ -155,7 +154,7 @@ def main():
                 swap_tx.sequence = swap_tx.sequence + 1
                 swap_tx.simulate()
                 print (swap_tx.readableFee())
-                
+
                 swap_tx.swap()
                 swap_tx.broadcast()
 

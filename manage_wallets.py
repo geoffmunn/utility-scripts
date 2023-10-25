@@ -1,12 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 
-from getpass import getpass
-
 from classes.common import (
     check_version,
     get_user_choice,
-    isPercentage,
     multiply_raw_balance
 )
 
@@ -14,8 +11,6 @@ from constants.constants import (
     TERRASWAP_UUSD_TO_ULUNA_ADDRESS,
     ULUNA,
     USER_ACTION_ALL,
-    USER_ACTION_CONTINUE,
-    USER_ACTION_CLEAR,
     USER_ACTION_DELEGATE,
     USER_ACTION_QUIT,
     USER_ACTION_SWAP,

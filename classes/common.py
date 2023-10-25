@@ -3,7 +3,6 @@
 
 import json
 import requests
-
 import traceback
 
 from constants.constants import (
