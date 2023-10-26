@@ -122,6 +122,7 @@ WDAI      = 'dai-wei'
 WDOT      = 'dot-planck'
 WETH      = 'weth-wei'
 WLINK     = 'link-wei'
+WMATIC    = 'wmatic-wei'
 
 # Coin keys and display values:
 # NOTE: This is in display order, not sorted by key
@@ -205,7 +206,8 @@ FULL_COIN_LOOKUP = {
     WDAI:      'wDAI',
     WDOT:      'wDOT',
     WETH:      'wETH',
-    WLINK:     'wLINK'
+    WLINK:     'wLINK',
+    WMATIC:    'wMATIC'
 }
 
 BASIC_COIN_LOOKUP = {
@@ -309,7 +311,8 @@ CHAIN_DATA = {
             WDAI:      'channel-208',
             WDOT:      'channel-208',
             WETH:      'channel-208',
-            WLINK:     'channel-208'
+            WLINK:     'channel-208',
+            WMATIC:    'channel-208'
         },
         'lcd_urls':      ['https://lcd.osmosis.zone'],
         'coingecko_id':  'osmosis',
@@ -649,6 +652,12 @@ CHAIN_DATA = {
     },
     WLINK: {
         'coingecko_id':  'chainlink',
+        'cosmos_name':   'axelar',
+        'precision':     18,
+        'bech32_prefix': 'axelar'
+    },
+    WMATIC: {
+        'coingecko_id':  'matic-network',
         'cosmos_name':   'axelar',
         'precision':     18,
         'bech32_prefix': 'axelar'
