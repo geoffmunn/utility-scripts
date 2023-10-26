@@ -5,6 +5,7 @@
 CHECK_FOR_UPDATES    = True
 WITHDRAWAL_REMAINDER = 250   # This is the amount of Lunc we want to keep after withdrawal and before delegating. You should never delegate the entire balance.
 SEARCH_RETRY_COUNT   = 30    # This is the number of times we will check for a transaction to appear in the chain before deciding it didn't work.
+HIDE_DISABLED_COINS  = True  # Some coins are not currently available. Functionality is mostly there, but swaps etc won't work
 
 # System settings - these can be changed, but shouldn't be necessary
 #GAS_PRICE_URI            = 'https://terra-classic-fcd.publicnode.com/v1/txs/gas_prices'
@@ -722,6 +723,7 @@ for item in CHAIN_DATA[UOSMO]['ibc_channels'].keys():
         OFFCHAIN_COINS.append(item)
 
 # Remove any disabled coin
-for item in DISABLED_COINS:
-    if item in FULL_COIN_LOOKUP:
-        del(FULL_COIN_LOOKUP[item])
+if HIDE_DISABLED_COINS == True:
+    for item in DISABLED_COINS:
+        if item in FULL_COIN_LOOKUP:
+            del(FULL_COIN_LOOKUP[item])
