@@ -581,7 +581,7 @@ CHAIN_DATA = {
     UUSDC: {
         'coingecko_id':  'usd-coin',
         'cosmos_name':   'axelar',
-        'precision':     8,
+        'precision':     6,
         'bech32_prefix': 'axelar'
     },
     UVDL: {
@@ -611,7 +611,7 @@ CHAIN_DATA = {
     WAVAX: {
         'coingecko_id':  'avalanche-2',
         'cosmos_name':   'axelar',
-        'precision':     8,
+        'precision':     18,
         'bech32_prefix': 'axelar'
     },
     WBTC: {
@@ -629,7 +629,7 @@ CHAIN_DATA = {
     WDOT: {
         'coingecko_id':  'polkadot',
         'cosmos_name':   'axelar',
-        'precision':     8,
+        'precision':     10,
         'bech32_prefix': 'axelar'
     },
     WETH: {
