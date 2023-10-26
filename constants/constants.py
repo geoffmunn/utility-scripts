@@ -115,6 +115,7 @@ UVDL      = 'uvdl'
 UWHALE    = 'uwhale'
 UXKI      = 'uxki'
 UXPRT     = 'uxprt'
+WARB      = 'arb-wei'
 WAVAX     = 'wavax-wei'
 WBNB      = 'wbnb-wei'
 WBTC      = 'wbtc-satoshi'
@@ -202,6 +203,7 @@ FULL_COIN_LOOKUP = {
     UUSDC:     'USDC',
     UVDL:      'Vidulum',
     UWHALE:    'Whale',
+    WARB:      'wARB',
     WAVAX:     'wAVAX',
     WBNB:      'wBNB',
     WBTC:      'wBTC',
@@ -309,6 +311,7 @@ CHAIN_DATA = {
             UWHALE:    'channel-84',
             UXKI:      'channel-77',
             UXPRT:     'channel-4',
+            WARB:      'channel-208',
             WAVAX:     'channel-208',
             WBNB:      'channel-208',
             WBTC:      'channel-208',
@@ -620,6 +623,12 @@ CHAIN_DATA = {
         'precision':     6,
         'bech32_prefix': 'persistence'
     },
+    WARB: {
+        'coingecko_id':  'arbitrum',
+        'cosmos_name':   'axelar',
+        'precision':     18,
+        'bech32_prefix': 'axelar'
+    },
     WAVAX: {
         'coingecko_id':  'avalanche-2',
         'cosmos_name':   'axelar',
@@ -686,7 +695,3 @@ OFFCHAIN_COINS = []
 for item in CHAIN_DATA[UOSMO]['ibc_channels'].keys():
     if item != ULUNA:
         OFFCHAIN_COINS.append(item)
-
-# Arb
-
-
