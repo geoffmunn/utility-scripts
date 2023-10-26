@@ -305,20 +305,18 @@ class SwapTransaction(TransactionCore):
         current_option = self.getRoute(self.swap_denom, self.swap_request_denom, self.swap_amount)
 
         if current_option['pool_id'] is None:
-            #print ('no options so far, trying an osmo jump')
             # Now we have to try OSMO jumps
-            #print ('getting denom in:')
             current_option1 = self.getRoute(self.swap_denom, UOSMO, self.swap_amount)
-            #print (f"getting denom out for {current_option1['swap_amount']} {current_option1['denom']}:")
             current_option2 = self.getRoute(UOSMO, self.swap_request_denom, current_option1['swap_amount'])
 
-            #print ('denom in:', current_option1)
-            #print ('denom out:', current_option2)
-
             if current_option2['pool_id'] is None:
-                print (' 🛑 No pool could be found that supported this swap pair.')
-                print ('Exiting...')    
-                exit()
+                current_option1 = self.getRoute(self.swap_denom, UUSD, self.swap_amount)
+                current_option2 = self.getRoute(UUSD, self.swap_request_denom, current_option1['swap_amount'])
+
+                if current_option2['pool_id'] is None: 
+                    print (' 🛑 No pool could be found that supported this swap pair.')
+                    print ('Exiting...')    
+                    exit()
 
             routes = [
                 {
@@ -782,7 +780,7 @@ class SwapTransaction(TransactionCore):
                         #     options.sequence = self.sequence
                         #     print (' 🛎️  Boosting sequence number')
                         # else:
-                        print ('An unexpected error occurred in the swap function:')
+                        print (' 🛑 An unexpected error occurred in the swap function:')
                         print (err)
                         break
                     except Exception as err:
