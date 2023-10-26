@@ -117,6 +117,8 @@ UXKI      = 'uxki'
 UXPRT     = 'uxprt'
 WAVAX     = 'wavax-wei'
 WBTC      = 'wbtc-satoshi'
+WDAI      = 'dai-wei'
+WDOT      = 'dot-planck'
 WETH      = 'weth-wei'
 WLINK     = 'link-wei'
 
@@ -198,6 +200,8 @@ FULL_COIN_LOOKUP = {
     UWHALE:    'Whale',
     WAVAX:     'wAVAX',
     WBTC:      'wBTC',
+    WDAI:      'wDAI',
+    WDOT:      'wDOT',
     WETH:      'wETH',
     WLINK:     'wLINK'
 }
@@ -299,6 +303,8 @@ CHAIN_DATA = {
             UXPRT:     'channel-4',
             WAVAX:     'channel-208',
             WBTC:      'channel-208',
+            WDAI:      'channel-208',
+            WDOT:      'channel-208',
             WETH:      'channel-208',
             WLINK:     'channel-208'
         },
@@ -614,6 +620,18 @@ CHAIN_DATA = {
         'precision':     8,
         'bech32_prefix': 'axelar'
     },
+    WDAI: {
+        'coingecko_id':  'dai',
+        'cosmos_name':   'axelar',
+        'precision':     18,
+        'bech32_prefix': 'axelar'
+    },
+    WDOT: {
+        'coingecko_id':  'polkadot',
+        'cosmos_name':   'axelar',
+        'precision':     8,
+        'bech32_prefix': 'axelar'
+    },
     WETH: {
         'coingecko_id':  'ethereum',
         'cosmos_name':   'axelar',
@@ -623,7 +641,7 @@ CHAIN_DATA = {
     WLINK: {
         'coingecko_id':  'chainlink',
         'cosmos_name':   'axelar',
-        'precision':     8,
+        'precision':     18,
         'bech32_prefix': 'axelar'
     }
 }
@@ -634,8 +652,6 @@ for item in CHAIN_DATA[UOSMO]['ibc_channels'].keys():
         OFFCHAIN_COINS.append(item)
 
 # USDT
-# DAI
-# DOT
 # BNB
 # Matic
 # BUSD
