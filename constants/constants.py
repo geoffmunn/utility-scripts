@@ -121,6 +121,7 @@ WBTC      = 'wbtc-satoshi'
 WDAI      = 'dai-wei'
 WDOT      = 'dot-planck'
 WETH      = 'weth-wei'
+WFTM      = 'wftm-wei'
 WLINK     = 'link-wei'
 WMATIC    = 'wmatic-wei'
 
@@ -206,6 +207,7 @@ FULL_COIN_LOOKUP = {
     WDAI:      'wDAI',
     WDOT:      'wDOT',
     WETH:      'wETH',
+    WFTM:      'wFTM',
     WLINK:     'wLINK',
     WMATIC:    'wMATIC'
 }
@@ -311,6 +313,7 @@ CHAIN_DATA = {
             WDAI:      'channel-208',
             WDOT:      'channel-208',
             WETH:      'channel-208',
+            WFTM:      'channel-208',
             WLINK:     'channel-208',
             WMATIC:    'channel-208'
         },
@@ -650,6 +653,12 @@ CHAIN_DATA = {
         'precision':     18,
         'bech32_prefix': 'axelar'
     },
+    WFTM: {
+        'coingecko_id':  'fantom',
+        'cosmos_name':   'axelar',
+        'precision':     18,
+        'bech32_prefix': 'axelar'
+    },
     WLINK: {
         'coingecko_id':  'chainlink',
         'cosmos_name':   'axelar',
@@ -669,10 +678,6 @@ for item in CHAIN_DATA[UOSMO]['ibc_channels'].keys():
     if item != ULUNA:
         OFFCHAIN_COINS.append(item)
 
-# USDT
-# Matic
-# BUSD
-# FTM
 # Frax
 # Arb
 
