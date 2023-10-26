@@ -221,6 +221,31 @@ BASIC_COIN_LOOKUP = {
     UUSD:  'USTC'
 }
 
+# These coins will be removed from the full coin lookup
+# They used to work, but were disabled by a change on the columbus-5 chain
+DISABLED_COINS = [
+    'uaud',
+    'ucad',
+    'uchf',
+    'ucny',
+    'udkk',
+    'ueur',
+    'ugbp',
+    'uhkd',
+    'uidr',
+    'uinr',
+    'ujpy',
+    'umnt',
+    'umyr',
+    'unok',
+    'uphp',
+    'usdr',
+    'usek',
+    'usgd',
+    'uthb',
+    'utwd'
+]
+
 # To add a coin to the Osmosis swap options, we need 6 things:
 # 1: the denom for this coin, found here: https://cosmos.directory/NAME_HERE/chain
 # 2: the cosmos name is listed in the URL: https://cosmos.directory/THIS_NAME/chain
@@ -695,3 +720,8 @@ OFFCHAIN_COINS = []
 for item in CHAIN_DATA[UOSMO]['ibc_channels'].keys():
     if item != ULUNA:
         OFFCHAIN_COINS.append(item)
+
+# Remove any disabled coin
+for item in DISABLED_COINS:
+    if item in FULL_COIN_LOOKUP:
+        del(FULL_COIN_LOOKUP[item])
