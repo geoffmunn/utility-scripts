@@ -63,10 +63,15 @@ USER_ACTION_VALIDATOR_SWITCH             = 's'
 MAX_VALIDATOR_COUNT = 130
 
 # Coin constants:
+AACRE     = 'aacre'
+AARCH     = 'aarch'
+ACANTO    = 'acanto'
 ACUDOS    = 'acudos'
 AEVMOS    = 'aevmos'
 AFET      = 'afet'
+ANOM      = 'anom'
 APLANQ    = 'aplanq'
+AREBUS    = 'arebus'
 BASECRO   = 'basecro'
 INJ       = 'inj'
 LOKI      = 'loki'
@@ -132,14 +137,17 @@ WMATIC    = 'wmatic-wei'
 # NOTE: This is in display order, not sorted by key
 FULL_COIN_LOOKUP = {
     UAKT:      'Akash',
-    UAXL:      'Axelar',
+    AACRE:     'Arable Protocol',
+    AARCH:     'Archway',
     UMNTL:     'AssetMantle',
-    'uaud':    'AUTC',
     UATOM:     'Atom',
+    'uaud':    'AUTC',
+    UAXL:      'Axelar',
     UBAND:     'Band Protocol',
     UBASE:     'BASE',
     UBTSG:     'Bitsong',
     UBNT:      'Bluzelle',
+    ACANTO:    'Canto',
     SWTH:      'Carbon',
     'ucad':    'CATC',
     NCHEQ:     'Cheqd',
@@ -180,11 +188,13 @@ FULL_COIN_LOOKUP = {
     'umyr':    'MYTC',
     'unok':    'NOTC',
     LOKI:      'Odin protocol',
+    ANOM:      'Onomy Protocol',
     ORAI:      'Oraichain',
     UOSMO:     'OSMO',
     UXPRT:     'Persistance',
     'uphp':    'PHTC',
     APLANQ:    'Planq',
+    AREBUS:    'Rebus',
     UREGEN:    'Regen',
     USCRT:     'Secret',
     'usdr':    'SDTC',
@@ -286,10 +296,15 @@ CHAIN_DATA = {
     UOSMO: {
         'chain_id':      'osmosis-1',
         'ibc_channels':  {
+            AACRE:     'channel-490',
+            AARCH:     'channel-1429',
+            ACANTO:    'channel-550',
             ACUDOS:    'channel-298',
             AEVMOS:    'channel-204',
             AFET:      'channel-229',
+            ANOM:      'channel-525',
             APLANQ:    'channel-492',
+            AREBUS:    'channel-355',
             BASECRO:   'channel-5',
             INJ:       'channel-122',
             LOKI:      'channel-258',
@@ -355,6 +370,24 @@ CHAIN_DATA = {
         'precision':     6,
         'bech32_prefix': 'osmo'
     },
+    AACRE: {
+        'coingecko_id':  'arable-protocol',
+        'cosmos_name':   'acrechain',
+        'precision':     18,
+        'bech32_prefix': 'acre'
+    },
+    AARCH: {
+        'coingecko_id':  'archway',
+        'cosmos_name':   'archway',
+        'precision':     18,
+        'bech32_prefix': 'archway'
+    },
+    ACANTO: {
+        'coingecko_id':  'canto',
+        'cosmos_name':   'canto',
+        'precision':     18,
+        'bech32_prefix': 'canto'
+    },
     ACUDOS: {
         'coingecko_id':  'cudos',
         'cosmos_name':   'cudos',
@@ -373,11 +406,23 @@ CHAIN_DATA = {
         'precision':     18,
         'bech32_prefix': 'fetch'
     },
+    ANOM: {
+        'coingecko_id':  'onomy-protocol',
+        'cosmos_name':   'onomy',
+        'precision':     18,
+        'bech32_prefix': 'onomy'
+    },
     APLANQ: {
         'coingecko_id':  'planq',
         'cosmos_name':   'planq',
         'precision':     18,
         'bech32_prefix': 'plq'
+    },
+    AREBUS: {
+        'coingecko_id':  'rebus',
+        'cosmos_name':   'rebus',
+        'precision':     18,
+        'bech32_prefix': 'rebus'
     },
     BASECRO: {
         'coingecko_id':  'crypto-com-chain',
@@ -722,7 +767,7 @@ for item in CHAIN_DATA[UOSMO]['ibc_channels'].keys():
     if item != ULUNA:
         OFFCHAIN_COINS.append(item)
 
-# Remove any disabled coin
+# Remove any disabled coins
 if HIDE_DISABLED_COINS == True:
     for item in DISABLED_COINS:
         if item in FULL_COIN_LOOKUP:
