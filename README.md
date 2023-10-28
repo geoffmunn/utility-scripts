@@ -12,6 +12,8 @@ Current functionality includes:
 
  * Address book functionality for commonly used addresses
    * Includes LUNC and any supported IBC address
+   * Creation of wallets with the seed details for complete management
+     * Supports osmo and terra addresses
  * Viewing the balances across all your wallets
  * Withdrawing rewards from validator delegations
  * Managing validators
@@ -19,24 +21,105 @@ Current functionality includes:
    * Switching between validators
    * Undelegating from validators
    * Viewing undelegations in progress
- * Swapping USTC for LUNC
  * Staking LUNC with validators
  * Sending LUNC to other addresses
- * Swapping Terra coins (KRT, MNT, IDT etc) to USTC or LUNC where possible
- * IBC integration
-   * Send LUNC to Osmosis addresses
+   * Including Osmosis addresses via IBC integration
  * Support for LUNC chain projects
    * BASE token swapping and sending
- * Support for swapping of non-Terra coins via Osmosis
-   * Atom
-   * Kava
-   * Kujira
-   * Osmosis
-   * Secret
-   * USTC
-   * Whale
-   * Wrapped Bitcoin
-   * Wrapped Ethereum
+
+Swapping support includes the following:
+ * LUNC to USTC on the columbus-5 chain
+ * LUNC to BASE
+ * LUNC to KRTC via contract address
+
+You can also swap via Osmosis, converting LUNC to the following:
+
+ * Akash
+ * Axelar
+ * AssetMantle
+ * Atom (CosmosHub)
+ * Band Protocol
+ * Bitsong
+ * Bluzelle
+ * Carbon
+ * Cheqd
+ * Chihuahua
+ * Comdex
+ * CRO (Crypto.com)
+ * Cudos
+ * Decentr
+ * Desmos
+ * e-Money
+ * Evmos
+ * Fetch.ai
+ * Gravity Bridge
+ * Injective
+ * IRISnet
+ * Ixo Protocol
+ * Juno
+ * Kava
+ * Kichain
+ * Kujira
+ * Lambda
+ * Likecoin
+ * Luna Classic (on Osmosis)
+ * Mars Protocol
+ * Medibloc
+ * Microtick
+ * Odin protocol
+ * Oraichain
+ * OSMO (Osmosis)
+ * Persistance
+ * Planq
+ * Regen
+ * Secret
+ * Sentinel
+ * Shentu
+ * Sifchain
+ * Sommelier
+ * Stargaze
+ * Starname
+ * Stride
+ * Umee
+ * USTC (on Osmosis)
+ * USDC
+ * Vidulum
+ * Whale
+ * Wrapped Arbitum
+ * Wrapped Avalanche
+ * Wrapped BNB
+ * Wrapped Bitcoin
+ * Wrapped DAI
+ * Wrapped Polygon
+ * Wrapped Ethereum
+ * Wrapped Frax
+ * Wrapped FTM
+ * Wrapped Chainlink
+ *  Wrapped Polygon
+
+The full list of minor Terra coins are also supported, but currently do not work:
+
+ * AUTC
+ * CATC
+ * CHTC
+ * CNTC
+ * DKTC
+ * EUTC
+ * GBTC
+ * HKTC
+ * IDTC
+ * INTC
+ * JPTC
+ * KRTC
+ * MNTC
+ * MYTC
+ * NOTC
+ * PHTC
+ * SDTC
+ * SETC
+ * SGTC
+ * THTC
+ * TWTC
 
  ## Why should you use these scripts?
 
@@ -94,7 +177,8 @@ You will be prompted for the following details:
  - **If you said yes - add an entire wallet:**
    - **Secret password (do not forget what this is)** A password to decrypt the seed value. For improved security, please make this a complex password.
     - **Do you want to generate a new wallet address?** Yes or no - if you say 'yes' then a new address and seed phrase will be displayed and used for this wallet.
-    - **Terra address**: Provide the address of the wallet here - it starts with 'terra'.
+    - **Is this a Terra Classic address (T) or an Osmosis address (O)?** If this is a conventional Terra wallet then the address with start with 'terra'. If you want an Osmosis wallet, then it will start with 'osmo'.
+    - **Terra address**: Provide the address of the wallet here - it starts with 'terra' or 'osmo'.
     - **Wallet seed**: Provide the secret seed phrase to generate the wallet here. This is the ONLY time you'll need to provide this - see the security section below.
     - Finished!
 
@@ -144,7 +228,7 @@ You can swap to other non-Terra coins by using the Osmosis exchange functionalit
 
 Fees are kept as low as possible, and slippage defaults to 1%. The swap paths are calculated automatically to use the lowest swap fee pool, and also required a pool with a significantly larger liquidity amount than what is being swapped.
 
-To use this, you need to send an amount of LUNC to your Osmosis address (starting with 'terra'). Once you have some funds there, you can swap them to other coins as well as using them for paying fees.
+To use this, you need to send an amount of LUNC to your Osmosis address (starting with 'osmo'). Once you have some funds there, you can swap them to other coins as well as using them for paying fees.
 
 For the sake of simplicity, LUNC is used as the fee payment option.
 
