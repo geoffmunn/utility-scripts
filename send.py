@@ -269,7 +269,8 @@ def main():
                         else:
                             print ('No broadcast log was available.')
                 else:
-                    print (f' ✅ Sent amount: {wallet.formatUluna(uluna_amount, denom)} {FULL_COIN_LOOKUP[denom]}')
+                    print (f' ✅ Sent amount: {wallet.formatUluna(send_tx.result_sent.amount, denom)} {FULL_COIN_LOOKUP[denom]}')
+                    print (f' ✅ Received amount: {wallet.formatUluna(send_tx.result_received.amount, denom)} {FULL_COIN_LOOKUP[denom]}')
                     print (f' ✅ Tx Hash: {send_tx.broadcast_result.txhash}')
             else:
                 print (' 🛎️  The send transaction could not be completed')
