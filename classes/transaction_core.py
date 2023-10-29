@@ -22,10 +22,14 @@ from constants.constants import (
 
 from terra_classic_sdk.client.lcd import LCDClient
 from terra_classic_sdk.client.lcd.api.tx import (
-    Tx
+    Tx,
+    TxInfo
 )
 from terra_classic_sdk.client.lcd.wallet import Wallet
-from terra_classic_sdk.core.broadcast import BlockTxBroadcastResult
+from terra_classic_sdk.core.broadcast import (
+    BlockTxBroadcastResult,
+    TxLog
+)
 from terra_classic_sdk.core.coin import Coin
 from terra_classic_sdk.core.coins import Coins
 from terra_classic_sdk.core.fee import Fee
@@ -49,6 +53,8 @@ class TransactionCore():
         self.height:int                              = None
         self.ibc_routes:list                         = None # Only used by swaps
         self.prices:dict                             = None
+        self.result_received:Coin                    = None
+        self.result_sent:Coin                        = None
         self.sequence:int                            = None
         self.tax_rate:json                           = None
         self.terra:LCDClient                         = None
@@ -262,6 +268,17 @@ class TransactionCore():
         retry_count = 0
         while True:
             if len(result['txs']) > 0:
+
+                info:TxInfo = result['txs'][0]
+                log:TxLog   = info.logs[0]
+                if 'coin_spent' in log.events_by_type:
+                    self.result_sent = Coin.from_str(log.events_by_type['coin_spent']['amount'][0])
+                if 'coin_received' in log.events_by_type:
+                    self.result_received = Coin.from_str(log.events_by_type['coin_received']['amount'][0])
+                else:
+                    print ('@TODO: events by type not returned, please check the results:')
+                    print (log)
+
                 if result['txs'][0].code == 0:
                     print ('Found the hash!')
                     time.sleep(1)
