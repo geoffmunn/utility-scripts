@@ -296,7 +296,12 @@ class TransactionCore():
             try:
                 if self.gas_price_url is not None:
                     gas_list:json = requests.get(self.gas_price_url).json()
-                    self.gas_list = gas_list
+                    if 'uluna' in gas_list:
+                        self.gas_list = gas_list
+                    else:
+                        self.gas_list = None
+                        print (f' 🛑 Gas prices not returned from {self.gas_price_url}')
+                        exit()
                 else:
                     print (' 🛑 No gas price URL set at self.gas_price_url')
                     exit()
