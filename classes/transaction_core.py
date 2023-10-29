@@ -403,7 +403,7 @@ class TransactionCore():
                 self.tax_rate = tax_rate
             except:
                 print (' 🛑 Error getting the tax rate')
-                print (requests.get(self.gas_price_url).content)
+                print (requests.get(TAX_RATE_URI).content)
                 exit()
 
         return self.tax_rate
