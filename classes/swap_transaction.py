@@ -284,6 +284,13 @@ class SwapTransaction(TransactionCore):
         else:
             is_offchain_swap:bool = False
 
+        # Overrides for some instances:
+        if self.swap_denom == ULUNA and self.swap_request_denom == UUSD and self.terra.chain_id == CHAIN_DATA[ULUNA]['chain_id']:
+            is_offchain_swap = False
+
+        if self.swap_denom == UUSD and self.swap_request_denom == ULUNA and self.terra.chain_id == CHAIN_DATA[ULUNA]['chain_id']:
+            is_offchain_swap = False
+
         return is_offchain_swap
 
     def offChainSimulate(self):
