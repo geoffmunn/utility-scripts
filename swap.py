@@ -27,9 +27,9 @@ def main():
     #         print ('found on channel', i)
     #         print (hashed)
     #         exit
-
-    # exit()
+    #exit()
     
+
     # Check if there is a new version we should be using
     check_version()
     
@@ -176,7 +176,9 @@ def main():
                     print ('No broadcast log was available.')
         else:
             print (f' ✅ Swapped amount: {wallet.formatUluna(swap_tx.swap_amount, swap_tx.swap_denom)} {FULL_COIN_LOOKUP[swap_tx.swap_denom]}')
+            print (f' ✅ Received amount: {wallet.formatUluna(swap_tx.result_received.amount, swap_tx.swap_denom)} {FULL_COIN_LOOKUP[swap_tx.swap_denom]}')
             print (f' ✅ Tx Hash: {swap_tx.broadcast_result.txhash}')
+    
     else:
         print (' 🛎️  The swap transaction could not be completed')
             
