@@ -13,6 +13,7 @@ GAS_PRICE_URI            = 'https://terra-classic-fcd.publicnode.com/v1/txs/gas_
 TAX_RATE_URI             = 'https://terra-classic-lcd.publicnode.com/terra/treasury/v1beta1/tax_rate'
 TOKEN_LIST               = 'https://assets.terrarebels.net/cw20/tokens.json'
 CONFIG_FILE_NAME         = 'user_config.yml'
+DB_FILE_NAME             = 'osmosis.db'
 GAS_ADJUSTMENT           = 3.6
 GAS_ADJUSTMENT_SEND      = 3.6
 GAS_ADJUSTMENT_SWAPS     = 3.6

@@ -2,12 +2,14 @@
 # -*- coding: UTF-8 -*-
 
 import json
+import os
 import requests
 import traceback
 
 from constants.constants import (
     CHAIN_DATA,
     CHECK_FOR_UPDATES,
+    DB_FILE_NAME,
     VERSION_URI
 )
 from terra_classic_sdk.core.coin import Coin
@@ -69,6 +71,26 @@ def check_version():
             return False
     else:
         return True
+    
+def check_database():
+    """
+    Check if the Osmosis database is present.
+    """
+
+    try:
+        if os.stat(DB_FILE_NAME).st_size > 0:
+            return True
+        else:
+            print (' 🛑 The Osmosis pool database is empty...')
+            print (' 🛑 Run \'get_osmosis_pools.py\' first to generate the list.\n')
+            exit()
+    except OSError:
+        print (' 🛑 The Osmosis pool database could not be found...')
+        print (' 🛑 Run \'get_osmosis_pools.py\' first to generate the list.\n')
+        exit()
+
+    return True
+
 
 def coin_list(input: Coins, existingList: dict) -> dict:
     """ 

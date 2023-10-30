@@ -10,6 +10,7 @@ from sqlite3 import Cursor, Connection
 from constants.constants import (
     BASE_SMART_CONTRACT_ADDRESS,
     CHAIN_DATA,
+    DB_FILE_NAME,
     GAS_ADJUSTMENT_SWAPS,
     MIN_OSMO_GAS,
     OFFCHAIN_COINS,
@@ -226,7 +227,7 @@ class SwapTransaction(TransactionCore):
         path_query:str      = "SELECT pool.pool_id, denom, readable_denom, swap_fee FROM pool INNER JOIN asset ON pool.pool_id=asset.pool_id WHERE pool.pool_id IN (SELECT pool_id FROM asset WHERE readable_denom = ?) AND readable_denom=? ORDER BY swap_fee ASC;"
         liquidity_query:str = "SELECT readable_denom, amount FROM asset WHERE pool_id = ?;"
 
-        conn:Connection = sqlite3.connect('osmosis.db')
+        conn:Connection = sqlite3.connect(DB_FILE_NAME)
         cursor:Cursor   = conn.execute(path_query, [denom_in, denom_out])
         rows:list       = cursor.fetchall()
 

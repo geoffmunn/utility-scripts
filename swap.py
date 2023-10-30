@@ -2,6 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 from classes.common import (
+    check_database,
     check_version,
     get_user_choice,
 )
@@ -32,7 +33,7 @@ def main():
 
     # Check if there is a new version we should be using
     check_version()
-    
+    check_database()
     # Get the user wallets
     wallets = UserWallets()
     user_wallets = wallets.loadUserWallets()
@@ -107,7 +108,6 @@ def main():
         result = swap_tx.offChainSimulate()
 
         if result == True:
-
             print (f'You will be swapping {wallet.formatUluna(swap_uluna, coin_from, False)} {FULL_COIN_LOOKUP[coin_from]} for approximately {estimated_amount} {FULL_COIN_LOOKUP[coin_to]}')
             print (swap_tx.readableFee())
             user_choice = get_user_choice('Do you want to continue? (y/n) ', [])
