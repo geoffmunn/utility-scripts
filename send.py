@@ -10,6 +10,7 @@ from constants.constants import (
     CHAIN_DATA,
     FULL_COIN_LOOKUP,
     ULUNA,
+    UOSMO,
     USER_ACTION_CONTINUE,
     USER_ACTION_QUIT,
 )
@@ -194,13 +195,13 @@ def main():
 
         send_tx.receiving_denom = wallet.getDenomByPrefix(send_tx.recipient_prefix)
         
-        if wallet.terra.chain_id == 'columbus-5' and send_tx.recipient_prefix == 'terra':
+        if wallet.terra.chain_id == CHAIN_DATA[ULUNA]['chain_id'] and send_tx.recipient_prefix == CHAIN_DATA[ULUNA]['bech32_prefix']:
             send_tx.is_on_chain = True
             send_tx.revision_number = 1
         else:
             send_tx.is_on_chain = False
             send_tx.source_channel = CHAIN_DATA[wallet.denom]['ibc_channels'][send_tx.receiving_denom]
-            if wallet.terra.chain_id == 'osmosis-1':
+            if wallet.terra.chain_id == CHAIN_DATA[UOSMO]['chain_id']:
                 send_tx.revision_number = 6
             else:
                 send_tx.revision_number = 1
