@@ -25,6 +25,7 @@ from constants.constants import (
     CHAIN_DATA,
     FULL_COIN_LOOKUP,
     UBASE,
+    ULUNA,
     USER_ACTION_CONTINUE,
     USER_ACTION_QUIT,
     UUSD,
@@ -246,7 +247,7 @@ class UserWallet:
                 print (f'Pagination error for {self.name}:', err)
 
             # Add the extra coins (Base etc)
-            if self.terra is not None and self.terra.chain_id == 'columbus-5':
+            if self.terra is not None and self.terra.chain_id == CHAIN_DATA[ULUNA]['chain_id']:
                 coin_balance = self.terra.wasm.contract_query(BASE_SMART_CONTRACT_ADDRESS, {'balance':{'address':self.address}})
                 if int(coin_balance['balance']) > 0:
                     balances[UBASE] = coin_balance['balance']
