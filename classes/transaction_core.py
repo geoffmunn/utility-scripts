@@ -360,14 +360,18 @@ class TransactionCore():
         """
         
         routes:list = self.ibc_routes
-        if routes is not None:
+        if len(routes) > 0:
             route_messages:list = []
-            max_length:int = 0
-            current_denom = FULL_COIN_LOOKUP[self.swap_denom]
+            max_length:int      = 0
+
+            # We need this just for readability purposes
+            current_denom:str = FULL_COIN_LOOKUP[self.swap_denom]
             for route in routes:
-                denom:str = FULL_COIN_LOOKUP[self.denomTrace(route['token_out_denom'])]
+
+                denom:str    = FULL_COIN_LOOKUP[self.denomTrace(route['token_out_denom'])]
                 swap_fee:str = str(route['swap_fee'] * 100) + '%'
-                msg = f"Converting {current_denom} to {denom} (#{route['pool_id']}) with a swap fee of {swap_fee}."
+                msg          = f"Converting {current_denom} to {denom} (#{route['pool_id']}) with a swap fee of {swap_fee}."
+
                 route_messages.append(msg)
                 if len(msg) > max_length:
                     max_length = len(msg)
