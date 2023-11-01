@@ -15,6 +15,7 @@ from constants.constants import (
     GAS_ADJUSTMENT_SWAPS,
     MIN_OSMO_GAS,
     OFFCHAIN_COINS,
+    OSMOSIS_FEE_MULTIPLIER,
     TERRASWAP_UKRW_TO_ULUNA_ADDRESS,
     TERRASWAP_ULUNA_TO_UUSD_ADDRESS,
     TERRASWAP_UUSD_TO_ULUNA_ADDRESS,
@@ -353,7 +354,7 @@ class SwapTransaction(TransactionCore):
         max_spread:float = self.max_spread
         
         # Figure out the minimum expected coins for this swap:
-        fee_multiplier:float = GAS_ADJUSTMENT_OSMOSIS
+        fee_multiplier:float = OSMOSIS_FEE_MULTIPLIER
         
         current_amount:int = self.swap_amount
         current_denom:str  = self.swap_denom
@@ -517,7 +518,7 @@ class SwapTransaction(TransactionCore):
                 fee            = self.fee,
                 gas            = self.gas_limit,
                 #gas_adjustment = IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['gas_adjustment'],
-                gas_adjustment = 1.5,
+                gas_adjustment = GAS_ADJUSTMENT_OSMOSIS,
                 msgs           = [tx_msg],
                 sequence       = self.sequence
             )

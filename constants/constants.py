@@ -12,16 +12,21 @@ GAS_PRICE_URI            = 'https://terra-classic-fcd.publicnode.com/v1/txs/gas_
 #GAS_PRICE_URI            = 'https://rest.cosmos.directory/terra/v1/txs/gas_prices'
 TAX_RATE_URI             = 'https://terra-classic-lcd.publicnode.com/terra/treasury/v1beta1/tax_rate'
 TOKEN_LIST               = 'https://assets.terrarebels.net/cw20/tokens.json'
+
+# File names:
 CONFIG_FILE_NAME         = 'user_config.yml'
 DB_FILE_NAME             = 'osmosis.db'
+VERSION_URI              = 'https://raw.githubusercontent.com/geoffmunn/utility-scripts/main/version.json'
+
+# Gas adjustments and other values
 GAS_ADJUSTMENT           = 3.6
 GAS_ADJUSTMENT_SEND      = 3.6
 GAS_ADJUSTMENT_SWAPS     = 3.6
-GAS_ADJUSTMENT_OSMOSIS   = 1.1
+GAS_ADJUSTMENT_OSMOSIS   = 1.5
 GAS_ADJUSTMENT_INCREMENT = 0.1
 MAX_GAS_ADJUSTMENT       = 4
-VERSION_URI              = 'https://raw.githubusercontent.com/geoffmunn/utility-scripts/main/version.json'
 MIN_OSMO_GAS             = 0.0025
+OSMOSIS_FEE_MULTIPLIER   = 1.5
 
 # Swap contracts can be found here
 # https://assets.terra.money/cw20/pairs.dex.json
