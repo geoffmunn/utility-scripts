@@ -11,6 +11,7 @@ from constants.constants import (
     BASE_SMART_CONTRACT_ADDRESS,
     CHAIN_DATA,
     DB_FILE_NAME,
+    GAS_ADJUSTMENT_OSMOSIS,
     GAS_ADJUSTMENT_SWAPS,
     MIN_OSMO_GAS,
     OFFCHAIN_COINS,
@@ -352,7 +353,7 @@ class SwapTransaction(TransactionCore):
         max_spread:float = self.max_spread
         
         # Figure out the minimum expected coins for this swap:
-        fee_multiplier:float = 1.1
+        fee_multiplier:float = GAS_ADJUSTMENT_OSMOSIS
         
         current_amount:int = self.swap_amount
         current_denom:str  = self.swap_denom

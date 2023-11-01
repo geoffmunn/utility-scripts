@@ -17,6 +17,7 @@ DB_FILE_NAME             = 'osmosis.db'
 GAS_ADJUSTMENT           = 3.6
 GAS_ADJUSTMENT_SEND      = 3.6
 GAS_ADJUSTMENT_SWAPS     = 3.6
+GAS_ADJUSTMENT_OSMOSIS   = 1.1
 GAS_ADJUSTMENT_INCREMENT = 0.1
 MAX_GAS_ADJUSTMENT       = 4
 VERSION_URI              = 'https://raw.githubusercontent.com/geoffmunn/utility-scripts/main/version.json'
