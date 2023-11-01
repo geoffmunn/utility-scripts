@@ -2,11 +2,16 @@
 #!/usr/bin/python
 
 import sqlite3
+
+from constants.constants import (
+    DB_FILE_NAME
+)
+
 from classes.wallet import UserWallet
 
 from terra_classic_sdk.core.osmosis import Pool, PoolAsset
 
-conn = sqlite3.connect('osmosis.db')
+conn = sqlite3.connect(DB_FILE_NAME)
 print ("Opened database successfully")
 
 # Create a terra object and get the Osmosis pools
