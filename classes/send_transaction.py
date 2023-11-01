@@ -161,7 +161,7 @@ class SendTransaction(TransactionCore):
         try:
             tx:Tx = None
 
-            if self.terra.chain_id == 'columbus-5':
+            if self.terra.chain_id == CHAIN_DATA[ULUNA]['chain_id']:
                 revision_number = 1
             else:
                 revision_number = 6
@@ -332,7 +332,7 @@ class SendTransaction(TransactionCore):
             # We'll use uluna as the preferred fee currency just to keep things simple
             
             # If we are sending from an offChain network, then the fee needs to be converted to IBC values
-            if self.terra.chain_id != 'columbus-5':
+            if self.terra.chain_id != CHAIN_DATA[ULUNA]['chain_id']:
                 self.fee = self.calculateFee(requested_fee, ULUNA, True)
             else:
                 self.fee = self.calculateFee(requested_fee, ULUNA)    
