@@ -490,10 +490,10 @@ class SwapTransaction(TransactionCore):
             #print ('should look like this:', IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['token_in'])
             #print ('should look like this: ibc/57AA1A70A4BC9769C525EBF6386F7A21536E04A79D62E1981EFCEF9428EBB205')
             
-            if self.swap_denom != 'uosmo':
+            if self.swap_denom != UOSMO:
                 coin_denom = 'ibc/' + sha256(f'transfer/{channel_id}/{self.swap_denom}'.encode('utf-8')).hexdigest().upper()
             else:
-                coin_denom = 'uosmo'
+                coin_denom = UOSMO
 
             #print ('we will be using', coin_denom)
 
