@@ -254,19 +254,19 @@ class TransactionCore():
         """
 
         # Store the current block here - needed for transaction searches
-        self.height:int = int(self.terra.tendermint.block_info()['block']['header']['height']) - 1
-
-        transaction_found:bool = False
-
-        result:dict = self.terra.tx.search([
-            ("message.sender", self.current_wallet.key.acc_address),
-            ("message.recipient", self.current_wallet.key.acc_address),
-            ('tx.hash', self.broadcast_result.txhash),
-            ('tx.height', self.height)
-        ])
-
         retry_count = 0
         while True:
+            self.height:int = int(self.terra.tendermint.block_info()['block']['header']['height']) - 1
+
+            transaction_found:bool = False
+
+            result:dict = self.terra.tx.search([
+                ("message.sender", self.current_wallet.key.acc_address),
+                ("message.recipient", self.current_wallet.key.acc_address),
+                ('tx.hash', self.broadcast_result.txhash),
+                ('tx.height', self.height)
+            ])
+
             if len(result['txs']) > 0:
 
                 info:TxInfo = result['txs'][0]
@@ -292,7 +292,7 @@ class TransactionCore():
             retry_count += 1
 
             if retry_count <= SEARCH_RETRY_COUNT:
-                print ('Tx hash not found...')
+                print (f'Tx hash not found... attempt {retry_count}/{SEARCH_RETRY_COUNT}')
                 print (result)
                 time.sleep(1)
             else:
