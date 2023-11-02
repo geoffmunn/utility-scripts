@@ -47,17 +47,17 @@ from terra_classic_sdk.exceptions import LCDResponseError
 from terra_classic_sdk.key.mnemonic import MnemonicKey
 class UserWallet:
     def __init__(self):
-        self.address:str               = ''
-        self.balances:dict             = None
-        self.delegations:dict          = {}
-        self.denom:str                 = ''
-        self.denom_traces:dict         = {}
-        self.undelegations:dict        = {}
-        self.name:str                  = ''
-        self.prefix:str                = ''
-        self.seed:str                  = ''
-        self.terra:LCDClient           = None
-        self.validated: bool           = False
+        self.address:str        = ''
+        self.balances:dict      = None
+        self.delegations:dict   = {}
+        self.denom:str          = ''
+        self.denom_traces:dict  = {}
+        self.undelegations:dict = {}
+        self.name:str           = ''
+        self.prefix:str         = ''
+        self.seed:str           = ''
+        self.terra:LCDClient    = None
+        self.validated: bool    = False
         
     def __iter_delegator_result__(self, delegator:Delegation) -> dict:
         """
