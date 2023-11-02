@@ -15,7 +15,6 @@ from constants.constants import (
     FULL_COIN_LOOKUP,
     GAS_PRICE_URI,
     SEARCH_RETRY_COUNT,
-    TAX_RATE_URI,
     ULUNA,
     UUSD
 )
@@ -419,17 +418,10 @@ class TransactionCore():
     
     def taxRate(self) -> json:
         """
-        Make a JSON request for the tax rate, and store it against this LCD client instance.
+        Query the terra treasury object for the current tax rate.
+        We are not caching it so that tax changes will be automatically picked up.
         """
 
-        if self.tax_rate is None:
-
-            try:
-                tax_rate:json = requests.get(TAX_RATE_URI).json()
-                self.tax_rate = tax_rate
-            except:
-                print (' 🛑 Error getting the tax rate')
-                print (requests.get(TAX_RATE_URI).content)
-                exit()
+        self.tax_rate = float(self.terra.treasury.tax_rate())
 
         return self.tax_rate

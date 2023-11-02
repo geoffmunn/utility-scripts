@@ -10,7 +10,6 @@ HIDE_DISABLED_COINS  = True  # Some coins are not currently available. Functiona
 # System settings - these can be changed, but shouldn't be necessary
 GAS_PRICE_URI            = 'https://terra-classic-fcd.publicnode.com/v1/txs/gas_prices'
 #GAS_PRICE_URI            = 'https://rest.cosmos.directory/terra/v1/txs/gas_prices'
-TAX_RATE_URI             = 'https://terra-classic-lcd.publicnode.com/terra/treasury/v1beta1/tax_rate'
 TOKEN_LIST               = 'https://assets.terrarebels.net/cw20/tokens.json'
 
 # File names:
