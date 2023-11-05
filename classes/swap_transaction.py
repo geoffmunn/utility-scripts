@@ -651,7 +651,7 @@ class SwapTransaction(TransactionCore):
             if self.swap_denom == UBASE:
                 self.tax = None
             else:
-                self.tax = int(math.ceil(self.swap_amount * float(self.tax_rate['tax_rate'])))
+                self.tax = int(math.ceil(self.swap_amount * float(self.tax_rate)))
 
             # Build a fee object
             if fee_denom == ULUNA and self.swap_denom == ULUNA:
