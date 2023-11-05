@@ -359,7 +359,7 @@ class TransactionCore():
         """
         
         routes:list = self.ibc_routes
-        if len(routes) > 0:
+        if routes is not None and len(routes) > 0:
             route_messages:list = []
             max_length:int      = 0
 
