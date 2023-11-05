@@ -420,8 +420,13 @@ class TransactionCore():
         """
         Query the terra treasury object for the current tax rate.
         We are not caching it so that tax changes will be automatically picked up.
+
+        If this is not a columbus-5 (Luna Classic) chain, then assume the tax rate is zero.
         """
 
-        self.tax_rate = float(self.terra.treasury.tax_rate())
+        if self.terra.chain_id == CHAIN_DATA[ULUNA]['chain_id']:
+            self.tax_rate = float(self.terra.treasury.tax_rate())
+        else:
+            self.tax_rate = 0
 
         return self.tax_rate
