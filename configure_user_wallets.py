@@ -80,8 +80,8 @@ def main():
         wallet_seed_encrypted:str = cryptocode.encrypt(wallet_seed, user_password)
 
     # Get the user configuration details from the default location
-    file_exists = exists(CONFIG_FILE_NAME)
-    data:list   = {}
+    file_exists:bool = exists(CONFIG_FILE_NAME)
+    data:list        = {}
 
     if file_exists:
         with open(CONFIG_FILE_NAME, 'r') as file:
