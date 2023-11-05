@@ -716,7 +716,7 @@ class SwapTransaction(TransactionCore):
                     tx_msg = MsgExecuteContract(
                         sender      = self.current_wallet.key.acc_address,
                         contract    = self.contract,
-                        execute_msg = {
+                        msg = {
                             "buy": {"affiliate": ""}
                         },
                         coins       = Coins(str(swap_amount) + self.swap_denom)
@@ -733,7 +733,7 @@ class SwapTransaction(TransactionCore):
                     tx_msg = MsgExecuteContract(
                         sender      = self.current_wallet.key.acc_address,
                         contract    = self.contract,
-                        execute_msg = {
+                        msg = {
                             "burn": {"amount": str(swap_amount)}
                         }
                     )
@@ -748,7 +748,7 @@ class SwapTransaction(TransactionCore):
                     tx_msg = MsgExecuteContract(
                         sender      = self.current_wallet.key.acc_address,
                         contract    = self.contract,
-                        execute_msg = {
+                        msg = {
                             'swap': {
                                 'belief_price': str(self.belief_price),
                                 'max_spread': str(self.max_spread),
