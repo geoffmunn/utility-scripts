@@ -292,7 +292,6 @@ class TransactionCore():
 
             if retry_count <= SEARCH_RETRY_COUNT:
                 print (f'Tx hash not found... attempt {retry_count}/{SEARCH_RETRY_COUNT}')
-                print (result)
                 time.sleep(1)
             else:
                 break
