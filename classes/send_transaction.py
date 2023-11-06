@@ -91,7 +91,7 @@ class SendTransaction(TransactionCore):
                 msg = MsgExecuteContract(
                     sender      = self.current_wallet.key.acc_address,
                     contract    = BASE_SMART_CONTRACT_ADDRESS,
-                    execute_msg = {
+                    msg = {
                         "transfer": {
                             "amount": str(send_amount),
                             "recipient": self.recipient_address
