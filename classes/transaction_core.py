@@ -270,10 +270,11 @@ class TransactionCore():
 
                 info:TxInfo = result['txs'][0]
                 log:TxLog   = info.logs[0]
+                
                 if 'coin_spent' in log.events_by_type:
                     self.result_sent = Coin.from_str(log.events_by_type['coin_spent']['amount'][0])
                 if 'coin_received' in log.events_by_type:
-                    self.result_received = Coin.from_str(log.events_by_type['coin_received']['amount'][0])
+                    self.result_received = Coin.from_str(log.events_by_type['coin_received']['amount'][-1])
                 else:
                     print ('@TODO: events by type not returned, please check the results:')
                     print (log)
