@@ -271,11 +271,25 @@ class TransactionCore():
                 info:TxInfo = result['txs'][0]
                 log:TxLog   = info.logs[0]
                 
+                log_found:bool = False
                 if 'coin_spent' in log.events_by_type:
                     self.result_sent = Coin.from_str(log.events_by_type['coin_spent']['amount'][0])
+                    log_found = True
                 if 'coin_received' in log.events_by_type:
                     self.result_received = Coin.from_str(log.events_by_type['coin_received']['amount'][-1])
-                else:
+                    log_found = True
+                if 'message' in log.events_by_type:
+                    if 'module' in log.events_by_type['message'] and log.events_by_type['message']['module'][0] == 'governance':
+                        self.result_sent     = None
+                        self.result_received = None
+                        log_found = True
+                if 'wasm' in log.events_by_type:
+                    if 'action' in log.events_by_type['wasm'] and log.events_by_type['wasm']['action'][0] == 'transfer':
+                        self.result_sent     = Coin.from_str(f"{log.events_by_type['wasm']['amount'][0]}{self.denom}")
+                        self.result_received = Coin.from_str(f"{log.events_by_type['wasm']['amount'][0]}{self.denom}")
+                        log_found = True
+
+                if log_found == False:
                     print ('@TODO: events by type not returned, please check the results:')
                     print (log)
 
