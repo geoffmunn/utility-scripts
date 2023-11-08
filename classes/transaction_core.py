@@ -272,17 +272,31 @@ class TransactionCore():
                 log:TxLog   = info.logs[0]
                 
                 log_found:bool = False
-                if 'coin_spent' in log.events_by_type:
-                    self.result_sent = Coin.from_str(log.events_by_type['coin_spent']['amount'][0])
-                    log_found = True
-                if 'coin_received' in log.events_by_type:
-                    self.result_received = Coin.from_str(log.events_by_type['coin_received']['amount'][-1])
-                    log_found = True
+                # Swaps:
+                if 'wasm' in log.events_by_type:
+                    if 'action' in log.events_by_type['wasm'] and log.events_by_type['wasm']['action'][0] == 'swap':
+                        self.result_sent = Coin.from_str(log.events_by_type['coin_spent']['amount'][0])
+                        self.result_received = Coin.from_str(log.events_by_type['coin_received']['amount'][-1])
+                        log_found = True
+                
                 if 'message' in log.events_by_type:
+                    # Governance votes
                     if 'module' in log.events_by_type['message'] and log.events_by_type['message']['module'][0] == 'governance':
                         self.result_sent     = None
                         self.result_received = None
                         log_found = True
+                    # Staking/Unstaking
+                    if 'module' in log.events_by_type['message'] and log.events_by_type['message']['module'][0] == 'staking':
+                        self.result_sent = None
+                        coin_list:Coins = Coins.from_str(log.events_by_type['coin_spent']['amount'][0])
+                        # Unstaking will return a bunch of random coins, but we only want the uluna coin
+                        coin:Coin
+                        for coin in coin_list:
+                            if coin.denom == ULUNA:
+                                self.result_received = coin
+                                break
+                        log_found = True
+                # Send transactions
                 if 'wasm' in log.events_by_type:
                     if 'action' in log.events_by_type['wasm'] and log.events_by_type['wasm']['action'][0] == 'transfer':
                         self.result_sent     = Coin.from_str(f"{log.events_by_type['wasm']['amount'][0]}{self.denom}")
