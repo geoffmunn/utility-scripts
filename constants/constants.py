@@ -68,6 +68,20 @@ USER_ACTION_VALIDATOR_SWITCH             = 's'
 # Max number of validators that Luna Classic allows
 MAX_VALIDATOR_COUNT = 130
 
+# Governance constants:
+PROPOSAL_STATUS_UNSPECIFIED    = 0
+PROPOSAL_STATUS_DEPOSIT_PERIOD = 1
+PROPOSAL_STATUS_VOTING_PERIOD  = 2
+PROPOSAL_STATUS_PASSED         = 3
+PROPOSAL_STATUS_REJECTED       = 4
+PROPOSAL_STATUS_FAILED         = 5
+
+PROPOSAL_VOTE_EMPTY        = 0
+PROPOSAL_VOTE_YES          = 1
+PROPOSAL_VOTE_ABSTAIN      = 2
+PROPOSAL_VOTE_NO           = 3
+PROPOSAL_VOTE_NO_WITH_VETO = 4
+
 # Coin constants:
 AACRE     = 'aacre'
 AARCH     = 'aarch'
