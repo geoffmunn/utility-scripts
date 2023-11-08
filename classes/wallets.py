@@ -112,10 +112,11 @@ class UserWallets:
             if len(str(ustc_reward)) > label_widths[3]:
                 label_widths[3] = len(str(ustc_reward))
 
-            if ULUNA in balances:
-                formatted_val = str(wallet.formatUluna(balances[ULUNA], ULUNA, False))
-                if len(formatted_val) > label_widths[4]:
-                    label_widths[4] = len(formatted_val)
+            if balances is not None:
+                if ULUNA in balances:
+                    formatted_val = str(wallet.formatUluna(balances[ULUNA], ULUNA, False))
+                    if len(formatted_val) > label_widths[4]:
+                        label_widths[4] = len(formatted_val)
 
         padding_str:str   = ' ' * 100
         header_string:str = ' Number |'
@@ -171,36 +172,40 @@ class UserWallets:
                 
                 wallet_name_str = wallet_name + padding_str[0:label_widths[1] - len(wallet_name)]  
 
-                uluna_reward:int  = 0
-                uluna_balance:int = 0
-                ustc_reward:int   = 0
-                
-                if delegations is not None:
-                    for validator in delegations:
-                        if ULUNA in delegations[validator]['rewards']:
-                            uluna_reward += delegations[validator]['rewards'][ULUNA]
-                        if UUSD in delegations[validator]['rewards']:
-                            ustc_reward += delegations[validator]['rewards'][UUSD]
+                if wallet.balances is not None:
+                    uluna_reward:int  = 0
+                    uluna_balance:int = 0
+                    ustc_reward:int   = 0
+                    
+                    if delegations is not None:
+                        for validator in delegations:
+                            if ULUNA in delegations[validator]['rewards']:
+                                uluna_reward += delegations[validator]['rewards'][ULUNA]
+                            if UUSD in delegations[validator]['rewards']:
+                                ustc_reward += delegations[validator]['rewards'][UUSD]
 
-                lunc_str = str(wallet.formatUluna(uluna_reward, ULUNA, False))
-                if label_widths[2] - len(str(lunc_str)) > 0:
-                    lunc_str += padding_str[0:(label_widths[2] - (len(str(lunc_str))))]
-                
-                if ULUNA in wallet.balances:
-                    uluna_balance = str(wallet.formatUluna(wallet.balances[ULUNA], ULUNA, False))
-                    if label_widths[4] - len(str(uluna_balance)) > 0:
-                        uluna_balance += padding_str[0:(label_widths[4] - (len(str(uluna_balance))))]
+                    lunc_str = str(wallet.formatUluna(uluna_reward, ULUNA, False))
+                    if label_widths[2] - len(str(lunc_str)) > 0:
+                        lunc_str += padding_str[0:(label_widths[2] - (len(str(lunc_str))))]
+                    
+                    
+                    if ULUNA in wallet.balances:
+                        uluna_balance = str(wallet.formatUluna(wallet.balances[ULUNA], ULUNA, False))
+                        if label_widths[4] - len(str(uluna_balance)) > 0:
+                            uluna_balance += padding_str[0:(label_widths[4] - (len(str(uluna_balance))))]
+                    else:
+                        uluna_balance = padding_str[0:label_widths[4]]
+
+                    if UUSD in wallet.balances:
+                        ustc_str = str(wallet.formatUluna(ustc_reward, UUSD, False))
+                        if label_widths[3] - len(str(ustc_str)) > 0:
+                            ustc_str += padding_str[0:(label_widths[3] - (len(str(ustc_str))))]
+                    else:
+                        ustc_str = padding_str[0:label_widths[3]]
+
+                    print (f"{count_str}{glyph} | {wallet_name_str} | {uluna_balance} | {lunc_str} | {ustc_str}")
                 else:
-                    uluna_balance = padding_str[0:label_widths[4]]
-
-                if UUSD in wallet.balances:
-                    ustc_str = str(wallet.formatUluna(ustc_reward, UUSD, False))
-                    if label_widths[3] - len(str(ustc_str)) > 0:
-                        ustc_str += padding_str[0:(label_widths[3] - (len(str(ustc_str))))]
-                else:
-                    ustc_str = padding_str[0:label_widths[3]]
-
-                print (f"{count_str}{glyph} | {wallet_name_str} | {uluna_balance} | {lunc_str} | {ustc_str}")
+                    print (f"{count_str}{glyph} | {wallet_name_str}")
                 
             print (horizontal_spacer + '\n')
                 
