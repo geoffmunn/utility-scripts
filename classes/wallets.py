@@ -71,52 +71,60 @@ class UserWallets:
 
         return self.addresses
     
-    def getUserMultiChoice(self, question:str) -> dict|str:
+    def getUserMultiChoice(self, question:str, options:dict) -> dict|str:
         """
         Get multiple user selections from a list.
         This is a custom function because the options are specific to this list.
+
+        Options are:
+        {
+          'display': 'balances', 'votes'
+          'proposal_id': proposal_id (for use when display = votes)   
+        }
         """
 
         label_widths:list = []
         label_widths.append(len('Number'))
         label_widths.append(len('Wallet name'))
-        label_widths.append(len('LUNC'))
-        label_widths.append(len('USTC'))
-        label_widths.append(len('Available'))
+        if options['display'] == 'balances':
+            label_widths.append(len('LUNC'))
+            label_widths.append(len('USTC'))
+            label_widths.append(len('Available'))
 
         for wallet_name in self.wallets:
             wallet:UserWallet = self.wallets[wallet_name]
 
-            # Get the delegations and balances for this wallet
-            delegations:dict = wallet.delegations
-            balances:dict    = wallet.balances
+            if options['display'] == 'balances':
+                # Get the delegations and balances for this wallet
+                delegations:dict = wallet.delegations
+                balances:dict    = wallet.balances
 
-            # Initialise the reward values
-            ulunc_reward:int = 0
-            ustc_reward:int  = 0
+                # Initialise the reward values
+                ulunc_reward:int = 0
+                ustc_reward:int  = 0
 
-            if delegations is not None:
-                for validator in delegations:
-                    if ULUNA in delegations[validator]['rewards']:
-                        ulunc_reward += float(wallet.formatUluna(delegations[validator]['rewards'][ULUNA], ULUNA, False))
-                                            
-                    if UUSD in delegations[validator]['rewards']:
-                        ustc_reward += float(wallet.formatUluna(delegations[validator]['rewards'][UUSD], UUSD, False))
+                if delegations is not None:
+                    for validator in delegations:
+                        if ULUNA in delegations[validator]['rewards']:
+                            ulunc_reward += float(wallet.formatUluna(delegations[validator]['rewards'][ULUNA], ULUNA, False))
+                                                
+                        if UUSD in delegations[validator]['rewards']:
+                            ustc_reward += float(wallet.formatUluna(delegations[validator]['rewards'][UUSD], UUSD, False))
 
-            if len(wallet_name) > label_widths[1]:
-                label_widths[1] = len(wallet_name)
+                if len(wallet_name) > label_widths[1]:
+                    label_widths[1] = len(wallet_name)
 
-            if len(str(ulunc_reward)) > label_widths[2]:
-                label_widths[2] = len(str(ulunc_reward))
+                if len(str(ulunc_reward)) > label_widths[2]:
+                    label_widths[2] = len(str(ulunc_reward))
 
-            if len(str(ustc_reward)) > label_widths[3]:
-                label_widths[3] = len(str(ustc_reward))
+                if len(str(ustc_reward)) > label_widths[3]:
+                    label_widths[3] = len(str(ustc_reward))
 
-            if balances is not None:
-                if ULUNA in balances:
-                    formatted_val = str(wallet.formatUluna(balances[ULUNA], ULUNA, False))
-                    if len(formatted_val) > label_widths[4]:
-                        label_widths[4] = len(formatted_val)
+                if balances is not None:
+                    if ULUNA in balances:
+                        formatted_val = str(wallet.formatUluna(balances[ULUNA], ULUNA, False))
+                        if len(formatted_val) > label_widths[4]:
+                            label_widths[4] = len(formatted_val)
 
         padding_str:str   = ' ' * 100
         header_string:str = ' Number |'
@@ -126,20 +134,21 @@ class UserWallets:
         else:
             header_string +=  ' Wallet name '
 
-        if label_widths[4] > len('Available'):
-            header_string += '| Available' + padding_str[0:label_widths[4] - len('Available')] + ' '
-        else:
-            header_string += '| Available '
+        if options['display'] == 'balances':
+            if label_widths[4] > len('Available'):
+                header_string += '| Available' + padding_str[0:label_widths[4] - len('Available')] + ' '
+            else:
+                header_string += '| Available '
 
-        if label_widths[2] > len('LUNC'):
-            header_string += '| LUNC' + padding_str[0:label_widths[2] - len('LUNC')] + ' '
-        else:
-            header_string += '| LUNC'
+            if label_widths[2] > len('LUNC'):
+                header_string += '| LUNC' + padding_str[0:label_widths[2] - len('LUNC')] + ' '
+            else:
+                header_string += '| LUNC'
 
-        if label_widths[3] > len('USTC'):
-            header_string += '| USTC' + padding_str[0:label_widths[3] - len('USTC')] + ' '
-        else:
-            header_string += '| USTC '
+            if label_widths[3] > len('USTC'):
+                header_string += '| USTC' + padding_str[0:label_widths[3] - len('USTC')] + ' '
+            else:
+                header_string += '| USTC '
 
         horizontal_spacer = '-' * len(header_string)
 
@@ -172,41 +181,51 @@ class UserWallets:
                 
                 wallet_name_str = wallet_name + padding_str[0:label_widths[1] - len(wallet_name)]  
 
-                if wallet.balances is not None:
-                    uluna_reward:int  = 0
-                    uluna_balance:int = 0
-                    ustc_reward:int   = 0
-                    
-                    if delegations is not None:
-                        for validator in delegations:
-                            if ULUNA in delegations[validator]['rewards']:
-                                uluna_reward += delegations[validator]['rewards'][ULUNA]
-                            if UUSD in delegations[validator]['rewards']:
-                                ustc_reward += delegations[validator]['rewards'][UUSD]
+                if options['display'] == 'balances':
+                    if wallet.balances is not None:
+                        uluna_reward:int  = 0
+                        uluna_balance:int = 0
+                        ustc_reward:int   = 0
+                        
+                        if delegations is not None:
+                            for validator in delegations:
+                                if ULUNA in delegations[validator]['rewards']:
+                                    uluna_reward += delegations[validator]['rewards'][ULUNA]
+                                if UUSD in delegations[validator]['rewards']:
+                                    ustc_reward += delegations[validator]['rewards'][UUSD]
 
-                    lunc_str = str(wallet.formatUluna(uluna_reward, ULUNA, False))
-                    if label_widths[2] - len(str(lunc_str)) > 0:
-                        lunc_str += padding_str[0:(label_widths[2] - (len(str(lunc_str))))]
-                    
-                    
-                    if ULUNA in wallet.balances:
-                        uluna_balance = str(wallet.formatUluna(wallet.balances[ULUNA], ULUNA, False))
-                        if label_widths[4] - len(str(uluna_balance)) > 0:
-                            uluna_balance += padding_str[0:(label_widths[4] - (len(str(uluna_balance))))]
+                        lunc_str = str(wallet.formatUluna(uluna_reward, ULUNA, False))
+                        if lunc_str == '0':
+                            lunc_str = ''
+                            
+                        if label_widths[2] - len(str(lunc_str)) > 0:
+                            lunc_str += padding_str[0:(label_widths[2] - (len(str(lunc_str))))]
+                        
+                        
+                        if ULUNA in wallet.balances:
+                            uluna_balance = str(wallet.formatUluna(wallet.balances[ULUNA], ULUNA, False))
+                            if label_widths[4] - len(str(uluna_balance)) > 0:
+                                uluna_balance += padding_str[0:(label_widths[4] - (len(str(uluna_balance))))]
+                        else:
+                            uluna_balance = padding_str[0:label_widths[4]]
+
+                        if UUSD in wallet.balances:
+                            ustc_str = str(wallet.formatUluna(ustc_reward, UUSD, False))
+                            if ustc_str == '0':
+                                ustc_str = ''
+
+                            if label_widths[3] - len(str(ustc_str)) > 0:
+                                ustc_str += padding_str[0:(label_widths[3] - (len(str(ustc_str))))]
+                        else:
+                            ustc_str = padding_str[0:label_widths[3]]
+                            
+                        print (f"{count_str}{glyph} | {wallet_name_str} | {uluna_balance} | {lunc_str} | {ustc_str}")
                     else:
-                        uluna_balance = padding_str[0:label_widths[4]]
-
-                    if UUSD in wallet.balances:
-                        ustc_str = str(wallet.formatUluna(ustc_reward, UUSD, False))
-                        if label_widths[3] - len(str(ustc_str)) > 0:
-                            ustc_str += padding_str[0:(label_widths[3] - (len(str(ustc_str))))]
-                    else:
-                        ustc_str = padding_str[0:label_widths[3]]
-
-                    print (f"{count_str}{glyph} | {wallet_name_str} | {uluna_balance} | {lunc_str} | {ustc_str}")
+                        print (f"{count_str}{glyph} | {wallet_name_str}")
                 else:
+                    # Vote display goes here
                     print (f"{count_str}{glyph} | {wallet_name_str}")
-                
+
             print (horizontal_spacer + '\n')
                 
             answer = input(question).lower()
