@@ -193,7 +193,7 @@ def main():
                 print ('Starting swaps...')
 
                 # Update the balances so we know we have the correct amount
-                wallet.getBalances()
+                wallet.getBalances(wallet.createCoin(UUSD, wallet.balances[UUSD]))
                 
                 # We are only supporting swaps with uusd (USTC) at the moment
                 if 'uusd' in wallet.balances:
@@ -268,7 +268,7 @@ def main():
                 print ('Starting delegations...')
 
                 # Update the balances after having done withdrawals and swaps
-                wallet.getBalances()
+                wallet.getBalances(wallet.createCoin(ULUNA, wallet.balances[ULUNA]))
                 
                 # Only proceed if this is an active validator with a non-zero balance
                 if delegations[validator]['balance_amount'] > 0:
