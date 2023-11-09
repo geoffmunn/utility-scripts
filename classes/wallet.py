@@ -24,6 +24,7 @@ from constants.constants import (
     BASE_SMART_CONTRACT_ADDRESS,
     CHAIN_DATA,
     FULL_COIN_LOOKUP,
+    SEARCH_RETRY_COUNT,
     UBASE,
     ULUNA,
     USER_ACTION_CONTINUE,
@@ -40,6 +41,7 @@ from terra_classic_sdk.client.lcd import LCDClient
 from terra_classic_sdk.client.lcd.api.distribution import Rewards
 from terra_classic_sdk.client.lcd.params import PaginationOptions
 from terra_classic_sdk.client.lcd.wallet import Wallet
+from terra_classic_sdk.core.coin import Coin
 from terra_classic_sdk.core.coins import Coins
 from terra_classic_sdk.core.staking.data.delegation import Delegation
 from terra_classic_sdk.core.staking.data.validator import Validator
@@ -213,44 +215,65 @@ class UserWallet:
         
         return lunc
     
-    def getBalances(self) -> dict:
+    def getBalances(self, target_coin:Coin = None) -> dict:
         """
         Get the balances associated with this wallet.
+        If you pass a target_coin Coin object, this will loop until it sees a change on this denomination.
 
         If you just want the previously fetched balances, use wallet.balances
         """
 
-        balances:dict = {}
         if self.terra is not None:
-            # Default pagination options
-            pagOpt:PaginationOptions = PaginationOptions(limit=50, count_total=True)
+            retry_count:int = 0
+            while True:
+                balances:dict = {}
+                # Default pagination options
+                pagOpt:PaginationOptions = PaginationOptions(limit=50, count_total=True)
 
-            # Get the current balance in this wallet
-            result:Coins
-            try:
-                result, pagination = self.terra.bank.balance(address = self.address, params = pagOpt)
-
-                # Convert the result into a friendly list
-                for coin in result:
-                    denom_trace = self.denomTrace(coin.denom)
-                    balances[denom_trace] = coin.amount
-                    
-                # Go through the pagination (if any)
-                while pagination['next_key'] is not None:
-                    pagOpt.key         = pagination["next_key"]
+                # Get the current balance in this wallet
+                result:Coins
+                try:
                     result, pagination = self.terra.bank.balance(address = self.address, params = pagOpt)
-                    
-                    denom_trace           = self.denomTrace(coin.denom)
-                    balances[denom_trace] = coin.amount
-                
-            except Exception as err:
-                print (f'Pagination error for {self.name}:', err)
 
-            # Add the extra coins (Base etc)
-            if self.terra is not None and self.terra.chain_id == CHAIN_DATA[ULUNA]['chain_id']:
-                coin_balance = self.terra.wasm.contract_query(BASE_SMART_CONTRACT_ADDRESS, {'balance':{'address':self.address}})
-                if int(coin_balance['balance']) > 0:
-                    balances[UBASE] = coin_balance['balance']
+                    # Convert the result into a friendly list
+                    for coin in result:
+                        denom_trace = self.denomTrace(coin.denom)
+                        balances[denom_trace] = coin.amount
+                        
+                    # Go through the pagination (if any)
+                    while pagination['next_key'] is not None:
+                        pagOpt.key         = pagination["next_key"]
+                        result, pagination = self.terra.bank.balance(address = self.address, params = pagOpt)
+                        
+                        denom_trace           = self.denomTrace(coin.denom)
+                        balances[denom_trace] = coin.amount
+                    
+                except Exception as err:
+                    print (f'Pagination error for {self.name}:', err)
+
+                # Add the extra coins (Base etc)
+                if self.terra is not None and self.terra.chain_id == CHAIN_DATA[ULUNA]['chain_id']:
+                    coin_balance = self.terra.wasm.contract_query(BASE_SMART_CONTRACT_ADDRESS, {'balance':{'address':self.address}})
+                    if int(coin_balance['balance']) > 0:
+                        balances[UBASE] = coin_balance['balance']
+
+                if target_coin is not None:
+                    # If the current balance has a higher amount in it than that target coin, then we can exit
+                    if target_coin.denom in balances and balances[target_coin.denom] > target_coin.amount:
+                        break
+                else:
+                    # We're not checking a specific coin, we can exit now
+                    break
+
+                # Wait for one second and try again
+                retry_count += 1
+                if retry_count <= SEARCH_RETRY_COUNT:
+                    print (f'Target denom not found... attempt {retry_count}/{SEARCH_RETRY_COUNT}')
+                    time.sleep(1)
+                else:
+                    break
+        else:
+            balances:dict = {}
 
         self.balances = balances
 
