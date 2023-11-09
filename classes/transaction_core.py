@@ -296,6 +296,11 @@ class TransactionCore():
                                 self.result_received = coin
                                 break
                         log_found = True
+                    # Osmosis swaps
+                    if 'module' in log.events_by_type['message'] and log.events_by_type['message']['module'][0] == 'gamm':
+                        self.result_sent = Coin.from_str(log.events_by_type['coin_spent']['amount'][0])
+                        self.result_received = Coin.from_str(log.events_by_type['coin_received']['amount'][-1])
+                        log_found = True
                 # Send transactions
                 if 'wasm' in log.events_by_type:
                     if 'action' in log.events_by_type['wasm'] and log.events_by_type['wasm']['action'][0] == 'transfer':
