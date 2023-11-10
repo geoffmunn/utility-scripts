@@ -24,6 +24,11 @@ from constants.constants import (
     BASE_SMART_CONTRACT_ADDRESS,
     CHAIN_DATA,
     FULL_COIN_LOOKUP,
+    PROPOSAL_VOTE_EMPTY,
+    PROPOSAL_VOTE_YES,
+    PROPOSAL_VOTE_ABSTAIN,
+    PROPOSAL_VOTE_NO,
+    PROPOSAL_VOTE_NO_WITH_VETO,
     SEARCH_RETRY_COUNT,
     UBASE,
     ULUNA,
@@ -514,6 +519,32 @@ class UserWallet:
 
         return prefix.lower()
     
+    def getProposalVote(self, proposal_id) -> str:
+        """
+        Get the vote that this wallet made on the supplied proposal id
+        """
+
+        vote_result:dict = self.terra.gov.vote(proposal_id, self.address)
+
+        # Get the vote value and convert it
+        if 'options' in vote_result:
+            vote_value = vote_result['options'][0]['option']
+            result:str = None
+            if vote_value == 'VOTE_OPTION_UNSPECIFIED':
+                result = ''
+            elif vote_value == 'VOTE_OPTION_YES':
+                result = 'Yes'
+            elif vote_value == 'VOTE_OPTION_ABSTAIN':
+                result = 'Abstain'
+            elif vote_value == 'VOTE_OPTION_NO':
+                result = 'No'
+            elif vote_value == 'VOTE_OPTION_NO_WITH_VETO':
+                result = 'No with veto'
+        else:
+            result = ''
+
+        return result
+
     def getSupportedPrefixes(self) -> list:
         """
         Return a list of all the supported prefixes, based on what we can find in the CHAIN_DATA dictionary
