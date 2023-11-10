@@ -86,13 +86,21 @@ class UserWallets:
         label_widths:list = []
         label_widths.append(len('Number'))
         label_widths.append(len('Wallet name'))
+
         if options['display'] == 'balances':
             label_widths.append(len('LUNC'))
             label_widths.append(len('USTC'))
             label_widths.append(len('Available'))
 
+        if options['display'] == 'votes':
+            label_widths.append(len('Your vote'))
+
+        wallet_votes:dict = {}
         for wallet_name in self.wallets:
             wallet:UserWallet = self.wallets[wallet_name]
+
+            if len(wallet_name) > label_widths[1]:
+                label_widths[1] = len(wallet_name)
 
             if options['display'] == 'balances':
                 # Get the delegations and balances for this wallet
@@ -111,9 +119,6 @@ class UserWallets:
                         if UUSD in delegations[validator]['rewards']:
                             ustc_reward += float(wallet.formatUluna(delegations[validator]['rewards'][UUSD], UUSD, False))
 
-                if len(wallet_name) > label_widths[1]:
-                    label_widths[1] = len(wallet_name)
-
                 if len(str(ulunc_reward)) > label_widths[2]:
                     label_widths[2] = len(str(ulunc_reward))
 
@@ -125,6 +130,17 @@ class UserWallets:
                         formatted_val = str(wallet.formatUluna(balances[ULUNA], ULUNA, False))
                         if len(formatted_val) > label_widths[4]:
                             label_widths[4] = len(formatted_val)
+
+            if options['display'] == 'votes':
+                
+                # Get the vote for this proposal
+                vote_result = wallet.getProposalVote(options['proposal_id'])
+
+                # Store this so we don't have to check twice
+                wallet_votes[wallet_name] = vote_result
+
+                if len(vote_result) > label_widths[2]:
+                    label_widths[2] = len(vote_result)
 
         padding_str:str   = ' ' * 100
         header_string:str = ' Number |'
@@ -150,8 +166,12 @@ class UserWallets:
             else:
                 header_string += '| USTC '
 
+        if options['display'] == 'votes':
+            header_string += '| Your vote'
+
         horizontal_spacer = '-' * len(header_string)
 
+        print ('label widths:', label_widths)
         wallets_to_use:dict = {}
         while True:
 
@@ -197,7 +217,7 @@ class UserWallets:
                         lunc_str = str(wallet.formatUluna(uluna_reward, ULUNA, False))
                         if lunc_str == '0':
                             lunc_str = ''
-                            
+
                         if label_widths[2] - len(str(lunc_str)) > 0:
                             lunc_str += padding_str[0:(label_widths[2] - (len(str(lunc_str))))]
                         
@@ -224,7 +244,8 @@ class UserWallets:
                         print (f"{count_str}{glyph} | {wallet_name_str}")
                 else:
                     # Vote display goes here
-                    print (f"{count_str}{glyph} | {wallet_name_str}")
+                    vote_result = wallet_votes[wallet_name]
+                    print (f"{count_str}{glyph} | {wallet_name_str} | {vote_result}")
 
             print (horizontal_spacer + '\n')
                 
