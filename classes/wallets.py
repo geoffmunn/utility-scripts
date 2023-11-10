@@ -171,7 +171,6 @@ class UserWallets:
 
         horizontal_spacer = '-' * len(header_string)
 
-        print ('label widths:', label_widths)
         wallets_to_use:dict = {}
         while True:
 
