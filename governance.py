@@ -58,16 +58,16 @@ def main():
 
     # Get the user vote:
     vote_options:dict = {
-        'c': PROPOSAL_VOTE_EMPTY,
+        #'c': PROPOSAL_VOTE_EMPTY,
         'y': PROPOSAL_VOTE_YES,
         'a': PROPOSAL_VOTE_ABSTAIN,
         'n': PROPOSAL_VOTE_NO,
-        'c': PROPOSAL_VOTE_NO_WITH_VETO,
+        'v': PROPOSAL_VOTE_NO_WITH_VETO,
         'q': -1
     }
 
     print ('What is your vote going to be?\n')
-    print ('  (C)  Clear my existing vote')
+    #print ('  (C)  Clear my existing vote')
     print ('  (Y)  Vote yes')
     print ('  (A)  Abstain')
     print ('  (N)  Vote no')
