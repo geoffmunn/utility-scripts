@@ -523,11 +523,6 @@ class SwapTransaction(TransactionCore):
                 sequence       = self.sequence
             )
 
-            #print (self.terra.chain_id)
-            #print (self.terra.url)
-            #print ('options:')
-            #print (options)
-
             tx:Tx = self.current_wallet.create_and_sign_tx(options)
             
             self.transaction = tx
