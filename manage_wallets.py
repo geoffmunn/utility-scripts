@@ -87,7 +87,7 @@ def main():
     if len(user_wallets) > 0:
         print (f'You can {action_string} on the following wallets:')
 
-        user_wallets,answer = wallets.getUserMultiChoice(f"Select a wallet number 1 - {str(len(user_wallets))}, or 'A' to add all of them, 'C' to clear the list, 'X' to continue, or 'Q' to quit: ")
+        user_wallets,answer = wallets.getUserMultiChoice(f"Select a wallet number 1 - {str(len(user_wallets))}, or 'A' to add all of them, 'C' to clear the list, 'X' to continue, or 'Q' to quit: ", {'display': 'balances'})
 
         if answer == USER_ACTION_QUIT:
             print (' 🛑 Exiting...\n')
