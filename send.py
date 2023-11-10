@@ -24,7 +24,7 @@ def get_send_to_address(user_wallets:UserWallet):
     Show a simple list address from what is found in the user_config file
     """
 
-    label_widths = []
+    label_widths:list = []
 
     label_widths.append(len('Number'))
     label_widths.append(len('Wallet name'))
@@ -33,27 +33,27 @@ def get_send_to_address(user_wallets:UserWallet):
         if len(wallet_name) > label_widths[1]:
             label_widths[1] = len(wallet_name)
                 
-    padding_str = ' ' * 100
-
-    header_string = ' Number |'
+    # Generic string we use for padding purposes
+    padding_str:str   = ' ' * 100
+    header_string:str = ' Number |'
 
     if label_widths[1] > len('Wallet name'):
         header_string +=  ' Wallet name' + padding_str[0:label_widths[1] - len('Wallet name')] + ' '
     else:
         header_string +=  ' Wallet name '
 
-    horizontal_spacer = '-' * len(header_string)
+    horizontal_spacer:str = '-' * len(header_string)
 
     # Create default variables and values
-    wallets_to_use         = {}
-    user_wallet            = {}
-    recipient_address: str = ''
+    wallets_to_use:dict   = {}
+    user_wallet:dict      = {}
+    recipient_address:str = ''
 
     while True:
 
-        count          = 0
-        wallet_numbers = {}
-        wallets_by_name = {}
+        count:int            = 0
+        wallet_numbers:dict  = {}
+        wallets_by_name:dict = {}
 
         print ('\n' + horizontal_spacer)
         print (header_string)
@@ -82,7 +82,7 @@ def get_send_to_address(user_wallets:UserWallet):
         print ('You can send to an address in your config file by typing the wallet name or number.')
         print ('You can also send to a completely new address by entering the wallet address.\n')
 
-        answer = input("What is the address you are sending to? (or type 'X' to continue, or 'Q' to quit) ").lower()
+        answer:str = input("What is the address you are sending to? (or type 'X' to continue, or 'Q' to quit) ").lower()
         
         # Check if someone typed the name of a wallet
         if answer in wallets_by_name.keys():
@@ -90,19 +90,19 @@ def get_send_to_address(user_wallets:UserWallet):
         
         if answer.isdigit() and int(answer) in wallet_numbers:
 
-            wallets_to_use = {}
+            wallets_to_use:dict = {}
 
-            key = wallet_numbers[int(answer)].name
+            key:str = wallet_numbers[int(answer)].name
             if key not in wallets_to_use:
                 wallets_to_use[key] = wallet_numbers[int(answer)]
             else:
                 wallets_to_use.pop(key)
         else:
             # check if this is an address we support:
-            prefix = wallet.getPrefix(answer)
+            prefix:str = wallet.getPrefix(answer)
 
             if prefix in wallet.getSupportedPrefixes():
-                recipient_address = answer
+                recipient_address:str = answer
                 break
             
         if answer == USER_ACTION_CONTINUE:
@@ -118,7 +118,7 @@ def get_send_to_address(user_wallets:UserWallet):
     if len(wallets_to_use) > 0:
         for item in wallets_to_use:
             user_wallet:UserWallet = wallets_to_use[item]
-            recipient_address  = user_wallet.address
+            recipient_address:str  = user_wallet.address
             break
     
     return recipient_address, answer
@@ -129,10 +129,10 @@ def main():
     check_version()
 
     # Get the user wallets
-    wallets = UserWallets()
-    user_wallets = wallets.loadUserWallets()
+    wallets           = UserWallets()
+    user_wallets:dict = wallets.loadUserWallets()
 
-    user_wallets:dict = wallets.wallets
+    #user_wallets:dict = wallets.wallets
     user_addresses:dict = wallets.addresses
 
     # Get the balances on each wallet (for display purposes)
@@ -196,7 +196,7 @@ def main():
         send_tx.receiving_denom = wallet.getDenomByPrefix(send_tx.recipient_prefix)
         
         if wallet.terra.chain_id == CHAIN_DATA[ULUNA]['chain_id'] and send_tx.recipient_prefix == CHAIN_DATA[ULUNA]['bech32_prefix']:
-            send_tx.is_on_chain = True
+            send_tx.is_on_chain     = True
             send_tx.revision_number = 1
         else:
             send_tx.is_on_chain = False
@@ -207,10 +207,10 @@ def main():
                 send_tx.revision_number = 1
         
         # Assign the user provided details:
-        send_tx.memo              = memo
-        send_tx.amount            = int(uluna_amount)
-        send_tx.denom             = denom
-        send_tx.block_height      = send_tx.terra.tendermint.block_info()['block']['header']['height']
+        send_tx.memo         = memo
+        send_tx.amount       = int(uluna_amount)
+        send_tx.denom        = denom
+        send_tx.block_height = send_tx.terra.tendermint.block_info()['block']['header']['height']
             
         # Simulate it            
         if send_tx.is_on_chain == True:
