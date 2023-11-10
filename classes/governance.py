@@ -276,6 +276,4 @@ class Governance(TransactionCore):
         # Store the transaction
         self.transaction = tx
 
-        print (self.transaction)
-
         return True
