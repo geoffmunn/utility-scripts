@@ -29,14 +29,9 @@ def main():
     # Check if there is a new version we should be using
     check_version()
 
-    
-
-    #for prop in proposals:
-    #   print (prop)
-
     # Get the user wallets
     wallets = UserWallets()
-    user_wallets = wallets.loadUserWallets()
+    user_wallets:dict = wallets.loadUserWallets()
     
     if len(user_wallets) > 0:
         print (f'You can vote on the following proposals:')
@@ -54,19 +49,8 @@ def main():
         print (" 🛑 This password couldn't decrypt any wallets. Make sure it is correct, or rebuild the wallet list by running the configure_user_wallet.py script again.\n")
         exit()
 
-
-    
-    # Get the user wallets
-    # wallets = UserWallets()
-    # user_wallets:UserWallets = wallets.loadUserWallets()
-
-    # # Create the governance object
-    # governance:Governance = Governance().create()
-
-    # # Get all the proposals currently taking votes
-    # proposals:dict = governance.proposals()
-
-    user_wallets, answer = wallets.getUserMultiChoice(f"Select a wallet number 1 - {str(len(user_wallets))}, or 'A' to add all of them, 'C' to clear the list, 'X' to continue, or 'Q' to quit: ")
+    # Get the wallets we'll be making votes on
+    user_wallets, answer = wallets.getUserMultiChoice(f"Select a wallet number 1 - {str(len(user_wallets))}, or 'A' to add all of them, 'C' to clear the list, 'X' to continue, or 'Q' to quit: ", {'display': 'votes', 'proposal_id': proposal['id']})
 
     if answer == USER_ACTION_QUIT:
         print (' 🛑 Exiting...\n')
@@ -90,7 +74,6 @@ def main():
     print ('  (V)  No with veto')
     print ('  (Q)  Quit')
 
-    print (vote_options.keys())
     user_choice = get_user_choice('Pick a vote option: ', vote_options.keys())
         
     if answer == USER_ACTION_QUIT:
