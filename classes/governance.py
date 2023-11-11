@@ -100,6 +100,7 @@ class Governance(TransactionCore):
 
             for proposal in proposals:
                 count += 1
+                
                 self.proposal_id = int(proposal['id'])
 
                 glyph:str = '  '
@@ -111,10 +112,10 @@ class Governance(TransactionCore):
                 proposal_title_str:str = proposal['title'] + padding_str[0:label_widths[2] - len(proposal['title'])]
                 
                 votes = self.tally()
-                yes_str = str(votes['Yes']) + padding_str[0:label_widths[3] - len(str(votes['Yes']))]
-                no_str = str(votes['No']) + padding_str[0:label_widths[4] - len(str(votes['No']))]
-                no_with_veto_str = str(votes['No with veto']) + padding_str[0:label_widths[5] - len(str(votes['No with veto']))]
-                abstain_str = str(votes['Abstain']) + padding_str[0:label_widths[6] - len(str(votes['Abstain']))]
+                yes_str          = str(votes['yes']) + padding_str[0:label_widths[3] - len(str(votes['yes']))]
+                no_str           = str(votes['no']) + padding_str[0:label_widths[4] - len(str(votes['no']))]
+                no_with_veto_str = str(votes['no with veto']) + padding_str[0:label_widths[5] - len(str(votes['no with veto']))]
+                abstain_str      = str(votes['abstain']) + padding_str[0:label_widths[6] - len(str(votes['abstain']))]
                 
                 print (f"{count_str}{glyph} | {proposal_id_str} | {proposal_title_str} | {yes_str} | {no_str} | {no_with_veto_str} | {abstain_str}")
 
@@ -141,7 +142,7 @@ class Governance(TransactionCore):
         Get the vote percentages of the current proposal ID
         """
 
-        votes = {'Yes': 0, 'No': 0, 'No with veto': 0, 'Abstain': 0}
+        votes = {'yes': 0, 'no': 0, 'no with veto': 0, 'abstain': 0}
 
         if self.proposal_id is not None:
         
@@ -151,10 +152,10 @@ class Governance(TransactionCore):
             for item in tally:
                 total += int(tally[item])
 
-            votes['Yes']          = round((int(tally['yes_count']) / total) * 100, 2)
-            votes['No']           = round((int(tally['no_count']) / total) * 100, 2)
-            votes['No with veto'] = round((int(tally['no_with_veto_count']) / total) * 100, 2)
-            votes['Abstain']      = round((int(tally['abstain_count']) / total) * 100, 2)
+            votes['yes']          = round((int(tally['yes_count']) / total) * 100, 2)
+            votes['no']           = round((int(tally['no_count']) / total) * 100, 2)
+            votes['no with veto'] = round((int(tally['no_with_veto_count']) / total) * 100, 2)
+            votes['abstain']      = round((int(tally['abstain_count']) / total) * 100, 2)
 
         return votes
 
