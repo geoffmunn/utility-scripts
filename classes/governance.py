@@ -5,18 +5,19 @@ import json
 
 from constants.constants import (
     CHAIN_DATA,
-    GAS_ADJUSTMENT,
-    MAX_VALIDATOR_COUNT,
     ULUNA,
     USER_ACTION_QUIT,
     PROPOSAL_STATUS_VOTING_PERIOD
     
 )
 
-from classes.wallet import UserWallet
 from classes.terra_instance import TerraInstance
 from classes.transaction_core import TransactionCore
 
+from terra_classic_sdk.core.coin import Coin
+from terra_classic_sdk.core.coins import Coins
+from terra_classic_sdk.core.fee import Fee
+from terra_classic_sdk.exceptions import LCDResponseError
 from terra_classic_sdk.client.lcd import LCDClient
 from terra_classic_sdk.client.lcd.params import PaginationOptions
 from terra_classic_sdk.core.gov import MsgVote, Proposal
@@ -25,15 +26,6 @@ from terra_classic_sdk.client.lcd.api.tx import (
     CreateTxOptions,
     Tx
 )
-from terra_classic_sdk.exceptions import LCDResponseError
-from terra_classic_sdk.core.broadcast import (
-    BlockTxBroadcastResult,
-    TxLog
-)
-from terra_classic_sdk.core.coin import Coin
-from terra_classic_sdk.core.coins import Coins
-from terra_classic_sdk.core.fee import Fee
-
 class Governance(TransactionCore):
 
     def __init__(self, *args, **kwargs):
@@ -75,6 +67,10 @@ class Governance(TransactionCore):
         label_widths.append(len('Number'))
         label_widths.append(len('ID'))
         label_widths.append(len('Title'))
+        label_widths.append(len('Yes  '))
+        label_widths.append(len('No   ')) # extra space is deliberate
+        label_widths.append(len('No with veto'))
+        label_widths.append(len('Abstain'))
         
         for proposal in proposals:
             if len(str(proposal['id'])) > label_widths[1]:
@@ -86,9 +82,11 @@ class Governance(TransactionCore):
 
         padding_str:str   = ' ' * 100
         header_string:str = ' Number'
+
         # Add the other columns to the header string
         header_string += ' | ID' + padding_str[0:label_widths[1] - len('ID')]
         header_string += ' | Title' + padding_str[0:label_widths[2] - len('Title')]
+        header_string += ' | Yes   | No    | No with veto | Abstain'
 
         horizontal_spacer:str = '-' * (len(header_string) + 2)
 
@@ -102,7 +100,8 @@ class Governance(TransactionCore):
 
             for proposal in proposals:
                 count += 1
-                
+                self.proposal_id = int(proposal['id'])
+
                 glyph:str = '  '
                 if count == proposal_to_use:
                     glyph = '✅'
@@ -111,7 +110,13 @@ class Governance(TransactionCore):
                 proposal_id_str:str    = str(proposal['id']) + padding_str[0:label_widths[1] - len(str(proposal['id']))]
                 proposal_title_str:str = proposal['title'] + padding_str[0:label_widths[2] - len(proposal['title'])]
                 
-                print (f"{count_str}{glyph} | {proposal_id_str} | {proposal_title_str}")
+                votes = self.tally()
+                yes_str = str(votes['Yes']) + padding_str[0:label_widths[3] - len(str(votes['Yes']))]
+                no_str = str(votes['No']) + padding_str[0:label_widths[4] - len(str(votes['No']))]
+                no_with_veto_str = str(votes['No with veto']) + padding_str[0:label_widths[5] - len(str(votes['No with veto']))]
+                abstain_str = str(votes['Abstain']) + padding_str[0:label_widths[6] - len(str(votes['Abstain']))]
+                
+                print (f"{count_str}{glyph} | {proposal_id_str} | {proposal_title_str} | {yes_str} | {no_str} | {no_with_veto_str} | {abstain_str}")
 
             print (horizontal_spacer + '\n')
 
@@ -131,18 +136,27 @@ class Governance(TransactionCore):
 
         return proposals[proposal_to_use - 1], answer
     
-    # def proposal(self, proposal_id:int) -> dict:
-    #     """
-    #     Get the details of the supplied proposal ID
-    #     """
+    def tally(self) -> dict:
+        """
+        Get the vote percentages of the current proposal ID
+        """
 
-    #     proposal = self.terra.gov.proposal(proposal_id)
+        votes = {'Yes': 0, 'No': 0, 'No with veto': 0, 'Abstain': 0}
 
-    #     print (self.terra.gov.tally(proposal_id))
+        if self.proposal_id is not None:
+        
+            tally:dict = self.terra.gov.tally(self.proposal_id)
 
-    #     self.terra.gov.votes()
+            total:int = 0
+            for item in tally:
+                total += int(tally[item])
 
-    #     #print (self.terra.gov.votes(10983))
+            votes['Yes']          = round((int(tally['yes_count']) / total) * 100, 2)
+            votes['No']           = round((int(tally['no_count']) / total) * 100, 2)
+            votes['No with veto'] = round((int(tally['no_with_veto_count']) / total) * 100, 2)
+            votes['Abstain']      = round((int(tally['abstain_count']) / total) * 100, 2)
+
+        return votes
 
     def proposals(self) -> list:
         """
