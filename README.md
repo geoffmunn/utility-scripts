@@ -95,7 +95,7 @@ You can also swap via Osmosis, converting LUNC to the following:
  * Wrapped Frax
  * Wrapped FTM
  * Wrapped Chainlink
- *  Wrapped Polygon
+ * Wrapped Polygon
 
 The full list of minor Terra coins are also supported, but currently do not work:
 
@@ -260,9 +260,9 @@ Network connectivity issues with the LCD endpoint. Try again later.
 
 The gas adjustment value needs to be increased.
 
-**terra_classic_sdk.exceptions.LCDResponseError: Status 400 - failed to execute message; message index: 0: token amount calculated (xxx) is lesser than min amount (yyy): invalid request
+**terra_classic_sdk.exceptions.LCDResponseError: Status 400 - failed to execute message; message index: 0: token amount calculated (xxx) is lesser than min amount (yyy): invalid request**
 
-If this was an Osmosis swap (probably to or from Ethereum) then increase the max_slippage value and try again.
+If this was an Osmosis swap (probably to or from Ethereum) then increase the OSMOSIS_FEE_MULTIPLIER value in ```constants.py``` and try again.
 
 ## Gas adjustment
 
