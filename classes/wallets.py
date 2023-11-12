@@ -316,9 +316,6 @@ class UserWallets:
 
             if show_delegations == True:
                 # Calculate the delegations and undelegations
-                print ('delegations for ', wallet_name)
-                print (self.wallets[wallet_name].delegations)
-                
                 delegations = self.wallets[wallet_name].delegations
                 for delegation in delegations:
                     if len(str(self.wallets[wallet_name].formatUluna(delegations[delegation]['balance_amount'], ULUNA, False))) > label_widths[4]:
