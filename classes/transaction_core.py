@@ -11,6 +11,7 @@ from classes.common import (
 )
 
 from constants.constants import (
+    BASE_SMART_CONTRACT_ADDRESS,
     CHAIN_DATA,
     FULL_COIN_LOOKUP,
     GAS_PRICE_URI,
@@ -272,7 +273,7 @@ class TransactionCore():
                 log:TxLog   = info.logs[0]
                 
                 log_found:bool = False
-                # Swaps:
+                # Standard swaps ('LUNC -> USTC'):
                 if 'wasm' in log.events_by_type:
                     if 'action' in log.events_by_type['wasm'] and log.events_by_type['wasm']['action'][0] == 'swap':
                         self.result_sent = Coin.from_str(log.events_by_type['coin_spent']['amount'][0])
@@ -301,12 +302,20 @@ class TransactionCore():
                         self.result_sent = Coin.from_str(log.events_by_type['coin_spent']['amount'][0])
                         self.result_received = Coin.from_str(log.events_by_type['coin_received']['amount'][-1])
                         log_found = True
-                # Send transactions
+                
                 if 'wasm' in log.events_by_type:
+                    # Send transactions
                     if 'action' in log.events_by_type['wasm'] and log.events_by_type['wasm']['action'][0] == 'transfer':
                         self.result_sent     = Coin.from_str(f"{log.events_by_type['wasm']['amount'][0]}{self.denom}")
                         self.result_received = Coin.from_str(f"{log.events_by_type['wasm']['amount'][0]}{self.denom}")
                         log_found = True
+
+                    # Base swaps/undelegations
+                    if '_contract_address' in log.events_by_type['wasm'] and log.events_by_type['wasm']['_contract_address'][0] == BASE_SMART_CONTRACT_ADDRESS:
+                        self.result_sent = None
+                        self.result_received = Coin.from_data({'amount': log.events_by_type['wasm']['Net Unstake:'][0], 'denom': ULUNA})
+                        log_found = True
+
 
                 if log_found == False:
                     print ('@TODO: events by type not returned, please check the results:')
