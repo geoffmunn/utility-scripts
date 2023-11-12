@@ -24,11 +24,6 @@ from constants.constants import (
     BASE_SMART_CONTRACT_ADDRESS,
     CHAIN_DATA,
     FULL_COIN_LOOKUP,
-    PROPOSAL_VOTE_EMPTY,
-    PROPOSAL_VOTE_YES,
-    PROPOSAL_VOTE_ABSTAIN,
-    PROPOSAL_VOTE_NO,
-    PROPOSAL_VOTE_NO_WITH_VETO,
     SEARCH_RETRY_COUNT,
     UBASE,
     ULUNA,
@@ -289,7 +284,7 @@ class UserWallet:
             balances:dict = {}
 
         self.balances = balances
-
+        
         return self.balances
     
     def getCoinSelection(self, question:str, coins:dict, only_active_coins:bool = True, estimation_against:dict = None):
