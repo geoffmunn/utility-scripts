@@ -72,13 +72,20 @@ class Governance(TransactionCore):
         label_widths.append(len('No with veto'))
         label_widths.append(len('Abstain'))
         
+        tallies:dict = {}
         for proposal in proposals:
             if len(str(proposal['id'])) > label_widths[1]:
                 label_widths[1] = len(str(proposal['id']))
-
-        for proposal in proposals:
             if len(str(proposal['title'])) > label_widths[2]:
                 label_widths[2] = len(str(proposal['title']))
+
+            # Go and get the tally results so we don't have to slow the display refresh down
+            self.proposal_id = int(proposal['id'])
+            tallies[proposal['id']] = self.tally()
+
+        # for proposal in proposals:
+        #     if len(str(proposal['title'])) > label_widths[2]:
+        #         label_widths[2] = len(str(proposal['title']))
 
         padding_str:str   = ' ' * 100
         header_string:str = ' Number'
@@ -107,11 +114,12 @@ class Governance(TransactionCore):
                 if count == proposal_to_use:
                     glyph = '✅'
                 
-                count_str:str          =  f' {count}' + padding_str[0:6 - (len(str(count)) + 2)]
+                count_str:str          = f' {count}' + padding_str[0:6 - (len(str(count)) + 2)]
                 proposal_id_str:str    = str(proposal['id']) + padding_str[0:label_widths[1] - len(str(proposal['id']))]
                 proposal_title_str:str = proposal['title'] + padding_str[0:label_widths[2] - len(proposal['title'])]
                 
-                votes = self.tally()
+                #votes = self.tally()
+                votes = tallies[proposal['id']]
                 yes_str          = str(votes['yes']) + padding_str[0:label_widths[3] - len(str(votes['yes']))]
                 no_str           = str(votes['no']) + padding_str[0:label_widths[4] - len(str(votes['no']))]
                 no_with_veto_str = str(votes['no with veto']) + padding_str[0:label_widths[5] - len(str(votes['no with veto']))]
@@ -179,8 +187,8 @@ class Governance(TransactionCore):
                 proposal_list.append({'id': proposal.proposal_id, 'title': proposal.content.title, 'content': proposal.content.description, 'voting_start': proposal.voting_start_time, 'voting_end': proposal.voting_end_time})
 
         while pagination["next_key"] is not None:
-            pagOpt              = PaginationOptions(key = pagination["next_key"])
-            result, pagination  = self.terra.gov.proposals(proposal_params, pagOpt)
+            pagOpt             = PaginationOptions(key = pagination["next_key"])
+            result, pagination = self.terra.gov.proposals(proposal_params, pagOpt)
             for proposal in result:
                 if type(proposal) == Proposal:
                     proposal_list.append({'id': proposal.proposal_id, 'title': proposal.content.title, 'content': proposal.content.description, 'voting_start': proposal.voting_start_time, 'voting_end': proposal.voting_end_time})
@@ -235,34 +243,30 @@ class Governance(TransactionCore):
         """
 
         # Create the wallet based on the calculated key
-        prefix              = CHAIN_DATA[ULUNA]['bech32_prefix']
-        current_wallet_key:MnemonicKey  = MnemonicKey(mnemonic = seed, prefix = prefix)
-        self.current_wallet = self.terra.wallet(current_wallet_key)
+        prefix                         = CHAIN_DATA[ULUNA]['bech32_prefix']
+        current_wallet_key:MnemonicKey = MnemonicKey(mnemonic = seed, prefix = prefix)
+        self.current_wallet            = self.terra.wallet(current_wallet_key)
         
+        # Assign the wallet address to this governance object
         self.address = current_wallet_key.acc_address
 
         # Get the gas prices and tax rate:
         self.gas_list = self.gasList()
-        #self.tax_rate = self.taxRate()
 
         return self
     
     def vote(self):
 
-        #self.account_number:int = self.current_wallet.account_number()
-        #self.sequence:int       = self.current_wallet.sequence()
-
         msg = MsgVote(
-            proposal_id=self.proposal_id,
-            voter=self.address,
-            option=self.user_vote
+            proposal_id = self.proposal_id,
+            voter       = self.address,
+            option      = self.user_vote
         )
             
         options = CreateTxOptions(
             account_number = str(self.account_number),
             gas            = self.gas_limit,
             gas_prices     = self.gas_list,
-            #gas_adjustment = int(GAS_ADJUSTMENT),
             fee            = self.fee,
             msgs           = [msg],
             sequence       = str(self.sequence)
