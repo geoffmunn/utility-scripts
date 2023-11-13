@@ -273,12 +273,6 @@ class TransactionCore():
                 log:TxLog   = info.logs[0]
                 
                 log_found:bool = False
-                # Standard swaps ('LUNC -> USTC'):
-                if 'wasm' in log.events_by_type:
-                    if 'action' in log.events_by_type['wasm'] and log.events_by_type['wasm']['action'][0] == 'swap':
-                        self.result_sent = Coin.from_str(log.events_by_type['coin_spent']['amount'][0])
-                        self.result_received = Coin.from_str(log.events_by_type['coin_received']['amount'][-1])
-                        log_found = True
                 
                 if 'message' in log.events_by_type:
                     # Governance votes
@@ -289,7 +283,7 @@ class TransactionCore():
                     # Staking/Unstaking
                     if 'module' in log.events_by_type['message'] and log.events_by_type['message']['module'][0] == 'staking':
                         self.result_sent = None
-                        coin_list:Coins = Coins.from_str(log.events_by_type['coin_spent']['amount'][0])
+                        coin_list:Coins  = Coins.from_str(log.events_by_type['coin_spent']['amount'][0])
                         # Unstaking will return a bunch of random coins, but we only want the uluna coin
                         coin:Coin
                         for coin in coin_list:
@@ -297,13 +291,45 @@ class TransactionCore():
                                 self.result_received = coin
                                 break
                         log_found = True
+
+                    # Validator rewards
+                    if 'module' in log.events_by_type['message'] and log.events_by_type['message']['module'][0] == 'distribution':
+                        self.result_sent = None
+                        coin_list:Coins  = Coins.from_str(log.events_by_type['coin_spent']['amount'][0])
+                        # Unstaking will return a bunch of random coins, but we only want the uluna coin
+                        coin:Coin
+                        for coin in coin_list:
+                            if coin.denom == ULUNA:
+                                self.result_received = coin
+                                break
+                        
+                        log_found = True
+
+                    # # Send to Osmosis
+                    # if 'module' in log.events_by_type['message'] and 'distribution' in log.events_by_type['message']['module']:
+                    #     self.result_sent     = Coin.from_str(log.events_by_type['coin_spent']['amount'][0])
+                    #     self.result_received = Coin.from_str(log.events_by_type['coin_received']['amount'][-1])
+                    #     log_found = True
+
                     # Osmosis swaps
                     if 'module' in log.events_by_type['message'] and log.events_by_type['message']['module'][0] == 'gamm':
-                        self.result_sent = Coin.from_str(log.events_by_type['coin_spent']['amount'][0])
+                        self.result_sent     = Coin.from_str(log.events_by_type['coin_spent']['amount'][0])
+                        self.result_received = Coin.from_str(log.events_by_type['coin_received']['amount'][-1])
+                        log_found = True
+
+                    # Send to Osmosis
+                    if 'module' in log.events_by_type['message'] and 'transfer' in log.events_by_type['message']['module']:
+                        self.result_sent     = Coin.from_str(log.events_by_type['coin_spent']['amount'][0])
                         self.result_received = Coin.from_str(log.events_by_type['coin_received']['amount'][-1])
                         log_found = True
                 
                 if 'wasm' in log.events_by_type:
+                    # Standard swaps ('LUNC -> USTC'):
+                    if 'action' in log.events_by_type['wasm'] and log.events_by_type['wasm']['action'][0] == 'swap':
+                        self.result_sent     = Coin.from_str(log.events_by_type['coin_spent']['amount'][0])
+                        self.result_received = Coin.from_str(log.events_by_type['coin_received']['amount'][-1])
+                        log_found = True
+
                     # Send transactions
                     if 'action' in log.events_by_type['wasm'] and log.events_by_type['wasm']['action'][0] == 'transfer':
                         self.result_sent     = Coin.from_str(f"{log.events_by_type['wasm']['amount'][0]}{self.denom}")
@@ -312,7 +338,7 @@ class TransactionCore():
 
                     # Base swaps/undelegations
                     if '_contract_address' in log.events_by_type['wasm'] and log.events_by_type['wasm']['_contract_address'][0] == BASE_SMART_CONTRACT_ADDRESS:
-                        self.result_sent = None
+                        self.result_sent     = None
                         self.result_received = Coin.from_data({'amount': log.events_by_type['wasm']['Net Unstake:'][0], 'denom': ULUNA})
                         log_found = True
 
