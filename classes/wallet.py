@@ -245,7 +245,7 @@ class UserWallet:
 
                     # Convert the result into a friendly list
                     for coin in result:
-                        denom_trace = self.denomTrace(coin.denom)
+                        denom_trace           = self.denomTrace(coin.denom)
                         balances[denom_trace] = coin.amount
                         
                     # Go through the pagination (if any)
