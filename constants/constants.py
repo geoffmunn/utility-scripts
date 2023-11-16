@@ -304,17 +304,19 @@ DISABLED_COINS = [
 CHAIN_DATA = {
     ULUNA: {
         'chain_id':      'columbus-5',
+        'coingecko_id':  'terra-luna',
+        'cosmos_name':   'terra',
         'ibc_channels':  {
             'uosmo': 'channel-1',
         },
-        'lcd_urls':      ['https://rest.cosmos.directory/terra', 'https://terra-classic-fcd.publicnode.com'],
-        'coingecko_id':  'terra-luna',
-        'cosmos_name':   'terra',
+        'lcd_urls':      ['https://terra-classic-fcd.publicnode.com', 'https://rest.cosmos.directory/terra', 'https://terra-classic-fcd.publicnode.com'],
         'precision':     6,
         'bech32_prefix': 'terra'
     },
     UOSMO: {
         'chain_id':      'osmosis-1',
+        'coingecko_id':  'osmosis',
+        'cosmos_name':   'osmosis',
         'ibc_channels':  {
             AACRE:     'channel-490',
             AARCH:     'channel-1429',
@@ -385,8 +387,6 @@ CHAIN_DATA = {
             WMATIC:    'channel-208'
         },
         'lcd_urls':      ['https://lcd.osmosis.zone'],
-        'coingecko_id':  'osmosis',
-        'cosmos_name':   'osmosis',
         'precision':     6,
         'bech32_prefix': 'osmo'
     },
