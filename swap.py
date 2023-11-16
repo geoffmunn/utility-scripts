@@ -61,7 +61,12 @@ def main():
 
     # List all the coins in this wallet, with the amounts available:
     print ('\nWhat coin do you want to swap FROM?')
-    coin_from, answer, null_value = wallet.getCoinSelection("Select a coin number 1 - " + str(len(wallet.balances)) + ", 'X' to continue, or 'Q' to quit: ", wallet.balances)
+    coin_count:int = 0
+    for coin in wallet.balances:
+        if coin in FULL_COIN_LOOKUP:
+            coin_count += 1
+
+    coin_from, answer, null_value = wallet.getCoinSelection("Select a coin number 1 - " + str(coin_count) + ", 'X' to continue, or 'Q' to quit: ", wallet.balances)
 
     if answer == USER_ACTION_QUIT:
         print (' 🛑 Exiting...\n')
@@ -76,7 +81,7 @@ def main():
         exit()
 
     print ('\nWhat coin do you want to swap TO?')
-    coin_to, answer, estimated_amount = wallet.getCoinSelection("Select a coin number 1 - " + str(len(wallet.balances)) + ", 'X' to continue, or 'Q' to quit: ", wallet.balances, False, {'denom':coin_from, 'amount':swap_uluna})
+    coin_to, answer, estimated_amount = wallet.getCoinSelection("Select a coin number 1 - " + str(len(FULL_COIN_LOOKUP)) + ", 'X' to continue, or 'Q' to quit: ", wallet.balances, False, {'denom':coin_from, 'amount':swap_uluna})
 
     if answer == USER_ACTION_QUIT:
         print (' 🛑 Exiting...\n')
@@ -182,7 +187,7 @@ def main():
         
     else:
         print (' 🛎️  The swap transaction could not be completed')
-            
+
     print (' 💯 Done!\n')
 
 if __name__ == "__main__":
