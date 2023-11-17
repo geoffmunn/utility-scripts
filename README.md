@@ -21,11 +21,11 @@ Current functionality includes:
    * Switching between validators
    * Undelegating from validators
    * Viewing undelegations in progress
- * Staking LUNC with validators
  * Sending LUNC to other addresses
    * Including Osmosis addresses via IBC integration
  * Support for LUNC chain projects
    * BASE token swapping and sending
+ * Voting on governance proposals
 
 Swapping support includes the following:
  * LUNC to USTC on the columbus-5 chain
@@ -126,7 +126,7 @@ The full list of minor Terra coins are also supported, but currently do not work
  By running these on your own computer, you get direct access to the Luna Classic chain. You don't need to rely on 3rd party software like the Terra Station app, browser extension wallets, or centralised exchanges.
 
 
- You can also be sure you're getting the correct prices and fees. You can edit the script to behave differently if you want to.
+ You can also be sure you're getting the correct prices and fees. You can edit the script to behave differently if you want to. For example, Osmosis swaps use a much lower fee than what you'd use by default on Osmosis Zone.
 
  ## Requirements
  
@@ -272,18 +272,21 @@ You can change the values in the ```constants/constants.py``` file:
 
 ```
 GAS_ADJUSTMENT           = 3.6
-GAS_ADJUSTMENT_INCREMENT = 0.1
-MAX_GAS_ADJUSTMENT       = 4
+GAS_ADJUSTMENT_SEND      = 3.6
+GAS_ADJUSTMENT_SWAPS     = 3.6
+GAS_ADJUSTMENT_OSMOSIS   = 1.5
 ```
 
 ## Security notes
 
-Your wallet seed phrase is extremely important and must be kept safe at all times. You need to provide the seed phrase so the wallet can be recreated to allow withdrawals and delegations.
+Your wallet seed phrase is extremely important and MUST be kept safe at all times. You need to provide the seed phrase so the wallet can be recreated to allow withdrawals and delegations.
 
 Each wallet seed phrase is encrypted with the cryptocode library (https://pypi.org/project/cryptocode/) which uses AES encryption. You provide a password which makes the encrypted string impossible to guess or brute-force as long as it's a sufficiently complex password.
 
 The encrypted string is saved in the ```user_config.yml``` file, and your seed phrase will never be visible in plain text.
 
 When you run any of the other scripts, you provide the same password you used when you ran ```configure_user_wallets.py```. If this password doesn't decrypt any valid wallets then the script will stop.
+
+To be extra sure, it is recommended that you create a test wallet and make some small transactions with these scripts until you are comfortable that it works and is safe.
 
 If you have any questions or concerns about the security aspect of your seed, then please raise an issue on this project.
