@@ -4,8 +4,6 @@
 from datetime import datetime
 
 from constants.constants import (
-    GAS_ADJUSTMENT_INCREMENT,
-    MAX_GAS_ADJUSTMENT,
     MAX_VALIDATOR_COUNT,
     UBASE,
     ULUNA,
@@ -151,22 +149,6 @@ def main():
             if result == True:
                 delegation_tx.broadcast()
             
-                if delegation_tx.broadcast_result.code == 11:
-                    while True:
-                        print (' 🛎️  Increasing the gas adjustment fee and trying again')
-                        delegation_tx.terra.gas_adjustment += GAS_ADJUSTMENT_INCREMENT
-                        print (f' 🛎️  Gas adjustment value is now {delegation_tx.terra.gas_adjustment}')
-                        delegation_tx.simulate(delegation_tx.delegate)
-                        print (delegation_tx.readableFee())
-                        delegation_tx.delegate()
-                        delegation_tx.broadcast()
-
-                        if delegation_tx.broadcast_result.code != 11:
-                            break
-
-                        if delegation_tx.terra.gas_adjustment >= MAX_GAS_ADJUSTMENT:
-                            break
-                    
                 if delegation_tx.broadcast_result.is_tx_error():
                     print (' 🛎️ The delegation failed, an error occurred:')
                     print (f' 🛎️  {delegation_tx.broadcast_result.raw_log}')
@@ -230,23 +212,6 @@ def main():
 
             if result == True:
                 undelegation_tx.broadcast()
-            
-                if undelegation_tx.broadcast_result.code == 11:
-                    while True:
-                        print (' 🛎️  Increasing the gas adjustment fee and trying again')
-                        undelegation_tx.terra.gas_adjustment += GAS_ADJUSTMENT_INCREMENT
-                        print (f' 🛎️  Gas adjustment value is now {undelegation_tx.terra.gas_adjustment}')
-                        undelegation_tx.simulate(undelegation_tx.undelegate)
-                        print (undelegation_tx.readableFee())
-                        undelegation_tx.undelegate()
-                        undelegation_tx.broadcast()
-
-                        if undelegation_tx.broadcast_result.code != 11:
-                            break
-
-                        if undelegation_tx.terra.gas_adjustment >= MAX_GAS_ADJUSTMENT:
-                            break
-
                 if undelegation_tx.broadcast_result.is_tx_error():
                     print (' 🛎️ The undelegation failed, an error occurred:')
                     print (f' 🛎️  {undelegation_tx.broadcast_result.raw_log}')
@@ -321,23 +286,7 @@ def main():
             if result == True:
                 delegation_tx.broadcast()
             
-                if delegation_tx is not None:
-                    if delegation_tx.broadcast_result.code == 11:
-                        while True:
-                            print (' 🛎️  Increasing the gas adjustment fee and trying again')
-                            delegation_tx.terra.gas_adjustment += GAS_ADJUSTMENT_INCREMENT
-                            print (f' 🛎️  Gas adjustment value is now {delegation_tx.terra.gas_adjustment}')
-                            delegation_tx.simulate(delegation_tx.redelegate)
-                            print (delegation_tx.readableFee())
-                            delegation_tx.redelegate()
-                            delegation_tx.broadcast()
-
-                            if delegation_tx.broadcast_result.code != 11:
-                                break
-
-                            if delegation_tx.terra.gas_adjustment >= MAX_GAS_ADJUSTMENT:
-                                break
-                        
+                if delegation_tx is not None:    
                     if delegation_tx.broadcast_result.is_tx_error():
                         print (' 🛎️ The delegation failed, an error occurred:')
                         print (f' 🛎️  {delegation_tx.broadcast_result.raw_log}')
