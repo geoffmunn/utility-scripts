@@ -12,6 +12,8 @@ Current functionality includes:
 
  * Address book functionality for commonly used addresses
    * Includes LUNC and any supported IBC address
+   * Creation of wallets with the seed details for complete management
+     * Supports osmo and terra addresses
  * Viewing the balances across all your wallets
  * Withdrawing rewards from validator delegations
  * Managing validators
@@ -19,19 +21,105 @@ Current functionality includes:
    * Switching between validators
    * Undelegating from validators
    * Viewing undelegations in progress
- * Swapping USTC for LUNC
  * Staking LUNC with validators
  * Sending LUNC to other addresses
- * Swapping Terra coins (KRT, MNT, IDT etc) to USTC or LUNC where possible
- * IBC integration
-   * Send LUNC to Osmosis addresses
+   * Including Osmosis addresses via IBC integration
  * Support for LUNC chain projects
    * BASE token swapping and sending
- * Support for swapping of non-Terra coins via Osmosis
-   * Atom
-   * Kujira
-   * Osmosis
-   * Wrapped Ethereum
+
+Swapping support includes the following:
+ * LUNC to USTC on the columbus-5 chain
+ * LUNC to BASE
+ * LUNC to KRTC via contract address
+
+You can also swap via Osmosis, converting LUNC to the following:
+
+ * Akash
+ * Axelar
+ * AssetMantle
+ * Atom (CosmosHub)
+ * Band Protocol
+ * Bitsong
+ * Bluzelle
+ * Carbon
+ * Cheqd
+ * Chihuahua
+ * Comdex
+ * CRO (Crypto.com)
+ * Cudos
+ * Decentr
+ * Desmos
+ * e-Money
+ * Evmos
+ * Fetch.ai
+ * Gravity Bridge
+ * Injective
+ * IRISnet
+ * Ixo Protocol
+ * Juno
+ * Kava
+ * Kichain
+ * Kujira
+ * Lambda
+ * Likecoin
+ * Luna Classic (on Osmosis)
+ * Mars Protocol
+ * Medibloc
+ * Microtick
+ * Odin protocol
+ * Oraichain
+ * OSMO (Osmosis)
+ * Persistance
+ * Planq
+ * Regen
+ * Secret
+ * Sentinel
+ * Shentu
+ * Sifchain
+ * Sommelier
+ * Stargaze
+ * Starname
+ * Stride
+ * Umee
+ * USTC (on Osmosis)
+ * USDC
+ * Vidulum
+ * Whale
+ * Wrapped Arbitum
+ * Wrapped Avalanche
+ * Wrapped BNB
+ * Wrapped Bitcoin
+ * Wrapped DAI
+ * Wrapped Polygon
+ * Wrapped Ethereum
+ * Wrapped Frax
+ * Wrapped FTM
+ * Wrapped Chainlink
+ * Wrapped Polygon
+
+The full list of minor Terra coins are also supported, but currently do not work:
+
+ * AUTC
+ * CATC
+ * CHTC
+ * CNTC
+ * DKTC
+ * EUTC
+ * GBTC
+ * HKTC
+ * IDTC
+ * INTC
+ * JPTC
+ * KRTC
+ * MNTC
+ * MYTC
+ * NOTC
+ * PHTC
+ * SDTC
+ * SETC
+ * SGTC
+ * THTC
+ * TWTC
 
  ## Why should you use these scripts?
 
@@ -78,22 +166,28 @@ Please take a look at the security section below for details on how your seed ph
 
 You will be prompted for the following details:
 
+- **Wallet name**: A unique identifier for your reference. If you use the same name as an existing entry, it will overwrite the existing values
+
  - **Are you adding an entire wallet?** If you are just adding an address that you want to send funds to, then say 'No'.
- - **Wallet name**: A unique identifier for your reference. If you use the same name as an existing entry, it will overwrite the existing values
- - **Do you want to generate a new wallet address?** Yes or no - if you say 'yes' then a new address and seed phrase will be displayed and used for this wallet.
- - **Terra address**: If you said 'no' to the previous prompt, then you provide the address of the wallet here - it starts with 'terra'.
- - **Wallet seed**: If you said 'no' to creating a new wallet, then you provide the secret seed phrase to generate the wallet here. This is the ONLY time you'll need to provide this - see the security section below.
- - **Do you want to withdraw or delegate anything?**: Optional - if you're staking coins then say 'yes'.
- - **Delegation amount**: You can provide a percentage (usually 100%), or a fixed number (in LUNC). This percentage or number comes from the balance in the wallet at the time, unrelated to the withdrawn amount.
- - **Withdrawal threshold**: The amount of LUNC that must be available as a staking reward before it is withdrawn. If you want to always withdraw everything, enter '0'.
- - **Allow swaps?**: Yes or no - if you say 'no' then the swaps function will not apply to this wallet.
+ 
+ - **If you said no - just add an address:**
+   - **What is the wallet address address?** Provide the address of the wallet here - it starts with 'terra'.
+   - Finished!
+
+ - **If you said yes - add an entire wallet:**
+   - **Secret password (do not forget what this is)** A password to decrypt the seed value. For improved security, please make this a complex password.
+    - **Do you want to generate a new wallet address?** Yes or no - if you say 'yes' then a new address and seed phrase will be displayed and used for this wallet.
+    - **Is this a Terra Classic address (T) or an Osmosis address (O)?** If this is a conventional Terra wallet then the address with start with 'terra'. If you want an Osmosis wallet, then it will start with 'osmo'.
+    - **Terra address**: Provide the address of the wallet here - it starts with 'terra' or 'osmo'.
+    - **Wallet seed**: Provide the secret seed phrase to generate the wallet here. This is the ONLY time you'll need to provide this - see the security section below.
+    - Finished!
 
 This script will create a file called ```user_config.yml```.
 You can edit this file if you need to, but do not modify the encrypted seed string.
 
 If this file is corrupted or you forget the password then you can delete it and start again.
 
-### get_balances.py
+### balances.py
 
 This will return the balances for each coin type on all of your wallets. You provide the same password as you used in the configuration step, and say 'yes' or 'no' to just getting the LUNC and USTC summaries.
 
@@ -107,14 +201,13 @@ To automatically update your wallets, you need to run ```manage_wallets.py```. P
 
  **Special note about delegations**: delegating will also withdraw all existing rewards (which are not part of the delegation), so your balance afterwards might also reflect the withdrawals.
 
-### send_transaction.py
+### send.py
 
-You use ```send_transaction.py``` to send LUNC to another address, from wallets in the ```user_config.yml``` file. Provide the same password you used in the configuration step.
+You use ```transaction.py``` to send LUNC to another address, from wallets in the ```user_config.yml``` file. Provide the same password you used in the configuration step.
 
 Two points to remember:
  - Memos are optional
  - You should keep a minimum amount of LUNC in reserve for payment of fees for future operations
- - Gas fees can be hard to predict if this is not a LUNC -> LUNC transaction. If the transaction fails, then you can specifiy a higher gas fee.
 
  ### validators.py
 
@@ -131,15 +224,15 @@ After pressing 'X' to continue, you will can then choose what you want to swap y
 
 ## Osmosis usage
 
-You can swap to other non-Terra coins by using the Osmosis exchange functionality. Support for other coins needs to be specifically added to the list in the utility_contants.py file.
+You can swap to other non-Terra coins by using the Osmosis exchange functionality. Support for other coins needs to be specifically added to the list in the ```constants.py``` file.
 
-Fees are kept as low as possible, and slippage defaults to 1% but some transactions (LUNC -> ETH) seem to require a 3% slippage in order to work reliably.
+Fees are kept as low as possible, and slippage defaults to 1%. The swap paths are calculated automatically to use the lowest swap fee pool, and also required a pool with a significantly larger liquidity amount than what is being swapped.
 
-To use this, you need to send an amount of LUNC to your Osmosis address (starting with 'terra'). Once you have some funds there, you can swap them to other coins as well as using them for paying fees.
+To use this, you need to send an amount of LUNC to your Osmosis address (starting with 'osmo'). Once you have some funds there, you can swap them to other coins as well as using them for paying fees.
 
 For the sake of simplicity, LUNC is used as the fee payment option.
 
-Transfers are usually instantaneous - by the time you have run the ```get_balances.py``` script, you should see them in your balance list. However, it can sometimes take longer - even hours for a transfer to appear. If transaction reported success and the hash showes up in the explorer, then it will eventually appear.
+Transfers are usually instantaneous - by the time you have run the ```balances.py``` script, you should see them in your balance list. However, it can sometimes take longer - even hours for a transfer to appear. If transaction reported success and the hash showes up in the explorer, then it will eventually appear.
 
 ## BASE usage
 
@@ -153,7 +246,7 @@ Examples of errors and what they might mean:
 
 **The script is stuck on 'Starting delegations' and isn't doing anything**
 
-Sometimes it seems to timeout and nothing will happen for many minutes. In these cases you can press 'control+C' (on the Mac) to quit the script. You can run ```python3 get_balances.py``` to check where your coins currently sit, and re-run the ```manage_wallets.py``` script to start again.
+Sometimes it seems to timeout and nothing will happen for many minutes. In these cases you can press 'control+C' (on the Mac) to quit the script. You can run ```python3 balances.py``` to check where your coins currently sit, and re-run the ```manage_wallets.py``` script to start again.
 
 **LCD Response Error Status 400 - failed to execute message; message index: 0: Operation exceeds max spread limit: execute wasm contract failed: invalid request**
 
@@ -167,20 +260,18 @@ Network connectivity issues with the LCD endpoint. Try again later.
 
 The gas adjustment value needs to be increased.
 
-**terra_classic_sdk.exceptions.LCDResponseError: Status 400 - failed to execute message; message index: 0: token amount calculated (xxx) is lesser than min amount (yyy): invalid request
+**terra_classic_sdk.exceptions.LCDResponseError: Status 400 - failed to execute message; message index: 0: token amount calculated (xxx) is lesser than min amount (yyy): invalid request**
 
-If this was an Osmosis swap (probably to or from Ethereum) then increase the max_slippage value and try again.
+If this was an Osmosis swap (probably to or from Ethereum) then increase the OSMOSIS_FEE_MULTIPLIER value in ```constants.py``` and try again.
 
 ## Gas adjustment
 
-By default, the gas adjustment value starts at 1. This is a very low amount, and will usually fail. When it fails, the script will increase the value by 0.1 and try again. This will keep repeating until the gas adjustment value reaches 4, and then fail if it hasn't successfully finished at this point.
+Currently it seems that a successful gas adjustment value is 3.6. If you don't want to try the initial value, then you can change the default to to something else.
 
-Currently it seems that a successful gas adjustment value is 1.1. If you don't want to try the initial value, then you can change the default to 1.1.
-
-You can change the values in the ```utility_constants.py``` file:
+You can change the values in the ```constants/constants.py``` file:
 
 ```
-GAS_ADJUSTMENT           = 1
+GAS_ADJUSTMENT           = 3.6
 GAS_ADJUSTMENT_INCREMENT = 0.1
 MAX_GAS_ADJUSTMENT       = 4
 ```
