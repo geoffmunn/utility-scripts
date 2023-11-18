@@ -16,6 +16,7 @@ from constants.constants import (
     FULL_COIN_LOOKUP,
     GAS_PRICE_URI,
     SEARCH_RETRY_COUNT,
+    UBASE,
     ULUNA,
     UUSD
 )
@@ -305,12 +306,6 @@ class TransactionCore():
                         
                         log_found = True
 
-                    # # Send to Osmosis
-                    # if 'module' in log.events_by_type['message'] and 'distribution' in log.events_by_type['message']['module']:
-                    #     self.result_sent     = Coin.from_str(log.events_by_type['coin_spent']['amount'][0])
-                    #     self.result_received = Coin.from_str(log.events_by_type['coin_received']['amount'][-1])
-                    #     log_found = True
-
                     # Osmosis swaps
                     if 'module' in log.events_by_type['message'] and log.events_by_type['message']['module'][0] == 'gamm':
                         self.result_sent     = Coin.from_str(log.events_by_type['coin_spent']['amount'][0])
@@ -338,8 +333,12 @@ class TransactionCore():
 
                     # Base swaps/undelegations
                     if '_contract_address' in log.events_by_type['wasm'] and log.events_by_type['wasm']['_contract_address'][0] == BASE_SMART_CONTRACT_ADDRESS:
-                        self.result_sent     = None
-                        self.result_received = Coin.from_data({'amount': log.events_by_type['wasm']['Net Unstake:'][0], 'denom': ULUNA})
+                        self.result_sent = None
+                        if log.events_by_type['wasm']['action'][0] == 'buy':
+                            self.result_received = Coin.from_data({'amount': log.events_by_type['wasm']['BASE Minted:'][0], 'denom': UBASE})
+                        else:
+                            # Assumes swaps back from BASE -> LUNC
+                            self.result_received = Coin.from_data({'amount': log.events_by_type['wasm']['Net Unstake:'][0], 'denom': ULUNA})
                         log_found = True
 
 
