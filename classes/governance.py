@@ -97,7 +97,7 @@ class Governance(TransactionCore):
 
         horizontal_spacer:str = '-' * (len(header_string) + 2)
 
-        proposal_to_use:int = 0
+        proposal_to_use:int = None
         while True:
             count:int = 0
 
@@ -143,7 +143,10 @@ class Governance(TransactionCore):
             if answer == USER_ACTION_QUIT:
                 break
 
-        return proposals[proposal_to_use - 1], answer
+        if proposal_to_use is not None:
+            return proposals[proposal_to_use - 1], answer
+        else:
+            return None, answer
     
     def tally(self) -> dict:
         """
