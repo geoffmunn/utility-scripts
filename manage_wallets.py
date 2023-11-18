@@ -183,6 +183,7 @@ def main():
                             
                                 else:
                                     print (f' ✅ Withdrawn amount: {wallet.formatUluna(uluna_reward, ULUNA, True)}')
+                                    print (f' ✅ Received amount: {wallet.formatUluna(withdrawal_tx.result_received.amount, ULUNA, True)}')
                                     print (f' ✅ Tx Hash: {withdrawal_tx.broadcast_result.txhash}')
                         else:
                             print (' 🛎️  The withdrawal could not be completed')
@@ -256,6 +257,7 @@ def main():
                             
                                 else:
                                     print (f' ✅ Swap successfully completed')
+                                    print (f' ✅ Received amount: {wallet.formatUluna(swap_tx.result_received.amount, ULUNA, True)}')
                                     print (f' ✅ Tx Hash: {swap_tx.broadcast_result.txhash}')
                             else:
                                 print (' 🛎️  Swap transaction could not be completed')
@@ -336,6 +338,7 @@ def main():
                                                 print (f' 🛎️  {delegation_tx.broadcast_result.raw_log}')
                                         else:
                                             print (f' ✅ Delegated amount: {wallet.formatUluna(delegated_uluna, ULUNA, True)}')
+                                            print (f' ✅ Received amount: {wallet.formatUluna(delegation_tx.result_received.amount, ULUNA, True)}')
                                             print (f' ✅ Tx Hash: {delegation_tx.broadcast_result.txhash}')
                                     else:
                                         print (' 🛎️  The delegation could not be completed')
