@@ -38,9 +38,9 @@ def get_send_to_address(user_wallets:UserWallet):
     header_string:str = ' Number |'
 
     if label_widths[1] > len('Wallet name'):
-        header_string +=  ' Wallet name' + padding_str[0:label_widths[1] - len('Wallet name')] + ' '
+        header_string +=  ' Wallet name' + padding_str[0:label_widths[1] - len('Wallet name')] + ' | Address                                      '
     else:
-        header_string +=  ' Wallet name '
+        header_string +=  ' Wallet name | Address                                      '
 
     horizontal_spacer:str = '-' * len(header_string)
 
@@ -73,9 +73,10 @@ def get_send_to_address(user_wallets:UserWallet):
 
             count_str =  f' {count}' + padding_str[0:6 - (len(str(count)) + 2)]
             
-            wallet_name_str = wallet_name + padding_str[0:label_widths[1] - len(wallet_name)]
+            wallet_name_str    = wallet_name + padding_str[0:label_widths[1] - len(wallet_name)]
+            wallet_address:str = wallet.address
             
-            print (f"{count_str}{glyph} | {wallet_name_str}")
+            print (f"{count_str}{glyph} | {wallet_name_str} | {wallet_address}")
             
         print (horizontal_spacer + '\n')
 
