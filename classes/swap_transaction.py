@@ -709,12 +709,12 @@ class SwapTransaction(TransactionCore):
                 if self.swap_denom == ULUNA and self.swap_request_denom == UBASE:
                     # We are swapping LUNC for BASE
                     tx_msg = MsgExecuteContract(
-                        sender      = self.current_wallet.key.acc_address,
-                        contract    = self.contract,
-                        msg = {
+                        sender   = self.current_wallet.key.acc_address,
+                        contract = self.contract,
+                        msg      = {
                             "buy": {"affiliate": ""}
                         },
-                        coins       = Coins(str(swap_amount) + self.swap_denom)
+                        coins    = Coins(str(swap_amount) + self.swap_denom)
                     )
                     options = CreateTxOptions(
                         fee        = self.fee,
@@ -726,9 +726,9 @@ class SwapTransaction(TransactionCore):
                 elif self.swap_denom == UBASE:
                     # We are swapping BASE back to ULUNA
                     tx_msg = MsgExecuteContract(
-                        sender      = self.current_wallet.key.acc_address,
-                        contract    = self.contract,
-                        msg = {
+                        sender   = self.current_wallet.key.acc_address,
+                        contract = self.contract,
+                        msg      = {
                             "burn": {"amount": str(swap_amount)}
                         }
                     )
@@ -741,9 +741,9 @@ class SwapTransaction(TransactionCore):
                     )
                 else:
                     tx_msg = MsgExecuteContract(
-                        sender      = self.current_wallet.key.acc_address,
-                        contract    = self.contract,
-                        msg = {
+                        sender   = self.current_wallet.key.acc_address,
+                        contract = self.contract,
+                        msg      = {
                             'swap': {
                                 'belief_price': str(self.belief_price),
                                 'max_spread': str(self.max_spread),
@@ -757,7 +757,7 @@ class SwapTransaction(TransactionCore):
                                 },
                             }
                         },
-                        coins = Coins(str(swap_amount) + self.swap_denom)
+                        coins    = Coins(str(swap_amount) + self.swap_denom)
                     )
 
                     options = CreateTxOptions(
