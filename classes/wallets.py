@@ -298,16 +298,15 @@ class UserWallets:
             if len(wallet_name) > label_widths[1]:
                 label_widths[1] = len(wallet_name)
 
-            if ULUNA in self.wallets[wallet_name].balances:
-                uluna_val:str = self.wallets[wallet_name].formatUluna(self.wallets[wallet_name].balances[ULUNA], ULUNA)
-            else:
-                uluna_val:str = ''
-                
-            if UUSD in self.wallets[wallet_name].balances:
-                ustc_val:str = self.wallets[wallet_name].formatUluna(self.wallets[wallet_name].balances[UUSD], UUSD)
-            else:
-                ustc_val:str = ''
-
+            uluna_val:str = ''
+            ustc_val:str  = ''
+            if self.wallets[wallet_name].balances is not None:
+                if ULUNA in self.wallets[wallet_name].balances:
+                    uluna_val = self.wallets[wallet_name].formatUluna(self.wallets[wallet_name].balances[ULUNA], ULUNA)
+                    
+                if UUSD in self.wallets[wallet_name].balances:
+                    ustc_val = self.wallets[wallet_name].formatUluna(self.wallets[wallet_name].balances[UUSD], UUSD)
+            
             if len(str(uluna_val)) > label_widths[2]:
                 label_widths[2] = len(str(uluna_val))
 
@@ -383,18 +382,17 @@ class UserWallets:
                 count_str:str       =  f' {count}' + padding_str[0:6 - (len(str(count)) + 2)]
                 wallet_name_str:str = wallet_name + padding_str[0:label_widths[1] - len(wallet_name)]
 
-                if ULUNA in wallet.balances:
-                    lunc_str:str = wallet.formatUluna(wallet.balances[ULUNA], ULUNA, False)
-                else: 
-                    lunc_str:str = ''
+                lunc_str:str = ''
+                ustc_str:str = ''
 
+                if wallet.balances is not None:
+                    if ULUNA in wallet.balances:
+                        lunc_str = wallet.formatUluna(wallet.balances[ULUNA], ULUNA, False)
+                    
+                    if UUSD in wallet.balances:
+                        ustc_str = wallet.formatUluna(wallet.balances[UUSD], UUSD, False)
+                    
                 lunc_str = lunc_str + padding_str[0:label_widths[2] - len(lunc_str)]
-                
-                if UUSD in wallet.balances:
-                    ustc_str:str = wallet.formatUluna(wallet.balances[UUSD], UUSD, False)
-                else:
-                    ustc_str:str = ' '
-
                 ustc_str = ustc_str + padding_str[0:label_widths[3] - len(ustc_str)]
                 
                 if show_delegations == True:
