@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 
+import asyncio
 import yaml
 
 from getpass import getpass
@@ -23,6 +24,31 @@ class UserWallets:
         self.wallets:dict   = {}
         self.addresses:dict = {}
 
+    async def __AsyncLoadBalances(self, user_wallets):
+        """
+        A special function to load wallet balances in an asynchronous mode.
+        """
+
+        async def async_loop(user_wallets, wallet_name):
+            wallet:UserWallet = user_wallets[wallet_name]
+            await wallet.getBalancesAsync()
+            
+        coros = [async_loop(user_wallets, wallet_name) for wallet_name in user_wallets]
+        await asyncio.gather(*coros)
+
+    async def __AsyncLoadDelegations(self, user_wallets):
+        """
+        A special function to load wallet delegations and undelegations in an asynchronous mode.
+        """
+
+        async def async_loop(user_wallets, wallet_name):
+            wallet:UserWallet = user_wallets[wallet_name]
+            await wallet.getDelegationsAsync()
+            await wallet.getUnDelegationsAsync()
+            
+        coros = [async_loop(user_wallets, wallet_name) for wallet_name in user_wallets]
+        
+        await asyncio.gather(*coros)
     def create(self, yml_file:dict, user_password:str) -> dict:
         """
         Create a dictionary of wallets. Each wallet is a Wallet object.
