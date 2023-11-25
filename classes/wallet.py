@@ -266,8 +266,15 @@ class UserWallet:
                         pagOpt.key         = pagination["next_key"]
                         result, pagination = self.terra.bank.balance(address = self.address, params = pagOpt)
                         
-                        denom_trace           = self.denomTrace(coin.denom)
-                        balances[denom_trace] = coin.amount
+                        # Convert the result into a friendly list
+                        for coin in result:
+                            if core_coins_only == True:
+                                if coin.denom in [ULUNA, UUSD]:
+                                    balances[coin.denom] = coin.amount
+                            else:
+                                denom_trace           = self.denomTrace(coin.denom)
+                                balances[denom_trace] = coin.amount
+
                     
                 except Exception as err:
                     print (f'Pagination error for {self.name}:', err)
