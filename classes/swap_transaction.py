@@ -133,7 +133,10 @@ class SwapTransaction(TransactionCore):
         self.gas_list = self.gasList()
         self.tax_rate = self.taxRate()
 
-        return self
+        if self.gas_list is None:
+            return False
+        else:
+            return self
     
     def marketSimulate(self):
         """
