@@ -86,7 +86,15 @@ class UserWallet:
 
         # Set up the object with the details we're interested in
         if balance_amount > 0:
-            self.delegations[validator_name] = {'balance_amount': balance_amount, 'balance_denom': balance_denom, 'commission': validator_commission, 'delegator': delegator_address, 'rewards': reward_coins, 'validator': validator_address,  'validator_name': validator_name}
+            self.delegations[validator_name] = {
+                'balance_amount': balance_amount, 
+                'balance_denom':  balance_denom, 
+                'commission':     validator_commission, 
+                'delegator':      delegator_address, 
+                'rewards':        reward_coins, 
+                'validator':      validator_address, 
+                'validator_name': validator_name
+            }
 
     def __iter_undelegation_result__(self, undelegation:UnbondingDelegation) -> dict:
         """
@@ -107,7 +115,12 @@ class UserWallet:
             balance_total += entry['balance']
 
         # Set up the object with the details we're interested in
-        self.undelegations[validator_address] = {'balance_amount': balance_total, 'delegator_address': delegator_address, 'validator_address': validator_address, 'entries': entries}
+        self.undelegations[validator_address] = {
+            'balance_amount':    balance_total, 
+            'delegator_address': delegator_address, 
+            'validator_address': validator_address, 
+            'entries':           entries
+        }
     
     def convertPercentage(self, percentage:float, keep_minimum:bool, target_amount:float, target_denom:str):
         """
