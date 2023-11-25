@@ -31,16 +31,22 @@ def main():
 
     # Get the user wallets
     wallets = UserWallets()
-    user_wallets:dict = wallets.loadUserWallets()
+    user_wallets:dict = wallets.loadUserWallets(get_balances = False)
     
     if len(user_wallets) > 0:
         print (f'You can vote on the following proposals:')
 
         # Create the governance object
         governance:Governance = Governance().create()
+
+        # Get any proposals that are up for voting
         proposals:dict = governance.proposals()
 
-        proposal, answer = governance.getUserSingleChoice(f"Select a proposal number 1 - {str(len(proposals))}, 'X' to continue, or 'Q' to quit: ")
+        if len(proposals) > 0:
+            proposal, answer = governance.getUserSingleChoice(f"Select a proposal number 1 - {str(len(proposals))}, 'X' to continue, or 'Q' to quit: ")
+        else:
+            print ('\n 🛑 There are no active proposals to vote on at the moment.\n')
+            exit()
 
         if answer == USER_ACTION_QUIT:
             print (' 🛑 Exiting...\n')
