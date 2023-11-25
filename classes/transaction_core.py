@@ -384,14 +384,13 @@ class TransactionCore():
                     else:
                         self.gas_list = None
                         print (f' 🛑 Gas prices not returned from {self.gas_price_url}')
-                        exit()
+                        
                 else:
                     print (' 🛑 No gas price URL set at self.gas_price_url')
-                    exit()
+                    self.gas_list = None
             except:
                 print (' 🛑 Error getting gas prices')
                 print (requests.get(self.gas_price_url).content)
-                exit()
 
         return self.gas_list
     
