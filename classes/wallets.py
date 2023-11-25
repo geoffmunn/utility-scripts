@@ -488,8 +488,8 @@ class UserWallets:
             break
         
         return user_wallet, answer
-    
-    def loadUserWallets(self) -> dict:
+        
+    def loadUserWallets(self, get_balances:bool = True, get_delegations:bool = False) -> dict:
         """
         Request the decryption password off the user and load the user_config.yml file based on this
         """
@@ -518,6 +518,14 @@ class UserWallets:
                print (' 🛑 The user_config.yml file could not be opened - please run configure_user_wallets.py before running this script.')
         else:
             print (' 🛑 The user_config.yml does not exist - please run configure_user_wallets.py before running this script.')
+
+        if get_balances == True:
+            loop = asyncio.get_event_loop()
+            loop.run_until_complete(self.__AsyncLoadBalances(self.wallets))
+
+        if get_delegations == True:
+            loop = asyncio.get_event_loop()
+            loop.run_until_complete(self.__AsyncLoadDelegations(self.wallets))
 
         return result
     
