@@ -49,6 +49,7 @@ class UserWallets:
         coros = [async_loop(user_wallets, wallet_name) for wallet_name in user_wallets]
         
         await asyncio.gather(*coros)
+
     def create(self, yml_file:dict, user_password:str) -> dict:
         """
         Create a dictionary of wallets. Each wallet is a Wallet object.
@@ -316,10 +317,6 @@ class UserWallets:
             label_widths.append(len('Delegations'))
             label_widths.append(len('Undelegations'))
 
-            for wallet_name in self.wallets:
-                self.wallets[wallet_name].getDelegations()
-                self.wallets[wallet_name].getUndelegations()
-
         for wallet_name in self.wallets:
             if len(wallet_name) > label_widths[1]:
                 label_widths[1] = len(wallet_name)
@@ -435,14 +432,6 @@ class UserWallets:
                     if delegations_str == '0':
                         delegations_str = ' '
 
-                    #if delegations is not None:
-                    #    for delegation in delegations:
-                    #        delegations_balance += int(delegations[delegation]['balance_amount'])
-
-                    #delegations_str = str(self.wallets[wallet_name].formatUluna(delegations_balance, ULUNA, False))
-                    #if delegations_str == '0':
-                    #    delegations_str = ''
-
                     delegations_str = delegations_str + padding_str[0:label_widths[4] - len(delegations_str)]
 
                     undelegations = self.wallets[wallet_name].undelegations
@@ -482,9 +471,12 @@ class UserWallets:
             if answer == USER_ACTION_QUIT:
                 break
 
-        # Get the first (and only) validator from the list
+        # Get the first (and only) wallet from the list
         for item in wallets_to_use:
             user_wallet:UserWallet = wallets_to_use[item]
+
+            # Get ALL the coins in the selected wallet:
+            user_wallet.getBalances()    
             break
         
         return user_wallet, answer
