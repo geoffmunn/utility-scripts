@@ -136,11 +136,6 @@ def main():
     #user_wallets:dict = wallets.wallets
     user_addresses:dict = wallets.addresses
 
-    # Get the balances on each wallet (for display purposes)
-    for wallet_name in user_wallets:
-        wallet:UserWallet = user_wallets[wallet_name]
-        wallet.getBalances()
-
     if len(user_wallets) > 0:
         print (f'You can send LUNC, USTC, and minor coins on the following wallets:')
 
