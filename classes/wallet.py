@@ -632,33 +632,32 @@ class UserWallet:
                     
 
         # Get any BASE undelegations currently in progress
-        if 'ubase' in self.balances:
-            base_undelegations       = self.getUbaseUndelegations(self.address)
-            undelegated_amount:float = 0
-            entries:list             = []
-            
-            utc_zone = tz.gettz('UTC')
-            base_zone = tz.gettz('US/Eastern')
+        base_undelegations       = self.getUbaseUndelegations(self.address)
+        undelegated_amount:float = 0
+        entries:list             = []
+        
+        utc_zone = tz.gettz('UTC')
+        base_zone = tz.gettz('US/Eastern')
 
-            for base_item in base_undelegations:
-                undelegated_amount += base_item['luncNetReleased']
+        for base_item in base_undelegations:
+            undelegated_amount += base_item['luncNetReleased']
 
-                # Convert the BASE date to a UTC format
-                # First, we need to swap it to a d/m/y format
-                release_date_bits = base_item['releaseDate'].split('/')
-                release_date      = f"{release_date_bits[1]}/{release_date_bits[0]}/{release_date_bits[2]}" 
-                base_time         = datetime.strptime(release_date, '%d/%m/%Y')
+            # Convert the BASE date to a UTC format
+            # First, we need to swap it to a d/m/y format
+            release_date_bits = base_item['releaseDate'].split('/')
+            release_date      = f"{release_date_bits[1]}/{release_date_bits[0]}/{release_date_bits[2]}" 
+            base_time         = datetime.strptime(release_date, '%d/%m/%Y')
 
-                # Now give it the timezone that BASE works in
-                base_time = base_time.replace(tzinfo = base_zone)
-                # Convert time to UTC
-                utc_time = base_time.astimezone(utc_zone)
-                # Generate UTC time string
-                utc_string = utc_time.strftime('%d/%m/%Y')
+            # Now give it the timezone that BASE works in
+            base_time = base_time.replace(tzinfo = base_zone)
+            # Convert time to UTC
+            utc_time = base_time.astimezone(utc_zone)
+            # Generate UTC time string
+            utc_string = utc_time.strftime('%d/%m/%Y')
 
-                entries.append({'balance': multiply_raw_balance(base_item['luncNetReleased'], UBASE), 'completion_time': utc_string})
-            
-            self.undelegations['base'] = {'balance_amount': multiply_raw_balance(undelegated_amount, UBASE), 'entries': entries}
+            entries.append({'balance': multiply_raw_balance(base_item['luncNetReleased'], UBASE), 'completion_time': utc_string})
+        
+        self.undelegations['base'] = {'balance_amount': multiply_raw_balance(undelegated_amount, UBASE), 'entries': entries}
 
         return self.undelegations
     
