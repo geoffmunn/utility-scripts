@@ -313,6 +313,15 @@ class UserWallet:
         
         return self.balances
     
+    async def getBalancesAsync(self) -> dict:
+        """
+        An asynchronous wrapper aruond the standard delegation function.
+        """
+
+        balances:dict = self.getBalances(core_coins_only = True)
+
+        return balances
+
     def getCoinSelection(self, question:str, coins:dict, only_active_coins:bool = True, estimation_against:dict = None):
         """
         Return a selected coin based on the provided list.
@@ -513,6 +522,15 @@ class UserWallet:
 
         return self.delegations
     
+    async def getDelegationsAsync(self) -> dict:
+        """
+        An asynchronous wrapper aruond the standard delegation function.
+        """
+
+        delegations:dict = self.getDelegations()
+
+        return delegations
+    
     def getDenomByPrefix(self, prefix:str) -> str:
         """
         Go through the supported chains to find the denom for the provided prefix
@@ -660,6 +678,15 @@ class UserWallet:
         self.undelegations['base'] = {'balance_amount': multiply_raw_balance(undelegated_amount, UBASE), 'entries': entries}
 
         return self.undelegations
+    
+    async def getUnDelegationsAsync(self) -> dict:
+        """
+        An asynchronous wrapper aruond the standard undelegation function.
+        """
+        
+        undelegations:dict = self.getUndelegations()
+
+        return undelegations
     
     def getUserNumber(self, question:str, params:dict):
         """
