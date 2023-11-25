@@ -236,7 +236,7 @@ class UserWallet:
         
         return lunc
     
-    def getBalances(self, target_coin:Coin = None) -> dict:
+    def getBalances(self, target_coin:Coin = None, core_coins_only:bool = False) -> dict:
         """
         Get the balances associated with this wallet.
         If you pass a target_coin Coin object, this will loop until it sees a change on this denomination.
@@ -258,8 +258,13 @@ class UserWallet:
 
                     # Convert the result into a friendly list
                     for coin in result:
-                        denom_trace           = self.denomTrace(coin.denom)
-                        balances[denom_trace] = coin.amount
+                        if core_coins_only == True:
+                            if coin.denom in [ULUNA, UUSD]:
+                                balances[coin.denom] = coin.amount
+                        else:
+                            denom_trace           = self.denomTrace(coin.denom)
+                            balances[denom_trace] = coin.amount
+                        
                         
                     # Go through the pagination (if any)
                     while pagination['next_key'] is not None:
@@ -279,11 +284,12 @@ class UserWallet:
                 except Exception as err:
                     print (f'Pagination error for {self.name}:', err)
 
-                # Add the extra coins (Base etc)
-                if self.terra is not None and self.terra.chain_id == CHAIN_DATA[ULUNA]['chain_id']:
-                    coin_balance = self.terra.wasm.contract_query(BASE_SMART_CONTRACT_ADDRESS, {'balance':{'address':self.address}})
-                    if int(coin_balance['balance']) > 0:
-                        balances[UBASE] = coin_balance['balance']
+                if core_coins_only == False:
+                    # Add the extra coins (Base etc)
+                    if self.terra is not None and self.terra.chain_id == CHAIN_DATA[ULUNA]['chain_id']:
+                        coin_balance = self.terra.wasm.contract_query(BASE_SMART_CONTRACT_ADDRESS, {'balance':{'address':self.address}})
+                        if int(coin_balance['balance']) > 0:
+                            balances[UBASE] = coin_balance['balance']
 
                 if target_coin is not None:
                     # If the current balance has a higher amount in it than that target coin, then we can exit
