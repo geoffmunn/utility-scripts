@@ -18,14 +18,15 @@ from classes.common import (
 from classes.wallets import UserWallets
 from classes.wallet import UserWallet
 
+
 def main():
     
     # Check if there is a new version we should be using
     check_version()
 
-    # Get the user wallets
-    user_wallets = UserWallets().loadUserWallets()
-
+    # Get the user wallets. We'll be getting the balances futher on down.
+    user_wallets = UserWallets().loadUserWallets(get_balances = False)
+    
     if len(user_wallets) == 0:
         print (" 🛑 This password couldn't decrypt any wallets. Make sure it is correct, or rebuild the wallet list by running the configure_user_wallet.py script again.\n")
         exit()
@@ -52,6 +53,7 @@ def main():
 
     for wallet_name in user_wallets:
         wallet:UserWallet = user_wallets[wallet_name]
+
         delegations:dict  = wallet.getDelegations()
 
         if delegations is not None:
