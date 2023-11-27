@@ -699,7 +699,7 @@ class SwapTransaction(TransactionCore):
                 fee_coin:Coin   = fee_amount[0]
                 fee_denom:str   = fee_coin.denom
             else:
-                fee_denom:str   = UUSD
+                fee_denom:str   = ULUNA
 
             if fee_denom in self.balances:
                 swap_amount = self.swap_amount
