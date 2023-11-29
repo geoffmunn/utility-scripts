@@ -317,6 +317,12 @@ class TransactionCore():
                         self.result_sent     = Coin.from_str(log.events_by_type['coin_spent']['amount'][0])
                         self.result_received = Coin.from_str(log.events_by_type['coin_received']['amount'][-1])
                         log_found = True
+
+                    # Send to on-chain address
+                    if 'module' in log.events_by_type['message'] and 'bank' in log.events_by_type['message']['module']:
+                        self.result_sent     = Coin.from_str(log.events_by_type['coin_spent']['amount'][0])
+                        self.result_received = Coin.from_str(log.events_by_type['coin_received']['amount'][-1])
+                        log_found = True
                 
                 if 'wasm' in log.events_by_type:
                     # Standard swaps ('LUNC -> USTC'):
