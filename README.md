@@ -244,6 +244,9 @@ Due to how BASE works, you need to wait 21 days for a swap from BASE back to LUN
 
 Examples of errors and what they might mean:
 
+**'unsupported hash type ripemd160' message when you enter your decryption password**
+This seems to be a problem with OpenSSL v3 on some versions of Linux. Follow the instructions here: https://stackoverflow.com/questions/72409563/unsupported-hash-type-ripemd160-with-hashlib-in-python to fix it.
+
 **The script is stuck on 'Starting delegations' and isn't doing anything**
 
 Sometimes it seems to timeout and nothing will happen for many minutes. In these cases you can press 'control+C' (on the Mac) to quit the script. You can run ```python3 balances.py``` to check where your coins currently sit, and re-run the ```manage_wallets.py``` script to start again.
