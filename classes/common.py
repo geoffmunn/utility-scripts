@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 
+
 import json
 import os
 import requests
+import sqlite3
 import traceback
+
+from datetime import datetime, timedelta
 
 from constants.constants import (
     CHAIN_DATA,
@@ -79,6 +83,20 @@ def check_database():
 
     try:
         if os.stat(DB_FILE_NAME).st_size > 0:
+            # Check if the last scan was fairly recent:
+            
+            recent_scan = "SELECT last_scan_date FROM osmosis_summary WHERE ID = 1;"
+            conn        = sqlite3.connect(DB_FILE_NAME)
+            cursor      = conn.execute(recent_scan)
+
+            for row in cursor.fetchone():
+                last_scan_date:datetime = datetime.strptime(row, '%Y-%m-%d %H:%M:%S')
+                previous_date:datetime  = datetime.now() - timedelta(weeks = 2)
+                
+                if last_scan_date < previous_date:
+                    print ('This database is out of date - you should get the latest Osmosis data.')
+                    print ('Run the get_osmosis_pools.py script to update the database.')
+
             return True
         else:
             print (' 🛑 The Osmosis pool database is empty...')

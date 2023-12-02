@@ -86,7 +86,15 @@ class UserWallet:
 
         # Set up the object with the details we're interested in
         if balance_amount > 0:
-            self.delegations[validator_name] = {'balance_amount': balance_amount, 'balance_denom': balance_denom, 'commission': validator_commission, 'delegator': delegator_address, 'rewards': reward_coins, 'validator': validator_address,  'validator_name': validator_name}
+            self.delegations[validator_name] = {
+                'balance_amount': balance_amount, 
+                'balance_denom':  balance_denom, 
+                'commission':     validator_commission, 
+                'delegator':      delegator_address, 
+                'rewards':        reward_coins, 
+                'validator':      validator_address, 
+                'validator_name': validator_name
+            }
 
     def __iter_undelegation_result__(self, undelegation:UnbondingDelegation) -> dict:
         """
@@ -107,7 +115,12 @@ class UserWallet:
             balance_total += entry['balance']
 
         # Set up the object with the details we're interested in
-        self.undelegations[validator_address] = {'balance_amount': balance_total, 'delegator_address': delegator_address, 'validator_address': validator_address, 'entries': entries}
+        self.undelegations[validator_address] = {
+            'balance_amount':    balance_total, 
+            'delegator_address': delegator_address, 
+            'validator_address': validator_address, 
+            'entries':           entries
+        }
     
     def convertPercentage(self, percentage:float, keep_minimum:bool, target_amount:float, target_denom:str):
         """
@@ -223,7 +236,7 @@ class UserWallet:
         
         return lunc
     
-    def getBalances(self, target_coin:Coin = None) -> dict:
+    def getBalances(self, target_coin:Coin = None, core_coins_only:bool = False) -> dict:
         """
         Get the balances associated with this wallet.
         If you pass a target_coin Coin object, this will loop until it sees a change on this denomination.
@@ -245,25 +258,38 @@ class UserWallet:
 
                     # Convert the result into a friendly list
                     for coin in result:
-                        denom_trace           = self.denomTrace(coin.denom)
-                        balances[denom_trace] = coin.amount
+                        if core_coins_only == True:
+                            if coin.denom in [ULUNA, UUSD]:
+                                balances[coin.denom] = coin.amount
+                        else:
+                            denom_trace           = self.denomTrace(coin.denom)
+                            balances[denom_trace] = coin.amount
+                        
                         
                     # Go through the pagination (if any)
                     while pagination['next_key'] is not None:
                         pagOpt.key         = pagination["next_key"]
                         result, pagination = self.terra.bank.balance(address = self.address, params = pagOpt)
                         
-                        denom_trace           = self.denomTrace(coin.denom)
-                        balances[denom_trace] = coin.amount
+                        # Convert the result into a friendly list
+                        for coin in result:
+                            if core_coins_only == True:
+                                if coin.denom in [ULUNA, UUSD]:
+                                    balances[coin.denom] = coin.amount
+                            else:
+                                denom_trace           = self.denomTrace(coin.denom)
+                                balances[denom_trace] = coin.amount
+
                     
                 except Exception as err:
                     print (f'Pagination error for {self.name}:', err)
 
-                # Add the extra coins (Base etc)
-                if self.terra is not None and self.terra.chain_id == CHAIN_DATA[ULUNA]['chain_id']:
-                    coin_balance = self.terra.wasm.contract_query(BASE_SMART_CONTRACT_ADDRESS, {'balance':{'address':self.address}})
-                    if int(coin_balance['balance']) > 0:
-                        balances[UBASE] = coin_balance['balance']
+                if core_coins_only == False:
+                    # Add the extra coins (Base etc)
+                    if self.terra is not None and self.terra.chain_id == CHAIN_DATA[ULUNA]['chain_id']:
+                        coin_balance = self.terra.wasm.contract_query(BASE_SMART_CONTRACT_ADDRESS, {'balance':{'address':self.address}})
+                        if int(coin_balance['balance']) > 0:
+                            balances[UBASE] = coin_balance['balance']
 
                 if target_coin is not None:
                     # If the current balance has a higher amount in it than that target coin, then we can exit
@@ -287,6 +313,15 @@ class UserWallet:
         
         return self.balances
     
+    async def getBalancesAsync(self) -> dict:
+        """
+        An asynchronous wrapper aruond the standard delegation function.
+        """
+
+        balances:dict = self.getBalances(core_coins_only = True)
+
+        return balances
+
     def getCoinSelection(self, question:str, coins:dict, only_active_coins:bool = True, estimation_against:dict = None):
         """
         Return a selected coin based on the provided list.
@@ -487,6 +522,15 @@ class UserWallet:
 
         return self.delegations
     
+    async def getDelegationsAsync(self) -> dict:
+        """
+        An asynchronous wrapper aruond the standard delegation function.
+        """
+
+        delegations:dict = self.getDelegations()
+
+        return delegations
+    
     def getDenomByPrefix(self, prefix:str) -> str:
         """
         Go through the supported chains to find the denom for the provided prefix
@@ -606,35 +650,43 @@ class UserWallet:
                     
 
         # Get any BASE undelegations currently in progress
-        if 'ubase' in self.balances:
-            base_undelegations       = self.getUbaseUndelegations(self.address)
-            undelegated_amount:float = 0
-            entries:list             = []
-            
-            utc_zone = tz.gettz('UTC')
-            base_zone = tz.gettz('US/Eastern')
+        base_undelegations       = self.getUbaseUndelegations(self.address)
+        undelegated_amount:float = 0
+        entries:list             = []
+        
+        utc_zone = tz.gettz('UTC')
+        base_zone = tz.gettz('US/Eastern')
 
-            for base_item in base_undelegations:
-                undelegated_amount += base_item['luncNetReleased']
+        for base_item in base_undelegations:
+            undelegated_amount += base_item['luncNetReleased']
 
-                # Convert the BASE date to a UTC format
-                # First, we need to swap it to a d/m/y format
-                release_date_bits = base_item['releaseDate'].split('/')
-                release_date      = f"{release_date_bits[1]}/{release_date_bits[0]}/{release_date_bits[2]}" 
-                base_time         = datetime.strptime(release_date, '%d/%m/%Y')
+            # Convert the BASE date to a UTC format
+            # First, we need to swap it to a d/m/y format
+            release_date_bits = base_item['releaseDate'].split('/')
+            release_date      = f"{release_date_bits[1]}/{release_date_bits[0]}/{release_date_bits[2]}" 
+            base_time         = datetime.strptime(release_date, '%d/%m/%Y')
 
-                # Now give it the timezone that BASE works in
-                base_time = base_time.replace(tzinfo = base_zone)
-                # Convert time to UTC
-                utc_time = base_time.astimezone(utc_zone)
-                # Generate UTC time string
-                utc_string = utc_time.strftime('%d/%m/%Y')
+            # Now give it the timezone that BASE works in
+            base_time = base_time.replace(tzinfo = base_zone)
+            # Convert time to UTC
+            utc_time = base_time.astimezone(utc_zone)
+            # Generate UTC time string
+            utc_string = utc_time.strftime('%d/%m/%Y')
 
-                entries.append({'balance': multiply_raw_balance(base_item['luncNetReleased'], UBASE), 'completion_time': utc_string})
-            
-            self.undelegations['base'] = {'balance_amount': multiply_raw_balance(undelegated_amount, UBASE), 'entries': entries}
+            entries.append({'balance': multiply_raw_balance(base_item['luncNetReleased'], UBASE), 'completion_time': utc_string})
+        
+        self.undelegations['base'] = {'balance_amount': multiply_raw_balance(undelegated_amount, UBASE), 'entries': entries}
 
         return self.undelegations
+    
+    async def getUnDelegationsAsync(self) -> dict:
+        """
+        An asynchronous wrapper aruond the standard undelegation function.
+        """
+        
+        undelegations:dict = self.getUndelegations()
+
+        return undelegations
     
     def getUserNumber(self, question:str, params:dict):
         """

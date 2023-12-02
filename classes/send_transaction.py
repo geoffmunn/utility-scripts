@@ -267,7 +267,7 @@ class SendTransaction(TransactionCore):
                 # No taxes for BASE transfers
                 self.tax = 0
             else:
-                self.tax = int(math.ceil(self.amount * float(self.tax_rate['tax_rate'])))
+                self.tax = int(math.ceil(self.amount * float(self.tax_rate)))
 
             # Build a fee object
             if fee_denom == ULUNA and self.denom == ULUNA:

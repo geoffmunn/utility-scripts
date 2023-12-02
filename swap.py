@@ -41,11 +41,6 @@ def main():
     if user_wallets is None:  
         print (" 🛑 This password couldn't decrypt any wallets. Make sure it is correct, or rebuild the wallet list by running the configure_user_wallet.py script again.\n")
         exit()
-    
-    # Get the balances on each wallet (for display purposes)
-    for wallet_name in user_wallets:
-        wallet:UserWallet = user_wallets[wallet_name]
-        wallet.getBalances()
 
     if len(user_wallets) > 0:
         print (f'You can make swaps on the following wallets:')

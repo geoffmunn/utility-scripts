@@ -41,13 +41,7 @@ def main():
 
     # Get the user wallets
     wallets      = UserWallets()
-    user_wallets = wallets.loadUserWallets()
-
-    # Get the balances on each wallet (for display purposes)
-    for wallet_name in user_wallets:
-        wallet:UserWallet = user_wallets[wallet_name]
-        wallet.getBalances()
-        wallet.getDelegations()
+    user_wallets = wallets.loadUserWallets(get_delegations = True)
 
     if len(user_wallets) > 0:
         print (f'You have these wallets available:')
@@ -92,7 +86,8 @@ def main():
         print (' 🛑 No validators could be retrieved - perhaps there are network issues?')
         exit()
 
-    delegations:dict = wallet.getDelegations()
+    # Not required for listing undelegations, but no harm having it here:
+    delegations:dict = wallet.delegations
 
     if user_action == USER_ACTION_VALIDATOR_DELEGATE:
 
@@ -304,7 +299,7 @@ def main():
         
         # Get the validator list and the undelegations in progress
         validator_list:dict = validators.validators_by_address
-        undelegations:dict  = wallet.getUndelegations()
+        undelegations:dict  = wallet.undelegations
         
         # Use today's date. 
         today:datetime = datetime.now()
