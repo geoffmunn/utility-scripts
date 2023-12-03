@@ -508,8 +508,10 @@ class UserWallets:
                 
             except:
                print (' 🛑 The user_config.yml file could not be opened - please run configure_user_wallets.py before running this script.')
+               exit()
         else:
             print (' 🛑 The user_config.yml does not exist - please run configure_user_wallets.py before running this script.')
+            exit()
 
         if get_balances == True:
             loop = asyncio.get_event_loop()
