@@ -85,19 +85,25 @@ def check_database():
         if os.stat(DB_FILE_NAME).st_size > 0:
             # Check if the last scan was fairly recent:
             
-            recent_scan = "SELECT last_scan_date FROM osmosis_summary WHERE ID = 1;"
-            conn        = sqlite3.connect(DB_FILE_NAME)
-            cursor      = conn.execute(recent_scan)
+            try:
+                recent_scan = "SELECT last_scan_date FROM osmosis_summary WHERE ID = 1;"
+                conn        = sqlite3.connect(DB_FILE_NAME)
+                cursor      = conn.execute(recent_scan)
 
-            for row in cursor.fetchone():
-                last_scan_date:datetime = datetime.strptime(row, '%Y-%m-%d %H:%M:%S')
-                previous_date:datetime  = datetime.now() - timedelta(weeks = 2)
-                
-                if last_scan_date < previous_date:
-                    print ('This database is out of date - you should get the latest Osmosis data.')
-                    print ('Run the get_osmosis_pools.py script to update the database.')
+                for row in cursor.fetchone():
+                    last_scan_date:datetime = datetime.strptime(row, '%Y-%m-%d %H:%M:%S')
+                    previous_date:datetime  = datetime.now() - timedelta(weeks = 2)
+                    
+                    if last_scan_date < previous_date:
+                        print ('This database is out of date - you should get the latest Osmosis data.')
+                        print ('Run the get_osmosis_pools.py script to update the database.')
 
-            return True
+                return True
+            except:
+                print (' 🛑 The Osmosis pool database could accessed...')
+                print (' 🛑 Run \'get_osmosis_pools.py\' first to generate the list.\n')
+                exit()
+
         else:
             print (' 🛑 The Osmosis pool database is empty...')
             print (' 🛑 Run \'get_osmosis_pools.py\' first to generate the list.\n')
