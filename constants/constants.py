@@ -64,7 +64,7 @@ USER_ACTION_VALIDATOR_UNDELEGATE         = 'u'
 USER_ACTION_VALIDATOR_SWITCH             = 's'
 
 # Max number of validators that Luna Classic allows
-MAX_VALIDATOR_COUNT = 130
+MAX_VALIDATOR_COUNT = 100
 
 # Governance constants:
 PROPOSAL_STATUS_UNSPECIFIED    = 0
