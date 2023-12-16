@@ -229,8 +229,8 @@ class SwapTransaction(TransactionCore):
         We will pick the lowest fee while still having a good level of liquidity
         """
 
-        path_query:str      = "SELECT pool.pool_id, denom, readable_denom, swap_fee FROM pool INNER JOIN asset ON pool.pool_id=asset.pool_id WHERE pool.pool_id IN (SELECT pool_id FROM asset WHERE readable_denom = ?) AND readable_denom=? ORDER BY swap_fee ASC;"
-        liquidity_query:str = "SELECT readable_denom, amount FROM asset WHERE pool_id = ?;"
+        path_query:str      = "SELECT pool.pool_id, token_denom, token_readable_denom, pool_swap_fee FROM pool INNER JOIN asset ON pool.pool_id=asset.pool_id WHERE pool.pool_id IN (SELECT pool_id FROM asset WHERE token_readable_denom = ?) AND token_readable_denom=? ORDER BY pool_swap_fee ASC;"
+        liquidity_query:str = "SELECT token_readable_denom, token_amount FROM asset WHERE pool_id = ?;"
 
         conn:Connection = sqlite3.connect(DB_FILE_NAME)
         cursor:Cursor   = conn.execute(path_query, [denom_in, denom_out])
@@ -255,13 +255,6 @@ class SwapTransaction(TransactionCore):
                     exit_liquidity = row2
                     exit_liquidity_value:float = divide_raw_balance(exit_liquidity[1], denom_out) * float(self.prices[CHAIN_DATA[denom_out]['coingecko_id']]['usd'])
 
-            #print (f'pool id: {row[0]}')
-            #print (f'origin liquidity: ({denom_in}) = {origin_liquidity}')
-            #print (f'exit liquidity: ({denom_out}) = {exit_liquidity}')
-            #print ('converted liquidity:', divide_raw_balance(exit_liquidity[1], denom_out))
-            #print ('value:', self.prices[CHAIN_DATA[denom_out]['coingecko_id']]['usd'])
-            #print (f'exit liquidity value: {exit_liquidity_value}')
-            
             # Now we have the origin and exit options, check that the liquidity amounts are sufficient
             swap_amount:float = initial_amount
             if origin_liquidity[1] > float(swap_amount * 10) and exit_liquidity_value >= 100:
