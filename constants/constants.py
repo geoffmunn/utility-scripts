@@ -23,7 +23,11 @@ GAS_ADJUSTMENT_SEND      = 3.6
 GAS_ADJUSTMENT_SWAPS     = 3.6
 GAS_ADJUSTMENT_OSMOSIS   = 1.5
 MIN_OSMO_GAS             = 0.0025
+MAX_SPREAD               = 0.01
 OSMOSIS_FEE_MULTIPLIER   = 1.5
+
+# For liquidity investments, what slippage will we tolerate?
+OSMOSIS_LIQUIDITIY_SPREAD = 0.05
 
 # Swap contracts can be found here
 # https://assets.terra.money/cw20/pairs.dex.json
