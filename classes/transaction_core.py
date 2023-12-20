@@ -29,7 +29,7 @@ from terra_classic_sdk.client.lcd.api.tx import (
 from terra_classic_sdk.client.lcd.wallet import Wallet
 from terra_classic_sdk.core.broadcast import (
     BlockTxBroadcastResult,
-    TxLog
+    TxLog,
 )
 from terra_classic_sdk.core.coin import Coin
 from terra_classic_sdk.core.coins import Coins
@@ -73,7 +73,7 @@ class TransactionCore():
         """
 
         try:
-            result:BlockTxBroadcastResult = self.terra.tx.broadcast(self.transaction)    
+            result:BlockTxBroadcastResult = self.terra.tx.broadcast_sync(self.transaction)    
         except Exception as err:
             print (' 🛑 A broadcast error occurred.')
             print (err)
