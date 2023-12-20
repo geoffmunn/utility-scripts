@@ -13,6 +13,7 @@ from constants.constants import (
     DB_FILE_NAME,
     GAS_ADJUSTMENT_OSMOSIS,
     GAS_ADJUSTMENT_SWAPS,
+    MAX_SPREAD,
     MIN_OSMO_GAS,
     OFFCHAIN_COINS,
     OSMOSIS_FEE_MULTIPLIER,
@@ -59,7 +60,7 @@ class SwapTransaction(TransactionCore):
         self.contract               = None
         self.fee_deductables:float  = None
         self.gas_limit:str          = 'auto'
-        self.max_spread:float       = 0.01
+        self.max_spread:float       = MAX_SPREAD
         self.min_out:int            = None
         self.osmosis_pools:dict     = {}
         self.recipient_address:str  = ''
@@ -545,7 +546,9 @@ class SwapTransaction(TransactionCore):
 
             # Return this result
             result = pool        
-            
+        else:
+            result = self.osmosis_pools[pool_id]
+
         return result
 
     
