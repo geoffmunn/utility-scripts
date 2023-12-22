@@ -27,7 +27,7 @@ MAX_SPREAD               = 0.01
 OSMOSIS_FEE_MULTIPLIER   = 1.5
 
 # For liquidity investments, what slippage will we tolerate?
-OSMOSIS_LIQUIDITIY_SPREAD = 0.05
+OSMOSIS_LIQUIDITIY_SPREAD = 0.01
 
 # Swap contracts can be found here
 # https://assets.terra.money/cw20/pairs.dex.json
