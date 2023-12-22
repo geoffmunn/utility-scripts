@@ -169,56 +169,57 @@ def main():
     liquidity_tx.liquidity_denom = denom
     liquidity_tx.source_channel = CHAIN_DATA[wallet.denom]['ibc_channels'][denom]
     liquidity_tx.wallet_denom = wallet.denom
-    liquidity_tx.simulate()
+    result = liquidity_tx.simulate()
 
-    print (liquidity_tx.readableFee())
-
-    user_choice = get_user_choice('Do you want to continue? (y/n) ', [])
-
-    if user_choice == False:
-        exit()
-
-    # Now we know what the fee is, we can do it again and finalise it
-    result = liquidity_tx.joinPool()
-        
     if result == True:
-        liquidity_tx.broadcast()
+        print (liquidity_tx.readableFee())
 
-        if liquidity_tx.broadcast_result is not None and liquidity_tx.broadcast_result.code == 32:
-            while True:
-                print (' 🛎️  Boosting sequence number and trying again...')
+        user_choice = get_user_choice('Do you want to continue? (y/n) ', [])
 
-                liquidity_tx.sequence = liquidity_tx.sequence + 1
-                
-                liquidity_tx.simulate()
-                liquidity_tx.joinPool()
-                
-                liquidity_tx.broadcast()
+        if user_choice == False:
+            exit()
 
-                if liquidity_tx is None:
-                    break
+        # Now we know what the fee is, we can do it again and finalise it
+        result = liquidity_tx.joinPool()
+            
+        if result == True:
+            liquidity_tx.broadcast()
 
-                # Code 32 = account sequence mismatch
-                if liquidity_tx.broadcast_result.code != 32:
-                    break
+            if liquidity_tx.broadcast_result is not None and liquidity_tx.broadcast_result.code == 32:
+                while True:
+                    print (' 🛎️  Boosting sequence number and trying again...')
 
-        if liquidity_tx.broadcast_result is None or liquidity_tx.broadcast_result.is_tx_error():
-            if liquidity_tx.broadcast_result is None:
-                print (' 🛎️  The send transaction failed, no broadcast object was returned.')
-            else:
-                print (' 🛎️  The send transaction failed, an error occurred:')
-                if liquidity_tx.broadcast_result.raw_log is not None:
-                    print (f' 🛎️  Error code {liquidity_tx.broadcast_result.code}')
-                    print (f' 🛎️  {liquidity_tx.broadcast_result.raw_log}')
+                    liquidity_tx.sequence = liquidity_tx.sequence + 1
+                    
+                    liquidity_tx.simulate()
+                    liquidity_tx.joinPool()
+                    
+                    liquidity_tx.broadcast()
+
+                    if liquidity_tx is None:
+                        break
+
+                    # Code 32 = account sequence mismatch
+                    if liquidity_tx.broadcast_result.code != 32:
+                        break
+
+            if liquidity_tx.broadcast_result is None or liquidity_tx.broadcast_result.is_tx_error():
+                if liquidity_tx.broadcast_result is None:
+                    print (' 🛎️  The send transaction failed, no broadcast object was returned.')
                 else:
-                    print ('No broadcast log was available.')
+                    print (' 🛎️  The send transaction failed, an error occurred:')
+                    if liquidity_tx.broadcast_result.raw_log is not None:
+                        print (f' 🛎️  Error code {liquidity_tx.broadcast_result.code}')
+                        print (f' 🛎️  {liquidity_tx.broadcast_result.raw_log}')
+                    else:
+                        print ('No broadcast log was available.')
+            else:
+                if liquidity_tx.result_received is not None:
+                    print (f' ✅ Sent amount: {wallet.formatUluna(liquidity_tx.result_sent.amount, denom)} {FULL_COIN_LOOKUP[denom]}')
+                    print (f' ✅ Received amount: {wallet.formatUluna(liquidity_tx.result_received.amount, denom)} {FULL_COIN_LOOKUP[denom]}')
+                    print (f' ✅ Tx Hash: {liquidity_tx.broadcast_result.txhash}')
         else:
-            if liquidity_tx.result_received is not None:
-                print (f' ✅ Sent amount: {wallet.formatUluna(liquidity_tx.result_sent.amount, denom)} {FULL_COIN_LOOKUP[denom]}')
-                print (f' ✅ Received amount: {wallet.formatUluna(liquidity_tx.result_received.amount, denom)} {FULL_COIN_LOOKUP[denom]}')
-                print (f' ✅ Tx Hash: {liquidity_tx.broadcast_result.txhash}')
-    else:
-        print (' 🛎️  The send transaction could not be completed')
+            print (' 🛎️  The send transaction could not be completed')
 
     # # Print a list of the addresses in the user_config.yml file:
     # recipient_address, answer = get_send_to_address(user_addresses)
