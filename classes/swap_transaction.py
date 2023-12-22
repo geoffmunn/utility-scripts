@@ -473,35 +473,14 @@ class SwapTransaction(TransactionCore):
         """
 
         try:
-            #print ('sender prefix:', self.sender_prefix)
-            #print ('swap denom:', self.swap_denom)
-            #chain = self.getChainByDenom(self.swap_denom)
-            #chain = CHAIN_DATA[self.wallet_denom]
-            #prefix = chain['prefix']
-            #print ('prefix:', prefix)
-            #channel_id = CHAIN_IDS[prefix]['ibc_channel']
             channel_id = CHAIN_DATA[self.wallet_denom]['ibc_channels'][self.swap_denom]
             
-            #print ('channel id:', channel_id)
-            #print (f'hash: transfer/{channel_id}/{self.swap_denom}')
-            #print ('hash result:', sha256(f'transfer/{channel_id}/{self.swap_denom}'.encode('utf-8')).hexdigest().upper())
-            #print ('should look like this:', IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['token_in'])
-            #print ('should look like this: ibc/57AA1A70A4BC9769C525EBF6386F7A21536E04A79D62E1981EFCEF9428EBB205')
-            
             if self.swap_denom != UOSMO:
-                coin_denom = 'ibc/' + sha256(f'transfer/{channel_id}/{self.swap_denom}'.encode('utf-8')).hexdigest().upper()
+                coin_denom = self.IBCfromDenom(channel_id, self.swap_denom)
             else:
                 coin_denom = UOSMO
 
-            #print ('we will be using', coin_denom)
-
             token_in:Coin = Coin(coin_denom, self.swap_amount)
-
-            #old:Coin = Coin(IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['token_in'], self.swap_amount)
-            #print (f"old coin: {self.swap_denom}/{self.swap_request_denom} returns {IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['token_in']}")
-            #print ('old denom:', old.denom)
-
-            #token_in:Coin = Coin(IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['token_in'], self.swap_amount)
 
             tx_msg = MsgSwapExactAmountIn(
                 sender               = self.sender_address,
@@ -514,7 +493,6 @@ class SwapTransaction(TransactionCore):
                 account_number = self.account_number,
                 fee            = self.fee,
                 gas            = self.gas_limit,
-                #gas_adjustment = IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['gas_adjustment'],
                 gas_adjustment = GAS_ADJUSTMENT_OSMOSIS,
                 msgs           = [tx_msg],
                 sequence       = self.sequence
