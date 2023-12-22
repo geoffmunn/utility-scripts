@@ -430,6 +430,16 @@ class TransactionCore():
         
         return {'from':from_price, 'to': to_price}
         
+    def IBCfromDenom(self, channel_id:str, denom:str) -> str:
+        """
+        Based on the provided denom and the source channel, figure out the IBC value
+        """
+
+        ibc_value = sha256(f'transfer/{channel_id}/{denom}'.encode('utf-8')).hexdigest().upper()
+        ibc_result = 'ibc/' + ibc_value
+
+        return ibc_result
+
     def readableFee(self) -> str:
         """
         Return a description of the fee for the current transaction.
