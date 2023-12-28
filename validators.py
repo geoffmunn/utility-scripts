@@ -20,7 +20,7 @@ from classes.common import (
     get_user_choice,
 )
 
-from classes.wallet import UserWallet
+from classes.delegation_transaction import DelegationTransaction
 from classes.wallets import UserWallets
 from classes.validators import Validators
 
@@ -121,9 +121,10 @@ def main():
         print (f'Delegating {wallet.formatUluna(delegated_uluna, ULUNA, True)}...')
         
         # Create the delegation object
-        delegation_tx = wallet.delegate().create()
-        
+        delegation_tx = DelegationTransaction().create(seed = wallet.seed, denom = ULUNA)
+
         # Assign the details
+        delegation_tx.balances          = wallet.balances
         delegation_tx.delegator_address = wallet.address
         delegation_tx.validator_address = user_validator['operator_address']
         delegation_tx.delegated_uluna   = delegated_uluna
@@ -186,15 +187,16 @@ def main():
 
         print (f'Undelegating {wallet.formatUluna(undelegated_uluna, ULUNA, True)}...')
 
-        # Create the delegation object    
-        undelegation_tx = wallet.delegate().create()
+        # Create the undelegation object    
+        undelegation_tx = DelegationTransaction().create(seed = wallet.seed, denom = ULUNA)
 
         # Assign the details
+        undelegation_tx.balances          = wallet.balances
         undelegation_tx.delegator_address = wallet.address
         undelegation_tx.validator_address = user_validator['operator_address']
         undelegation_tx.delegated_uluna   = undelegated_uluna
         undelegation_tx.wallet_denom      = wallet.denom
-
+        
         # Simulate it
         result = undelegation_tx.simulate(undelegation_tx.undelegate)
 
@@ -259,9 +261,10 @@ def main():
         print (f'Redelegating {wallet.formatUluna(switched_uluna, ULUNA, True)}...')
   
         # Create the delegation object
-        delegation_tx = wallet.delegate().create()
-        
+        delegation_tx = DelegationTransaction().create(seed = wallet.seed, denom = ULUNA)
+
         # Assign the details
+        delegation_tx.balances              = wallet.balances
         delegation_tx.delegator_address     = wallet.address
         delegation_tx.validator_address     = to_validator['operator_address']
         delegation_tx.validator_address_old = from_validator['operator_address']
