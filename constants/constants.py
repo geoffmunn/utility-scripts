@@ -41,6 +41,8 @@ TERRASWAP_UKRW_TO_ULUNA_ADDRESS = 'terra1erfdlgdtt9e05z0j92wkndwav4t75xzyapntkv'
 #TERRASWAP_UKUJI_TO_ULUNA_ADDRESS = 'terra19qx5xe6q9ll4w0890ux7lv2p4mf3csd4qvt3ex'
 TERRASWAP_ULUNA_TO_UUSD_ADDRESS = 'terra1l7vy20x940je7lskm6x9s839vjsmekz9k9mv7g'
 BASE_SMART_CONTRACT_ADDRESS     = 'terra1uewxz67jhhhs2tj97pfm2egtk7zqxuhenm4y4m'
+#TERRASWAP_GRDX_TO_LUNC_ADDRESS  = 'terra1mkl973d34jsuv0whsfl43yw3sktm8kv7lgn35fhe6l88d0vvaukq5nq929'
+TERRASWAP_GRDX_TO_LUNC_ADDRESS =  'terra12f3f5fzfzxckc0qlv3rmwwkjfhzevpwmx77345n0zuu2678vxf0sm6vvcw'
 
 # Do not change these:
 
@@ -95,6 +97,7 @@ ANOM      = 'anom'
 APLANQ    = 'aplanq'
 AREBUS    = 'arebus'
 BASECRO   = 'basecro'
+GRDX      = 'grdx'
 INJ       = 'inj'
 LOKI      = 'loki'
 NANOLIKE  = 'nanolike'
@@ -186,6 +189,7 @@ FULL_COIN_LOOKUP = {
     'ueur':    'EUTC',
     AEVMOS:    'Evmos',
     AFET:      'Fetch.ai',
+    GRDX:      'GarudaX Token',
     'ugbp':    'GBTC',
     UGRAVITON: 'Gravity Bridge',
     'uhkd':    'HKTC',
