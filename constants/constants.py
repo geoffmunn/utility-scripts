@@ -2,9 +2,9 @@
 # -*- coding: UTF-8 -*-
 
 # User settings - can be changed if required
-CHECK_FOR_UPDATES    = True
+CHECK_FOR_UPDATES    = True  # This might slow things down a bit when the script is first run. Change it to False if it becomes a problem.
 WITHDRAWAL_REMAINDER = 250   # This is the amount of Lunc we want to keep after withdrawal and before delegating. You should never delegate the entire balance.
-SEARCH_RETRY_COUNT   = 30    # This is the number of times we will check for a transaction to appear in the chain before deciding it didn't work.
+SEARCH_RETRY_COUNT   = 50    # This is the number of times we will check for a transaction to appear in the chain before deciding it didn't work.
 HIDE_DISABLED_COINS  = True  # Some coins are not currently available. Functionality is mostly there, but swaps etc won't work
 
 # System settings - these can be changed, but shouldn't be necessary
@@ -23,7 +23,11 @@ GAS_ADJUSTMENT_SEND      = 3.6
 GAS_ADJUSTMENT_SWAPS     = 3.6
 GAS_ADJUSTMENT_OSMOSIS   = 1.5
 MIN_OSMO_GAS             = 0.0025
+MAX_SPREAD               = 0.01
 OSMOSIS_FEE_MULTIPLIER   = 1.5
+
+# For liquidity investments, what slippage will we tolerate?
+OSMOSIS_LIQUIDITIY_SPREAD = 0.01
 
 # Swap contracts can be found here
 # https://assets.terra.money/cw20/pairs.dex.json
@@ -64,7 +68,7 @@ USER_ACTION_VALIDATOR_UNDELEGATE         = 'u'
 USER_ACTION_VALIDATOR_SWITCH             = 's'
 
 # Max number of validators that Luna Classic allows
-MAX_VALIDATOR_COUNT = 130
+MAX_VALIDATOR_COUNT = 100
 
 # Governance constants:
 PROPOSAL_STATUS_UNSPECIFIED    = 0

@@ -167,8 +167,8 @@ class SendTransaction(TransactionCore):
                 revision_number = 6
 
             if self.denom != self.wallet_denom:
-                ibc_value = sha256(f'transfer/{self.source_channel}/{self.denom}'.encode('utf-8')).hexdigest().upper()
-                send_denom = 'ibc/' + ibc_value
+                send_denom = self.IBCfromDenom(self.source_channel, self.denom)
+
                 token = {
                     "amount": str(send_amount),
                     "denom": send_denom

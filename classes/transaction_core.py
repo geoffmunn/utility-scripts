@@ -29,7 +29,7 @@ from terra_classic_sdk.client.lcd.api.tx import (
 from terra_classic_sdk.client.lcd.wallet import Wallet
 from terra_classic_sdk.core.broadcast import (
     BlockTxBroadcastResult,
-    TxLog
+    TxLog,
 )
 from terra_classic_sdk.core.coin import Coin
 from terra_classic_sdk.core.coins import Coins
@@ -73,7 +73,7 @@ class TransactionCore():
         """
 
         try:
-            result:BlockTxBroadcastResult = self.terra.tx.broadcast(self.transaction)    
+            result:BlockTxBroadcastResult = self.terra.tx.broadcast_sync(self.transaction)    
         except Exception as err:
             print (' 🛑 A broadcast error occurred.')
             print (err)
@@ -308,7 +308,13 @@ class TransactionCore():
 
                     # Osmosis swaps
                     if 'module' in log.events_by_type['message'] and log.events_by_type['message']['module'][0] == 'gamm':
-                        self.result_sent     = Coin.from_str(log.events_by_type['coin_spent']['amount'][0])
+                        
+                        # For some reason, wBTC -> LUNC swaps have an empty string so we'll fix that
+                        amount = log.events_by_type['coin_spent']['amount'][0]
+                        if amount == '':
+                            amount = '0uluna'
+
+                        self.result_sent     = Coin.from_str(amount)
                         self.result_received = Coin.from_str(log.events_by_type['coin_received']['amount'][-1])
                         log_found = True
 
@@ -424,6 +430,16 @@ class TransactionCore():
         
         return {'from':from_price, 'to': to_price}
         
+    def IBCfromDenom(self, channel_id:str, denom:str) -> str:
+        """
+        Based on the provided denom and the source channel, figure out the IBC value
+        """
+
+        ibc_value = sha256(f'transfer/{channel_id}/{denom}'.encode('utf-8')).hexdigest().upper()
+        ibc_result = 'ibc/' + ibc_value
+
+        return ibc_result
+
     def readableFee(self) -> str:
         """
         Return a description of the fee for the current transaction.

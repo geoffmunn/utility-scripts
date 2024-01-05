@@ -13,6 +13,7 @@ from constants.constants import (
     DB_FILE_NAME,
     GAS_ADJUSTMENT_OSMOSIS,
     GAS_ADJUSTMENT_SWAPS,
+    MAX_SPREAD,
     MIN_OSMO_GAS,
     OFFCHAIN_COINS,
     OSMOSIS_FEE_MULTIPLIER,
@@ -59,7 +60,7 @@ class SwapTransaction(TransactionCore):
         self.contract               = None
         self.fee_deductables:float  = None
         self.gas_limit:str          = 'auto'
-        self.max_spread:float       = 0.01
+        self.max_spread:float       = MAX_SPREAD
         self.min_out:int            = None
         self.osmosis_pools:dict     = {}
         self.recipient_address:str  = ''
@@ -229,8 +230,8 @@ class SwapTransaction(TransactionCore):
         We will pick the lowest fee while still having a good level of liquidity
         """
 
-        path_query:str      = "SELECT pool.pool_id, denom, readable_denom, swap_fee FROM pool INNER JOIN asset ON pool.pool_id=asset.pool_id WHERE pool.pool_id IN (SELECT pool_id FROM asset WHERE readable_denom = ?) AND readable_denom=? ORDER BY swap_fee ASC;"
-        liquidity_query:str = "SELECT readable_denom, amount FROM asset WHERE pool_id = ?;"
+        path_query:str      = "SELECT pool.pool_id, token_denom, token_readable_denom, pool_swap_fee FROM pool INNER JOIN asset ON pool.pool_id=asset.pool_id WHERE pool.pool_id IN (SELECT pool_id FROM asset WHERE token_readable_denom = ?) AND token_readable_denom=? ORDER BY pool_swap_fee ASC;"
+        liquidity_query:str = "SELECT token_readable_denom, token_amount FROM asset WHERE pool_id = ?;"
 
         conn:Connection = sqlite3.connect(DB_FILE_NAME)
         cursor:Cursor   = conn.execute(path_query, [denom_in, denom_out])
@@ -255,13 +256,6 @@ class SwapTransaction(TransactionCore):
                     exit_liquidity = row2
                     exit_liquidity_value:float = divide_raw_balance(exit_liquidity[1], denom_out) * float(self.prices[CHAIN_DATA[denom_out]['coingecko_id']]['usd'])
 
-            #print (f'pool id: {row[0]}')
-            #print (f'origin liquidity: ({denom_in}) = {origin_liquidity}')
-            #print (f'exit liquidity: ({denom_out}) = {exit_liquidity}')
-            #print ('converted liquidity:', divide_raw_balance(exit_liquidity[1], denom_out))
-            #print ('value:', self.prices[CHAIN_DATA[denom_out]['coingecko_id']]['usd'])
-            #print (f'exit liquidity value: {exit_liquidity_value}')
-            
             # Now we have the origin and exit options, check that the liquidity amounts are sufficient
             swap_amount:float = initial_amount
             if origin_liquidity[1] > float(swap_amount * 10) and exit_liquidity_value >= 100:
@@ -479,35 +473,14 @@ class SwapTransaction(TransactionCore):
         """
 
         try:
-            #print ('sender prefix:', self.sender_prefix)
-            #print ('swap denom:', self.swap_denom)
-            #chain = self.getChainByDenom(self.swap_denom)
-            #chain = CHAIN_DATA[self.wallet_denom]
-            #prefix = chain['prefix']
-            #print ('prefix:', prefix)
-            #channel_id = CHAIN_IDS[prefix]['ibc_channel']
             channel_id = CHAIN_DATA[self.wallet_denom]['ibc_channels'][self.swap_denom]
             
-            #print ('channel id:', channel_id)
-            #print (f'hash: transfer/{channel_id}/{self.swap_denom}')
-            #print ('hash result:', sha256(f'transfer/{channel_id}/{self.swap_denom}'.encode('utf-8')).hexdigest().upper())
-            #print ('should look like this:', IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['token_in'])
-            #print ('should look like this: ibc/57AA1A70A4BC9769C525EBF6386F7A21536E04A79D62E1981EFCEF9428EBB205')
-            
             if self.swap_denom != UOSMO:
-                coin_denom = 'ibc/' + sha256(f'transfer/{channel_id}/{self.swap_denom}'.encode('utf-8')).hexdigest().upper()
+                coin_denom = self.IBCfromDenom(channel_id, self.swap_denom)
             else:
                 coin_denom = UOSMO
 
-            #print ('we will be using', coin_denom)
-
             token_in:Coin = Coin(coin_denom, self.swap_amount)
-
-            #old:Coin = Coin(IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['token_in'], self.swap_amount)
-            #print (f"old coin: {self.swap_denom}/{self.swap_request_denom} returns {IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['token_in']}")
-            #print ('old denom:', old.denom)
-
-            #token_in:Coin = Coin(IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['token_in'], self.swap_amount)
 
             tx_msg = MsgSwapExactAmountIn(
                 sender               = self.sender_address,
@@ -520,7 +493,6 @@ class SwapTransaction(TransactionCore):
                 account_number = self.account_number,
                 fee            = self.fee,
                 gas            = self.gas_limit,
-                #gas_adjustment = IBC_ADDRESSES[self.swap_denom][self.swap_request_denom]['gas_adjustment'],
                 gas_adjustment = GAS_ADJUSTMENT_OSMOSIS,
                 msgs           = [tx_msg],
                 sequence       = self.sequence
@@ -552,7 +524,9 @@ class SwapTransaction(TransactionCore):
 
             # Return this result
             result = pool        
-            
+        else:
+            result = self.osmosis_pools[pool_id]
+
         return result
 
     
