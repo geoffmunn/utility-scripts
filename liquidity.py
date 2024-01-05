@@ -136,7 +136,7 @@ def main():
     user_wallets:dict = wallets.loadUserWallets()
 
     #user_wallets:dict = wallets.wallets
-    user_addresses:dict = wallets.addresses
+    #user_addresses:dict = wallets.addresses
 
     if len(user_wallets) > 0:
         print (f'You can send LUNC, USTC, and minor coins on the following wallets:')
@@ -158,20 +158,27 @@ def main():
 
     print (f"The {wallet.name} wallet holds {wallet.formatUluna(wallet.balances[denom], denom)} {FULL_COIN_LOOKUP[denom]}")
     print (f"NOTE: You can send the entire value of this wallet by typing '100%' - no minimum amount will be retained.")
-    uluna_amount:int  = wallet.getUserNumber('How much are you sending? ', {'max_number': float(wallet.formatUluna(wallet.balances[denom], denom, False)), 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': True, 'keep_minimum': False, 'target_denom': denom})
+    uluna_amount:int = wallet.getUserNumber('How much are you sending? ', {'max_number': float(wallet.formatUluna(wallet.balances[denom], denom, False)), 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': True, 'keep_minimum': False, 'target_denom': denom})
 
-
+    # Create the send tx object
     liquidity_tx = LiquidityTransaction().create(wallet.seed, wallet.denom)
-    liquidity_tx.balances          = wallet.balances
-    liquidity_tx.pool_id = 800
-    liquidity_tx.sender_address = wallet.address
+
+    # Populate it with required details:
+    liquidity_tx.balances         = wallet.balances
     liquidity_tx.liquidity_amount = uluna_amount
-    liquidity_tx.liquidity_denom = denom
-    liquidity_tx.source_channel = CHAIN_DATA[wallet.denom]['ibc_channels'][denom]
-    liquidity_tx.wallet_denom = wallet.denom
+    liquidity_tx.liquidity_denom  = denom
+    liquidity_tx.pool_id          = 800
+    liquidity_tx.sender_address   = wallet.address
+    liquidity_tx.source_channel   = CHAIN_DATA[wallet.denom]['ibc_channels'][denom]
+    liquidity_tx.wallet_denom     = wallet.denom
+
+    # Simulate it    
     result = liquidity_tx.simulate()
 
     if result == True:
+
+        print(f'You are about to add {wallet.formatUluna(uluna_amount, denom)} {FULL_COIN_LOOKUP[denom]} to Pool #{liquidity_tx.pool_id}')
+
         print (liquidity_tx.readableFee())
 
         user_choice = get_user_choice('Do you want to continue? (y/n) ', [])
@@ -193,7 +200,6 @@ def main():
                     
                     liquidity_tx.simulate()
                     liquidity_tx.joinPool()
-                    
                     liquidity_tx.broadcast()
 
                     if liquidity_tx is None:
@@ -216,129 +222,10 @@ def main():
             else:
                 if liquidity_tx.result_received is not None:
                     print (f' ✅ Sent amount: {wallet.formatUluna(liquidity_tx.result_sent.amount, denom)} {FULL_COIN_LOOKUP[denom]}')
-                    print (f' ✅ Received amount: {wallet.formatUluna(liquidity_tx.result_received.amount, denom)} {FULL_COIN_LOOKUP[denom]}')
+                    print (f' ✅ Received amount: {wallet.formatUluna(liquidity_tx.result_received.amount, denom)} shares in pool #{liquidity_tx.pool_id}')
                     print (f' ✅ Tx Hash: {liquidity_tx.broadcast_result.txhash}')
         else:
             print (' 🛎️  The send transaction could not be completed')
-
-    # # Print a list of the addresses in the user_config.yml file:
-    # recipient_address, answer = get_send_to_address(user_addresses)
-
-    # if answer == USER_ACTION_QUIT:
-    #     print (' 🛑 Exiting...\n')
-    #     exit()
-
-    # if recipient_address == USER_ACTION_QUIT:
-    #     print (' 🛑 Exiting...\n')
-    #     exit()
-
-    # # NOTE: I'm pretty sure the memo size is int64, but I've capped it at 255 so python doens't panic
-    # memo:str = wallet.getUserText('Provide a memo (optional): ', 255, True)
-
-    # print (f'\nAccessing the {wallet.name} wallet...')
-
-    # if ULUNA in wallet.balances:
-    #     print (f'Sending {wallet.formatUluna(uluna_amount, denom)} {FULL_COIN_LOOKUP[denom]}')
-
-    #     # Create the send tx object
-    #     #send_tx = wallet.send().create(wallet.denom)
-    #     send_tx = SendTransaction().create(wallet.seed, wallet.denom)
-        
-    #     # Populate it with required details:
-    #     send_tx.balances          = wallet.balances
-    #     send_tx.recipient_address = recipient_address
-    #     send_tx.recipient_prefix  = wallet.getPrefix(recipient_address)
-    #     send_tx.sender_address    = wallet.address
-    #     send_tx.sender_prefix     = wallet.getPrefix(wallet.address)
-    #     send_tx.wallet_denom      = wallet.denom
-
-    #     send_tx.receiving_denom = wallet.getDenomByPrefix(send_tx.recipient_prefix)
-        
-    #     if wallet.terra.chain_id == CHAIN_DATA[ULUNA]['chain_id'] and send_tx.recipient_prefix == CHAIN_DATA[ULUNA]['bech32_prefix']:
-    #         send_tx.is_on_chain     = True
-    #         send_tx.revision_number = 1
-    #     else:
-    #         send_tx.is_on_chain = False
-    #         send_tx.source_channel = CHAIN_DATA[wallet.denom]['ibc_channels'][send_tx.receiving_denom]
-    #         if wallet.terra.chain_id == CHAIN_DATA[UOSMO]['chain_id']:
-    #             send_tx.revision_number = 6
-    #         else:
-    #             send_tx.revision_number = 1
-        
-    #     # Assign the user provided details:
-    #     send_tx.memo         = memo
-    #     send_tx.amount       = int(uluna_amount)
-    #     send_tx.denom        = denom
-    #     send_tx.block_height = send_tx.terra.tendermint.block_info()['block']['header']['height']
-            
-    #     # Simulate it            
-    #     if send_tx.is_on_chain == True:
-    #         result = send_tx.simulate()
-    #     else:
-    #         result = send_tx.simulateOffchain()
-        
-    #     # Now complete it
-    #     if result == True:
-    #         print(f'You are about to send {wallet.formatUluna(uluna_amount, denom)} {FULL_COIN_LOOKUP[denom]} to {recipient_address}')
-
-    #         print (send_tx.readableFee())
-
-    #         user_choice = get_user_choice('Do you want to continue? (y/n) ', [])
-
-    #         if user_choice == False:
-    #             exit()
-
-    #         # Now we know what the fee is, we can do it again and finalise it
-    #         if send_tx.is_on_chain == True:
-    #             result = send_tx.send()
-    #         else:
-    #             result = send_tx.sendOffchain()
-            
-    #         if result == True:
-    #             send_tx.broadcast()
-
-    #             if send_tx.broadcast_result is not None and send_tx.broadcast_result.code == 32:
-    #                 while True:
-    #                     print (' 🛎️  Boosting sequence number and trying again...')
-
-    #                     send_tx.sequence = send_tx.sequence + 1
-    #                     if send_tx.is_on_chain == True:
-    #                         send_tx.simulate()
-    #                         send_tx.send()
-    #                     else:
-    #                         send_tx.simulateOffchain()
-    #                         send_tx.sendOffchain()
-                            
-    #                     send_tx.broadcast()
-
-    #                     if send_tx is None:
-    #                         break
-
-    #                     # Code 32 = account sequence mismatch
-    #                     if send_tx.broadcast_result.code != 32:
-    #                         break
-
-    #             if send_tx.broadcast_result is None or send_tx.broadcast_result.is_tx_error():
-    #                 if send_tx.broadcast_result is None:
-    #                     print (' 🛎️  The send transaction failed, no broadcast object was returned.')
-    #                 else:
-    #                     print (' 🛎️  The send transaction failed, an error occurred:')
-    #                     if send_tx.broadcast_result.raw_log is not None:
-    #                         print (f' 🛎️  Error code {send_tx.broadcast_result.code}')
-    #                         print (f' 🛎️  {send_tx.broadcast_result.raw_log}')
-    #                     else:
-    #                         print ('No broadcast log was available.')
-    #             else:
-    #                 if send_tx.result_received is not None:
-    #                     print (f' ✅ Sent amount: {wallet.formatUluna(send_tx.result_sent.amount, denom)} {FULL_COIN_LOOKUP[denom]}')
-    #                     print (f' ✅ Received amount: {wallet.formatUluna(send_tx.result_received.amount, denom)} {FULL_COIN_LOOKUP[denom]}')
-    #                     print (f' ✅ Tx Hash: {send_tx.broadcast_result.txhash}')
-    #         else:
-    #             print (' 🛎️  The send transaction could not be completed')
-    #     else:
-    #         print (' 🛎️  The send transaction could not be completed')
-    # else:
-    #     print (" 🛑 This wallet has no LUNC - you need a small amount to be present to pay for fees.")
 
     print (' 💯 Done!\n')
 

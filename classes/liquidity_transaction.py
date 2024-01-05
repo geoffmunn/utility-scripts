@@ -31,7 +31,7 @@ from terra_classic_sdk.core.tx import Tx
 from terra_classic_sdk.exceptions import LCDResponseError
 from terra_classic_sdk.key.mnemonic import MnemonicKey
 
-from terra_classic_sdk.core.osmosis import MsgJoinPool, MsgJoinSwapExternAmountIn
+from terra_classic_sdk.core.osmosis import MsgJoinPool, MsgJoinSwapExternAmountIn, PoolAsset
 
 class LiquidityTransaction(TransactionCore):
 
@@ -50,7 +50,7 @@ class LiquidityTransaction(TransactionCore):
         self.source_channel:str   = None
         self.token_in_coin:dict   = None
         
-    def calcShareOutAmount(self, pool_id:int, coin:Coin) -> int:
+    def calcShareOutAmount(self, coin:Coin) -> int:
         """
         Calculate the share_out_amount value based on the pool and provided coin.
         This only works with a single coin liquidity investment.
@@ -68,19 +68,17 @@ class LiquidityTransaction(TransactionCore):
         #     .decimalPlaces(0, BigNumber.ROUND_HALF_UP)
         #     .toString();
 
-        
-        #total_share
+        # Get the pool details from the network
+        pool:list = self.terra.pool.osmosis_pool(self.pool_id)
 
-        # Get the pool details from the database
-        pool_result:str = "SELECT pool.total_shares_amount, asset.token_amount FROM pool INNER JOIN asset ON pool.pool_id=asset.pool_id WHERE pool.pool_id = ? and token_denom = ?"
-        conn:Connection = sqlite3.connect(DB_FILE_NAME)
-        cursor:Cursor   = conn.execute(pool_result, [pool_id, coin.denom])
-        row:list        = cursor.fetchone()
-
+        asset:PoolAsset
+        for asset in pool.pool_assets:
+            if asset.token.denom == coin.denom:
+                pool_asset_amount:int = int(asset.token.amount)
+                
         shift_val:int         = 10 ** 18
-        token_in_amount:float = coin.amount
-        total_share_exp:float = float(row[0] / shift_val)
-        pool_asset_amount:int = int(row[1])
+        token_in_amount:float = float(coin.amount)
+        total_share_exp:float = float(int(pool.total_shares.amount) / shift_val)
 
         # This is the basic amount we expect to receive
         share_out_amount:int = ((token_in_amount * total_share_exp) / pool_asset_amount) * shift_val
@@ -123,7 +121,7 @@ class LiquidityTransaction(TransactionCore):
         
         token_in_coin:Coin = Coin(liquidity_denom, int(self.liquidity_amount))
 
-        share_out_amount:int = self.calcShareOutAmount(self.pool_id, token_in_coin) / 2
+        share_out_amount:int = self.calcShareOutAmount(token_in_coin) / 2
 
         share_out_amount = round(share_out_amount * (1 - self.max_spread))
 
