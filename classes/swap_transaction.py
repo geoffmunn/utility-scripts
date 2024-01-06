@@ -103,8 +103,12 @@ class SwapTransaction(TransactionCore):
                                 
                             parts[result['assets'][1]['info']['native_token']['denom']] = int(result['assets'][1]['amount'])
 
-                            belief_price:float = parts[self.swap_denom] / parts[self.swap_request_denom]
-                        
+                            if self.swap_denom == GRDX and self.swap_request_denom == ULUNA:
+                                belief_price:float = parts[self.swap_request_denom] / parts[self.swap_denom]
+                            else:
+                                # Everything except GRDX -> ULUNA goes here:
+                                belief_price:float = parts[self.swap_denom] / parts[self.swap_request_denom]
+
                 else:
                     # UBASE does something different
                     if self.swap_denom == UBASE or self.swap_request_denom == UBASE:
