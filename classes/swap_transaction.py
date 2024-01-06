@@ -13,10 +13,13 @@ from constants.constants import (
     DB_FILE_NAME,
     GAS_ADJUSTMENT_OSMOSIS,
     GAS_ADJUSTMENT_SWAPS,
+    GRDX,
+    GRDX_SMART_CONTRACT_ADDRESS,
     MAX_SPREAD,
     MIN_OSMO_GAS,
     OFFCHAIN_COINS,
     OSMOSIS_FEE_MULTIPLIER,
+    TERRASWAP_GRDX_TO_LUNC_ADDRESS,
     TERRASWAP_UKRW_TO_ULUNA_ADDRESS,
     TERRASWAP_ULUNA_TO_UUSD_ADDRESS,
     TERRASWAP_UUSD_TO_ULUNA_ADDRESS,
@@ -83,31 +86,37 @@ class SwapTransaction(TransactionCore):
         if self.contract is not None:
             try:
                 if self.swap_denom != UBASE and self.swap_request_denom != UBASE:
-                    contract_swaps:list = [ULUNA, UKRW, UUSD]
+                    contract_swaps:list = [GRDX, ULUNA, UKRW, UUSD]
                     # Contract swaps must be on the columbus-5 chain
                     if self.terra.chain_id == CHAIN_DATA[ULUNA]['chain_id']:
                         if self.swap_denom in contract_swaps and self.swap_request_denom in contract_swaps:
+                            parts:dict = {}
+
                             # Get the pool details
-                            parts:dict          = {}
                             result = self.terra.wasm.contract_query(self.contract, {"pool": {}})
                             if 'native_token' in result['assets'][0]['info']:
                                 parts[result['assets'][0]['info']['native_token']['denom']] = int(result['assets'][0]['amount'])
-
+                            else:
+                                # GRDX:
+                                if result['assets'][0]['info']['token']['contract_addr'] == TERRASWAP_GRDX_TO_LUNC_ADDRESS:
+                                    parts[GRDX] = int(result['assets'][0]['amount'])
+                                
                             parts[result['assets'][1]['info']['native_token']['denom']] = int(result['assets'][1]['amount'])
 
                             belief_price:float = parts[self.swap_denom] / parts[self.swap_request_denom]
                         
                 else:
                     # UBASE does something different
-                    if self.terra.chain_id == CHAIN_DATA[ULUNA]['chain_id']:
-                        result           = self.terra.wasm.contract_query(self.contract, {"curve_info": {}})
-                        spot_price:float = float(result['spot_price'])
+                    if self.swap_denom == UBASE or self.swap_request_denom == UBASE:
+                        if self.terra.chain_id == CHAIN_DATA[ULUNA]['chain_id']:
+                            result           = self.terra.wasm.contract_query(self.contract, {"curve_info": {}})
+                            spot_price:float = float(result['spot_price'])
 
-                        if self.swap_request_denom == UBASE:
-                            belief_price:float = divide_raw_balance((spot_price * 1.053), UBASE)
-                        else:
-                            belief_price:float = divide_raw_balance((spot_price - (spot_price * 0.048)), UBASE)
-
+                            if self.swap_request_denom == UBASE:
+                                belief_price:float = divide_raw_balance((spot_price * 1.053), UBASE)
+                            else:
+                                belief_price:float = divide_raw_balance((spot_price - (spot_price * 0.048)), UBASE)
+                
             except Exception as err:
                 print (' 🛑 A connection error has occurred:')
                 print (err)
@@ -539,7 +548,7 @@ class SwapTransaction(TransactionCore):
         
         use_market_swap:bool = True
         self.contract        = None
-        contract_swaps:list  = [ULUNA, UKRW, UUSD, UBASE]
+        contract_swaps:list  = [GRDX, UBASE, ULUNA, UKRW, UUSD]
 
         if self.swap_denom in contract_swaps and self.swap_request_denom in contract_swaps:
             use_market_swap = False
@@ -551,6 +560,8 @@ class SwapTransaction(TransactionCore):
                     self.contract = TERRASWAP_UKRW_TO_ULUNA_ADDRESS
                 if self.swap_request_denom == UBASE:
                     self.contract = BASE_SMART_CONTRACT_ADDRESS
+                if self.swap_request_denom == GRDX:
+                    self.contract = GRDX_SMART_CONTRACT_ADDRESS
 
             if self.swap_denom == UUSD:
                 if self.swap_request_denom == ULUNA:
@@ -569,6 +580,10 @@ class SwapTransaction(TransactionCore):
             if self.swap_denom == UBASE:
                 if self.swap_request_denom == ULUNA:
                     self.contract = BASE_SMART_CONTRACT_ADDRESS
+
+            if self.swap_denom == GRDX:
+                if self.swap_request_denom == ULUNA:
+                    self.contract = GRDX_SMART_CONTRACT_ADDRESS
 
         self.use_market_swap = use_market_swap
 
@@ -794,7 +809,10 @@ class SwapTransaction(TransactionCore):
                 if self.swap_request_denom == ULUNA:
                     swap_price       = self.beliefPrice()
                     estimated_amount = float(self.swap_amount * swap_price)
-                
+            elif self.swap_denom == GRDX:
+                if self.swap_request_denom == ULUNA:
+                    swap_price       = self.beliefPrice()
+                    estimated_amount = float(self.swap_amount * swap_price)
             else:
                 # This will cover nearly all swap pairs:
                 swap_price = self.beliefPrice()
