@@ -96,16 +96,16 @@ class TransactionCore():
                 return self.broadcast_result
             else:
                 # Find the transaction on the network and return the result
-                try:
-                    transaction_confirmed = self.findTransaction()
+                #try:
+                transaction_confirmed = self.findTransaction()
 
-                    if transaction_confirmed == True:
-                        print ('This transaction should be visible in your wallet now.')
-                    else:
-                        print ('The transaction did not appear. Future transactions might fail due to a lack of expected funds.')
-                except Exception as err:
-                    print ('An unexpected error occurred when broadcasting:')
-                    print (err)
+                if transaction_confirmed == True:
+                    print ('This transaction should be visible in your wallet now.')
+                else:
+                    print ('The transaction did not appear. Future transactions might fail due to a lack of expected funds.')
+                # except Exception as err:
+                #     print ('An unexpected error occurred when broadcasting:')
+                #     print (err)
 
         return self.broadcast_result
     
@@ -157,7 +157,7 @@ class TransactionCore():
 
         If desired, the fee can specifically be uusd.
 
-        convert_to_ibc only applies to the ULUNA value, if it is available
+        convert_to_ibc only applies to the ULUNA value, if it is available.
         """
 
         other_coin_list:list      = []
