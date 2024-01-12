@@ -308,15 +308,20 @@ class TransactionCore():
 
                     # Osmosis swaps
                     if 'module' in log.events_by_type['message'] and log.events_by_type['message']['module'][0] == 'gamm':
-                        
-                        # For some reason, wBTC -> LUNC swaps have an empty string so we'll fix that
-                        amount = log.events_by_type['coin_spent']['amount'][0]
-                        if amount == '':
-                            amount = '0uluna'
+                        if 'pool_exited' in log.events_by_type:
+                            # This is an exit pool request
+                            self.result_sent = None
+                            self.result_received = Coins.from_str(log.events_by_type['pool_exited']['tokens_out'][0])
+                            log_found = True
+                        else:
+                            # For some reason, wBTC -> LUNC swaps have an empty string so we'll fix that
+                            amount = log.events_by_type['coin_spent']['amount'][0]
+                            if amount == '':
+                                amount = '0uluna'
 
-                        self.result_sent     = Coin.from_str(amount)
-                        self.result_received = Coin.from_str(log.events_by_type['coin_received']['amount'][-1])
-                        log_found = True
+                            self.result_sent     = Coin.from_str(amount)
+                            self.result_received = Coin.from_str(log.events_by_type['coin_received']['amount'][-1])
+                            log_found = True
 
                     # Send to Osmosis
                     if 'module' in log.events_by_type['message'] and 'transfer' in log.events_by_type['message']['module']:
