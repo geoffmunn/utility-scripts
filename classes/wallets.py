@@ -50,7 +50,7 @@ class UserWallets:
         
         await asyncio.gather(*coros)
 
-    def create(self, yml_file:dict, user_password:str) -> dict:
+    def create(self, yml_file:dict, user_password:str, filter:list = None) -> dict:
         """
         Create a dictionary of wallets. Each wallet is a Wallet object.
         """
@@ -72,14 +72,17 @@ class UserWallets:
             if 'seed' in wallet:
                 wallet_item:UserWallet = UserWallet().create(name = wallet['wallet'], address = wallet['address'], seed = wallet['seed'], password = user_password)
 
-                wallet_item.validated = wallet_item.validateWallet()
+                prefix:str = wallet_item.getPrefix(wallet_item.address)
+                
+                if filter is None or prefix in filter:
+                    wallet_item.validated = wallet_item.validateWallet()
 
-                if wallet_item.validated == True:
-                    # Add this completed wallet to the list
-                    self.wallets[wallet['wallet']] = wallet_item
+                    if wallet_item.validated == True:
+                        # Add this completed wallet to the list
+                        self.wallets[wallet['wallet']] = wallet_item
 
-                    # Add this to the address list as well
-                    self.addresses[wallet['wallet']] = wallet_item
+                        # Add this to the address list as well
+                        self.addresses[wallet['wallet']] = wallet_item
             else:
                 # It's just an address - add it to the address list
                 if 'address' in wallet:
@@ -481,7 +484,7 @@ class UserWallets:
         
         return user_wallet, answer
         
-    def loadUserWallets(self, get_balances:bool = True, get_delegations:bool = False) -> dict:
+    def loadUserWallets(self, get_balances:bool = True, get_delegations:bool = False, filter:list = None) -> dict:
         """
         Request the decryption password off the user and load the user_config.yml file based on this
         """
@@ -503,7 +506,7 @@ class UserWallets:
                     user_config = yaml.safe_load(file)
 
                     print ('Decrypting and validating wallets - please wait...\n')
-                    self.create(user_config, decrypt_password)
+                    self.create(user_config, decrypt_password, filter)
                     result = self.wallets
                 
             except:
