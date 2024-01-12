@@ -190,8 +190,8 @@ class TransactionCore():
             if convert_to_ibc == True:
                 # NOTE: this assumes there is enough ULUNA to cover the fee
                 ibc_channel          = CHAIN_DATA[self.wallet_denom]['ibc_channels'][ULUNA]
-                ibc_value            = self.denomTrace(ibc_channel, ULUNA) 
-                requested_fee.amount = Coins({Coin(ibc_value, int(has_uluna))})
+                ibc_value            = self.IBCfromDenom(ibc_channel, ULUNA)
+                requested_fee.amount = Coins({Coin(ibc_value, has_uluna)})
             else:
                 if specific_denom != '':
                     requested_fee.amount = Coins({Coin(specific_denom, specific_denom_amount)})
