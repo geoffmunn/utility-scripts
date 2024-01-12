@@ -4,12 +4,15 @@
 from classes.common import (
     check_database,
     check_version,
-    get_user_choice
+    get_user_choice,
+    isPercentage
 )
 
 from constants.constants import (
     CHAIN_DATA,
+    EXIT_POOL,
     FULL_COIN_LOOKUP,
+    JOIN_POOL,
     ULUNA,
     UOSMO,
     USER_ACTION_CONTINUE,
@@ -125,8 +128,32 @@ def get_send_to_address(user_wallets:UserWallet):
     
     return recipient_address, answer
 
+from terra_classic_sdk.core.coin import Coin
+from terra_classic_sdk.core.coins import Coins
+
 def main():
     
+    # ibc_value = 'ibc/0EF15DF2F02480ADE0BB6E85D9EBB5DAEA2836D3860E9F97F9AADE4F57A31AA0'
+    # has_uluna = 42487500
+    # #test:Coin = Coin.from_data({'denom': ibc_value, 'amount': has_uluna})
+    # test:Coins = Coins({Coin(ibc_value, int(has_uluna))})
+
+    # coin_list:list = test.to_list()
+
+    # print (coin_list[0])
+    # fee_coin:Coin = Coin.from_data({'amount': 999999, 'denom': coin_list[0].denom})
+    
+    # print (fee_coin.amount, fee_coin.denom)
+
+    # #test:Coins = Coins.from_data({'amount': fee_coin.amount, 'denom': fee_coin.denom})
+
+    # #print (test)
+
+    # test2:Coins = Coins.from_proto([fee_coin])
+    # print (test2)
+    # exit()
+    
+
     # Check if there is a new version we should be using
     check_version()
     check_database()
@@ -156,28 +183,70 @@ def main():
         print (' 🛑 Exiting...\n')
         exit()
 
-    print (f"The {wallet.name} wallet holds {wallet.formatUluna(wallet.balances[denom], denom)} {FULL_COIN_LOOKUP[denom]}")
-    print (f"NOTE: You can send the entire value of this wallet by typing '100%' - no minimum amount will be retained.")
-    uluna_amount:int = wallet.getUserNumber('How much are you sending? ', {'max_number': float(wallet.formatUluna(wallet.balances[denom], denom, False)), 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': True, 'keep_minimum': False, 'target_denom': denom})
-
     # Create the send tx object
     liquidity_tx = LiquidityTransaction().create(wallet.seed, wallet.denom)
 
-    # Populate it with required details:
+    # Populate it with the details we have so far:
     liquidity_tx.balances         = wallet.balances
-    liquidity_tx.liquidity_amount = uluna_amount
-    liquidity_tx.liquidity_denom  = denom
     liquidity_tx.pool_id          = 800
+    liquidity_tx.pools            = wallet.pools
     liquidity_tx.sender_address   = wallet.address
     liquidity_tx.source_channel   = CHAIN_DATA[wallet.denom]['ibc_channels'][denom]
     liquidity_tx.wallet_denom     = wallet.denom
 
-    # Simulate it    
-    result = liquidity_tx.simulate()
+    # Are we joining aliquidity pool, or exiting?
+    join_or_exit = get_user_choice('Do you want to join (J) a liquidity pool, or exit (E)? ', [JOIN_POOL, EXIT_POOL])
 
+    if join_or_exit == JOIN_POOL:
+        print (f"The {wallet.name} wallet holds {wallet.formatUluna(wallet.balances[denom], denom)} {FULL_COIN_LOOKUP[denom]}")
+        print (f"NOTE: You can send the entire value of this wallet by typing '100%' - no minimum amount will be retained.")
+        uluna_amount:int = wallet.getUserNumber('How much are you sending? ', {'max_number': float(wallet.formatUluna(wallet.balances[denom], denom, False)), 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': True, 'keep_minimum': False, 'target_denom': denom})
+    else:
+        # Get thet assets for the summary list
+        pool_assets:dict = liquidity_tx.getPoolAssets()
+
+        asset_values:dict = liquidity_tx.getAssetValues(pool_assets)
+        total_value:float = 0
+
+        print ('This pool holds:\n')
+        for asset_denom in pool_assets:
+            print (' *  ' + str(round(pool_assets[asset_denom], 2)) + ' ' + FULL_COIN_LOOKUP[asset_denom] + ' $' + str(round(asset_values[asset_denom],2)))
+            total_value += asset_values[asset_denom]
+
+        total_value = round(total_value, 2)
+
+        print (f'Total value: ${total_value}')
+
+        print ('\nHow much do you want to withdraw?')
+        print ('You can type a percentage (eg 50%), or an exact amount of LUNC.')
+
+        print ('max number:', pool_assets[ULUNA])
+        user_withdrawal:str = wallet.getUserNumber('How much LUNC are you withdrawing? ', {'max_number': float(pool_assets[ULUNA]), 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': False, 'keep_minimum': False, 'target_denom': ULUNA})
+
+        print ('uluna amount:', user_withdrawal)
+        
+        if isPercentage(user_withdrawal):
+            amount_out:float = float(user_withdrawal[:-1]) / 100
+        
+        print ('amount out as a percentage:', amount_out)
+        liquidity_tx.amount_out = amount_out
+
+    # Populate it with remaining required details:
+    #liquidity_tx.liquidity_amount = uluna_amount
+    liquidity_tx.liquidity_denom  = denom
+    
+    # Simulate it
+    if join_or_exit == JOIN_POOL:
+        result = liquidity_tx.joinSimulate()
+    else:
+        result = liquidity_tx.exitSimulate()
+    
     if result == True:
 
-        print(f'You are about to add {wallet.formatUluna(uluna_amount, denom)} {FULL_COIN_LOOKUP[denom]} to Pool #{liquidity_tx.pool_id}')
+        if join_or_exit == JOIN_POOL:
+            print (f'You are about to add {wallet.formatUluna(uluna_amount, denom)} {FULL_COIN_LOOKUP[denom]} to Pool #{liquidity_tx.pool_id}')
+        else:
+            print (f'You are about to withdraw some stuff @TODO FIX ME')
 
         print (liquidity_tx.readableFee())
 
@@ -187,7 +256,10 @@ def main():
             exit()
 
         # Now we know what the fee is, we can do it again and finalise it
-        result = liquidity_tx.joinPool()
+        if join_or_exit == JOIN_POOL:
+            result = liquidity_tx.joinPool()
+        else:
+            result = liquidity_tx.exitPool()
             
         if result == True:
             liquidity_tx.broadcast()
@@ -198,8 +270,14 @@ def main():
 
                     liquidity_tx.sequence = liquidity_tx.sequence + 1
                     
-                    liquidity_tx.simulate()
-                    liquidity_tx.joinPool()
+                    
+                    if join_or_exit == JOIN_POOL:
+                        liquidity_tx.joinSimulate()
+                        liquidity_tx.joinPool()
+                    else:
+                        liquidity_tx.exitSimulate()
+                        liquidity_tx.exitPool()
+
                     liquidity_tx.broadcast()
 
                     if liquidity_tx is None:
@@ -211,9 +289,9 @@ def main():
 
             if liquidity_tx.broadcast_result is None or liquidity_tx.broadcast_result.is_tx_error():
                 if liquidity_tx.broadcast_result is None:
-                    print (' 🛎️  The send transaction failed, no broadcast object was returned.')
+                    print (' 🛎️  The liquidity transaction failed, no broadcast object was returned.')
                 else:
-                    print (' 🛎️  The send transaction failed, an error occurred:')
+                    print (' 🛎️  The liquidity transaction failed, an error occurred:')
                     if liquidity_tx.broadcast_result.raw_log is not None:
                         print (f' 🛎️  Error code {liquidity_tx.broadcast_result.code}')
                         print (f' 🛎️  {liquidity_tx.broadcast_result.raw_log}')
@@ -221,11 +299,14 @@ def main():
                         print ('No broadcast log was available.')
             else:
                 if liquidity_tx.result_received is not None:
-                    print (f' ✅ Sent amount: {wallet.formatUluna(liquidity_tx.result_sent.amount, denom)} {FULL_COIN_LOOKUP[denom]}')
-                    print (f' ✅ Received amount: {wallet.formatUluna(liquidity_tx.result_received.amount, denom)} shares in pool #{liquidity_tx.pool_id}')
+                    print (f' ✅ Swapped amount: {wallet.formatUluna(liquidity_tx.result_sent, liquidity_tx.swap_denom)} {FULL_COIN_LOOKUP[liquidity_tx.swap_denom]}')
+                    print (f' ✅ Received amounts: ')
+                    received_coin:Coin
+                    for received_coin in liquidity_tx.result_received:
+                        print (wallet.formatUluna(received_coin.amount, received_coin.denom, True))
                     print (f' ✅ Tx Hash: {liquidity_tx.broadcast_result.txhash}')
         else:
-            print (' 🛎️  The send transaction could not be completed')
+            print (' 🛎️  The liquidity transaction could not be completed')
 
     print (' 💯 Done!\n')
 
