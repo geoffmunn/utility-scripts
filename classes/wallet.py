@@ -226,6 +226,7 @@ class UserWallet:
         A generic helper function to convert uluna amounts to LUNC.
         """
 
+        denom         = self.denomTrace(denom)
         precision:int = getPrecision(denom)
         lunc:float    = round(float(divide_raw_balance(uluna, denom)), precision)
 
