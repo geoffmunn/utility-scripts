@@ -84,6 +84,10 @@ PROPOSAL_VOTE_ABSTAIN      = 2
 PROPOSAL_VOTE_NO           = 3
 PROPOSAL_VOTE_NO_WITH_VETO = 4
 
+# Liquidity pool constants
+JOIN_POOL = 'j'
+EXIT_POOL = 'e'
+
 # Coin constants:
 AACRE     = 'aacre'
 AARCH     = 'aarch'
