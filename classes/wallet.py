@@ -56,6 +56,7 @@ class UserWallet:
         self.denom_traces:dict  = {}
         self.undelegations:dict = {}
         self.name:str           = ''
+        self.pools:dict         = {}
         self.prefix:str         = ''
         self.seed:str           = ''
         self.terra:LCDClient    = None
@@ -246,8 +247,11 @@ class UserWallet:
 
         if self.terra is not None:
             retry_count:int = 0
+
+            balances:dict = {}
+            pools:dict    = {}
             while True:
-                balances:dict = {}
+                
                 # Default pagination options
                 pagOpt:PaginationOptions = PaginationOptions(limit=50, count_total=True)
 
@@ -261,11 +265,16 @@ class UserWallet:
                         if core_coins_only == True:
                             if coin.denom in [ULUNA, UUSD]:
                                 balances[coin.denom] = coin.amount
+                            
                         else:
                             denom_trace           = self.denomTrace(coin.denom)
                             balances[denom_trace] = coin.amount
                         
-                        
+                            # We only get pools if the entire coin list is requested
+                            if denom_trace[0:len('gamm/pool/')] == 'gamm/pool/':
+                                pool_id = denom_trace[len('gamm/pool/'):]
+                                pools[int(pool_id)] = coin.amount
+
                     # Go through the pagination (if any)
                     while pagination['next_key'] is not None:
                         pagOpt.key         = pagination["next_key"]
@@ -280,6 +289,10 @@ class UserWallet:
                                 denom_trace           = self.denomTrace(coin.denom)
                                 balances[denom_trace] = coin.amount
 
+                                # We only get pools if the entire coin list is requested
+                                if denom_trace[0:len('gamm/pool/')] == 'gamm/pool/':
+                                    pool_id = denom_trace[len('gamm/pool/'):]
+                                    pools[int(pool_id)] = coin.amount
                     
                 except Exception as err:
                     print (f'Pagination error for {self.name}:', err)
@@ -310,7 +323,8 @@ class UserWallet:
             balances:dict = {}
 
         self.balances = balances
-        
+        self.pools    = pools
+
         return self.balances
     
     async def getBalancesAsync(self) -> dict:
