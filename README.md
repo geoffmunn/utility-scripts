@@ -26,8 +26,11 @@ Current functionality includes:
  * Support for LUNC chain projects
    * BASE token swapping and sending
  * Voting on governance proposals
+ * Swapping to a wide range of coins on Osmosis (see list below)
+ * Joining and exiting Osmosis liquidity pools.
+   * Only LUNC pools are currently supported
 
-Swapping support includes the following:
+Onchain swapping support includes the following:
  * LUNC to USTC on the columbus-5 chain
  * LUNC to BASE
  * LUNC to KRTC via contract address
@@ -138,11 +141,12 @@ The full list of minor Terra coins are also supported, but currently do not work
 
   These can be installed via pip:
 
-  ```
-  python - m pip pip install terra-classic-sdk
-  python - m pip pip install terra-classic-proto
-  python - m pip install cryptocode
-  python - m pip install pyyaml
+  ```bash
+  python -m pip pip install terra-classic-sdk
+  python -m pip pip install terra-classic-proto
+  python -m pip install cryptocode
+  python -m pip install pycoingecko
+  python -m pip install pyyaml
   ```
 
 NOTE: installing terra-classic-sdk first should automatically install the terra-classic-proto dependency.
@@ -234,6 +238,14 @@ For the sake of simplicity, LUNC is used as the fee payment option.
 
 Transfers are usually instantaneous - by the time you have run the ```balances.py``` script, you should see them in your balance list. However, it can sometimes take longer - even hours for a transfer to appear. If transaction reported success and the hash showes up in the explorer, then it will eventually appear.
 
+### Liquidity pools on Osmosis
+
+Liquidity pool support is still experimental. Most pools work perfectly well, but you might experience problems depending on the pool contribution rules - sometimes there are minimum deposit requirements. If you get an error message, please raise an issue on this project.
+
+Liquidity pools are limited to LUNC only until I'm comfortable that it works perfectly.
+
+When you withdraw (exit) from a pool, you will get a mix of coins depending on the assets that the pool supports (ie, not just LUNC).
+
 ## BASE usage
 
 You can swap LUNC to BASE by using ```swap.py```. Select the amount and BASE and the swap will complete.
@@ -278,6 +290,9 @@ GAS_ADJUSTMENT           = 3.6
 GAS_ADJUSTMENT_SEND      = 3.6
 GAS_ADJUSTMENT_SWAPS     = 3.6
 GAS_ADJUSTMENT_OSMOSIS   = 1.5
+MIN_OSMO_GAS             = 0.0025
+MAX_SPREAD               = 0.01
+OSMOSIS_FEE_MULTIPLIER   = 1.5
 ```
 
 ## Security notes
