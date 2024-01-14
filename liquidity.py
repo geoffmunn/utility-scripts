@@ -132,27 +132,6 @@ from terra_classic_sdk.core.coin import Coin
 from terra_classic_sdk.core.coins import Coins
 
 def main():
-    
-    # ibc_value = 'ibc/0EF15DF2F02480ADE0BB6E85D9EBB5DAEA2836D3860E9F97F9AADE4F57A31AA0'
-    # has_uluna = 42487500
-    # #test:Coin = Coin.from_data({'denom': ibc_value, 'amount': has_uluna})
-    # test:Coins = Coins({Coin(ibc_value, int(has_uluna))})
-
-    # coin_list:list = test.to_list()
-
-    # print (coin_list[0])
-    # fee_coin:Coin = Coin.from_data({'amount': 999999, 'denom': coin_list[0].denom})
-    
-    # print (fee_coin.amount, fee_coin.denom)
-
-    # #test:Coins = Coins.from_data({'amount': fee_coin.amount, 'denom': fee_coin.denom})
-
-    # #print (test)
-
-    # test2:Coins = Coins.from_proto([fee_coin])
-    # print (test2)
-    # exit()
-    
 
     # Check if there is a new version we should be using
     check_version()
@@ -160,13 +139,10 @@ def main():
 
     # Get the user wallets
     wallets           = UserWallets()
-    user_wallets:dict = wallets.loadUserWallets()
-
-    #user_wallets:dict = wallets.wallets
-    #user_addresses:dict = wallets.addresses
+    user_wallets:dict = wallets.loadUserWallets(filter = [CHAIN_DATA[UOSMO]['bech32_prefix']])
 
     if len(user_wallets) > 0:
-        print (f'You can send LUNC, USTC, and minor coins on the following wallets:')
+        print (f'You can join or exit liquidity pools on the following wallets:')
 
         wallet, answer = wallets.getUserSinglechoice(f"Select a wallet number 1 - {str(len(user_wallets))}, 'X' to continue, or 'Q' to quit: ")
 
@@ -177,22 +153,28 @@ def main():
         print (" 🛑 This password couldn't decrypt any wallets. Make sure it is correct, or rebuild the wallet list by running the configure_user_wallet.py script again.\n")
         exit()
 
-    denom, answer, null_value = wallet.getCoinSelection(f"Select a coin number 1 - {str(len(FULL_COIN_LOOKUP))} that you want to send, 'X' to continue, or 'Q' to quit: ", wallet.balances)
+    denom:str = ULUNA
+
+    print ('Loading pool list, please wait...')
+    
+    # Create the send tx object
+    liquidity_tx = LiquidityTransaction().create(wallet.seed, wallet.denom)
+
+    user_pool, answer = liquidity_tx.getPoolSelection('What pool do you want to use? ', wallet, ULUNA)
 
     if answer == USER_ACTION_QUIT:
         print (' 🛑 Exiting...\n')
         exit()
 
-    # Create the send tx object
-    liquidity_tx = LiquidityTransaction().create(wallet.seed, wallet.denom)
+    
 
     # Populate it with the details we have so far:
-    liquidity_tx.balances         = wallet.balances
-    liquidity_tx.pool_id          = 800
-    liquidity_tx.pools            = wallet.pools
-    liquidity_tx.sender_address   = wallet.address
-    liquidity_tx.source_channel   = CHAIN_DATA[wallet.denom]['ibc_channels'][denom]
-    liquidity_tx.wallet_denom     = wallet.denom
+    liquidity_tx.balances        = wallet.balances
+    liquidity_tx.pool_id         = user_pool
+    liquidity_tx.pools           = wallet.pools
+    liquidity_tx.sender_address  = wallet.address
+    liquidity_tx.source_channel  = CHAIN_DATA[wallet.denom]['ibc_channels'][ULUNA]
+    liquidity_tx.wallet_denom    = wallet.denom
 
     # Are we joining aliquidity pool, or exiting?
     join_or_exit = get_user_choice('Do you want to join (J) a liquidity pool, or exit (E)? ', [JOIN_POOL, EXIT_POOL])
@@ -200,11 +182,14 @@ def main():
     if join_or_exit == JOIN_POOL:
         print (f"The {wallet.name} wallet holds {wallet.formatUluna(wallet.balances[denom], denom)} {FULL_COIN_LOOKUP[denom]}")
         print (f"NOTE: You can send the entire value of this wallet by typing '100%' - no minimum amount will be retained.")
-        uluna_amount:int = wallet.getUserNumber('How much are you sending? ', {'max_number': float(wallet.formatUluna(wallet.balances[denom], denom, False)), 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': True, 'keep_minimum': False, 'target_denom': denom})
-    else:
-        # Get thet assets for the summary list
-        pool_assets:dict = liquidity_tx.getPoolAssets()
 
+        uluna_amount:int       = wallet.getUserNumber('How much are you sending? ', {'max_number': float(wallet.formatUluna(wallet.balances[denom], denom, False)), 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': True, 'keep_minimum': False, 'target_denom': denom})
+        liquidity_tx.amount_in = uluna_amount
+
+    else:
+        # This is the exit pool logic
+        # Get the assets for the summary list
+        pool_assets:dict  = liquidity_tx.getPoolAssets()
         asset_values:dict = liquidity_tx.getAssetValues(pool_assets)
         total_value:float = 0
 
@@ -220,19 +205,20 @@ def main():
         print ('\nHow much do you want to withdraw?')
         print ('You can type a percentage (eg 50%), or an exact amount of LUNC.')
 
-        print ('max number:', pool_assets[ULUNA])
         user_withdrawal:str = wallet.getUserNumber('How much LUNC are you withdrawing? ', {'max_number': float(pool_assets[ULUNA]), 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': False, 'keep_minimum': False, 'target_denom': ULUNA})
-
-        print ('uluna amount:', user_withdrawal)
         
         if isPercentage(user_withdrawal):
             amount_out:float = float(user_withdrawal[:-1]) / 100
         
-        print ('amount out as a percentage:', amount_out)
         liquidity_tx.amount_out = amount_out
 
+    #denom, answer, null_value = wallet.getCoinSelection(f"Select a coin number 1 - {str(len(FULL_COIN_LOOKUP))} that you want to send, 'X' to continue, or 'Q' to quit: ", wallet.balances)
+
+    #if answer == USER_ACTION_QUIT:
+    #    print (' 🛑 Exiting...\n')
+    #    exit()
+
     # Populate it with remaining required details:
-    #liquidity_tx.liquidity_amount = uluna_amount
     liquidity_tx.liquidity_denom  = denom
     
     # Simulate it
@@ -270,7 +256,6 @@ def main():
 
                     liquidity_tx.sequence = liquidity_tx.sequence + 1
                     
-                    
                     if join_or_exit == JOIN_POOL:
                         liquidity_tx.joinSimulate()
                         liquidity_tx.joinPool()
@@ -299,11 +284,15 @@ def main():
                         print ('No broadcast log was available.')
             else:
                 if liquidity_tx.result_received is not None:
-                    print (f' ✅ Swapped amount: {wallet.formatUluna(liquidity_tx.result_sent, liquidity_tx.swap_denom)} {FULL_COIN_LOOKUP[liquidity_tx.swap_denom]}')
-                    print (f' ✅ Received amounts: ')
-                    received_coin:Coin
-                    for received_coin in liquidity_tx.result_received:
-                        print (wallet.formatUluna(received_coin.amount, received_coin.denom, True))
+                    if join_or_exit == JOIN_POOL:
+                        print (f' ✅ Sent amount into pool #{liquidity_tx.pool_id}: {wallet.formatUluna(liquidity_tx.result_sent, liquidity_tx.liquidity_denom)} {FULL_COIN_LOOKUP[liquidity_tx.liquidity_denom]}')
+                        print (f' ✅ Joined amount: {wallet.formatUluna(liquidity_tx.result_received.amount, liquidity_tx.liquidity_denom)} {FULL_COIN_LOOKUP[liquidity_tx.liquidity_denom]}')
+                    else:
+                        print (f' ✅ Withdrawn amount from pool #{liquidity_tx.pool_id}: {wallet.formatUluna(liquidity_tx.result_sent, liquidity_tx.liquidity_denom)} {FULL_COIN_LOOKUP[liquidity_tx.liquidity_denom]}')
+                        print (f' ✅ Received coins: ')
+                        received_coin:Coin
+                        for received_coin in liquidity_tx.result_received:
+                            print (' *  ' + wallet.formatUluna(received_coin.amount, received_coin.denom, True))
                     print (f' ✅ Tx Hash: {liquidity_tx.broadcast_result.txhash}')
         else:
             print (' 🛎️  The liquidity transaction could not be completed')
