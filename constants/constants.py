@@ -173,6 +173,7 @@ FULL_COIN_LOOKUP = {
     UBASE:     'BASE',
     UBTSG:     'Bitsong',
     UBNT:      'Bluzelle',
+    'busd-wei':'BUSD',          # Only supported in pools
     ACANTO:    'Canto',
     SWTH:      'Carbon',
     'ucad':    'CATC',
@@ -187,6 +188,7 @@ FULL_COIN_LOOKUP = {
     UDSM:      'Desmos',
     'udkk':    'DKTC',
     UNGM:      'e-Money',
+    'eeur':    'EEUR',          # Only supported in pools
     'ueur':    'EUTC',
     AEVMOS:    'Evmos',
     AFET:      'Fetch.ai',
@@ -206,6 +208,7 @@ FULL_COIN_LOOKUP = {
     UKUJI:     'KUJI',
     ULAMB:     'Lambda',
     NANOLIKE:  'Likecoin',
+    'uluna2':  'LUNA',          # Only supported in pools
     ULUNA:     'LUNC',
     UMARS:     'Mars Protocol',
     UMED:      'Medibloc',
