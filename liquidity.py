@@ -285,8 +285,8 @@ def main():
             else:
                 if liquidity_tx.result_received is not None:
                     if join_or_exit == JOIN_POOL:
-                        print (f' ✅ Sent amount into pool #{liquidity_tx.pool_id}: {wallet.formatUluna(liquidity_tx.result_sent, liquidity_tx.liquidity_denom)} {FULL_COIN_LOOKUP[liquidity_tx.liquidity_denom]}')
-                        print (f' ✅ Joined amount: {wallet.formatUluna(liquidity_tx.result_received.amount, liquidity_tx.liquidity_denom)} {FULL_COIN_LOOKUP[liquidity_tx.liquidity_denom]}')
+                        print (f' ✅ Sent amount into pool #{liquidity_tx.pool_id}: {wallet.formatUluna(liquidity_tx.result_sent.amount, liquidity_tx.liquidity_denom)} {FULL_COIN_LOOKUP[liquidity_tx.liquidity_denom]}')
+                        print (f' ✅ Joined amount: {liquidity_tx.result_received.amount} shares')
                     else:
                         print (f' ✅ Withdrawn amount from pool #{liquidity_tx.pool_id}: {wallet.formatUluna(liquidity_tx.result_sent, liquidity_tx.liquidity_denom)} {FULL_COIN_LOOKUP[liquidity_tx.liquidity_denom]}')
                         print (f' ✅ Received coins: ')
