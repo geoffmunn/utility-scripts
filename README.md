@@ -137,6 +137,7 @@ The full list of minor Terra coins are also supported, but currently do not work
   * terra_classic_sdk
   * terra_proto (Terra Classic version)
   * cryptocode
+  * pycoingecko
   * yaml
 
   These can be installed via pip:
