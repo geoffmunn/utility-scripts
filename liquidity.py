@@ -160,7 +160,7 @@ def main():
     # Create the send tx object
     liquidity_tx = LiquidityTransaction().create(wallet.seed, wallet.denom)
 
-    user_pool, answer = liquidity_tx.getPoolSelection('What pool do you want to use? ', wallet, ULUNA)
+    user_pool, answer = liquidity_tx.getPoolSelection('Enter the pool number you want to use, (X) to continue, or (Q) to quit: ', wallet, ULUNA)
 
     if answer == USER_ACTION_QUIT:
         print (' 🛑 Exiting...\n')
@@ -177,10 +177,14 @@ def main():
     liquidity_tx.wallet_denom    = wallet.denom
 
     # Are we joining aliquidity pool, or exiting?
-    join_or_exit = get_user_choice('Do you want to join (J) a liquidity pool, or exit (E)? ', [JOIN_POOL, EXIT_POOL])
+    join_or_exit = get_user_choice('Do you want to join (J) a liquidity pool, exit a pool(E), or quit this process (Q)? ', [JOIN_POOL, EXIT_POOL, USER_ACTION_QUIT])
+
+    if answer == USER_ACTION_QUIT:
+        print (' 🛑 Exiting...\n')
+        exit()
 
     if join_or_exit == JOIN_POOL:
-        print (f"The {wallet.name} wallet holds {wallet.formatUluna(wallet.balances[denom], denom)} {FULL_COIN_LOOKUP[denom]}")
+        print (f"\nThe {wallet.name} wallet holds {wallet.formatUluna(wallet.balances[denom], denom)} {FULL_COIN_LOOKUP[denom]}\n")
         print (f"NOTE: You can send the entire value of this wallet by typing '100%' - no minimum amount will be retained.")
 
         uluna_amount:int       = wallet.getUserNumber('How much are you sending? ', {'max_number': float(wallet.formatUluna(wallet.balances[denom], denom, False)), 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': True, 'keep_minimum': False, 'target_denom': denom})
