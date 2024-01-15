@@ -213,7 +213,10 @@ def main():
         
         if isPercentage(user_withdrawal):
             amount_out:float = float(user_withdrawal[:-1]) / 100
-        
+        else:
+            # If this is a precise amount, we need to convert this into a percentage of the total amount of LUNC
+            amount_out:float = round(user_withdrawal / pool_assets[asset_denom] * 100,2)
+
         liquidity_tx.amount_out = amount_out
 
     #denom, answer, null_value = wallet.getCoinSelection(f"Select a coin number 1 - {str(len(FULL_COIN_LOOKUP))} that you want to send, 'X' to continue, or 'Q' to quit: ", wallet.balances)
