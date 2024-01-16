@@ -275,7 +275,7 @@ class LiquidityTransaction(TransactionCore):
 
         prices:dict = {}
         for asset_denom in assets:
-            prices[asset_denom] = assets[asset_denom] * self.getCoinPrice(asset_denom)
+            prices[asset_denom] = assets[asset_denom] * self.getCoinPrice([asset_denom])[asset_denom]
 
         return prices
     
@@ -677,4 +677,5 @@ class LiquidityTransaction(TransactionCore):
             token_out_list.append(Coin.from_data({'amount': user_amount, 'denom': asset.token.denom}))
 
         return token_out_list
+    
     
