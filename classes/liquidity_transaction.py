@@ -233,17 +233,26 @@ class LiquidityTransaction(TransactionCore):
         It returns the price in US dollars.
         """
 
-        # Create the Coingecko object
-        cg = CoinGeckoAPI()
+        price:float = None
+        if denom not in self.cached_prices:
+            # Create the Coingecko object
+            cg = CoinGeckoAPI()
 
-        # Coingecko uses its own denom key, which we store in the chain data constant
-        cg_denom:str = CHAIN_DATA[denom]['coingecko_id']
+            # Coingecko uses its own denom key, which we store in the chain data constant
+            cg_denom:str = CHAIN_DATA[denom]['coingecko_id']
 
-        # We're only supporting USD at the moment
-        result = cg.get_price(cg_denom, 'usd')
+            # We're only supporting USD at the moment
+            result      = cg.get_price(cg_denom, 'usd')
+            price:float = float(result[cg_denom]['usd'])
 
-        return float(result[cg_denom]['usd'])
-    
+            # Cache this so we don't have to hit CoinGecko more than once
+            self.cached_prices[denom] = price
+            
+        else:
+            price = self.cached_prices[denom]
+
+        return price
+
     def getAssetValues(self, assets) -> dict:
         """
         Go through the asset list and retrieve a price for each one
