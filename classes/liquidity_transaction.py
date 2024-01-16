@@ -46,6 +46,7 @@ class LiquidityTransaction(TransactionCore):
         self.amount_out:float     = None  # Used for exiting a pool - supplied by user
         self.amount_in:float      = None  # Used for joining a pool - supplied by user
         self.cached_pools:dict    = {}
+        self.cached_prices:dict   = {}
         self.gas_limit:str        = 'auto'
         self.max_spread:float     = OSMOSIS_LIQUIDITIY_SPREAD
         self.pool_id:int          = None  # Used by both joining and exiting - supplied by user
