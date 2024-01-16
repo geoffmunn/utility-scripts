@@ -228,33 +228,46 @@ class LiquidityTransaction(TransactionCore):
         else:
             return False
         
-    def getCoinPrice(self, denom:str) -> float:
+    def getCoinPrice(self, denom_list:list) -> dict:
         """
-        Based on the provided denomination, get the coingecko details.
+        Based on the provided list of denominations, get the coingecko details.
 
         It returns the price in US dollars.
         """
 
-        price:float = None
-        if denom not in self.cached_prices:
+        cg_denoms:list = []
+        denom_map:dict = {}
+
+        # Go through the denom list and take out any that we've already requested
+        for denom in denom_list:
+            if denom in CHAIN_DATA:
+                cg_denom = CHAIN_DATA[denom]['coingecko_id']
+
+                # Create a map of these denoms so we can return it with the same supplied keys
+                denom_map[denom] = cg_denom
+
+                if cg_denom not in self.cached_prices:
+                    cg_denoms.append(cg_denom)
+
+        # Now make a bulk query for anything we haven't already requested:        
+        if len(cg_denoms) > 0:
             # Create the Coingecko object
             cg = CoinGeckoAPI()
 
             # Coingecko uses its own denom key, which we store in the chain data constant
-            cg_denom:str = CHAIN_DATA[denom]['coingecko_id']
-
             # We're only supporting USD at the moment
-            result      = cg.get_price(cg_denom, 'usd')
-            price:float = float(result[cg_denom]['usd'])
+            cg_result = cg.get_price(cg_denoms, 'usd')
 
-            # Cache this so we don't have to hit CoinGecko more than once
-            self.cached_prices[denom] = price
-            
-        else:
-            price = self.cached_prices[denom]
+            for cg_denom in cg_result:
+                self.cached_prices[cg_denom] = cg_result[cg_denom]['usd']
 
-        return price
+        result:dict = {}
+        for denom in denom_list:
+            if denom in denom_map:
+                result[denom] = self.cached_prices[denom_map[denom]]
 
+        return result
+        
     def getAssetValues(self, assets) -> dict:
         """
         Go through the asset list and retrieve a price for each one
