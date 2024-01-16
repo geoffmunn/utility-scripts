@@ -157,7 +157,8 @@ class UserWallet:
             prefix = self.getPrefix(self.address)
             for chain_key in [*CHAIN_DATA]:
                 if chain_key != UUSD:
-                    if CHAIN_DATA[chain_key]['bech32_prefix'] == prefix:
+                    # By checking for LCD values, we can support dual prefixes, like LUNC and LUNA
+                    if CHAIN_DATA[chain_key]['bech32_prefix'] == prefix and 'lcd_urls' in CHAIN_DATA[chain_key]:
                         denom = chain_key
 
         self.denom = denom
