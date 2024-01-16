@@ -100,6 +100,7 @@ ANOM      = 'anom'
 APLANQ    = 'aplanq'
 AREBUS    = 'arebus'
 BASECRO   = 'basecro'
+EEUR      = 'eeur'
 INJ       = 'inj'
 LOKI      = 'loki'
 NANOLIKE  = 'nanolike'
@@ -130,6 +131,7 @@ UKRW      = 'ukrw'
 UKUJI     = 'ukuji'
 ULAMB     = 'ulamb'
 ULUNA     = 'uluna'
+ULUNA2    = 'uluna2'
 UMARS     = 'umars'
 UMED      = 'umed'
 UMNTL     = 'umntl'
@@ -189,7 +191,7 @@ FULL_COIN_LOOKUP = {
     UDSM:      'Desmos',
     'udkk':    'DKTC',
     UNGM:      'e-Money',
-    'eeur':    'EEUR',          # Only supported in pools
+    EEUR:      'EEUR',
     'ueur':    'EUTC',
     AEVMOS:    'Evmos',
     AFET:      'Fetch.ai',
@@ -209,7 +211,7 @@ FULL_COIN_LOOKUP = {
     UKUJI:     'KUJI',
     ULAMB:     'Lambda',
     NANOLIKE:  'Likecoin',
-    'uluna2':  'LUNA',          # Only supported in pools
+    ULUNA2:    'LUNA',
     ULUNA:     'LUNC',
     UMARS:     'Mars Protocol',
     UMED:      'Medibloc',
@@ -338,6 +340,7 @@ CHAIN_DATA = {
             APLANQ:    'channel-492',
             AREBUS:    'channel-355',
             BASECRO:   'channel-5',
+            EEUR:      'channel-37',
             INJ:       'channel-122',
             LOKI:      'channel-258',
             NANOLIKE:  'channel-53',
@@ -366,6 +369,7 @@ CHAIN_DATA = {
             UKUJI:     'channel-259',
             ULAMB:     'channel-378',
             ULUNA:     'channel-72',
+            ULUNA2:    'channel-72',
             UMARS:     'channel-557',
             UMED:      'channel-82',
             UMNTL:     'channel-232',
@@ -459,6 +463,12 @@ CHAIN_DATA = {
         'cosmos_name':   'cronos',
         'precision':     8,
         'bech32_prefix': 'cro'
+    },
+    EEUR: {
+        'coingecko_id': 'e-money-eur',
+        'cosmos_name': 'emoney',
+        'precision': 6,
+        'bech32_prefix': 'emoney'
     },
     INJ: {
         'coingecko_id':  'injective-protocol',
@@ -621,6 +631,12 @@ CHAIN_DATA = {
         'cosmos_name':   'lambda',
         'precision':     18,
         'bech32_prefix': 'lamb'
+    },
+    ULUNA2: {
+        'coingecko_id':  'terra-luna-2',
+        'cosmos_name':   'terra2',
+        'precision':     6,
+        'bech32_prefix': 'terra'
     },
     UMARS: {
         'coingecko_id':  'mars-protocol-a7fcbcfb-fd61-4017-92f0-7ee9f9cc6da3',
