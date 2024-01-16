@@ -295,12 +295,14 @@ def main():
                         print (f' ✅ Sent amount into pool #{liquidity_tx.pool_id}: {wallet.formatUluna(liquidity_tx.result_sent.amount, liquidity_tx.liquidity_denom)} {FULL_COIN_LOOKUP[liquidity_tx.liquidity_denom]}')
                         print (f' ✅ Joined amount: {liquidity_tx.result_received.amount} shares')
                     else:
-                        print (f' ✅ Withdrawn amount from pool #{liquidity_tx.pool_id}: {wallet.formatUluna(liquidity_tx.result_sent, liquidity_tx.liquidity_denom)} {FULL_COIN_LOOKUP[liquidity_tx.liquidity_denom]}')
+                        print (f' ✅ Withdrawn amount from pool #{liquidity_tx.pool_id}: {float(liquidity_tx.amount_out) * 100}%')
                         print (f' ✅ Received coins: ')
                         received_coin:Coin
                         for received_coin in liquidity_tx.result_received:
-                            print (' *  ' + wallet.formatUluna(received_coin.amount, received_coin.denom, True))
+                            print ('    * ' + wallet.formatUluna(received_coin.amount, received_coin.denom, True))
+                    
                     print (f' ✅ Tx Hash: {liquidity_tx.broadcast_result.txhash}')
+
         else:
             print (' 🛎️  The liquidity transaction could not be completed')
 
