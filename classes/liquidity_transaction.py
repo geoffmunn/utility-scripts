@@ -616,8 +616,12 @@ class LiquidityTransaction(TransactionCore):
         asset:PoolAsset
         # Go through each asset and add it to the list
         for asset in pool.pool_assets:
-            asset_amount    = int(asset.token.amount) / share_fraction
-            user_amount:int = int(asset_amount * self.amount_out)
+
+            # Get the amount of this asset as percentage of the total amount
+            asset_amount:float = int(asset.token.amount) / share_fraction
+
+            # This is the actual amount we're removing, minus the pool tax
+            user_amount:int    = int(int(asset_amount * self.amount_out) * (1 - OSMOSIS_POOL_TAX))
             
             token_out_list.append(Coin.from_data({'amount': user_amount, 'denom': asset.token.denom}))
 
