@@ -200,7 +200,7 @@ class TransactionCore():
 
         return requested_fee
 
-    def denomTrace(self, ibc_address:str):
+    def denomTrace(self, ibc_address:str) -> str:
         """
         Based on the wallet denomination, get the IBC denom trace details for this IBC address
         """
