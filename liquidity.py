@@ -101,8 +101,8 @@ def main():
         user_withdrawal:str = wallet.getUserNumber('How much LUNC are you withdrawing? ', {'max_number': float(pool_assets[ULUNA]), 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': False, 'keep_minimum': False, 'target_denom': ULUNA})
         
         if isPercentage(user_withdrawal):
-            amount_out:float = float(user_withdrawal[:-1]) / 100
-            coin_amount = round(pool_assets[ULUNA] * amount_out, 2)
+            amount_out:float  = float(user_withdrawal[:-1]) / 100
+            coin_amount:float = round(pool_assets[ULUNA] * amount_out, 2)
         else:
             # If this is a precise amount, we need to convert this into a percentage of the total amount of LUNC   
             coin_amount:float = wallet.formatUluna(user_withdrawal, ULUNA)
@@ -121,9 +121,9 @@ def main():
     
     # Simulate it
     if join_or_exit == JOIN_POOL:
-        result = liquidity_tx.joinSimulate()
+        result:bool = liquidity_tx.joinSimulate()
     else:
-        result = liquidity_tx.exitSimulate()
+        result:bool = liquidity_tx.exitSimulate()
     
     if result == True:
 
@@ -142,9 +142,9 @@ def main():
 
         # Now we know what the fee is, we can do it again and finalise it
         if join_or_exit == JOIN_POOL:
-            result = liquidity_tx.joinPool()
+            result:bool = liquidity_tx.joinPool()
         else:
-            result = liquidity_tx.exitPool()
+            result:bool = liquidity_tx.exitPool()
             
         if result == True:
             
