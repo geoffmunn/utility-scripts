@@ -598,15 +598,51 @@ class LiquidityTransaction(TransactionCore):
 
         # Go through the database results and get the live liquidity
         pools:dict = {}
+        
         for row in rows:
             if row[0] not in pools:
                 # If this pool is not in the list, then add it
                 pool:list        = self.getOsmosisPool(row[0])
-                total_shares:int = int(pool.total_shares.amount)
-                pools[int(row[0])]    = {'assets': [], 'liquidity': total_shares / 10 ** 18}
 
+                # Based on the assets, get the value of this pool:
+                pool_balance:float = 0
+                pool_asset:PoolAsset
+                valid_pool:bool = True
+
+                # To make things faster, we'll query all the denoms in one go:
+                cg_denom_list:list = []
+                for pool_asset in pool.pool_assets:
+                    readable_denom:str = self.denomTrace(pool_asset.token.denom)
+                    
+                    if pool_asset.token.denom == 'ibc/785AFEC6B3741100D15E7AF01374E3C4C36F24888E96479B1C33F5C71F364EF9':
+                        readable_denom = 'uluna2'
+
+                    cg_denom_list.append(readable_denom)
+
+                prices:dict = self.getCoinPrice(cg_denom_list)
+
+                # Now we can calculate the balance for each pool
+                for pool_asset in pool.pool_assets:
+                    readable_denom:str = self.denomTrace(pool_asset.token.denom)
+                    
+                    if pool_asset.token.denom == 'ibc/785AFEC6B3741100D15E7AF01374E3C4C36F24888E96479B1C33F5C71F364EF9':
+                        readable_denom = 'uluna2'
+
+                    if readable_denom not in CHAIN_DATA:
+                        valid_pool = False
+                        break
+
+                    asset_amount:float = int(pool_asset.token.amount) / (10 ** getPrecision(readable_denom))
+
+                    price:float   = prices[readable_denom]
+                    pool_balance += (price * asset_amount)
+
+                if valid_pool == True:
+                    pools[int(row[0])]    = {'assets': [], 'liquidity': pool_balance}
+                
             # Otherwise, add this new asset to the existing pool
-            pools[int(row[0])]['assets'].append(row[1])
+            if int(row[0]) in pools:
+                pools[int(row[0])]['assets'].append(row[1])
 
         return pools
     
