@@ -57,8 +57,6 @@ def main():
         print (' 🛑 Exiting...\n')
         exit()
 
-    
-
     # Populate it with the details we have so far:
     liquidity_tx.balances        = wallet.balances
     liquidity_tx.pool_id         = user_pool
@@ -104,9 +102,11 @@ def main():
         
         if isPercentage(user_withdrawal):
             amount_out:float = float(user_withdrawal[:-1]) / 100
+            coin_amount = round(pool_assets[ULUNA] * amount_out, 2)
         else:
-            # If this is a precise amount, we need to convert this into a percentage of the total amount of LUNC
-            amount_out:float = round(user_withdrawal / pool_assets[asset_denom] * 100,2)
+            # If this is a precise amount, we need to convert this into a percentage of the total amount of LUNC   
+            coin_amount:float = wallet.formatUluna(user_withdrawal, ULUNA)
+            amount_out:float  = round(int(coin_amount) / int(pool_assets[ULUNA]), 2)
 
         liquidity_tx.amount_out = amount_out
 
@@ -128,15 +128,16 @@ def main():
     if result == True:
 
         if join_or_exit == JOIN_POOL:
-            print (f'You are about to add {wallet.formatUluna(uluna_amount, denom)} {FULL_COIN_LOOKUP[denom]} to Pool #{liquidity_tx.pool_id}')
+            print (f'You are about to add {wallet.formatUluna(uluna_amount, denom)} {FULL_COIN_LOOKUP[denom]} to Pool #{liquidity_tx.pool_id}.')
         else:
-            print (f'You are about to withdraw some stuff @TODO FIX ME')
+            print (f'You are about to withdraw {coin_amount} LUNC ({round(int(coin_amount) / int(pool_assets[ULUNA]) * 100, 2)}%) from Pool #{liquidity_tx.pool_id}.')
 
         print (liquidity_tx.readableFee())
 
         user_choice = get_user_choice('Do you want to continue? (y/n) ', [])
 
         if user_choice == False:
+            print (' 🛑 Exiting...\n')
             exit()
 
         # Now we know what the fee is, we can do it again and finalise it
@@ -146,6 +147,7 @@ def main():
             result = liquidity_tx.exitPool()
             
         if result == True:
+            
             liquidity_tx.broadcast()
 
             if liquidity_tx.broadcast_result is not None and liquidity_tx.broadcast_result.code == 32:
