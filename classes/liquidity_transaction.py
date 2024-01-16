@@ -60,38 +60,18 @@ class LiquidityTransaction(TransactionCore):
     def calcShareInAmount(self) -> int:
         """
         Calculate the share_in_amount value based on the pool and required exit amount.
+        This is simply the total number of shares that the user has, multiplied by the percentage.
+
+        NOTE: the amount_out MUST be a percentage decimal value.
 
         This is used for exiting a pool.
         """
 
-        # Step 1: calculate the fraction that the user has of the entire pool:
+        # Get the number of shares that this user has
+        user_shares:int = int(self.pools[self.pool_id])
 
-        # Get the pool that we are dealing with
-        pool:list = self.getOsmosisPool(self.pool_id)
-        
-        # Calculate the two basic components of this request:
-        total_shares:int   = int(pool.total_shares.amount)
-        share_fraction:int = int(total_shares / self.pools[self.pool_id])
-        
-        # Step 2: now get the actual amount of each asset across this pool:
-        share_in_amount:int = 0
-
-        # Go through each asset
-        asset:PoolAsset
-        for asset in pool.pool_assets:
-
-            # Convert the IBC values to something readable
-            denom     = self.denomTrace(asset.token.denom)
-            precision = getPrecision(denom)
-            
-            # This is the actual amount we are requesting
-            asset_amount      = int(asset.token.amount) / share_fraction / (10 ** precision)
-            user_amount:float = float(asset_amount * self.amount_out)
-
-            # Get the price for this denom
-            denom_price = self.getCoinPrice(denom)
-
-            share_in_amount += user_amount * denom_price * 1000000000000000
+        # Multiply this by the percentage. This is the amount we are removing.
+        share_in_amount:int = int(user_shares * self.amount_out)
 
         return share_in_amount
         
