@@ -18,17 +18,14 @@ DB_FILE_NAME             = 'osmosis.db'
 VERSION_URI              = 'https://raw.githubusercontent.com/geoffmunn/utility-scripts/main/version.json'
 
 # Gas adjustments and other values
-GAS_ADJUSTMENT           = 3.6
-GAS_ADJUSTMENT_SEND      = 3.6
-GAS_ADJUSTMENT_SWAPS     = 3.6
-GAS_ADJUSTMENT_OSMOSIS   = 1.5
-MIN_OSMO_GAS             = 0.0025
-MAX_SPREAD               = 0.01
-OSMOSIS_FEE_MULTIPLIER   = 1.5
-OSMOSIS_POOL_TAX         = 0.025
-
-# For liquidity investments, what slippage will we tolerate?
-OSMOSIS_LIQUIDITIY_SPREAD = 0.01
+GAS_ADJUSTMENT            = 3.6      # The standard gas adjustment value. Make higher to increase liklihood of success
+GAS_ADJUSTMENT_SWAPS      = 3.6      # Gas adjustment value for swaps
+GAS_ADJUSTMENT_OSMOSIS    = 1.5      # Gas adjustment for Osmosis transactions
+MAX_SPREAD                = 0.01     # The spread (or slippage) for swaps
+MIN_OSMO_GAS              = 0.0025   # What it costs to make a transaction on Osmosis
+OSMOSIS_FEE_MULTIPLIER    = 1.5      # An additional fee multiplier for Osmosis transactions
+OSMOSIS_LIQUIDITIY_SPREAD = 0.01     # For liquidity investments, what slippage will we tolerate?
+OSMOSIS_POOL_TAX          = 0.025    # What it costs to exit a liquidity pool on Osmosis
 
 # Swap contracts can be found here
 # https://assets.terra.money/cw20/pairs.dex.json
