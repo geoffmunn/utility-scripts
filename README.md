@@ -53,6 +53,7 @@ You can also swap via Osmosis, converting LUNC to the following:
  * Decentr
  * Desmos
  * e-Money
+ * e-Money EUR
  * Evmos
  * Fetch.ai
  * Gravity Bridge
@@ -65,6 +66,7 @@ You can also swap via Osmosis, converting LUNC to the following:
  * Kujira
  * Lambda
  * Likecoin
+ * Luna2 (on Osmosis)
  * Luna Classic (on Osmosis)
  * Mars Protocol
  * Medibloc
@@ -226,6 +228,29 @@ You can swap the minor Terra coins for any other coin, including USTC and LUNC, 
 First, provide the same password you used in the configuration step, and then select the coin you want to swap from.
 
 After pressing 'X' to continue, you will can then choose what you want to swap your selection to. You can also see the estimated conversion result.
+
+### liquidity.py
+
+You can turn your LUNC into a productive asset by using liqudity pools on Osmosis.
+
+First, run ```liquidity.py``` and enter your password. A list of Osmosis wallets will be shown.
+NOTE: you must have an **osmo** address for this to work - you can create one in the ```manage_wallets.py``` script.
+
+This wallet must have a LUNC balance present - you cannot transfer LUNC directly from a terra address into a liquidity pool (yet).
+
+You will then see a list of supported pools and your current investment balance against each one. Select the pool you want by typing the pool ID number.
+
+Then you need to indicate if you are joining a pool, or exiting.
+
+- **If you are joining a pool:**
+  You will then be prompted to enter a contribution amount, based on the available amount of LUNC in your wallet. You'll be given a fee estimation, and if you say 'yes', then this transaction will be completed. Finished!
+- **If you are exiting a pool:**
+  You will be asked for a withdrawal amount. This can either be a percentage of the total balance, or a specific LUNC amount.
+
+  Specific LUNC amounts will be converted into a total percentage, and you will get an equivalent amount of all the pool assets as well as the LUNC amount.
+
+**NOTE** You should be very careful before joining low-liquidity pools. You could find yourself as the majority liquidity provider! Also, Osmosis may reject your contribution if you provide a low amount.
+
 
 ## Osmosis usage
 
