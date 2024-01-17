@@ -24,6 +24,7 @@ from constants.constants import (
 
 from classes.terra_instance import TerraInstance    
 from classes.transaction_core import TransactionCore
+from classes.wallet import UserWallet
 
 from terra_classic_sdk.client.lcd.api.tx import (
     CreateTxOptions,
@@ -47,7 +48,6 @@ class LiquidityTransaction(TransactionCore):
         self.amount_out:float     = None  # Used for exiting a pool - supplied by user
         self.amount_in:float      = None  # Used for joining a pool - supplied by user
         self.cached_pools:dict    = {}
-        self.cached_prices:dict   = {}
         self.gas_limit:str        = 'auto'
         self.max_spread:float     = OSMOSIS_LIQUIDITIY_SPREAD
         self.pool_id:int          = None  # Used by both joining and exiting - supplied by user
@@ -58,7 +58,8 @@ class LiquidityTransaction(TransactionCore):
         self.source_channel:str   = None
         self.token_in_coin:dict   = None
         self.token_out_coins:list = None
-        
+        self.wallet:UserWallet    = None
+
     def calcShareInAmount(self) -> int:
         """
         Calculate the share_in_amount value based on the pool and required exit amount.
@@ -228,46 +229,6 @@ class LiquidityTransaction(TransactionCore):
         else:
             return False
         
-    def getCoinPrice(self, denom_list:list) -> dict:
-        """
-        Based on the provided list of denominations, get the coingecko details.
-
-        It returns the price in US dollars.
-        """
-
-        cg_denoms:list = []
-        denom_map:dict = {}
-
-        # Go through the denom list and take out any that we've already requested
-        for denom in denom_list:
-            if denom in CHAIN_DATA:
-                cg_denom = CHAIN_DATA[denom]['coingecko_id']
-
-                # Create a map of these denoms so we can return it with the same supplied keys
-                denom_map[denom] = cg_denom
-
-                if cg_denom not in self.cached_prices:
-                    cg_denoms.append(cg_denom)
-
-        # Now make a bulk query for anything we haven't already requested:        
-        if len(cg_denoms) > 0:
-            # Create the Coingecko object
-            cg = CoinGeckoAPI()
-
-            # Coingecko uses its own denom key, which we store in the chain data constant
-            # We're only supporting USD at the moment
-            cg_result = cg.get_price(cg_denoms, 'usd')
-
-            for cg_denom in cg_result:
-                self.cached_prices[cg_denom] = cg_result[cg_denom]['usd']
-
-        result:dict = {}
-        for denom in denom_list:
-            if denom in denom_map:
-                result[denom] = self.cached_prices[denom_map[denom]]
-
-        return result
-        
     def getAssetValues(self, assets) -> dict:
         """
         Go through the asset list and retrieve a price for each one
@@ -275,7 +236,7 @@ class LiquidityTransaction(TransactionCore):
 
         prices:dict = {}
         for asset_denom in assets:
-            prices[asset_denom] = assets[asset_denom] * self.getCoinPrice([asset_denom])[asset_denom]
+            prices[asset_denom] = assets[asset_denom] * self.wallet.getCoinPrice([asset_denom])[asset_denom]
 
         return prices
     
@@ -341,7 +302,7 @@ class LiquidityTransaction(TransactionCore):
         # Now store the basic details
         liquidity_tx.balances     = wallet.balances
         liquidity_tx.pools        = wallet.pools
-        liquidity_tx.wallet_denom = wallet.denom
+        liquidity_tx.wallet       = wallet
 
         pool_balances:dict = {}
         pool_list:dict = liquidity_tx.poolList(ULUNA)
@@ -619,7 +580,7 @@ class LiquidityTransaction(TransactionCore):
 
                     cg_denom_list.append(readable_denom)
 
-                prices:dict = self.getCoinPrice(cg_denom_list)
+                prices:dict = self.wallet.getCoinPrice(cg_denom_list)
 
                 # Now we can calculate the balance for each pool
                 for pool_asset in pool.pool_assets:

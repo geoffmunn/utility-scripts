@@ -9,6 +9,7 @@ import traceback
 
 from datetime import datetime
 from dateutil.tz import tz
+from pycoingecko import CoinGeckoAPI
 
 from classes.common import (
     coin_list,
@@ -51,6 +52,7 @@ class UserWallet:
     def __init__(self):
         self.address:str        = ''
         self.balances:dict      = None
+        self.cached_prices:dict = {}
         self.delegations:dict   = {}
         self.denom:str          = ''
         self.denom_traces:dict  = {}
@@ -337,6 +339,46 @@ class UserWallet:
         balances:dict = self.getBalances(core_coins_only = True)
 
         return balances
+    
+    def getCoinPrice(self, denom_list:list) -> dict:
+        """
+        Based on the provided list of denominations, get the coingecko details.
+
+        It returns the price in US dollars.
+        """
+
+        cg_denoms:list = []
+        denom_map:dict = {}
+
+        # Go through the denom list and take out any that we've already requested
+        for denom in denom_list:
+            if denom in CHAIN_DATA:
+                cg_denom = CHAIN_DATA[denom]['coingecko_id']
+
+                # Create a map of these denoms so we can return it with the same supplied keys
+                denom_map[denom] = cg_denom
+
+                if cg_denom not in self.cached_prices:
+                    cg_denoms.append(cg_denom)
+
+        # Now make a bulk query for anything we haven't already requested:        
+        if len(cg_denoms) > 0:
+            # Create the Coingecko object
+            cg = CoinGeckoAPI()
+
+            # Coingecko uses its own denom key, which we store in the chain data constant
+            # We're only supporting USD at the moment
+            cg_result = cg.get_price(cg_denoms, 'usd')
+
+            for cg_denom in cg_result:
+                self.cached_prices[cg_denom] = cg_result[cg_denom]['usd']
+
+        result:dict = {}
+        for denom in denom_list:
+            if denom in denom_map:
+                result[denom] = self.cached_prices[denom_map[denom]]
+
+        return result
 
     def getCoinSelection(self, question:str, coins:dict, only_active_coins:bool = True, estimation_against:dict = None):
         """

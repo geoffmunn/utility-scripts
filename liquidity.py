@@ -63,6 +63,7 @@ def main():
     liquidity_tx.pools           = wallet.pools
     liquidity_tx.sender_address  = wallet.address
     liquidity_tx.source_channel  = CHAIN_DATA[wallet.denom]['ibc_channels'][ULUNA]
+    liquidity_tx.wallet          = wallet
     liquidity_tx.wallet_denom    = wallet.denom
 
     # Are we joining aliquidity pool, or exiting?
