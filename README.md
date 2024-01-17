@@ -152,7 +152,7 @@ The full list of minor Terra coins are also supported, but currently do not work
   python -m pip install pyyaml
   ```
 
-NOTE: installing terra-classic-sdk first should automatically install the terra-classic-proto dependency.
+**NOTE:** installing terra-classic-sdk first should automatically install the terra-classic-proto dependency.
 
  ## Installation guide
 
@@ -234,9 +234,10 @@ After pressing 'X' to continue, you will can then choose what you want to swap y
 You can turn your LUNC into a productive asset by using liqudity pools on Osmosis.
 
 First, run ```liquidity.py``` and enter your password. A list of Osmosis wallets will be shown.
-NOTE: you must have an **osmo** address for this to work - you can create one in the ```manage_wallets.py``` script.
 
-This wallet must have a LUNC balance present - you cannot transfer LUNC directly from a terra address into a liquidity pool (yet).
+**NOTE:** you must have an **osmo** address for this to work - you can create one in the ```manage_wallets.py``` script.
+
+This wallet must have a LUNC balance present on the osmo address - you cannot transfer LUNC directly from a terra address into a liquidity pool (yet).
 
 You will then see a list of supported pools and your current investment balance against each one. Select the pool you want by typing the pool ID number.
 
@@ -249,7 +250,7 @@ Then you need to indicate if you are joining a pool, or exiting.
 
   Specific LUNC amounts will be converted into a total percentage, and you will get an equivalent amount of all the pool assets as well as the LUNC amount.
 
-**NOTE** You should be very careful before joining low-liquidity pools. You could find yourself as the majority liquidity provider! Also, Osmosis may reject your contribution if you provide a low amount.
+**NOTE:** You should be very careful before joining low-liquidity pools. You could find yourself as the majority liquidity provider! Also, Osmosis may reject your contribution if you provide a low amount.
 
 
 ## Osmosis usage
@@ -312,13 +313,14 @@ Currently it seems that a successful gas adjustment value is 3.6. If you don't w
 You can change the values in the ```constants/constants.py``` file:
 
 ```
-GAS_ADJUSTMENT           = 3.6
-GAS_ADJUSTMENT_SEND      = 3.6
-GAS_ADJUSTMENT_SWAPS     = 3.6
-GAS_ADJUSTMENT_OSMOSIS   = 1.5
-MIN_OSMO_GAS             = 0.0025
-MAX_SPREAD               = 0.01
-OSMOSIS_FEE_MULTIPLIER   = 1.5
+GAS_ADJUSTMENT            = 3.6      # The standard gas adjustment value. Make higher to increase liklihood of success
+GAS_ADJUSTMENT_SWAPS      = 3.6      # Gas adjustment value for swaps
+GAS_ADJUSTMENT_OSMOSIS    = 1.5      # Gas adjustment for Osmosis transactions
+MAX_SPREAD                = 0.01     # The spread (or slippage) for swaps
+MIN_OSMO_GAS              = 0.0025   # What it costs to make a transaction on Osmosis
+OSMOSIS_FEE_MULTIPLIER    = 1.5      # An additional fee multiplier for Osmosis transactions
+OSMOSIS_LIQUIDITIY_SPREAD = 0.01     # For liquidity investments, what slippage will we tolerate?
+OSMOSIS_POOL_TAX          = 0.025    # What it costs to exit a liquidity pool on Osmosis
 ```
 
 ## Security notes
