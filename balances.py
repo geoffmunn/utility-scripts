@@ -34,8 +34,10 @@ def main():
 
     if just_main_coins == True:
         coin_lookup = BASIC_COIN_LOOKUP
+        print ('\n 🕐  Getting the balances for just LUNC and USTC in your wallets, please wait...')
     else:
         coin_lookup = FULL_COIN_LOOKUP
+        print ('\n 🕐  Getting the balances for all coins in your wallets, please wait...')
 
     balance_coins = {}
     label_widths  = []

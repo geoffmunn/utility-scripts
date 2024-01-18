@@ -505,7 +505,7 @@ class UserWallets:
                 with open(CONFIG_FILE_NAME, 'r') as file:
                     user_config = yaml.safe_load(file)
 
-                    print ('Decrypting and validating wallets - please wait...\n')
+                    print ('\n 🕐  Decrypting and validating wallets - please wait...\n')
                     self.create(user_config, decrypt_password, filter)
                     result = self.wallets
                 

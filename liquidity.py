@@ -46,7 +46,7 @@ def main():
 
     denom:str = ULUNA
 
-    print ('Loading pool list, please wait...')
+    print ('\n 🕐  Loading pool list, please wait...')
     
     # Create the send tx object
     liquidity_tx = LiquidityTransaction().create(wallet.seed, wallet.denom)
