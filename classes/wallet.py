@@ -368,7 +368,11 @@ class UserWallet:
 
             # Coingecko uses its own denom key, which we store in the chain data constant
             # We're only supporting USD at the moment
-            cg_result = cg.get_price(cg_denoms, 'usd')
+            try:
+                cg_result = cg.get_price(cg_denoms, 'usd')
+            except Exception as err:
+                print ('caught an error!')
+                print (err)
 
             for cg_denom in cg_result:
                 self.cached_prices[cg_denom] = cg_result[cg_denom]['usd']
