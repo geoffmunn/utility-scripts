@@ -79,7 +79,12 @@ def main():
         for denom in wallet.balances:
             raw_amount:float   = divide_raw_balance(wallet.balances[denom], denom)
             denom:str          = wallet.denomTrace(denom)
-            coin_denoms.append(denom)
+            if just_main_coins == True and denom in BASIC_COIN_LOOKUP: 
+                if denom not in coin_denoms:
+                    coin_denoms.append(denom)
+            elif just_main_coins == False:
+                if denom not in coin_denoms:
+                    coin_denoms.append(denom)
             
         for denom in wallet.balances:
             
