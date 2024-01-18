@@ -5,11 +5,14 @@ import cryptocode
 import json
 import requests
 import time
+import sqlite3
 import traceback
+
 
 from datetime import datetime
 from dateutil.tz import tz
 from pycoingecko import CoinGeckoAPI
+from sqlite3 import Cursor, Connection
 
 from classes.common import (
     coin_list,
@@ -24,6 +27,7 @@ from classes.common import (
 from constants.constants import (
     BASE_SMART_CONTRACT_ADDRESS,
     CHAIN_DATA,
+    DB_FILE_NAME,
     FULL_COIN_LOOKUP,
     SEARCH_RETRY_COUNT,
     UBASE,
@@ -52,10 +56,10 @@ class UserWallet:
     def __init__(self):
         self.address:str        = ''
         self.balances:dict      = None
-        self.cached_prices:dict = {}
+        self.cached_prices:dict = {}    # Prices get stored here for speed
+        self.cached_traces:dict = {}    # Denom traces get stored here for speed
         self.delegations:dict   = {}
         self.denom:str          = ''
-        self.denom_traces:dict  = {}
         self.undelegations:dict = {}
         self.name:str           = ''
         self.pools:dict         = {}
@@ -179,18 +183,37 @@ class UserWallet:
     
     def denomTrace(self, ibc_address:str):
         """
-        Based on the wallet prefix, get the IBC denom trace details for this IBC address
+        Based on the wallet prefix, get the IBC denom trace details for this IBC address.
+        This is a slow process, so we do two things:
+        First, check the cached results in memory.
+        Second, check the database.
+        Third, go and get the actual result.
         """
-        
-        result:list = []
 
-        if ibc_address[0:4] == 'ibc/':
-            
-            value:str      = ibc_address[4:]
-            chain_name:str = CHAIN_DATA[self.denom]['cosmos_name']
-            uri:str        = f'https://rest.cosmos.directory/{chain_name}/ibc/apps/transfer/v1/denom_traces/{value}'
-            
-            if uri not in self.denom_traces:
+        # First, if this is not even an IBC address, then return the original value:
+        if ibc_address[0:4].lower() != 'ibc/':
+            return ibc_address
+
+        # We will use the uri as the key, just to make sure there are no collisions
+        value:str      = ibc_address[4:]
+        chain_name:str = CHAIN_DATA[self.denom]['cosmos_name']
+        uri:str        = f'https://rest.cosmos.directory/{chain_name}/ibc/apps/transfer/v1/denom_traces/{value}'
+        result:str     = ''
+
+        # Now check the cached traces:
+        if uri not in self.cached_traces:
+            # Now check the database:
+
+            get_ibc_query    = "SELECT readable_denom FROM ibc_denoms WHERE ibc_denom=?;"
+            insert_ibc_denom = "INSERT INTO ibc_denoms (ibc_denom, readable_denom) VALUES (?, ?);"
+
+            # Get the database results
+            conn:Connection = sqlite3.connect(DB_FILE_NAME)
+            cursor:Cursor   = conn.execute(get_ibc_query, [uri])
+            row:list        = cursor.fetchone()
+
+            if row is None:
+                # Go and get this denom trace:
 
                 retry_count:int = 0
                 retry:bool      = True
@@ -200,10 +223,16 @@ class UserWallet:
                         trace_result:json = requests.get(uri).json()
                     
                         if 'denom_trace' in trace_result:
-                            # Store this result for future requests
-                            self.denom_traces[uri] = trace_result['denom_trace']
                             # Return this result
-                            result = trace_result['denom_trace']
+                            result = trace_result['denom_trace']['base_denom']
+                            
+                            # Add this IBC value and readable version into the database:
+                            cursor:Cursor = conn.execute(insert_ibc_denom, [uri, result])
+                            conn.commit()
+
+                            # Store this result for future requests
+                            self.cached_traces[uri] = result
+                            
                             break
                         else:
                             break
@@ -212,18 +241,23 @@ class UserWallet:
                         if retry_count == 10:
                             print (f'Denom trace error for {uri}:')
                             print (err)
-                            retry = False
+                            retry  = False
+                            result = ''
                             break
                         else:
                             time.sleep(1)
             else:
-                result = self.denom_traces[uri]
-        
-        if len(result) == 0:
-            return ibc_address # Not an IBC address we could resolve
+                # This IBC entry is in the database
+                result = row[0]
+
+                # Update the cache so we don't have to do this again
+                self.cached_traces[uri] = result
         else:
-            return result['base_denom']
-    
+            # Return what we already have
+            result = self.cached_traces[uri]
+
+        return result
+        
     def formatUluna(self, uluna:float, denom:str, add_suffix:bool = False):
         """
         A generic helper function to convert uluna amounts to LUNC.

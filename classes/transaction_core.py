@@ -3,8 +3,11 @@
 
 import json
 import requests
+import sqlite3
 import time
+
 from hashlib import sha256
+from sqlite3 import Cursor, Connection
 
 from classes.common import (
     divide_raw_balance
@@ -13,6 +16,7 @@ from classes.common import (
 from constants.constants import (
     BASE_SMART_CONTRACT_ADDRESS,
     CHAIN_DATA,
+    DB_FILE_NAME,
     FULL_COIN_LOOKUP,
     GAS_PRICE_URI,
     SEARCH_RETRY_COUNT,
@@ -46,8 +50,8 @@ class TransactionCore():
         self.account_number:int                      = None
         self.balances:dict                           = {}
         self.broadcast_result:BlockTxBroadcastResult = None
+        self.cached_traces:dict                      = {}
         self.current_wallet:Wallet                   = None # The generated wallet based on the provided details
-        self.denom_traces:dict                       = {}
         self.fee:Fee                                 = None
         self.gas_list:json                           = None
         self.gas_price_url:str                       = None
@@ -202,18 +206,37 @@ class TransactionCore():
 
     def denomTrace(self, ibc_address:str) -> str:
         """
-        Based on the wallet denomination, get the IBC denom trace details for this IBC address
+        Based on the wallet prefix, get the IBC denom trace details for this IBC address.
+        This is a slow process, so we do two things:
+        First, check the cached results in memory.
+        Second, check the database.
+        Third, go and get the actual result.
         """
-        
-        result:list = []
 
-        if ibc_address[0:4] == 'ibc/':
-            
-            value      = ibc_address[4:]
-            chain_name = CHAIN_DATA[self.wallet_denom]['cosmos_name']
-            uri:str    = f'https://rest.cosmos.directory/{chain_name}/ibc/apps/transfer/v1/denom_traces/{value}'
+        # First, if this is not even an IBC address, then return the original value:
+        if ibc_address[0:4].lower() != 'ibc/':
+            return ibc_address
 
-            if uri not in self.denom_traces:
+        # We will use the uri as the key, just to make sure there are no collisions
+        value:str      = ibc_address[4:]
+        chain_name:str = CHAIN_DATA[self.wallet_denom]['cosmos_name']
+        uri:str        = f'https://rest.cosmos.directory/{chain_name}/ibc/apps/transfer/v1/denom_traces/{value}'
+        result:str     = ''
+
+        # Now check the cached traces:
+        if uri not in self.cached_traces:
+            # Now check the database:
+
+            get_ibc_query    = "SELECT readable_denom FROM ibc_denoms WHERE ibc_denom=?;"
+            insert_ibc_denom = "INSERT INTO ibc_denoms (ibc_denom, readable_denom) VALUES (?, ?);"
+
+            # Get the database results
+            conn:Connection = sqlite3.connect(DB_FILE_NAME)
+            cursor:Cursor   = conn.execute(get_ibc_query, [uri])
+            row:list        = cursor.fetchone()
+
+            if row is None:
+                # Go and get this denom trace:
 
                 retry_count:int = 0
                 retry:bool      = True
@@ -223,30 +246,40 @@ class TransactionCore():
                         trace_result:json = requests.get(uri).json()
                     
                         if 'denom_trace' in trace_result:
-                            # Store this result for future requests
-                            self.denom_traces[uri] = trace_result['denom_trace']
                             # Return this result
-                            result = trace_result['denom_trace']
+                            result = trace_result['denom_trace']['base_denom']
+                            
+                            # Add this IBC value and readable version into the database:
+                            cursor:Cursor = conn.execute(insert_ibc_denom, [uri, result])
+                            conn.commit()
+
+                            # Store this result for future requests
+                            self.cached_traces[uri] = result
+                            
                             break
                         else:
                             break
                     except Exception as err:
-                        print (f'Denom trace error for {uri}:')
-                        print (err)
-
                         retry_count += 1
                         if retry_count == 10:
-                            retry = False
+                            print (f'Denom trace error for {uri}:')
+                            print (err)
+                            retry  = False
+                            result = ''
                             break
                         else:
                             time.sleep(1)
             else:
-                result = self.denom_traces[uri]
-        
-        if len(result) == 0:
-            return ibc_address # Not an IBC address we could resolve
+                # This IBC entry is in the database
+                result = row[0]
+
+                # Update the cache so we don't have to do this again
+                self.cached_traces[uri] = result
         else:
-            return result['base_denom']
+            # Return what we already have
+            result = self.cached_traces[uri]
+
+        return result
         
     def findTransaction(self) -> bool:
         """
