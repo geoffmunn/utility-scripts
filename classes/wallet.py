@@ -373,7 +373,15 @@ class UserWallet:
 
             while retry == True:
                 try:
+                    
                     cg_result = cg.get_price(cg_denoms, 'usd')
+
+                    for cg_denom in cg_result:
+                        self.cached_prices[cg_denom] = cg_result[cg_denom]['usd']
+
+                    retry = False
+                    break
+
                 except Exception as err:
                     retry_count += 1
                     if retry_count == 10:
@@ -385,17 +393,13 @@ class UserWallet:
                     else:
                         if retry_count == 1:
                             print (' 🛎️  Coingecko is slow at the moment, this might take a while...')
-                            
-                        time.sleep(1)
 
-                for cg_denom in cg_result:
-                    self.cached_prices[cg_denom] = cg_result[cg_denom]['usd']
+                        time.sleep(1)
 
         result:dict = {}
         for denom in denom_list:
-            if denom in denom_map:
+            if denom in denom_map and denom_map[denom] in self.cached_prices:
                 result[denom] = self.cached_prices[denom_map[denom]]
-
         return result
 
     def getCoinSelection(self, question:str, coins:dict, only_active_coins:bool = True, estimation_against:dict = None):
