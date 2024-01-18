@@ -58,7 +58,8 @@ def main():
             print (f'Adding pool id {pool.id}')
 
             cursor = conn.execute(add_pool, [pool.id, pool.type, pool.address, pool.pool_params.swap_fee, pool.pool_params.exit_fee, pool.future_pool_governor, str(pool.total_shares.amount), pool.total_weight])
-            
+            conn.commit()
+
             pool_asset:PoolAsset
             for pool_asset in pool.pool_assets:
                 readable_denom = wallet.denomTrace(pool_asset.token.denom)
@@ -68,8 +69,7 @@ def main():
 
                 #print (f'pool asset token amount for {readable_denom} is {pool_asset.token.amount}')
                 cursor = conn.execute(add_asset, [pool.id, pool_asset.token.denom, readable_denom, pool_asset.token.amount, pool_asset.weight])
-                
-            conn.commit()
+                conn.commit()
         except Exception as err:
                 print (err)
 
