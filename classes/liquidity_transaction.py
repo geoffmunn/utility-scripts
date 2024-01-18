@@ -303,6 +303,7 @@ class LiquidityTransaction(TransactionCore):
         liquidity_tx.balances     = wallet.balances
         liquidity_tx.pools        = wallet.pools
         liquidity_tx.wallet       = wallet
+        liquidity_tx.wallet_denom = wallet.denom
 
         pool_balances:dict = {}
         pool_list:dict = liquidity_tx.poolList(ULUNA)
