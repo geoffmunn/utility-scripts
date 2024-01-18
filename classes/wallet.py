@@ -383,6 +383,9 @@ class UserWallet:
                         retry = False
                         exit()
                     else:
+                        if retry_count == 1:
+                            print (' 🛎️  Coingecko is slow at the moment, this might take a while...')
+                            
                         time.sleep(1)
 
                 for cg_denom in cg_result:
