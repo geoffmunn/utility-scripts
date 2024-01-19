@@ -426,7 +426,7 @@ class UserWallet:
                         exit()
                     else:
                         if retry_count == 1:
-                            print (' 🛎️  Coingecko is slow at the moment, this might take a while...')
+                            print (' 🛎️   Coingecko is slow at the moment, this might take a while...')
 
                         time.sleep(1)
 
