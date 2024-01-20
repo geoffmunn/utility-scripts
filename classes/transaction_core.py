@@ -290,7 +290,7 @@ class TransactionCore():
         # Store the current block here - needed for transaction searches
         retry_count = 0
         
-        print (f' 🔎︎  Looking for the TX hash...')
+        print (f'\n 🔎︎ Looking for the TX hash...')
         while True:
             self.height:int = int(self.terra.tendermint.block_info()['block']['header']['height']) - 1
 
