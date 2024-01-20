@@ -5,10 +5,14 @@ import cryptocode
 import json
 import requests
 import time
+import sqlite3
 import traceback
+
 
 from datetime import datetime
 from dateutil.tz import tz
+from pycoingecko import CoinGeckoAPI
+from sqlite3 import Cursor, Connection
 
 from classes.common import (
     coin_list,
@@ -23,6 +27,7 @@ from classes.common import (
 from constants.constants import (
     BASE_SMART_CONTRACT_ADDRESS,
     CHAIN_DATA,
+    DB_FILE_NAME,
     FULL_COIN_LOOKUP,
     SEARCH_RETRY_COUNT,
     UBASE,
@@ -51,11 +56,13 @@ class UserWallet:
     def __init__(self):
         self.address:str        = ''
         self.balances:dict      = None
+        self.cached_prices:dict = {}    # Prices get stored here for speed
+        self.cached_traces:dict = {}    # Denom traces get stored here for speed
         self.delegations:dict   = {}
         self.denom:str          = ''
-        self.denom_traces:dict  = {}
         self.undelegations:dict = {}
         self.name:str           = ''
+        self.pools:dict         = {}
         self.prefix:str         = ''
         self.seed:str           = ''
         self.terra:LCDClient    = None
@@ -156,7 +163,8 @@ class UserWallet:
             prefix = self.getPrefix(self.address)
             for chain_key in [*CHAIN_DATA]:
                 if chain_key != UUSD:
-                    if CHAIN_DATA[chain_key]['bech32_prefix'] == prefix:
+                    # By checking for LCD values, we can support dual prefixes, like LUNC and LUNA
+                    if CHAIN_DATA[chain_key]['bech32_prefix'] == prefix and 'lcd_urls' in CHAIN_DATA[chain_key]:
                         denom = chain_key
 
         self.denom = denom
@@ -175,18 +183,37 @@ class UserWallet:
     
     def denomTrace(self, ibc_address:str):
         """
-        Based on the wallet prefix, get the IBC denom trace details for this IBC address
+        Based on the wallet prefix, get the IBC denom trace details for this IBC address.
+        This is a slow process, so we do two things:
+        First, check the cached results in memory.
+        Second, check the database.
+        Third, go and get the actual result.
         """
-        
-        result:list = []
 
-        if ibc_address[0:4] == 'ibc/':
-            
-            value:str      = ibc_address[4:]
-            chain_name:str = CHAIN_DATA[self.denom]['cosmos_name']
-            uri:str        = f'https://rest.cosmos.directory/{chain_name}/ibc/apps/transfer/v1/denom_traces/{value}'
-            
-            if uri not in self.denom_traces:
+        # First, if this is not even an IBC address, then return the original value:
+        if ibc_address[0:4].lower() != 'ibc/':
+            return ibc_address
+
+        # We will use the uri as the key, just to make sure there are no collisions
+        value:str      = ibc_address[4:]
+        chain_name:str = CHAIN_DATA[self.denom]['cosmos_name']
+        uri:str        = f'https://rest.cosmos.directory/{chain_name}/ibc/apps/transfer/v1/denom_traces/{value}'
+        result:str     = ''
+
+        # Now check the cached traces:
+        if uri not in self.cached_traces:
+            # Now check the database:
+
+            get_ibc_query    = "SELECT readable_denom FROM ibc_denoms WHERE ibc_denom=?;"
+            insert_ibc_denom = "INSERT INTO ibc_denoms (ibc_denom, readable_denom) VALUES (?, ?);"
+
+            # Get the database results
+            conn:Connection = sqlite3.connect(DB_FILE_NAME)
+            cursor:Cursor   = conn.execute(get_ibc_query, [uri])
+            row:list        = cursor.fetchone()
+
+            if row is None:
+                # Go and get this denom trace:
 
                 retry_count:int = 0
                 retry:bool      = True
@@ -196,10 +223,16 @@ class UserWallet:
                         trace_result:json = requests.get(uri).json()
                     
                         if 'denom_trace' in trace_result:
-                            # Store this result for future requests
-                            self.denom_traces[uri] = trace_result['denom_trace']
                             # Return this result
-                            result = trace_result['denom_trace']
+                            result = trace_result['denom_trace']['base_denom']
+                            
+                            # Add this IBC value and readable version into the database:
+                            cursor:Cursor = conn.execute(insert_ibc_denom, [uri, result])
+                            conn.commit()
+
+                            # Store this result for future requests
+                            self.cached_traces[uri] = result
+                            
                             break
                         else:
                             break
@@ -208,23 +241,29 @@ class UserWallet:
                         if retry_count == 10:
                             print (f'Denom trace error for {uri}:')
                             print (err)
-                            retry = False
+                            retry  = False
+                            result = ''
                             break
                         else:
                             time.sleep(1)
             else:
-                result = self.denom_traces[uri]
-        
-        if len(result) == 0:
-            return ibc_address # Not an IBC address we could resolve
+                # This IBC entry is in the database
+                result = row[0]
+
+                # Update the cache so we don't have to do this again
+                self.cached_traces[uri] = result
         else:
-            return result['base_denom']
-    
+            # Return what we already have
+            result = self.cached_traces[uri]
+
+        return result
+        
     def formatUluna(self, uluna:float, denom:str, add_suffix:bool = False):
         """
         A generic helper function to convert uluna amounts to LUNC.
         """
 
+        denom         = self.denomTrace(denom)
         precision:int = getPrecision(denom)
         lunc:float    = round(float(divide_raw_balance(uluna, denom)), precision)
 
@@ -246,8 +285,11 @@ class UserWallet:
 
         if self.terra is not None:
             retry_count:int = 0
+
+            balances:dict = {}
+            pools:dict    = {}
             while True:
-                balances:dict = {}
+                
                 # Default pagination options
                 pagOpt:PaginationOptions = PaginationOptions(limit=50, count_total=True)
 
@@ -261,11 +303,16 @@ class UserWallet:
                         if core_coins_only == True:
                             if coin.denom in [ULUNA, UUSD]:
                                 balances[coin.denom] = coin.amount
+                            
                         else:
                             denom_trace           = self.denomTrace(coin.denom)
                             balances[denom_trace] = coin.amount
                         
-                        
+                            # We only get pools if the entire coin list is requested
+                            if denom_trace[0:len('gamm/pool/')] == 'gamm/pool/':
+                                pool_id = denom_trace[len('gamm/pool/'):]
+                                pools[int(pool_id)] = coin.amount
+
                     # Go through the pagination (if any)
                     while pagination['next_key'] is not None:
                         pagOpt.key         = pagination["next_key"]
@@ -280,6 +327,10 @@ class UserWallet:
                                 denom_trace           = self.denomTrace(coin.denom)
                                 balances[denom_trace] = coin.amount
 
+                                # We only get pools if the entire coin list is requested
+                                if denom_trace[0:len('gamm/pool/')] == 'gamm/pool/':
+                                    pool_id = denom_trace[len('gamm/pool/'):]
+                                    pools[int(pool_id)] = coin.amount
                     
                 except Exception as err:
                     print (f'Pagination error for {self.name}:', err)
@@ -310,7 +361,8 @@ class UserWallet:
             balances:dict = {}
 
         self.balances = balances
-        
+        self.pools    = pools
+
         return self.balances
     
     async def getBalancesAsync(self) -> dict:
@@ -321,6 +373,68 @@ class UserWallet:
         balances:dict = self.getBalances(core_coins_only = True)
 
         return balances
+    
+    def getCoinPrice(self, denom_list:list) -> dict:
+        """
+        Based on the provided list of denominations, get the coingecko details.
+
+        It returns the price in US dollars.
+        """
+
+        cg_denoms:list = []
+        denom_map:dict = {}
+
+        # Go through the denom list and take out any that we've already requested
+        for denom in denom_list:
+            if denom in CHAIN_DATA:
+                cg_denom = CHAIN_DATA[denom]['coingecko_id']
+
+                # Create a map of these denoms so we can return it with the same supplied keys
+                denom_map[denom] = cg_denom
+
+                if cg_denom not in self.cached_prices:
+                    cg_denoms.append(cg_denom)
+
+        # Now make a bulk query for anything we haven't already requested:        
+        if len(cg_denoms) > 0:
+            # Create the Coingecko object
+            cg = CoinGeckoAPI()
+
+            # Coingecko uses its own denom key, which we store in the chain data constant
+            # We're only supporting USD at the moment
+            retry_count:int = 0
+            retry:bool      = True
+
+            while retry == True:
+                try:
+                    
+                    cg_result = cg.get_price(cg_denoms, 'usd')
+
+                    for cg_denom in cg_result:
+                        self.cached_prices[cg_denom] = cg_result[cg_denom]['usd']
+
+                    retry = False
+                    break
+
+                except Exception as err:
+                    retry_count += 1
+                    if retry_count == 10:
+                        print (' 🛑 Error getting coin prices')
+                        print (err)
+
+                        retry = False
+                        exit()
+                    else:
+                        if retry_count == 1:
+                            print (' 🛎️   Coingecko is slow at the moment, this might take a while...')
+
+                        time.sleep(1)
+
+        result:dict = {}
+        for denom in denom_list:
+            if denom in denom_map and denom_map[denom] in self.cached_prices:
+                result[denom] = self.cached_prices[denom_map[denom]]
+        return result
 
     def getCoinSelection(self, question:str, coins:dict, only_active_coins:bool = True, estimation_against:dict = None):
         """

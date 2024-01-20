@@ -18,16 +18,14 @@ DB_FILE_NAME             = 'osmosis.db'
 VERSION_URI              = 'https://raw.githubusercontent.com/geoffmunn/utility-scripts/main/version.json'
 
 # Gas adjustments and other values
-GAS_ADJUSTMENT           = 3.6
-GAS_ADJUSTMENT_SEND      = 3.6
-GAS_ADJUSTMENT_SWAPS     = 3.6
-GAS_ADJUSTMENT_OSMOSIS   = 1.5
-MIN_OSMO_GAS             = 0.0025
-MAX_SPREAD               = 0.01
-OSMOSIS_FEE_MULTIPLIER   = 1.5
-
-# For liquidity investments, what slippage will we tolerate?
-OSMOSIS_LIQUIDITIY_SPREAD = 0.01
+GAS_ADJUSTMENT            = 3.6      # The standard gas adjustment value. Make higher to increase liklihood of success
+GAS_ADJUSTMENT_SWAPS      = 3.6      # Gas adjustment value for swaps
+GAS_ADJUSTMENT_OSMOSIS    = 1.5      # Gas adjustment for Osmosis transactions
+MAX_SPREAD                = 0.01     # The spread (or slippage) for swaps
+MIN_OSMO_GAS              = 0.0025   # What it costs to make a transaction on Osmosis
+OSMOSIS_FEE_MULTIPLIER    = 1.5      # An additional fee multiplier for Osmosis transactions
+OSMOSIS_LIQUIDITIY_SPREAD = 0.01     # For liquidity investments, what slippage will we tolerate?
+OSMOSIS_POOL_TAX          = 0.025    # What it costs to exit a liquidity pool on Osmosis
 
 # Swap contracts can be found here
 # https://assets.terra.money/cw20/pairs.dex.json
@@ -84,6 +82,10 @@ PROPOSAL_VOTE_ABSTAIN      = 2
 PROPOSAL_VOTE_NO           = 3
 PROPOSAL_VOTE_NO_WITH_VETO = 4
 
+# Liquidity pool constants
+JOIN_POOL = 'j'
+EXIT_POOL = 'e'
+
 # Coin constants:
 AACRE     = 'aacre'
 AARCH     = 'aarch'
@@ -95,6 +97,7 @@ ANOM      = 'anom'
 APLANQ    = 'aplanq'
 AREBUS    = 'arebus'
 BASECRO   = 'basecro'
+EEUR      = 'eeur'
 INJ       = 'inj'
 LOKI      = 'loki'
 NANOLIKE  = 'nanolike'
@@ -125,6 +128,7 @@ UKRW      = 'ukrw'
 UKUJI     = 'ukuji'
 ULAMB     = 'ulamb'
 ULUNA     = 'uluna'
+ULUNA2    = 'uluna2'
 UMARS     = 'umars'
 UMED      = 'umed'
 UMNTL     = 'umntl'
@@ -169,6 +173,7 @@ FULL_COIN_LOOKUP = {
     UBASE:     'BASE',
     UBTSG:     'Bitsong',
     UBNT:      'Bluzelle',
+    'busd-wei':'BUSD',          # Only supported in pools
     ACANTO:    'Canto',
     SWTH:      'Carbon',
     'ucad':    'CATC',
@@ -183,6 +188,7 @@ FULL_COIN_LOOKUP = {
     UDSM:      'Desmos',
     'udkk':    'DKTC',
     UNGM:      'e-Money',
+    EEUR:      'EEUR',
     'ueur':    'EUTC',
     AEVMOS:    'Evmos',
     AFET:      'Fetch.ai',
@@ -202,6 +208,7 @@ FULL_COIN_LOOKUP = {
     UKUJI:     'KUJI',
     ULAMB:     'Lambda',
     NANOLIKE:  'Likecoin',
+    ULUNA2:    'LUNA',
     ULUNA:     'LUNC',
     UMARS:     'Mars Protocol',
     UMED:      'Medibloc',
@@ -330,6 +337,7 @@ CHAIN_DATA = {
             APLANQ:    'channel-492',
             AREBUS:    'channel-355',
             BASECRO:   'channel-5',
+            EEUR:      'channel-37',
             INJ:       'channel-122',
             LOKI:      'channel-258',
             NANOLIKE:  'channel-53',
@@ -358,6 +366,7 @@ CHAIN_DATA = {
             UKUJI:     'channel-259',
             ULAMB:     'channel-378',
             ULUNA:     'channel-72',
+            ULUNA2:    'channel-72',
             UMARS:     'channel-557',
             UMED:      'channel-82',
             UMNTL:     'channel-232',
@@ -451,6 +460,12 @@ CHAIN_DATA = {
         'cosmos_name':   'cronos',
         'precision':     8,
         'bech32_prefix': 'cro'
+    },
+    EEUR: {
+        'coingecko_id': 'e-money-eur',
+        'cosmos_name': 'emoney',
+        'precision': 6,
+        'bech32_prefix': 'emoney'
     },
     INJ: {
         'coingecko_id':  'injective-protocol',
@@ -613,6 +628,12 @@ CHAIN_DATA = {
         'cosmos_name':   'lambda',
         'precision':     18,
         'bech32_prefix': 'lamb'
+    },
+    ULUNA2: {
+        'coingecko_id':  'terra-luna-2',
+        'cosmos_name':   'terra2',
+        'precision':     6,
+        'bech32_prefix': 'terra'
     },
     UMARS: {
         'coingecko_id':  'mars-protocol-a7fcbcfb-fd61-4017-92f0-7ee9f9cc6da3',

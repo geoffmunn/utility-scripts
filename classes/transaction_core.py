@@ -3,8 +3,11 @@
 
 import json
 import requests
+import sqlite3
 import time
+
 from hashlib import sha256
+from sqlite3 import Cursor, Connection
 
 from classes.common import (
     divide_raw_balance
@@ -13,6 +16,7 @@ from classes.common import (
 from constants.constants import (
     BASE_SMART_CONTRACT_ADDRESS,
     CHAIN_DATA,
+    DB_FILE_NAME,
     FULL_COIN_LOOKUP,
     GAS_PRICE_URI,
     SEARCH_RETRY_COUNT,
@@ -46,8 +50,8 @@ class TransactionCore():
         self.account_number:int                      = None
         self.balances:dict                           = {}
         self.broadcast_result:BlockTxBroadcastResult = None
+        self.cached_traces:dict                      = {}
         self.current_wallet:Wallet                   = None # The generated wallet based on the provided details
-        self.denom_traces:dict                       = {}
         self.fee:Fee                                 = None
         self.gas_list:json                           = None
         self.gas_price_url:str                       = None
@@ -87,7 +91,7 @@ class TransactionCore():
             try:
                 code = self.broadcast_result.code
             except:
-                print ('Error getting the code attribute')
+                print ('\nError getting the code attribute')
             
             if code is not None and code != 0:
                 # Send this back for a retry with a higher gas adjustment value
@@ -98,11 +102,11 @@ class TransactionCore():
                     transaction_confirmed = self.findTransaction()
 
                     if transaction_confirmed == True:
-                        print ('This transaction should be visible in your wallet now.')
+                        print ('\nThis transaction should be visible in your wallet now.')
                     else:
-                        print ('The transaction did not appear. Future transactions might fail due to a lack of expected funds.')
+                        print ('\nThe transaction did not appear. Future transactions might fail due to a lack of expected funds.')
                 except Exception as err:
-                    print ('An unexpected error occurred when broadcasting:')
+                    print ('\nAn unexpected error occurred when broadcasting:')
                     print (err)
 
         return self.broadcast_result
@@ -189,8 +193,8 @@ class TransactionCore():
             # Override the calculations if we've been told to use uusd or something else
             if convert_to_ibc == True:
                 # NOTE: this assumes there is enough ULUNA to cover the fee
-                ibc_channel = CHAIN_DATA[self.wallet_denom]['ibc_channels'][ULUNA]
-                ibc_value = 'ibc/' + sha256(f"transfer/{ibc_channel}/{ULUNA}".encode('utf-8')).hexdigest().upper()
+                ibc_channel          = CHAIN_DATA[self.wallet_denom]['ibc_channels'][ULUNA]
+                ibc_value            = self.IBCfromDenom(ibc_channel, ULUNA)
                 requested_fee.amount = Coins({Coin(ibc_value, has_uluna)})
             else:
                 if specific_denom != '':
@@ -200,20 +204,39 @@ class TransactionCore():
 
         return requested_fee
 
-    def denomTrace(self, ibc_address:str):
+    def denomTrace(self, ibc_address:str) -> str:
         """
-        Based on the wallet denomination, get the IBC denom trace details for this IBC address
+        Based on the wallet prefix, get the IBC denom trace details for this IBC address.
+        This is a slow process, so we do two things:
+        First, check the cached results in memory.
+        Second, check the database.
+        Third, go and get the actual result.
         """
-        
-        result:list = []
 
-        if ibc_address[0:4] == 'ibc/':
-            
-            value      = ibc_address[4:]
-            chain_name = CHAIN_DATA[self.wallet_denom]['cosmos_name']
-            uri:str    = f'https://rest.cosmos.directory/{chain_name}/ibc/apps/transfer/v1/denom_traces/{value}'
+        # First, if this is not even an IBC address, then return the original value:
+        if ibc_address[0:4].lower() != 'ibc/':
+            return ibc_address
 
-            if uri not in self.denom_traces:
+        # We will use the uri as the key, just to make sure there are no collisions
+        value:str      = ibc_address[4:]
+        chain_name:str = CHAIN_DATA[self.wallet_denom]['cosmos_name']
+        uri:str        = f'https://rest.cosmos.directory/{chain_name}/ibc/apps/transfer/v1/denom_traces/{value}'
+        result:str     = ''
+
+        # Now check the cached traces:
+        if uri not in self.cached_traces:
+            # Now check the database:
+
+            get_ibc_query    = "SELECT readable_denom FROM ibc_denoms WHERE ibc_denom=?;"
+            insert_ibc_denom = "INSERT INTO ibc_denoms (ibc_denom, readable_denom) VALUES (?, ?);"
+
+            # Get the database results
+            conn:Connection = sqlite3.connect(DB_FILE_NAME)
+            cursor:Cursor   = conn.execute(get_ibc_query, [uri])
+            row:list        = cursor.fetchone()
+
+            if row is None:
+                # Go and get this denom trace:
 
                 retry_count:int = 0
                 retry:bool      = True
@@ -223,30 +246,40 @@ class TransactionCore():
                         trace_result:json = requests.get(uri).json()
                     
                         if 'denom_trace' in trace_result:
-                            # Store this result for future requests
-                            self.denom_traces[uri] = trace_result['denom_trace']
                             # Return this result
-                            result = trace_result['denom_trace']
+                            result = trace_result['denom_trace']['base_denom']
+                            
+                            # Add this IBC value and readable version into the database:
+                            cursor:Cursor = conn.execute(insert_ibc_denom, [uri, result])
+                            conn.commit()
+
+                            # Store this result for future requests
+                            self.cached_traces[uri] = result
+                            
                             break
                         else:
                             break
                     except Exception as err:
-                        print (f'Denom trace error for {uri}:')
-                        print (err)
-
                         retry_count += 1
                         if retry_count == 10:
-                            retry = False
+                            print (f'Denom trace error for {uri}:')
+                            print (err)
+                            retry  = False
+                            result = ''
                             break
                         else:
                             time.sleep(1)
             else:
-                result = self.denom_traces[uri]
-        
-        if len(result) == 0:
-            return ibc_address # Not an IBC address we could resolve
+                # This IBC entry is in the database
+                result = row[0]
+
+                # Update the cache so we don't have to do this again
+                self.cached_traces[uri] = result
         else:
-            return result['base_denom']
+            # Return what we already have
+            result = self.cached_traces[uri]
+
+        return result
         
     def findTransaction(self) -> bool:
         """
@@ -256,6 +289,8 @@ class TransactionCore():
 
         # Store the current block here - needed for transaction searches
         retry_count = 0
+        
+        print (f'\n 🔎︎ Looking for the TX hash...')
         while True:
             self.height:int = int(self.terra.tendermint.block_info()['block']['header']['height']) - 1
 
@@ -308,15 +343,20 @@ class TransactionCore():
 
                     # Osmosis swaps
                     if 'module' in log.events_by_type['message'] and log.events_by_type['message']['module'][0] == 'gamm':
-                        
-                        # For some reason, wBTC -> LUNC swaps have an empty string so we'll fix that
-                        amount = log.events_by_type['coin_spent']['amount'][0]
-                        if amount == '':
-                            amount = '0uluna'
+                        if 'pool_exited' in log.events_by_type:
+                            # This is an exit pool request
+                            self.result_sent = None
+                            self.result_received = Coins.from_str(log.events_by_type['pool_exited']['tokens_out'][0])
+                            log_found = True
+                        else:
+                            # For some reason, wBTC -> LUNC swaps have an empty string so we'll fix that
+                            amount = log.events_by_type['coin_spent']['amount'][0]
+                            if amount == '':
+                                amount = '0uluna'
 
-                        self.result_sent     = Coin.from_str(amount)
-                        self.result_received = Coin.from_str(log.events_by_type['coin_received']['amount'][-1])
-                        log_found = True
+                            self.result_sent     = Coin.from_str(amount)
+                            self.result_received = Coin.from_str(log.events_by_type['coin_received']['amount'][-1])
+                            log_found = True
 
                     # Send to Osmosis
                     if 'module' in log.events_by_type['message'] and 'transfer' in log.events_by_type['message']['module']:
@@ -353,13 +393,12 @@ class TransactionCore():
                             self.result_received = Coin.from_data({'amount': log.events_by_type['wasm']['Net Unstake:'][0], 'denom': ULUNA})
                         log_found = True
 
-
                 if log_found == False:
                     print ('@TODO: events by type not returned, please check the results:')
                     print (log)
 
                 if result['txs'][0].code == 0:
-                    print ('Found the hash!')
+                    print ('\n ⭐ Found the hash!')
                     time.sleep(1)
                     transaction_found = True
                     break
@@ -371,7 +410,7 @@ class TransactionCore():
             retry_count += 1
 
             if retry_count <= SEARCH_RETRY_COUNT:
-                print (f'Tx hash not found... attempt {retry_count}/{SEARCH_RETRY_COUNT}')
+                print (f'    Search attempt {retry_count}/{SEARCH_RETRY_COUNT}')
                 time.sleep(1)
             else:
                 break
