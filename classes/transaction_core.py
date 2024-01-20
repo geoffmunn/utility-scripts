@@ -91,7 +91,7 @@ class TransactionCore():
             try:
                 code = self.broadcast_result.code
             except:
-                print ('Error getting the code attribute')
+                print ('\nError getting the code attribute')
             
             if code is not None and code != 0:
                 # Send this back for a retry with a higher gas adjustment value
@@ -102,11 +102,11 @@ class TransactionCore():
                     transaction_confirmed = self.findTransaction()
 
                     if transaction_confirmed == True:
-                        print ('This transaction should be visible in your wallet now.')
+                        print ('\nThis transaction should be visible in your wallet now.')
                     else:
-                        print ('The transaction did not appear. Future transactions might fail due to a lack of expected funds.')
+                        print ('\nThe transaction did not appear. Future transactions might fail due to a lack of expected funds.')
                 except Exception as err:
-                    print ('An unexpected error occurred when broadcasting:')
+                    print ('\nAn unexpected error occurred when broadcasting:')
                     print (err)
 
         return self.broadcast_result
@@ -399,7 +399,7 @@ class TransactionCore():
                     print (log)
 
                 if result['txs'][0].code == 0:
-                    print ('Found the hash!')
+                    print ('\n ⭐ Found the hash!')
                     time.sleep(1)
                     transaction_found = True
                     break
