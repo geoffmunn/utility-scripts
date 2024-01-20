@@ -393,7 +393,6 @@ class TransactionCore():
                             self.result_received = Coin.from_data({'amount': log.events_by_type['wasm']['Net Unstake:'][0], 'denom': ULUNA})
                         log_found = True
 
-
                 if log_found == False:
                     print ('@TODO: events by type not returned, please check the results:')
                     print (log)
