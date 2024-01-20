@@ -26,8 +26,11 @@ Current functionality includes:
  * Support for LUNC chain projects
    * BASE token swapping and sending
  * Voting on governance proposals
+ * Swapping to a wide range of coins on Osmosis (see list below)
+ * Joining and exiting Osmosis liquidity pools.
+   * Only LUNC pools are currently supported
 
-Swapping support includes the following:
+Onchain swapping support includes the following:
  * LUNC to USTC on the columbus-5 chain
  * LUNC to BASE
  * LUNC to KRTC via contract address
@@ -50,6 +53,7 @@ You can also swap via Osmosis, converting LUNC to the following:
  * Decentr
  * Desmos
  * e-Money
+ * e-Money EUR
  * Evmos
  * Fetch.ai
  * Gravity Bridge
@@ -62,6 +66,7 @@ You can also swap via Osmosis, converting LUNC to the following:
  * Kujira
  * Lambda
  * Likecoin
+ * Luna2 (on Osmosis)
  * Luna Classic (on Osmosis)
  * Mars Protocol
  * Medibloc
@@ -134,18 +139,20 @@ The full list of minor Terra coins are also supported, but currently do not work
   * terra_classic_sdk
   * terra_proto (Terra Classic version)
   * cryptocode
+  * pycoingecko
   * yaml
 
   These can be installed via pip:
 
-  ```
-  python - m pip pip install terra-classic-sdk
-  python - m pip pip install terra-classic-proto
-  python - m pip install cryptocode
-  python - m pip install pyyaml
+  ```bash
+  python -m pip pip install terra-classic-sdk
+  python -m pip pip install terra-classic-proto
+  python -m pip install cryptocode
+  python -m pip install pycoingecko
+  python -m pip install pyyaml
   ```
 
-NOTE: installing terra-classic-sdk first should automatically install the terra-classic-proto dependency.
+**NOTE:** installing terra-classic-sdk first should automatically install the terra-classic-proto dependency.
 
  ## Installation guide
 
@@ -222,6 +229,30 @@ First, provide the same password you used in the configuration step, and then se
 
 After pressing 'X' to continue, you will can then choose what you want to swap your selection to. You can also see the estimated conversion result.
 
+### liquidity.py
+
+You can turn your LUNC into a productive asset by using liqudity pools on Osmosis.
+
+First, run ```liquidity.py``` and enter your password. A list of Osmosis wallets will be shown.
+
+**NOTE:** you must have an **osmo** address for this to work - you can create one in the ```manage_wallets.py``` script.
+
+This wallet must have a LUNC balance present on the osmo address - you cannot transfer LUNC directly from a terra address into a liquidity pool (yet).
+
+You will then see a list of supported pools and your current investment balance against each one. Select the pool you want by typing the pool ID number.
+
+Then you need to indicate if you are joining a pool, or exiting.
+
+- **If you are joining a pool:**
+  You will then be prompted to enter a contribution amount, based on the available amount of LUNC in your wallet. You'll be given a fee estimation, and if you say 'yes', then this transaction will be completed. Finished!
+- **If you are exiting a pool:**
+  You will be asked for a withdrawal amount. This can either be a percentage of the total balance, or a specific LUNC amount.
+
+  Specific LUNC amounts will be converted into a total percentage, and you will get an equivalent amount of all the pool assets as well as the LUNC amount.
+
+**NOTE:** You should be very careful before joining low-liquidity pools. You could find yourself as the majority liquidity provider! Also, Osmosis may reject your contribution if you provide a low amount.
+
+
 ## Osmosis usage
 
 You can swap to other non-Terra coins by using the Osmosis exchange functionality. Support for other coins needs to be specifically added to the list in the ```constants.py``` file.
@@ -233,6 +264,14 @@ To use this, you need to send an amount of LUNC to your Osmosis address (startin
 For the sake of simplicity, LUNC is used as the fee payment option.
 
 Transfers are usually instantaneous - by the time you have run the ```balances.py``` script, you should see them in your balance list. However, it can sometimes take longer - even hours for a transfer to appear. If transaction reported success and the hash showes up in the explorer, then it will eventually appear.
+
+### Liquidity pools on Osmosis
+
+Liquidity pool support is still experimental. Most pools work perfectly well, but you might experience problems depending on the pool contribution rules - sometimes there are minimum deposit requirements. If you get an error message, please raise an issue on this project.
+
+Liquidity pools are limited to LUNC only until I'm comfortable that it works perfectly.
+
+When you withdraw (exit) from a pool, you will get a mix of coins depending on the assets that the pool supports (ie, not just LUNC).
 
 ## BASE usage
 
@@ -274,10 +313,14 @@ Currently it seems that a successful gas adjustment value is 3.6. If you don't w
 You can change the values in the ```constants/constants.py``` file:
 
 ```
-GAS_ADJUSTMENT           = 3.6
-GAS_ADJUSTMENT_SEND      = 3.6
-GAS_ADJUSTMENT_SWAPS     = 3.6
-GAS_ADJUSTMENT_OSMOSIS   = 1.5
+GAS_ADJUSTMENT            = 3.6      # The standard gas adjustment value. Make higher to increase liklihood of success
+GAS_ADJUSTMENT_SWAPS      = 3.6      # Gas adjustment value for swaps
+GAS_ADJUSTMENT_OSMOSIS    = 1.5      # Gas adjustment for Osmosis transactions
+MAX_SPREAD                = 0.01     # The spread (or slippage) for swaps
+MIN_OSMO_GAS              = 0.0025   # What it costs to make a transaction on Osmosis
+OSMOSIS_FEE_MULTIPLIER    = 1.5      # An additional fee multiplier for Osmosis transactions
+OSMOSIS_LIQUIDITIY_SPREAD = 0.01     # For liquidity investments, what slippage will we tolerate?
+OSMOSIS_POOL_TAX          = 0.025    # What it costs to exit a liquidity pool on Osmosis
 ```
 
 ## Security notes

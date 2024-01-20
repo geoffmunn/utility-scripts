@@ -18,10 +18,12 @@ def main():
     # Create a terra object and get the Osmosis pools
     delete_pool_table    = "DROP TABLE IF EXISTS pool;"
     delete_asset_table   = "DROP TABLE IF EXISTS asset;"
+    delete_ibc_table     = "DROP TABLE IF EXISTS ibc_denoms;"
     delete_summary_table = "DROP TABLE IF EXISTS osmosis_summary;"
 
     create_pool_table    = "CREATE TABLE pool (ID INTEGER PRIMARY KEY AUTOINCREMENT, date_added DATETIME DEFAULT CURRENT_TIMESTAMP, pool_id INTEGER NOT NULL, pool_type TEXT NOT NULL, pool_address TEXT NOT NULL, pool_swap_fee FLOAT NOT NULL, pool_exit_fee FLOAT NOT NULL, pool_future_pool_governor STRING NOT NULL, total_shares_amount STRING NOT NULL, pool_total_weight INTEGER NOT NULL);"
     create_asset_table   = "CREATE TABLE asset (ID INTEGER PRIMARY KEY AUTOINCREMENT, date_added DATETIME DEFAULT CURRENT_TIMESTAMP, pool_id INTEGER NOT NULL, token_denom TEXT NOT NULL, token_readable_denom TEXT NOT NULL, token_amount STRING NOT NULL, weight INTEGER NOT NULL);"
+    create_ibc_table     = "CREATE TABLE ibc_denoms (ID INTEGER PRIMARY KEY AUTOINCREMENT, date_added DATETIME DEFAULT CURRENT_TIMESTAMP, ibc_denom TEXT NOT NULL, readable_denom TEXT NOT NULL);"
     create_summary_table = "CREATE TABLE osmosis_summary (ID INTEGER PRIMARY KEY AUTOINCREMENT, last_scan_date DATETIME);"
 
     add_pool       = "INSERT INTO pool (pool_id, pool_type, pool_address, pool_swap_fee, pool_exit_fee, pool_future_pool_governor, total_shares_amount, pool_total_weight) VALUES (?, ?, ?, ?, ?, ?, ?, ?);"
@@ -39,11 +41,13 @@ def main():
     # exit()
     cursor = conn.execute(delete_pool_table)
     cursor = conn.execute(delete_asset_table)
+    cursor = conn.execute(delete_ibc_table)
     cursor = conn.execute(delete_summary_table)
     conn.commit()
 
     cursor = conn.execute(create_pool_table)
     cursor = conn.execute(create_asset_table)
+    cursor = conn.execute(create_ibc_table)
     cursor = conn.execute(create_summary_table)
     conn.commit()
 
@@ -54,7 +58,8 @@ def main():
             print (f'Adding pool id {pool.id}')
 
             cursor = conn.execute(add_pool, [pool.id, pool.type, pool.address, pool.pool_params.swap_fee, pool.pool_params.exit_fee, pool.future_pool_governor, str(pool.total_shares.amount), pool.total_weight])
-            
+            conn.commit()
+
             pool_asset:PoolAsset
             for pool_asset in pool.pool_assets:
                 readable_denom = wallet.denomTrace(pool_asset.token.denom)
@@ -64,8 +69,7 @@ def main():
 
                 #print (f'pool asset token amount for {readable_denom} is {pool_asset.token.amount}')
                 cursor = conn.execute(add_asset, [pool.id, pool_asset.token.denom, readable_denom, pool_asset.token.amount, pool_asset.weight])
-                
-            conn.commit()
+                conn.commit()
         except Exception as err:
                 print (err)
 
