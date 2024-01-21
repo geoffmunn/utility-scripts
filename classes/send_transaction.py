@@ -7,6 +7,8 @@ import math
 from constants.constants import (
     BASE_SMART_CONTRACT_ADDRESS,
     CHAIN_DATA,
+    GRDX,
+    TERRASWAP_GRDX_TO_LUNC_ADDRESS,
     UBASE,
     ULUNA,
     UUSD
@@ -91,6 +93,17 @@ class SendTransaction(TransactionCore):
                 msg = MsgExecuteContract(
                     sender      = self.current_wallet.key.acc_address,
                     contract    = BASE_SMART_CONTRACT_ADDRESS,
+                    msg = {
+                        "transfer": {
+                            "amount": str(send_amount),
+                            "recipient": self.recipient_address
+                        }
+                    }
+                )
+            elif self.denom == GRDX:
+                msg = MsgExecuteContract(
+                    sender      = self.current_wallet.key.acc_address,
+                    contract    = TERRASWAP_GRDX_TO_LUNC_ADDRESS,
                     msg = {
                         "transfer": {
                             "amount": str(send_amount),
@@ -263,8 +276,8 @@ class SendTransaction(TransactionCore):
             fee_denom    = fee_bit.denom
         
             # Calculate the tax portion
-            if self.denom == UBASE:
-                # No taxes for BASE transfers
+            if self.denom == UBASE or self.denom == GRDX:
+                # No taxes for BASE and GRDX transfers
                 self.tax = 0
             else:
                 self.tax = int(math.ceil(self.amount * float(self.tax_rate)))
@@ -272,7 +285,7 @@ class SendTransaction(TransactionCore):
             # Build a fee object
             if fee_denom == ULUNA and self.denom == ULUNA:
                 new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount + self.tax))})
-            elif self.denom == UBASE:
+            elif self.denom == UBASE or self.denom == GRDX:
                 new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount))})
             else:
                 new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount)), Coin(self.denom, int(self.tax))})
