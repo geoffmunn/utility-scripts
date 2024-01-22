@@ -396,9 +396,9 @@ class TransactionCore():
                         log_found = True
 
                     # GRDX swaps (will override the standard swaps detection done earlier)
-                    if '_contract_address' in log.events_by_type['wasm'] and log.events_by_type['wasm']['_contract_address'][0] == GRDX_SMART_CONTRACT_ADDRESS:
+                    if '_contract_address' in log.events_by_type['wasm'] and GRDX_SMART_CONTRACT_ADDRESS in log.events_by_type['wasm']['_contract_address']:
                         self.result_sent     = Coin.from_data({'amount': log.events_by_type['wasm']['offer_amount'][0], 'denom': log.events_by_type['wasm']['offer_asset'][0]})
-                        self.result_received = Coin.from_data({'amount': log.events_by_type['wasm']['amount'][0], 'denom': GRDX})
+                        self.result_received = Coin.from_data({'amount': log.events_by_type['wasm']['return_amount'][0], 'denom': GRDX})
                         log_found = True
 
                 if log_found == False:

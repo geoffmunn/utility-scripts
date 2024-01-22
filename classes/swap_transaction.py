@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 
-from hashlib import sha256
+import base64
 import json
 import math
 import sqlite3
+
+#from hashlib import sha256
 from sqlite3 import Cursor, Connection
 
 from constants.constants import (
@@ -735,36 +737,25 @@ class SwapTransaction(TransactionCore):
                         sequence   = self.sequence,
                     )
                 elif self.swap_denom == GRDX:
-                    print ('using GRDX message')
-                    print ('belief price:', self.belief_price)
+                    encoded_msg = base64.b64encode(bytes(str('{"swap":{"max_spread": "' + str(MAX_SPREAD) + '","belief_price": "' + str(self.belief_price) + '"}}'), 'utf-8'))
+                    encoded_msg = encoded_msg.decode("utf-8")
+
                     tx_msg = MsgExecuteContract(
                         sender   = self.current_wallet.key.acc_address,
                         contract = TERRASWAP_GRDX_TO_LUNC_ADDRESS,
-                        msg      = {
-                            'send': {
-                                'amount': str(swap_amount),
-                                'contract': 'terra1g3zc8lwwmkrm0cz9wkgl849pdqaw6cq8lh7872',
-                                'msg': {
-                                    'swap':{
-                                        'max_spread': MAX_SPREAD,
-                                        'belief_price': self.belief_price
-                                    }
-                                }
-                            }
-                        }
-                        #coins    = Coins(str(swap_amount) + self.swap_denom)
+                        msg      = {'send': {'amount': str(swap_amount), 'contract': 'terra1mkl973d34jsuv0whsfl43yw3sktm8kv7lgn35fhe6l88d0vvaukq5nq929','msg': encoded_msg}}
+                        
                     )
 
                     options = CreateTxOptions(
                         fee            = self.fee,
                         gas            = 1000000,
-                        gas_prices = {'uluna': self.gas_list['uluna']},
+                        gas_prices     = {'uluna': self.gas_list['uluna']},
                         gas_adjustment = GAS_ADJUSTMENT_SWAPS,
                         msgs           = [tx_msg],
                         sequence       = self.sequence,
                     )
 
-                    print (options)
                 else:
                     tx_msg = MsgExecuteContract(
                         sender   = self.current_wallet.key.acc_address,
