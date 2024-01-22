@@ -19,6 +19,8 @@ from constants.constants import (
     DB_FILE_NAME,
     FULL_COIN_LOOKUP,
     GAS_PRICE_URI,
+    GRDX,
+    GRDX_SMART_CONTRACT_ADDRESS,
     SEARCH_RETRY_COUNT,
     UBASE,
     ULUNA,
@@ -159,7 +161,7 @@ class TransactionCore():
 
         If desired, the fee can specifically be uusd.
 
-        convert_to_ibc only applies to the ULUNA value, if it is available
+        convert_to_ibc only applies to the ULUNA value, if it is available.
         """
 
         other_coin_list:list      = []
@@ -391,6 +393,12 @@ class TransactionCore():
                         else:
                             # Assumes swaps back from BASE -> LUNC
                             self.result_received = Coin.from_data({'amount': log.events_by_type['wasm']['Net Unstake:'][0], 'denom': ULUNA})
+                        log_found = True
+
+                    # GRDX swaps (will override the standard swaps detection done earlier)
+                    if '_contract_address' in log.events_by_type['wasm'] and GRDX_SMART_CONTRACT_ADDRESS in log.events_by_type['wasm']['_contract_address']:
+                        self.result_sent     = Coin.from_data({'amount': log.events_by_type['wasm']['offer_amount'][0], 'denom': log.events_by_type['wasm']['offer_asset'][0]})
+                        self.result_received = Coin.from_data({'amount': log.events_by_type['wasm']['return_amount'][0], 'denom': GRDX})
                         log_found = True
 
                 if log_found == False:

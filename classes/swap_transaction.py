@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 
-from hashlib import sha256
+import base64
 import json
 import math
 import sqlite3
+
+#from hashlib import sha256
 from sqlite3 import Cursor, Connection
 
 from constants.constants import (
@@ -13,10 +15,13 @@ from constants.constants import (
     DB_FILE_NAME,
     GAS_ADJUSTMENT_OSMOSIS,
     GAS_ADJUSTMENT_SWAPS,
+    GRDX,
+    GRDX_SMART_CONTRACT_ADDRESS,
     MAX_SPREAD,
     MIN_OSMO_GAS,
     OFFCHAIN_COINS,
     OSMOSIS_FEE_MULTIPLIER,
+    TERRASWAP_GRDX_TO_LUNC_ADDRESS,
     TERRASWAP_UKRW_TO_ULUNA_ADDRESS,
     TERRASWAP_ULUNA_TO_UUSD_ADDRESS,
     TERRASWAP_UUSD_TO_ULUNA_ADDRESS,
@@ -83,31 +88,41 @@ class SwapTransaction(TransactionCore):
         if self.contract is not None:
             try:
                 if self.swap_denom != UBASE and self.swap_request_denom != UBASE:
-                    contract_swaps:list = [ULUNA, UKRW, UUSD]
+                    contract_swaps:list = [GRDX, ULUNA, UKRW, UUSD]
                     # Contract swaps must be on the columbus-5 chain
                     if self.terra.chain_id == CHAIN_DATA[ULUNA]['chain_id']:
                         if self.swap_denom in contract_swaps and self.swap_request_denom in contract_swaps:
+                            parts:dict = {}
+
                             # Get the pool details
-                            parts:dict          = {}
                             result = self.terra.wasm.contract_query(self.contract, {"pool": {}})
                             if 'native_token' in result['assets'][0]['info']:
                                 parts[result['assets'][0]['info']['native_token']['denom']] = int(result['assets'][0]['amount'])
-
+                            else:
+                                # GRDX:
+                                if result['assets'][0]['info']['token']['contract_addr'] == TERRASWAP_GRDX_TO_LUNC_ADDRESS:
+                                    parts[GRDX] = int(result['assets'][0]['amount'])
+                                
                             parts[result['assets'][1]['info']['native_token']['denom']] = int(result['assets'][1]['amount'])
 
-                            belief_price:float = parts[self.swap_denom] / parts[self.swap_request_denom]
-                        
+                            if self.swap_denom == GRDX and self.swap_request_denom == ULUNA:
+                                belief_price:float = parts[self.swap_request_denom] / parts[self.swap_denom]
+                            else:
+                                # Everything except GRDX -> ULUNA goes here:
+                                belief_price:float = parts[self.swap_denom] / parts[self.swap_request_denom]
+
                 else:
                     # UBASE does something different
-                    if self.terra.chain_id == CHAIN_DATA[ULUNA]['chain_id']:
-                        result           = self.terra.wasm.contract_query(self.contract, {"curve_info": {}})
-                        spot_price:float = float(result['spot_price'])
+                    if self.swap_denom == UBASE or self.swap_request_denom == UBASE:
+                        if self.terra.chain_id == CHAIN_DATA[ULUNA]['chain_id']:
+                            result           = self.terra.wasm.contract_query(self.contract, {"curve_info": {}})
+                            spot_price:float = float(result['spot_price'])
 
-                        if self.swap_request_denom == UBASE:
-                            belief_price:float = divide_raw_balance((spot_price * 1.053), UBASE)
-                        else:
-                            belief_price:float = divide_raw_balance((spot_price - (spot_price * 0.048)), UBASE)
-
+                            if self.swap_request_denom == UBASE:
+                                belief_price:float = divide_raw_balance((spot_price * 1.053), UBASE)
+                            else:
+                                belief_price:float = divide_raw_balance((spot_price - (spot_price * 0.048)), UBASE)
+                
             except Exception as err:
                 print (' 🛑 A connection error has occurred:')
                 print (err)
@@ -539,7 +554,7 @@ class SwapTransaction(TransactionCore):
         
         use_market_swap:bool = True
         self.contract        = None
-        contract_swaps:list  = [ULUNA, UKRW, UUSD, UBASE]
+        contract_swaps:list  = [GRDX, UBASE, ULUNA, UKRW, UUSD]
 
         if self.swap_denom in contract_swaps and self.swap_request_denom in contract_swaps:
             use_market_swap = False
@@ -551,6 +566,8 @@ class SwapTransaction(TransactionCore):
                     self.contract = TERRASWAP_UKRW_TO_ULUNA_ADDRESS
                 if self.swap_request_denom == UBASE:
                     self.contract = BASE_SMART_CONTRACT_ADDRESS
+                if self.swap_request_denom == GRDX:
+                    self.contract = GRDX_SMART_CONTRACT_ADDRESS
 
             if self.swap_denom == UUSD:
                 if self.swap_request_denom == ULUNA:
@@ -569,6 +586,10 @@ class SwapTransaction(TransactionCore):
             if self.swap_denom == UBASE:
                 if self.swap_request_denom == ULUNA:
                     self.contract = BASE_SMART_CONTRACT_ADDRESS
+
+            if self.swap_denom == GRDX:
+                if self.swap_request_denom == ULUNA:
+                    self.contract = GRDX_SMART_CONTRACT_ADDRESS
 
         self.use_market_swap = use_market_swap
 
@@ -611,7 +632,6 @@ class SwapTransaction(TransactionCore):
 
             # This will be used by the swap function next time we call it
             # We'll use uluna as the preferred fee currency just to keep things simple
-
             self.fee = self.calculateFee(requested_fee, ULUNA)
 
             # Figure out the fee structure
@@ -620,7 +640,7 @@ class SwapTransaction(TransactionCore):
             fee_denom    = fee_bit.denom
 
             # Calculate the tax portion 
-            if self.swap_denom == UBASE:
+            if self.swap_denom == UBASE or self.swap_denom == GRDX:
                 self.tax = None
             else:
                 self.tax = int(math.ceil(self.swap_amount * float(self.tax_rate)))
@@ -628,7 +648,7 @@ class SwapTransaction(TransactionCore):
             # Build a fee object
             if fee_denom == ULUNA and self.swap_denom == ULUNA:
                 new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount + self.tax))})
-            if self.swap_denom == UBASE:
+            if self.swap_denom == UBASE or self.swap_denom == GRDX:
                 new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount))})
             else:
                 new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount)), Coin(self.swap_denom, int(self.tax))})
@@ -646,7 +666,7 @@ class SwapTransaction(TransactionCore):
                 self.fee_deductables = int(fee_amount + self.tax)
             elif fee_denom == ULUNA and self.swap_denom == UUSD:
                 self.fee_deductables = int(self.tax)
-            elif fee_denom == ULUNA and self.swap_denom == UBASE:
+            elif fee_denom == ULUNA and (self.swap_denom == UBASE or self.swap_denom == GRDX):
                 self.fee_deductables = 0
             #elif fee_denom == UKUJI and self.swap_denom == UUSD:
             #    self.fee_deductables = int(self.tax)
@@ -716,6 +736,26 @@ class SwapTransaction(TransactionCore):
                         msgs       = [tx_msg],
                         sequence   = self.sequence,
                     )
+                elif self.swap_denom == GRDX:
+                    encoded_msg = base64.b64encode(bytes(str('{"swap":{"max_spread": "' + str(MAX_SPREAD) + '","belief_price": "' + str(self.belief_price) + '"}}'), 'utf-8'))
+                    encoded_msg = encoded_msg.decode("utf-8")
+
+                    tx_msg = MsgExecuteContract(
+                        sender   = self.current_wallet.key.acc_address,
+                        contract = TERRASWAP_GRDX_TO_LUNC_ADDRESS,
+                        msg      = {'send': {'amount': str(swap_amount), 'contract': 'terra1mkl973d34jsuv0whsfl43yw3sktm8kv7lgn35fhe6l88d0vvaukq5nq929','msg': encoded_msg}}
+                        
+                    )
+
+                    options = CreateTxOptions(
+                        fee            = self.fee,
+                        gas            = 1000000,
+                        gas_prices     = {'uluna': self.gas_list['uluna']},
+                        gas_adjustment = GAS_ADJUSTMENT_SWAPS,
+                        msgs           = [tx_msg],
+                        sequence       = self.sequence,
+                    )
+
                 else:
                     tx_msg = MsgExecuteContract(
                         sender   = self.current_wallet.key.acc_address,
@@ -794,7 +834,10 @@ class SwapTransaction(TransactionCore):
                 if self.swap_request_denom == ULUNA:
                     swap_price       = self.beliefPrice()
                     estimated_amount = float(self.swap_amount * swap_price)
-                
+            elif self.swap_denom == GRDX:
+                if self.swap_request_denom == ULUNA:
+                    swap_price       = self.beliefPrice()
+                    estimated_amount = float(self.swap_amount * swap_price)
             else:
                 # This will cover nearly all swap pairs:
                 swap_price = self.beliefPrice()
