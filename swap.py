@@ -86,6 +86,7 @@ def main():
 
     # Create the swap object
     swap_tx = SwapTransaction().create(seed = wallet.seed, denom = wallet.denom)
+
     # Assign the details:
     swap_tx.balances           = wallet.balances
     swap_tx.swap_amount        = int(swap_uluna)
@@ -100,7 +101,7 @@ def main():
 
     # Set the contract based on what we've picked
     # As long as the swap_denom and swap_request_denom values are set, the correct contract should be picked
-    use_market_swap:bool = swap_tx.setContract()
+    use_market_swap:bool  = swap_tx.setContract()
     is_offchain_swap:bool = swap_tx.isOffChainSwap()
 
     if is_offchain_swap == True:
@@ -110,6 +111,7 @@ def main():
         if result == True:
             print (f'You will be swapping {wallet.formatUluna(swap_uluna, coin_from, False)} {FULL_COIN_LOOKUP[coin_from]} for approximately {estimated_amount} {FULL_COIN_LOOKUP[coin_to]}')
             print (swap_tx.readableFee())
+
             user_choice = get_user_choice('Do you want to continue? (y/n) ', [])
 
             if user_choice == False:

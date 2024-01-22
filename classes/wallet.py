@@ -29,7 +29,9 @@ from constants.constants import (
     CHAIN_DATA,
     DB_FILE_NAME,
     FULL_COIN_LOOKUP,
+    GRDX,
     SEARCH_RETRY_COUNT,
+    TERRASWAP_GRDX_TO_LUNC_ADDRESS,
     UBASE,
     ULUNA,
     USER_ACTION_CONTINUE,
@@ -300,6 +302,7 @@ class UserWallet:
 
                     # Convert the result into a friendly list
                     for coin in result:
+                        
                         if core_coins_only == True:
                             if coin.denom in [ULUNA, UUSD]:
                                 balances[coin.denom] = coin.amount
@@ -307,12 +310,11 @@ class UserWallet:
                         else:
                             denom_trace           = self.denomTrace(coin.denom)
                             balances[denom_trace] = coin.amount
-                        
                             # We only get pools if the entire coin list is requested
                             if denom_trace[0:len('gamm/pool/')] == 'gamm/pool/':
                                 pool_id = denom_trace[len('gamm/pool/'):]
                                 pools[int(pool_id)] = coin.amount
-
+                        
                     # Go through the pagination (if any)
                     while pagination['next_key'] is not None:
                         pagOpt.key         = pagination["next_key"]
@@ -336,11 +338,16 @@ class UserWallet:
                     print (f'Pagination error for {self.name}:', err)
 
                 if core_coins_only == False:
-                    # Add the extra coins (Base etc)
+                    # Add the extra coins (Base, GarudaX, etc)
                     if self.terra is not None and self.terra.chain_id == CHAIN_DATA[ULUNA]['chain_id']:
                         coin_balance = self.terra.wasm.contract_query(BASE_SMART_CONTRACT_ADDRESS, {'balance':{'address':self.address}})
                         if int(coin_balance['balance']) > 0:
                             balances[UBASE] = coin_balance['balance']
+
+                        coin_balance = self.terra.wasm.contract_query(TERRASWAP_GRDX_TO_LUNC_ADDRESS, {'balance':{'address':self.address}})
+                        if int(coin_balance['balance']) > 0:
+                            balances[GRDX] = coin_balance['balance']
+
 
                 if target_coin is not None:
                     # If the current balance has a higher amount in it than that target coin, then we can exit
