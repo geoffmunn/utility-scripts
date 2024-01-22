@@ -25,6 +25,7 @@ Current functionality includes:
    * Including Osmosis addresses via IBC integration
  * Support for LUNC chain projects
    * BASE token swapping and sending
+   * Garuda Token swapping and sending
  * Voting on governance proposals
  * Swapping to a wide range of coins on Osmosis (see list below)
  * Joining and exiting Osmosis liquidity pools.
@@ -33,6 +34,7 @@ Current functionality includes:
 Onchain swapping support includes the following:
  * LUNC to USTC on the columbus-5 chain
  * LUNC to BASE
+ * LUNC to GRDX
  * LUNC to KRTC via contract address
 
 You can also swap via Osmosis, converting LUNC to the following:
