@@ -21,19 +21,10 @@ from classes.wallets import UserWallets
 
 def main():
 
-    # for i in range(2000):
-    #     test = f'transfer/channel-{i}/cosmos'.encode('utf-8')
-    #     hashed =  sha256(test).hexdigest()
-    #     if hashed.upper() == '27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2':
-    #         print ('found on channel', i)
-    #         print (hashed)
-    #         exit
-    #exit()
-    
-
     # Check if there is a new version we should be using
     check_version()
     check_database()
+
     # Get the user wallets
     wallets = UserWallets()
     user_wallets = wallets.loadUserWallets()
