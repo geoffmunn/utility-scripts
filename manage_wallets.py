@@ -2,6 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 from classes.common import (
+    check_database,
     check_version,
     get_user_choice,
     multiply_raw_balance
@@ -31,6 +32,7 @@ def main():
     
     # Check if there is a new version we should be using
     check_version()
+    check_database()
 
     # Get the user wallets
     wallets = UserWallets()

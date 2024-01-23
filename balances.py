@@ -10,6 +10,7 @@ from constants.constants import (
 )
 
 from classes.common import (
+    check_database,
     check_version,
     divide_raw_balance,
     get_user_choice
@@ -22,6 +23,7 @@ def main():
     
     # Check if there is a new version we should be using
     check_version()
+    check_database()
 
     # Get the user wallets. We'll be getting the balances futher on down.
     user_wallets = UserWallets().loadUserWallets(get_balances = False)
