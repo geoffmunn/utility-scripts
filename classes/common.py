@@ -84,7 +84,6 @@ def check_database():
     try:
         if os.stat(DB_FILE_NAME).st_size > 0:
             # Check if the last scan was fairly recent:
-            
             try:
                 recent_scan = "SELECT last_scan_date FROM osmosis_summary WHERE ID = 1;"
                 conn        = sqlite3.connect(DB_FILE_NAME)
@@ -95,15 +94,30 @@ def check_database():
                     previous_date:datetime  = datetime.now() - timedelta(weeks = 2)
                     
                     if last_scan_date < previous_date:
-                        print ('This database is out of date - you should get the latest Osmosis data.')
-                        print ('Run the get_osmosis_pools.py script to update the database.')
+                        print (' 🗄 This database is out of date - you should get the latest Osmosis data.')
+                        print (' 🗄 Run the get_osmosis_pools.py script to update the database.')
 
-                return True
             except:
                 print (' 🛑 The Osmosis pool database could accessed...')
                 print (' 🛑 Run \'get_osmosis_pools.py\' first to generate the list.\n')
                 exit()
 
+            # Make sure that the ibc_denoms table is there:
+            ibc_table_exists:bool = True
+            try:
+                recent_scan = "SELECT * FROM ibc_denoms LIMIT 1;"
+                conn        = sqlite3.connect(DB_FILE_NAME)
+                cursor      = conn.execute(recent_scan)
+            except:
+                ibc_table_exists = False
+
+            if ibc_table_exists == False:
+                print (' 🗄 No ibc_denom table found, creating one...')
+                create_ibc_table = "CREATE TABLE ibc_denoms (ID INTEGER PRIMARY KEY AUTOINCREMENT, date_added DATETIME DEFAULT CURRENT_TIMESTAMP, ibc_denom TEXT NOT NULL, readable_denom TEXT NOT NULL);"
+                cursor = conn.execute(create_ibc_table)
+                conn.commit()
+
+            return True
         else:
             print (' 🛑 The Osmosis pool database is empty...')
             print (' 🛑 Run \'get_osmosis_pools.py\' first to generate the list.\n')
