@@ -91,6 +91,10 @@ def main():
 
     if user_action == USER_ACTION_VALIDATOR_DELEGATE:
 
+        if ULUNA not in wallet.balances or wallet.balances[ULUNA] == 0:
+            print (' 🛑 This wallet has no LUNC available to delegate.\n')
+            exit()
+
         print (f'Select a validator to delegate to:')
 
         max_number:int = len(sorted_validators)
@@ -165,6 +169,10 @@ def main():
         for validator in delegations:
             filter_list.append(validator)
 
+        if len(filter_list) == 0:
+            print (' 🛑 This wallet has no active validators with delegations.\n')
+            exit()
+
         user_validator, answer = validators.getValidatorSingleChoice("Select a validator number 1 - " + str(len(filter_list)) + ", 'X' to continue, or 'Q' to quit: ", sorted_validators, filter_list, delegations)
 
         if answer == USER_ACTION_QUIT:
@@ -227,6 +235,10 @@ def main():
 
         for validator in delegations:
             filter_list.append(validator)
+
+        if len(filter_list) == 0:
+            print (' 🛑 This wallet has no active validators with delegations.\n')
+            exit()
 
         print (f'Select a validator to delegate switch FROM:')
         from_validator, answer = validators.getValidatorSingleChoice("Select a validator number 1 - " + str(len(filter_list)) + ", 'X' to continue, or 'Q' to quit: ", sorted_validators, filter_list, delegations)
