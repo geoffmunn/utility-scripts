@@ -68,7 +68,7 @@ class DelegationTransaction(TransactionCore):
             msg = MsgDelegate(
                 delegator_address = self.delegator_address,
                 validator_address = self.validator_address,
-                amount            = Coin(ULUNA, self.delegated_uluna)
+                amount            = Coin(ULUNA, int(self.delegated_uluna))
             )
 
             options = CreateTxOptions(
