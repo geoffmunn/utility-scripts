@@ -14,6 +14,7 @@ TOKEN_LIST               = 'https://assets.terrarebels.net/cw20/tokens.json'
 
 # File names:
 CONFIG_FILE_NAME         = 'user_config.yml'
+WORKFLOWS_FILE_NAME      = 'user_workflows.yml'
 DB_FILE_NAME             = 'osmosis.db'
 VERSION_URI              = 'https://raw.githubusercontent.com/geoffmunn/utility-scripts/main/version.json'
 
