@@ -20,9 +20,12 @@ from classes.common import (
     get_user_choice,
 )
 
-from classes.delegation_transaction import DelegationTransaction
+from classes.delegation_transaction import DelegationTransaction, delegate_to_validator
+from classes.transaction_core import TransactionResult
 from classes.wallets import UserWallets
 from classes.validators import Validators
+
+from terra_classic_sdk.core.coin import Coin
 
 def main():
 
@@ -124,41 +127,20 @@ def main():
 
         print (f'Delegating {wallet.formatUluna(delegated_uluna, ULUNA, True)}...')
         
-        # Create the delegation object
-        delegation_tx = DelegationTransaction().create(seed = wallet.seed, denom = ULUNA)
+        transaction_result:TransactionResult = delegate_to_validator(wallet, user_validator['operator_address'], delegated_uluna)
 
-        # Assign the details
-        delegation_tx.balances          = wallet.balances
-        delegation_tx.delegator_address = wallet.address
-        delegation_tx.validator_address = user_validator['operator_address']
-        delegation_tx.delegated_uluna   = delegated_uluna
-        delegation_tx.sender_address    = wallet.address
-        delegation_tx.sender_prefix     = wallet.getPrefix(wallet.address)
-        delegation_tx.wallet_denom      = wallet.denom
-
-        # Simulate it
-        result = delegation_tx.simulate(delegation_tx.delegate)
-
-        if result == True:
-                
-            print (delegation_tx.readableFee())
-
-            # Now we know what the fee is, we can do it again and finalise it
-            result = delegation_tx.delegate()
-            
-            if result == True:
-                delegation_tx.broadcast()
-            
-                if delegation_tx.broadcast_result.is_tx_error():
-                    print (' 🛎️ The delegation failed, an error occurred:')
-                    print (f' 🛎️  {delegation_tx.broadcast_result.raw_log}')
-                else:
-                    print (f' ✅ Delegated amount: {wallet.formatUluna(delegated_uluna, ULUNA, True)}')
-                    print (f' ✅ Tx Hash: {delegation_tx.broadcast_result.txhash}')
-            else:
-                print (' 🛎️  The delegation could not be completed')
+        if transaction_result.transaction_confirmed == True:
+            print (f'\n ✅ Delegated amount: {wallet.formatUluna(delegated_uluna, ULUNA, True)}')
+            print (f' ✅ Received amount: ')
+            received_coin:Coin
+            for received_coin in transaction_result.result_received:
+                print ('    * ' + wallet.formatUluna(received_coin.amount, received_coin.denom, True))
+            print (f' ✅ Tx Hash: {transaction_result.broadcast_result.txhash}')
+            print ('\n')
         else:
-            print ('🛎️  The delegation could not be completed')
+            print (transaction_result.message)
+            if transaction_result.log is not None:
+                print (transaction_result.log)
 
     if user_action == USER_ACTION_VALIDATOR_UNDELEGATE:
         print (f'Select a validator to undelegate from:')
