@@ -6,8 +6,9 @@ from constants.constants import (
     ULUNA
 )
 
-from classes.transaction_core import TransactionCore
 from classes.terra_instance import TerraInstance
+from classes.transaction_core import TransactionCore, TransactionResult
+from classes.wallet import UserWallet
 
 from terra_classic_sdk.client.lcd.api.tx import (
     CreateTxOptions,
@@ -239,3 +240,55 @@ class DelegationTransaction(TransactionCore):
         except:
            return False
         
+def delegate_to_validator(wallet:UserWallet, validator_address:str, delegated_uluna:int ):
+    """
+    A wrapper function for workflows and wallet management.
+    This lets the user delegate uluna to a supplied validator.
+
+    The wrapper function adds any error messages depending on the results that got returned.
+    
+    @params:
+      - wallet: a fully complete wallet object
+      - validator_address: the address of the validator in question
+      - delegated_uluna: the amount (in uluna) that we are delegating
+
+    @returns a transaction_result object
+    """
+
+    transaction_result:TransactionResult = TransactionResult()
+
+    # Create the delegation object
+    delegation_tx = DelegationTransaction().create(seed = wallet.seed, denom = ULUNA)
+
+    # Assign the details
+    delegation_tx.balances          = wallet.balances
+    delegation_tx.delegator_address = wallet.address
+    delegation_tx.validator_address = validator_address #user_validator['operator_address']
+    delegation_tx.delegated_uluna   = delegated_uluna
+    delegation_tx.sender_address    = wallet.address
+    delegation_tx.sender_prefix     = wallet.getPrefix(wallet.address)
+    delegation_tx.wallet_denom      = wallet.denom
+
+    # Simulate it
+    delegation_result = delegation_tx.simulate(delegation_tx.delegate)
+
+    if delegation_result == True:
+            
+        print (delegation_tx.readableFee())
+
+        # Now we know what the fee is, we can do it again and finalise it
+        delegation_result = delegation_tx.delegate()
+        
+        if delegation_result == True:
+            transaction_result = delegation_tx.broadcast()
+        
+            if transaction_result.broadcast_result is None or transaction_result.broadcast_result.is_tx_error():
+                transaction_result.message = ' 🛎️ The delegation failed, an error occurred.'
+                transaction_result.log     = f' 🛎️  {transaction_result.broadcast_result.raw_log}'
+            
+        else:
+            transaction_result.message = ' 🛎️  The delegation could not be completed'
+    else:
+        transaction_result.message = '🛎️  The delegation could not be completed'
+    
+    return transaction_result
