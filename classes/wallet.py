@@ -878,7 +878,7 @@ class UserWallet:
                     answer = answer + '%'
             else:
                 if convert_to_uluna == True:
-                    answer = float(multiply_raw_balance(answer, params['target_denom']))
+                    answer = int(multiply_raw_balance(answer, params['target_denom']))
 
         return answer
     
