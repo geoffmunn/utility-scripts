@@ -12,7 +12,8 @@ from constants.constants import (
 )
 
 from classes.terra_instance import TerraInstance
-from classes.transaction_core import TransactionCore
+from classes.transaction_core import TransactionCore, TransactionResult
+from classes.wallet import UserWallet
 
 from terra_classic_sdk.core.coin import Coin
 from terra_classic_sdk.core.coins import Coins
@@ -37,6 +38,7 @@ class Governance(TransactionCore):
         self.fee:Fee            = None
         self.gas_list:json      = None
         self.gas_limit:str      = 'auto'
+        self.memo:str           = ''
         self.proposal_id:int    = None
         self.terra:LCDClient    = None
         self.user_vote:int      = None
@@ -82,10 +84,6 @@ class Governance(TransactionCore):
             # Go and get the tally results so we don't have to slow the display refresh down
             self.proposal_id = int(proposal['id'])
             tallies[proposal['id']] = self.tally()
-
-        # for proposal in proposals:
-        #     if len(str(proposal['title'])) > label_widths[2]:
-        #         label_widths[2] = len(str(proposal['title']))
 
         padding_str:str   = ' ' * 100
         header_string:str = ' Number'
@@ -259,6 +257,10 @@ class Governance(TransactionCore):
         return self
     
     def vote(self):
+        """
+        Cast the vote with the details provided by the user.
+        The simulate function needs to have been called first.
+        """
 
         msg = MsgVote(
             proposal_id = self.proposal_id,
@@ -271,12 +273,14 @@ class Governance(TransactionCore):
             gas            = self.gas_limit,
             gas_prices     = self.gas_list,
             fee            = self.fee,
+            memo           = self.memo,
             msgs           = [msg],
             sequence       = str(self.sequence)
         )
 
         # This process often generates sequence errors. If we get a response error, then
         # bump up the sequence number by one and try again.
+        tx:Tx = None
         while True:
             try:
                 tx:Tx = self.current_wallet.create_and_sign_tx(options)
@@ -287,11 +291,11 @@ class Governance(TransactionCore):
                     options.sequence = self.sequence
                     print (' 🛎️  Boosting sequence number')
                 else:
-                    print (' 🛑 An unexpected error occurred in the off-chain send function:')
+                    print (' 🛑 An unexpected error occurred in the governance vote function:')
                     print (err)
                     break
             except Exception as err:
-                print (' 🛑 An unexpected error occurred in the off-chain send function:')
+                print (' 🛑 An unexpected error occurred in the governance vote function:')
                 print (err)
                 break
 
@@ -299,3 +303,69 @@ class Governance(TransactionCore):
         self.transaction = tx
 
         return True
+    
+def cast_governance_vote(user_wallets:dict, proposal_id:int, user_vote:int, memo:str = '' ):
+    """
+    A wrapper function for casting governance votes.
+    The wrapper function adds any error messages depending on the results that got returned.
+    
+    @params:
+      - user_wallets: a dictionary of all the wallets we're voting with
+      - proposal_id: the id of the proposal ID we're voting on
+      - user_vote: one of the values in the PROPOSAL constant list
+      - memo: an optional message to include. Defaults to an empty string.
+
+    @returns a transaction_result object
+    """
+
+    transaction_result:TransactionResult = TransactionResult()
+
+    governance:Governance = Governance().create()
+
+    governance.proposal_id = proposal_id
+    governance.user_vote   = user_vote
+    governance.memo        = memo
+
+    for wallet_name in user_wallets:
+
+        wallet:UserWallet = user_wallets[wallet_name]
+        wallet.getBalances()
+
+        governance.balances = wallet.balances
+        governance.update(wallet.seed)
+
+        governance.simulate()
+        governance_result = governance.vote()
+
+        if governance_result == True:
+            transaction_result = governance.broadcast()
+
+            if transaction_result.broadcast_result is not None and transaction_result.broadcast_result.code == 32:
+                while True:
+                    print (' 🛎️  Boosting sequence number and trying again...')
+
+                    governance.sequence = governance.sequence + 1
+                    
+                    governance.simulate()
+                    governance.send()
+                    transaction_result = governance.broadcast()
+
+                    if governance is None:
+                        break
+
+                    # Code 32 = account sequence mismatch
+                    if transaction_result.broadcast_result.code != 32:
+                        break
+
+            if transaction_result.broadcast_result is None or transaction_result.broadcast_result.is_tx_error():
+                if transaction_result.broadcast_result is None:
+                    transaction_result.message = ' 🛎️  The vote transaction failed, no broadcast object was returned.'
+                else:
+                    if transaction_result.broadcast_result.raw_log is not None:
+                        transaction_result.message = f' 🛎️  {transaction_result.broadcast_result.raw_log}'
+                    else:
+                        transaction_result.message = 'No broadcast log was available.'
+        else:
+            transaction_result.message = ' 🛎️  The vote transaction could not be completed'
+
+    return transaction_result

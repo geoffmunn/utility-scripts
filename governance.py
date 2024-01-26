@@ -20,7 +20,8 @@ from constants.constants import (
     PROPOSAL_VOTE_NO_WITH_VETO
 )
 
-from classes.governance import Governance
+from classes.governance import Governance, cast_governance_vote
+from classes.transaction_core import TransactionResult
 from classes.wallet import UserWallet
 from classes.wallets import UserWallets
 
@@ -80,62 +81,23 @@ def main():
     print ('  (V)  No with veto')
     print ('  (Q)  Quit')
 
-    user_choice = get_user_choice('Pick a vote option: ', vote_options.keys())
+    user_vote = get_user_choice('\nPick a vote option: ', vote_options.keys())
         
     if answer == USER_ACTION_QUIT:
         print (' 🛑 Exiting...\n')
         exit()
 
-    governance.proposal_id = proposal['id']
-    governance.user_vote = vote_options[user_choice]
+    # Get a memo value from the user
+    memo:str = UserWallet().getUserText('\n 🖊  Provide a memo (optional): ', 255, True)
 
-    for wallet_name in user_wallets:
+    transaction_result:TransactionResult = cast_governance_vote(user_wallets, proposal['id'], vote_options[user_vote], memo)
 
-        wallet:UserWallet = user_wallets[wallet_name]
-        wallet.getBalances()
-
-        governance.balances = wallet.balances
-        governance.update(wallet.seed)
-
-        governance.simulate()
-        result = governance.vote()
-
-        if result == True:
-            governance.broadcast()
-
-            if governance.broadcast_result is not None and governance.broadcast_result.code == 32:
-                while True:
-                    print (' 🛎️  Boosting sequence number and trying again...')
-
-                    governance.sequence = governance.sequence + 1
-                    
-                    governance.simulate()
-                    governance.send()
-                        
-                    governance.broadcast()
-
-                    if governance is None:
-                        break
-
-                    # Code 32 = account sequence mismatch
-                    if governance.broadcast_result.code != 32:
-                        break
-
-            if governance.broadcast_result is None or governance.broadcast_result.is_tx_error():
-                if governance.broadcast_result is None:
-                    print (' 🛎️  The vote transaction failed, no broadcast object was returned.')
-                else:
-                    print (' 🛎️  The vote transaction failed, an error occurred:')
-                    if governance.broadcast_result.raw_log is not None:
-                        print (f' 🛎️  Error code {governance.broadcast_result.code}')
-                        print (f' 🛎️  {governance.broadcast_result.raw_log}')
-                    else:
-                        print ('No broadcast log was available.')
-            else:
-                if governance.result_received is not None:
-                    print (f' ✅ Tx Hash: {governance.broadcast_result.txhash}')
-        else:
-            print (' 🛎️  The vote transaction could not be completed')
+    if transaction_result.transaction_confirmed == True:
+        print (f' ✅ Tx Hash: {transaction_result.broadcast_result.txhash}')
+    else:
+        print (transaction_result.message)
+        if transaction_result.log is not None:
+            print (transaction_result.log)
 
     print (' 💯 Done!\n')
 
