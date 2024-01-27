@@ -57,15 +57,14 @@ class TransactionCore():
         self.fee:Fee                                 = None
         self.gas_list:json                           = None
         self.gas_price_url:str                       = None
-        self.height:int                              = None
         self.ibc_routes:list                         = None # Only used by swaps
         self.prices:dict                             = None
-        self.result_received:Coin                    = None
-        self.result_sent:Coin                        = None
+        #self.result_recieved:Coin                    = None
+        #self.result_sent:Coin                        = None
         self.sequence:int                            = None
         self.tax_rate:json                           = None
         self.terra:LCDClient                         = None
-        self.transaction:Tx                          = None
+        #self.transaction:Tx                          = None
         self.wallet_denom:str                        = None # Used so we can identify the chain that this transaction is using
 
         # Initialise the basic variables:
@@ -78,40 +77,43 @@ class TransactionCore():
         It will wait until the transaction shows up in the search function before finishing.
         """
 
+        # Set up the basic transaction result object
+        transaction_result:TransactionResult = TransactionResult()
+
         try:
-            result:BlockTxBroadcastResult = self.terra.tx.broadcast_sync(self.transaction)    
+            transaction_result.broadcast_result:BlockTxBroadcastResult = self.terra.tx.broadcast_sync(self.transaction)
+            self.broadcast_result = transaction_result.broadcast_result
         except Exception as err:
-            print (' 🛑 A broadcast error occurred.')
-            print (err)
-            result:BlockTxBroadcastResult = None
+            transaction_result.message          = ' 🛑 A broadcast error occurred.'
+            transaction_result.log              = err
+            transaction_result.broadcast_result = None
 
-        self.broadcast_result:BlockTxBroadcastResult = result
-
-        if result is not None:
-            code:int = None
-
-            try:
-                code = self.broadcast_result.code
-            except:
-                print ('\nError getting the code attribute')
+        if transaction_result.broadcast_result is not None:
             
+            # We need the code to determine if we proceed or not
+            code:int = None
+            try:
+                code = transaction_result.broadcast_result.code
+            except:
+                transaction_result.message = 'Error getting the code attribute.'
+                
             if code is not None and code != 0:
                 # Send this back for a retry with a higher gas adjustment value
-                return self.broadcast_result
+                return transaction_result
             else:
                 # Find the transaction on the network and return the result
-                try:
-                    transaction_confirmed = self.findTransaction()
+                #try:
+                transaction_result:TransactionResult = self.findTransaction()
 
-                    if transaction_confirmed == True:
-                        print ('\nThis transaction should be visible in your wallet now.')
-                    else:
-                        print ('\nThe transaction did not appear. Future transactions might fail due to a lack of expected funds.')
-                except Exception as err:
-                    print ('\nAn unexpected error occurred when broadcasting:')
-                    print (err)
-
-        return self.broadcast_result
+                if transaction_result.transaction_confirmed == True:
+                    transaction_result.message = 'This transaction should be visible in your wallet now.'
+                else:
+                    transaction_result.message = 'The transaction did not appear. Future transactions might fail due to a lack of expected funds.'
+                #except Exception as err:
+                #    transaction_result.message = 'An unexpected error occurred when broadcasting.'
+                #    transaction_result.log     = err
+                 
+        return transaction_result
     
     def cachePrices(self):
         """
@@ -283,26 +285,31 @@ class TransactionCore():
 
         return result
         
-    def findTransaction(self) -> bool:
+    def findTransaction(self):
         """
         Do a search for any transaction with the current tx hash.
         If it can't be found within 10 attempts, then give up.
         """
 
-        # Store the current block here - needed for transaction searches
-        retry_count = 0
+        retry_count:int                      = 0
+        transaction_result:TransactionResult = TransactionResult()
         
+        # Set up the default values:
+        transaction_result.transaction_confirmed = False
+        # Put the broadcast result here - the displayed hash comes from this
+        transaction_result.broadcast_result      = self.broadcast_result
+
         print (f'\n 🔎︎ Looking for the TX hash...')
         while True:
-            self.height:int = int(self.terra.tendermint.block_info()['block']['header']['height']) - 1
+            # We will be the current height - 1 just in case it rolled over just as we started the search
+            block_height:int = int(self.terra.tendermint.block_info()['block']['header']['height']) - 1
 
-            transaction_found:bool = False
-
+            # Build the transaction search object:
             result:dict = self.terra.tx.search([
                 ("message.sender", self.current_wallet.key.acc_address),
                 ("message.recipient", self.current_wallet.key.acc_address),
-                ('tx.hash', self.broadcast_result.txhash),
-                ('tx.height', self.height)
+                ('tx.hash', transaction_result.broadcast_result.txhash),
+                ('tx.height', block_height)
             ])
 
             if len(result['txs']) > 0:
@@ -310,109 +317,117 @@ class TransactionCore():
                 info:TxInfo = result['txs'][0]
                 log:TxLog   = info.logs[0]
                 
-                log_found:bool = False
-                
                 if 'message' in log.events_by_type:
                     # Governance votes
                     if 'module' in log.events_by_type['message'] and log.events_by_type['message']['module'][0] == 'governance':
-                        self.result_sent     = None
-                        self.result_received = None
-                        log_found = True
+                        transaction_result.result_sent     = None
+                        transaction_result.result_received = None
+                        transaction_result.log_found       = True
+
                     # Staking/Unstaking
                     if 'module' in log.events_by_type['message'] and log.events_by_type['message']['module'][0] == 'staking':
-                        self.result_sent = None
-                        coin_list:Coins  = Coins.from_str(log.events_by_type['coin_spent']['amount'][0])
+                        transaction_result.result_sent = None
+
                         # Unstaking will return a bunch of random coins, but we only want the uluna coin
+                        coin_list:Coins = Coins.from_str(log.events_by_type['coin_spent']['amount'][0])
                         coin:Coin
                         for coin in coin_list:
                             if coin.denom == ULUNA:
-                                self.result_received = coin
+                                transaction_result.result_received = Coins.from_proto([coin])
                                 break
-                        log_found = True
+
+                        transaction_result.log_found = True
 
                     # Validator rewards
                     if 'module' in log.events_by_type['message'] and log.events_by_type['message']['module'][0] == 'distribution':
-                        self.result_sent = None
+                        transaction_result.result_sent = None
+
+                        # Unstaking will return a bunch of random coins, but we only want uluna and uust
                         coin_list:Coins  = Coins.from_str(log.events_by_type['coin_spent']['amount'][0])
-                        # Unstaking will return a bunch of random coins, but we only want the uluna coin
-                        coin:Coin
-                        for coin in coin_list:
-                            if coin.denom == ULUNA:
-                                self.result_received = coin
-                                break
                         
-                        log_found = True
+                        coin:Coin
+                        filtered_list:list = []
+                        for coin in coin_list:
+                            if coin.denom in [ULUNA, UUSD]:
+                                #transaction_result.result_received.append(Coins.from_proto([coin]))
+                                filtered_list.append(coin)
+                                #break
+                        
+                        transaction_result.result_received = Coins.from_proto(filtered_list)
+                        transaction_result.log_found = True
 
                     # Osmosis swaps
                     if 'module' in log.events_by_type['message'] and log.events_by_type['message']['module'][0] == 'gamm':
                         if 'pool_exited' in log.events_by_type:
                             # This is an exit pool request
-                            self.result_sent = None
-                            self.result_received = Coins.from_str(log.events_by_type['pool_exited']['tokens_out'][0])
-                            log_found = True
+                            transaction_result.result_sent     = None
+                            transaction_result.result_received = Coins.from_str(log.events_by_type['pool_exited']['tokens_out'][0])
+                            transaction_result.log_found       = True
                         else:
                             # For some reason, wBTC -> LUNC swaps have an empty string so we'll fix that
                             amount = log.events_by_type['coin_spent']['amount'][0]
                             if amount == '':
                                 amount = '0uluna'
 
-                            self.result_sent     = Coin.from_str(amount)
-                            self.result_received = Coin.from_str(log.events_by_type['coin_received']['amount'][-1])
-                            log_found = True
+                            transaction_result.result_sent     = Coin.from_str(amount)
+                            transaction_result.result_received = Coins.from_proto([Coin.from_str(log.events_by_type['coin_received']['amount'][-1])])
+                            transaction_result.log_found       = True
 
                     # Send to Osmosis
                     if 'module' in log.events_by_type['message'] and 'transfer' in log.events_by_type['message']['module']:
-                        self.result_sent     = Coin.from_str(log.events_by_type['coin_spent']['amount'][0])
-                        self.result_received = Coin.from_str(log.events_by_type['coin_received']['amount'][-1])
-                        log_found = True
+                        transaction_result.result_sent     = Coin.from_str(log.events_by_type['coin_spent']['amount'][0])
+                        transaction_result.result_received = Coin.from_str(log.events_by_type['coin_received']['amount'][-1])
+                        transaction_result.log_found       = True
 
                     # Send to on-chain address
                     if 'module' in log.events_by_type['message'] and 'bank' in log.events_by_type['message']['module']:
-                        self.result_sent     = Coin.from_str(log.events_by_type['coin_spent']['amount'][0])
-                        self.result_received = Coin.from_str(log.events_by_type['coin_received']['amount'][-1])
-                        log_found = True
+                        transaction_result.result_sent     = Coin.from_str(log.events_by_type['coin_spent']['amount'][0])
+                        transaction_result.result_received = Coin.from_str(log.events_by_type['coin_received']['amount'][-1])
+                        transaction_result.log_found       = True
                 
                 if 'wasm' in log.events_by_type:
                     # Standard swaps ('LUNC -> USTC'):
                     if 'action' in log.events_by_type['wasm'] and log.events_by_type['wasm']['action'][0] == 'swap':
-                        self.result_sent     = Coin.from_str(log.events_by_type['coin_spent']['amount'][0])
-                        self.result_received = Coin.from_str(log.events_by_type['coin_received']['amount'][-1])
-                        log_found = True
+                        transaction_result.result_sent     = Coin.from_str(log.events_by_type['coin_spent']['amount'][0])
+                        transaction_result.result_received = Coin.from_str(log.events_by_type['coin_received']['amount'][-1])
+                        transaction_result.log_found       = True
 
                     # Send transactions
                     if 'action' in log.events_by_type['wasm'] and log.events_by_type['wasm']['action'][0] == 'transfer':
-                        self.result_sent     = Coin.from_str(f"{log.events_by_type['wasm']['amount'][0]}{self.denom}")
-                        self.result_received = Coin.from_str(f"{log.events_by_type['wasm']['amount'][0]}{self.denom}")
-                        log_found = True
+                        transaction_result.result_sent     = Coin.from_str(f"{log.events_by_type['wasm']['amount'][0]}{self.denom}")
+                        transaction_result.result_received = Coin.from_str(f"{log.events_by_type['wasm']['amount'][0]}{self.denom}")
+                        transaction_result.log_found       = True
 
                     # Base swaps/undelegations
                     if '_contract_address' in log.events_by_type['wasm'] and log.events_by_type['wasm']['_contract_address'][0] == BASE_SMART_CONTRACT_ADDRESS:
-                        self.result_sent = None
+                        transaction_result.result_sent = None
                         if log.events_by_type['wasm']['action'][0] == 'buy':
-                            self.result_received = Coin.from_data({'amount': log.events_by_type['wasm']['BASE Minted:'][0], 'denom': UBASE})
+                            transaction_result.result_received = Coin.from_data({'amount': log.events_by_type['wasm']['BASE Minted:'][0], 'denom': UBASE})
                         else:
                             # Assumes swaps back from BASE -> LUNC
-                            self.result_received = Coin.from_data({'amount': log.events_by_type['wasm']['Net Unstake:'][0], 'denom': ULUNA})
-                        log_found = True
+                            transaction_result.result_received = Coin.from_data({'amount': log.events_by_type['wasm']['Net Unstake:'][0], 'denom': ULUNA})
+                        
+                        transaction_result.log_found = True
 
                     # GRDX swaps (will override the standard swaps detection done earlier)
                     if '_contract_address' in log.events_by_type['wasm'] and GRDX_SMART_CONTRACT_ADDRESS in log.events_by_type['wasm']['_contract_address']:
-                        self.result_sent     = Coin.from_data({'amount': log.events_by_type['wasm']['offer_amount'][0], 'denom': log.events_by_type['wasm']['offer_asset'][0]})
-                        self.result_received = Coin.from_data({'amount': log.events_by_type['wasm']['return_amount'][0], 'denom': GRDX})
-                        log_found = True
+                        transaction_result.result_sent     = Coin.from_data({'amount': log.events_by_type['wasm']['offer_amount'][0], 'denom': log.events_by_type['wasm']['offer_asset'][0]})
+                        transaction_result.result_received = Coin.from_data({'amount': log.events_by_type['wasm']['return_amount'][0], 'denom': GRDX})
+                        transaction_result.log_found       = True
 
-                if log_found == False:
+                if transaction_result.log_found == False:
                     print ('@TODO: events by type not returned, please check the results:')
                     print (log)
 
                 if result['txs'][0].code == 0:
                     print ('\n ⭐ Found the hash!')
                     time.sleep(1)
-                    transaction_found = True
+                    transaction_result.transaction_confirmed = True
+                    #transaction_found = True
                     break
                 if result['txs'][0].code == 5:
                     print (' 🛑 A transaction error occurred.')
-                    transaction_found = False
+                    #transaction_found = False
                     break
 
             retry_count += 1
@@ -423,7 +438,8 @@ class TransactionCore():
             else:
                 break
 
-        return transaction_found
+        # Return the completed transaction result
+        return transaction_result
 
     def gasList(self) -> json:
         """
@@ -565,3 +581,21 @@ class TransactionCore():
             self.tax_rate = 0
 
         return self.tax_rate
+    
+class TransactionResult():
+    """
+    Holds the details of the transaction result.
+    We're moving the results into a separate class so it's cleaner.
+    """
+
+    def __init__(self):
+        
+        self.broadcast_result:BlockTxBroadcastResult = None
+        self.log:str                                 = None
+        self.log_found:bool                          = False
+        self.message:str                             = ''
+        self.result_received:Coins                   = None     # Even if we only get one coin, we'll treat it as a list of coins
+        self.result_sent:Coin                        = None
+        self.transaction_confirmed:bool              = None
+        
+        
