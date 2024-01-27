@@ -90,14 +90,18 @@ def main():
     # Get a memo value from the user
     memo:str = UserWallet().getUserText('\n 🖊  Provide a memo (optional): ', 255, True)
 
-    transaction_result:TransactionResult = cast_governance_vote(user_wallets, proposal['id'], vote_options[user_vote], memo)
+    transaction_results = cast_governance_vote(user_wallets, proposal['id'], vote_options[user_vote], memo)
 
-    if transaction_result.transaction_confirmed == True:
-        print (f' ✅ Tx Hash: {transaction_result.broadcast_result.txhash}')
-    else:
-        print (transaction_result.message)
-        if transaction_result.log is not None:
-            print (transaction_result.log)
+    for transaction_result in transaction_results:
+        transaction:TransactionResult = transaction_results[transaction_result]
+        if transaction.transaction_confirmed == True:
+            print (f' ✅ Vote successful on the {transaction_result} wallet!')
+            print (f' ✅ Tx Hash: {transaction.broadcast_result.txhash}')
+        else:
+            print (f' 🛎️  An error occured on the {transaction_result} wallet:')
+            print (transaction.message)
+            if transaction.log is not None:
+                print (transaction.log)
 
     print (' 💯 Done!\n')
 

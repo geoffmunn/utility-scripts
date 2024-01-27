@@ -304,7 +304,7 @@ class Governance(TransactionCore):
 
         return True
     
-def cast_governance_vote(user_wallets:dict, proposal_id:int, user_vote:int, memo:str = '' ):
+def cast_governance_vote(user_wallets:dict, proposal_id:int, user_vote:int, memo:str = '' ) -> dict:
     """
     A wrapper function for casting governance votes.
     The wrapper function adds any error messages depending on the results that got returned.
@@ -315,13 +315,17 @@ def cast_governance_vote(user_wallets:dict, proposal_id:int, user_vote:int, memo
       - user_vote: one of the values in the PROPOSAL constant list
       - memo: an optional message to include. Defaults to an empty string.
 
-    @returns a transaction_result object
+    @returns a dictionary of transaction_result objects (wallet name is the dictionary key)
     """
+
+    transaction_results:dict = {}
 
     transaction_result:TransactionResult = TransactionResult()
 
+    # Create the basic governance object
     governance:Governance = Governance().create()
 
+    # Populate it with the relevant details
     governance.proposal_id = proposal_id
     governance.user_vote   = user_vote
     governance.memo        = memo
@@ -368,4 +372,7 @@ def cast_governance_vote(user_wallets:dict, proposal_id:int, user_vote:int, memo
         else:
             transaction_result.message = ' 🛎️  The vote transaction could not be completed'
 
-    return transaction_result
+        # Add this result to the returned dictionary
+        transaction_results[wallet_name] = transaction_result
+
+    return transaction_results
