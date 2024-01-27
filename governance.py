@@ -96,7 +96,7 @@ def main():
         transaction:TransactionResult = transaction_results[transaction_result]
         if transaction.transaction_confirmed == True:
             print (f' ✅ Vote successful on the {transaction_result} wallet!')
-            print (f' ✅ Tx Hash: {transaction.broadcast_result.txhash}')
+            print (f' ✅ Tx Hash: {transaction.broadcast_result.txhash}\n')
         else:
             print (f' 🛎️  An error occured on the {transaction_result} wallet:')
             print (transaction.message)
