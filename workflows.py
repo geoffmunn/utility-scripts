@@ -10,10 +10,13 @@ from classes.common import (
 #     check_database,
 #     check_version,
 #     get_user_choice,
-     multiply_raw_balance
+    getPrecision,
+    isPercentage,
+    multiply_raw_balance
 )
 
 from constants.constants import (
+    FULL_COIN_LOOKUP,
     WORKFLOWS_FILE_NAME,
 #     TERRASWAP_UUSD_TO_ULUNA_ADDRESS,
      ULUNA,
@@ -33,12 +36,96 @@ from constants.constants import (
 # from classes.swap_transaction import SwapTransaction
 from classes.delegation_transaction import delegate_to_validator
 from classes.transaction_core import TransactionResult
+from classes.validators import Validators
 from classes.wallet import UserWallet
 from classes.wallets import UserWallets
 from classes.withdrawal_transaction import claim_delegation_rewards
 # from classes.withdrawal_transaction import WithdrawalTransaction
     
 from terra_classic_sdk.core.coin import Coin
+
+def check_amount(amount:str, balances:dict, preserve_minimum:bool = False) -> (bool, int):
+    """
+    The amount will be either a percentage or a specific amount.
+    If it's a percentage, then ee need to convert this to an actual amount.
+    If it's a specific amount, we need to check that we have this amount in the provided balance
+
+    @params:
+        - amount: the amount we want to perform an action with
+        - balances: a dictionary of coins. This can be from the wallet.balances list, or the validator withdrawals
+        - include_minimim: if True, then deduct the WITHDRAWAL_REMAINDER value off the available amount
+
+    @return: can we proceed? and converted uluna amount
+    """
+
+    amount_ok:bool  = True
+    coin_denom:str  = ''
+    coin_amount:int = 0
+
+    if isPercentage(amount):
+        # If this is a percentage, then it's assumed to be LUNC
+        amount = float(amount[0:-1]) / 100
+        coin_denom  = ULUNA
+        coin_amount = float(balances[ULUNA] * amount)
+    else:
+        amount_bits:list = amount.split(' ')
+        if amount_bits[0].isnumeric():
+            coin_denom:str     = list(FULL_COIN_LOOKUP.keys())[list(FULL_COIN_LOOKUP.values()).index(amount_bits[0])]
+            coin_amount:float = amount_bits[1] / (10 ** getPrecision(coin_denom))
+        elif amount_bits[1].isnumeric():
+            coin_denom:str     = list(FULL_COIN_LOOKUP.keys())[list(FULL_COIN_LOOKUP.values()).index(amount_bits[1])]
+            coin_amount:float = amount_bits[0] / (10 ** getPrecision(coin_denom))
+
+        # If this is a fixed amount, make sure that we have enough in the balance
+        if coin_amount < balances[coin_denom]:
+            amount_ok = False
+    
+    if preserve_minimum == True:
+        coin_amount -= (WITHDRAWAL_REMAINDER * (10 ** getPrecision(coin_denom)))
+        if coin_amount < 0:
+            coin_amount = 0
+            amount_ok = False
+
+    return amount_ok, coin_amount
+
+def check_trigger(trigger:str, balances:dict) -> bool:
+    """
+    Check the 'when' clause. 
+    If it's got a balance check, then compare the requirements against the wallet.
+    If this is a validator check, then compare the requirements against the available rewards.
+
+    @params:
+      - trigger: the simple equation to check with
+      - balances: a dictionary of coins. This can be from the wallet.balances list, or the validator withdrawals
+
+    @return true/false, this step can proceed
+    """
+
+    # Check the trigger
+    is_triggered:bool = False
+
+    if trigger == 'always':
+        is_triggered = True
+    else:
+        trigger_bits:list = trigger.split(' ')
+        if len(trigger_bits) == 3:
+            # Should be something like LUNC >= 1000
+            coin_denom:str      = str(trigger_bits[0])
+            comparison:str      = str(trigger_bits[1])
+            target_amount:float = float(trigger_bits[2])
+
+            # Get this coin's technical name (ie, uluna)
+            coin_denom:str     = list(FULL_COIN_LOOKUP.keys())[list(FULL_COIN_LOOKUP.values()).index(coin_denom)]
+            coin_balance:float = balances[coin_denom] / (10 ** getPrecision(coin_denom))
+            eval_string:str    = f'{coin_balance}{comparison}{target_amount}'
+
+            # Evaluate this string and return the value
+            value:bool = eval(eval_string)
+
+            if value == True:
+                is_triggered = True
+
+    return is_triggered
 
 def main():
     
@@ -78,7 +165,7 @@ def main():
                     workflow['user_wallets'].append(user_wallets[wallet])
             
     # Now go through each workflow and run the steps
-    validator_withdrawals:dict = {}  # This keeps track of what we've removed from each validator
+    
     for workflow in user_workflows['workflows']:
         
         # Only proceed if we have a wallet attached to this workflow:
@@ -86,161 +173,145 @@ def main():
 
             # Get the relevant wallets from this workflow
             wallets:list = workflow['user_wallets']
+            steps:list   = workflow['steps']
 
-            steps:list = workflow['steps']
-
+            print ('#' * len(workflow['name']))
+            print (workflow['name'])
             # Go through each wallet
             wallet:UserWallet
             for wallet in wallets:
+                validator_withdrawals:dict = {}  # This keeps track of what we've removed from each validator in this wallet
                 # Go through each step
                 for step in steps:
                     action = step['action'].lower()
-                    print ('action:', action)
                     if action == 'withdraw':
-                        # Check the trigger
-                        is_triggered:bool = False
                         
-                        if step['when'] == 'always':
-                            is_triggered = True
+                        # Get an updated list of delegations on this wallet
+                        wallet.getDelegations()
+                        delegations:dict = wallet.delegations
 
+                        for validator in delegations:
+                            # One last check to make sure LUNC is in the reward list
+                            if ULUNA in delegations[validator]['rewards']:
+                                uluna_reward:int = delegations[validator]['rewards'][ULUNA]
+
+                                # Check that the 'when' clause is triggered
+                                # We will pass a dictionary of the validator LUNC rewards that we are expecting
+                                is_triggered:bool = check_trigger(step['when'], {ULUNA: uluna_reward})
+                                                            
+                                if is_triggered == True:
+                                    print (f"Withdrawing rewards from {delegations[validator]['validator_name']}...")
+                                    print (f'Withdrawing {wallet.formatUluna(uluna_reward, ULUNA, False)} rewards.')
+
+                                    # DELETE ME:
+                                    # if delegations[validator]['validator'] not in validator_withdrawals:
+                                    #     validator_withdrawals[delegations[validator]['validator']] = {}
+                                    # validator_withdrawals[delegations[validator]['validator']][ULUNA] = uluna_reward
+
+                                    transaction_result:TransactionResult = claim_delegation_rewards(wallet, validator_address = delegations[validator]['validator'])
+
+                                    if transaction_result.transaction_confirmed == True:
+                                        print (f' ✅ Received amount: ')
+                                        received_coin:Coin
+                                        for received_coin in transaction_result.result_received:
+                                            print ('    * ' + wallet.formatUluna(received_coin.amount, received_coin.denom, True))
+
+                                            # Update the list of validators with what we've just received
+                                            if delegations[validator]['validator'] not in validator_withdrawals:
+                                               validator_withdrawals[delegations[validator]['validator']] = {}
+                                            validator_withdrawals[delegations[validator]['validator']][received_coin.denom] = received_coin.amount
+
+                                        print (f' ✅ Tx Hash: {transaction_result.broadcast_result.txhash}')
+
+                                    else:
+                                        print (transaction_result.message)
+                                        if transaction_result.log is not None:
+                                            print (transaction_result.log)
+                                else:
+                                    print ('TRIGGER NOT FIRED!')
+                            else:
+                                print ('No LUNC in the validator to withdraw!')
+
+                    if action == 'redelegate':
+                         # Check the trigger
+                         delegations:dict = wallet.delegations
+
+                         for validator in validator_withdrawals:
+                            is_triggered = check_trigger(step['when'], validator_withdrawals[validator])
+                                
+                            if is_triggered == True:
+                                # We will redelegate an amount based on the 'amount' value, calculated from the returned rewards
+                                delegated_uluna = validator_withdrawals[validator][ULUNA]
+                                amount_ok, delegated_uluna = check_amount(step['amount'], validator_withdrawals[validator])
+                                if amount_ok == True:
+                                    transaction_result:TransactionResult = delegate_to_validator(wallet, validator, delegated_uluna)
+
+                                    if transaction_result.transaction_confirmed == True:
+                                        print (f'\n ✅ Delegated amount: {wallet.formatUluna(delegated_uluna, ULUNA, True)}')
+                                        print (f' ✅ Received amount: ')
+                                        received_coin:Coin
+                                        for received_coin in transaction_result.result_received:
+                                            print ('    * ' + wallet.formatUluna(received_coin.amount, received_coin.denom, True))
+                                        print (f' ✅ Tx Hash: {transaction_result.broadcast_result.txhash}')
+                                        print ('\n')
+                                    else:
+                                        print (transaction_result.message)
+                                        if transaction_result.log is not None:
+                                            print (transaction_result.log)
+                                else:
+                                    print ('Not enough LUNC in the rewards to make this delegation.')
+                            else:
+                                print ('TRIGGER NOT FIRED!')
+                 
+                    if action == 'delegate':
+                        # This is going to a specific validator, and is from the wallet balance
+
+                        wallet.getBalances()
+
+                        is_triggered = check_trigger(step['when'], wallet.balances)
+                                
                         if is_triggered == True:
-                            # Make a validator withdrawal:
-                            # Update the balances so we know what we have to pay the fee with
-                            wallet.getBalances()
-                            wallet.getDelegations()
+                            # We will delegate a specific amount of LUNC from the wallet balance
+                            # We only support LUNC for this action
+                            delegated_uluna = wallet.balances[ULUNA]
+                            amount_ok, delegated_uluna = check_amount(step['amount'], wallet.balances, True)
+                            if amount_ok == True:
+                                # Find the validator
+                                if 'validator' in step:
+                                    # Find the validator details
+                                    validators = Validators()
+                                    validators.create()
+                                    validator_address = validators.findValidatorByName(step['validator'])
 
-                            delegations:dict = wallet.delegations
-                            for validator in delegations:
+                                    if validator_address != '':
 
-                                if ULUNA in delegations[validator]['rewards']:
-                                    uluna_reward:int = delegations[validator]['rewards'][ULUNA]
+                                        transaction_result:TransactionResult = delegate_to_validator(wallet, validator_address, delegated_uluna)
 
-                                    # Only withdraw the staking rewards if the rewards exceed the threshold (if any)
-                                    if uluna_reward > multiply_raw_balance(1, ULUNA):
-                                        print (f"Withdrawing rewards from {delegations[validator]['validator_name']}...")
-                                        print (f'Withdrawing {wallet.formatUluna(uluna_reward, ULUNA, False)} rewards.')
-
-                                        transaction_result:TransactionResult = claim_delegation_rewards(wallet, validator_address = delegations[validator]['validator'])
-
-                                        print ('confirmed?', transaction_result.transaction_confirmed)
                                         if transaction_result.transaction_confirmed == True:
+                                            print (f'\n ✅ Delegated amount: {wallet.formatUluna(delegated_uluna, ULUNA, True)}')
                                             print (f' ✅ Received amount: ')
                                             received_coin:Coin
                                             for received_coin in transaction_result.result_received:
                                                 print ('    * ' + wallet.formatUluna(received_coin.amount, received_coin.denom, True))
                                             print (f' ✅ Tx Hash: {transaction_result.broadcast_result.txhash}')
-
-                                            # Update the list of validators with what we've just received
-                                            print ('Adding coins to withdrawal list with the key:', delegations[validator]['validator'])
-
-                                            validator_withdrawals[delegations[validator]['validator']] = transaction_result.result_received
-
-                                            print ('validator_withdrawals: ', validator_withdrawals)
+                                            print ('\n')
                                         else:
                                             print (transaction_result.message)
                                             if transaction_result.log is not None:
                                                 print (transaction_result.log)
+                                                
+                                    else:
+                                        print ('The validator could not be found, please check the name')
 
-                    if action == 'delegate':
-                        # Check the trigger
-                        is_triggered:bool = False
-                        
-                        print ('validator withdrawals:', validator_withdrawals)
-                        delegations:dict = wallet.delegations
-                        for validator in validator_withdrawals:
-                            print ('validator:', validator)
-                            if step['when'] == 'always':
-                                
-                                # Put balance checks here:
-                                #delegated_uluna:int = wallet.balances[ULUNA] - WITHDRAWAL_REMAINDER
-                                # We need to get the ULUNA coin from the validator results
-                                delegated_uluna:int = 0
-                                received_coins = validator_withdrawals[validator]
-                                print ('received coins:', received_coins)
-                                received_coin:Coin
-                                for received_coin in received_coins:
-                                    print ('received coin:', received_coin)
-                                    if received_coin.denom == ULUNA:
-                                        delegated_uluna = received_coin.amount
-                                        is_triggered = True
-                                        break
-
-                                # Now we should have the total amount that the validator returned, we can adjust it based on the 'when' clause
-                                # @TODO - only supports 'always' at the moment
-                                
-                            if is_triggered == True:
-                                print ('we are delegating:', delegated_uluna)
-                                print ('the validator is:', validator)
-                                
-                                wallet.getBalances()
-
-                                transaction_result:TransactionResult = delegate_to_validator(wallet, validator, delegated_uluna)
-
-                                if transaction_result.transaction_confirmed == True:
-                                    print (f'\n ✅ Delegated amount: {wallet.formatUluna(delegated_uluna, ULUNA, True)}')
-                                    print (f' ✅ Received amount: ')
-                                    received_coin:Coin
-                                    for received_coin in transaction_result.result_received:
-                                        print ('    * ' + wallet.formatUluna(received_coin.amount, received_coin.denom, True))
-                                    print (f' ✅ Tx Hash: {transaction_result.broadcast_result.txhash}')
-                                    print ('\n')
                                 else:
-                                    print (transaction_result.message)
-                                    if transaction_result.log is not None:
-                                        print (transaction_result.log)
-            
-            #     if step['action'] == 'delegate':
-            #         # check the trigger:
-            #         if step['when'] == 'always':
+                                    print ('No validator specified to delegated to!')
 
-            #             #if ULUNA not in wallet.balances or wallet.balances[ULUNA] == 0:
-            #             #    print (' 🛑 This wallet has no LUNC available to delegate.\n')
-            #             #    exit()
-
-            #             #print (f'Select a validator to delegate to:')
-
-            #             #max_number:int = len(sorted_validators)
-            #             #if max_number > MAX_VALIDATOR_COUNT:
-            #             #    max_number = MAX_VALIDATOR_COUNT
-
-            #             #user_validator, answer = validators.getValidatorSingleChoice("Select a validator number 1 - " + str(max_number) + ", 'X' to continue, or 'Q' to quit: ", sorted_validators, [], delegations)
-
-            #             #if answer == USER_ACTION_QUIT:
-            #             #    print (' 🛑 Exiting...\n')
-            #             #    exit()
-
-            #             #print (f"The {wallet.name} wallet holds {wallet.formatUluna(wallet.balances[ULUNA], ULUNA, True)}")
-            #             #print (f"NOTE: A minimum amount of {WITHDRAWAL_REMAINDER} LUNC will be retained for future transactions.")
-            #             delegated_uluna:int = int(wallet.getUserNumber('How much are you delegating? ', {'max_number': float(wallet.formatUluna(wallet.balances[ULUNA], ULUNA)), 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': True, 'keep_minimum': True, 'target_denom': ULUNA}))
                                 
-            #             if delegated_uluna == 0:
-            #                 print (' 🛑 Delegated amount is zero, exiting...\n')
-            #                 exit()
-
-            #             #print (f"You are about to delegate {wallet.formatUluna(delegated_uluna, ULUNA, True)} to {user_validator['moniker']}.")
-            #             #complete_transaction = get_user_choice('Do you want to continue? (y/n) ', [])
-
-            #             #if complete_transaction == False:
-            #             #    print (' 🛑 Exiting...\n')
-            #             #    exit()
-
-            #             print (f'Delegating {wallet.formatUluna(delegated_uluna, ULUNA, True)}...')
-                        
-            #             transaction_result:TransactionResult = delegate_to_validator(wallet, user_validator['operator_address'], delegated_uluna)
-
-            #             if transaction_result.transaction_confirmed == True:
-            #                 print (f'\n ✅ Delegated amount: {wallet.formatUluna(delegated_uluna, ULUNA, True)}')
-            #                 print (f' ✅ Received amount: ')
-            #                 received_coin:Coin
-            #                 for received_coin in transaction_result.result_received:
-            #                     print ('    * ' + wallet.formatUluna(received_coin.amount, received_coin.denom, True))
-            #                 print (f' ✅ Tx Hash: {transaction_result.broadcast_result.txhash}')
-            #                 print ('\n')
-            #             else:
-            #                 print (transaction_result.message)
-            #                 if transaction_result.log is not None:
-            #                     print (transaction_result.log)
-
+                                
+                            else:
+                                print ('Not enough LUNC in the rewards to make this delegation.')
+                        else:
+                            print ('TRIGGER NOT FIRED!')
 
 
 
