@@ -4,18 +4,25 @@
 from hashlib import sha256
 import math
 
+from classes.common import (
+    get_user_choice
+)
+
 from constants.constants import (
     BASE_SMART_CONTRACT_ADDRESS,
     CHAIN_DATA,
+    FULL_COIN_LOOKUP,
     GRDX,
     TERRASWAP_GRDX_TO_LUNC_ADDRESS,
     UBASE,
     ULUNA,
+    UOSMO,
     UUSD
 )
 
 from classes.terra_instance import TerraInstance
-from classes.transaction_core import TransactionCore
+from classes.transaction_core import TransactionCore, TransactionResult
+from classes.wallet import UserWallet
 
 from terra_classic_sdk.client.lcd.api.tx import (
     CreateTxOptions,
@@ -366,3 +373,113 @@ class SendTransaction(TransactionCore):
         else:
             return False
         
+def send_transaction(wallet:UserWallet, recipient_address:str, send_coin:Coin, memo:str = ''):
+    """
+    A wrapper function for workflows and wallet management.
+    This lets the user send a LUNC or USTC amount to supported address.
+    This could be a terra, osmo, or an IBC destination.
+    The wrapper function adds any error messages depending on the results that got returned.
+    
+    @params:
+      - wallet: a fully complete wallet object
+      - recipient: the address of the recipient in question
+      - send_coin: a fully complete Coin object. We get the amount and denom from this
+      - memo: optional text to include
+
+    @returns a transaction_result object
+    """
+
+    transaction_result:TransactionResult = TransactionResult()
+
+    send_tx = SendTransaction().create(wallet.seed, wallet.denom)
+        
+    # Populate it with required details:
+    send_tx.balances          = wallet.balances
+    send_tx.recipient_address = recipient_address
+    send_tx.recipient_prefix  = wallet.getPrefix(recipient_address)
+    send_tx.sender_address    = wallet.address
+    send_tx.sender_prefix     = wallet.getPrefix(wallet.address)
+    send_tx.wallet_denom      = wallet.denom
+
+    send_tx.receiving_denom = wallet.getDenomByPrefix(send_tx.recipient_prefix)
+    
+    if wallet.terra.chain_id == CHAIN_DATA[ULUNA]['chain_id'] and send_tx.recipient_prefix == CHAIN_DATA[ULUNA]['bech32_prefix']:
+        send_tx.is_on_chain     = True
+        send_tx.revision_number = 1
+    else:
+        send_tx.is_on_chain = False
+        send_tx.source_channel = CHAIN_DATA[wallet.denom]['ibc_channels'][send_tx.receiving_denom]
+        if wallet.terra.chain_id == CHAIN_DATA[UOSMO]['chain_id']:
+            send_tx.revision_number = 6
+        else:
+            send_tx.revision_number = 1
+    
+    # Assign the user provided details:
+    send_tx.memo         = memo
+    send_tx.amount       = int(send_coin.amount)
+    send_tx.denom        = send_coin.denom
+    send_tx.block_height = send_tx.terra.tendermint.block_info()['block']['header']['height']
+        
+    # Simulate it            
+    if send_tx.is_on_chain == True:
+        send_result = send_tx.simulate()
+    else:
+        send_result = send_tx.simulateOffchain()
+    
+    # Now complete it
+    if send_result == True:
+        print(f'You are about to send {wallet.formatUluna(send_coin.amount, send_coin.denom)} {FULL_COIN_LOOKUP[send_coin.denom]} to {recipient_address}')
+
+        print (send_tx.readableFee())
+
+        user_choice = get_user_choice('Do you want to continue? (y/n) ', [])
+
+        if user_choice == False:
+            exit()
+
+        # Now we know what the fee is, we can do it again and finalise it
+        if send_tx.is_on_chain == True:
+            send_result = send_tx.send()
+        else:
+            send_result = send_tx.sendOffchain()
+        
+        if send_result == True:
+            transaction_result:TransactionResult = send_tx.broadcast()
+
+            if send_tx.broadcast_result is not None and send_tx.broadcast_result.code == 32:
+                while True:
+                    print (' 🛎️  Boosting sequence number and trying again...')
+
+                    send_tx.sequence = send_tx.sequence + 1
+                    if send_tx.is_on_chain == True:
+                        send_tx.simulate()
+                        send_tx.send()
+                    else:
+                        send_tx.simulateOffchain()
+                        send_tx.sendOffchain()
+
+                    if send_tx is None:
+                        break
+
+                    transaction_result:TransactionResult = send_tx.broadcast()
+
+                    # Code 32 = account sequence mismatch
+                    if transaction_result.broadcast_result.code != 32:
+                        break
+
+            if transaction_result.broadcast_result is None or transaction_result.broadcast_result.is_tx_error():
+                if transaction_result.broadcast_result is None:
+                    transaction_result.message = ' 🛎️  The send transaction failed, no broadcast object was returned.'
+                else:
+                    if transaction_result.broadcast_result.raw_log is not None:
+                        transaction_result.message = ' 🛎️  The send transaction failed, an error occurred.'
+                        transaction_result.code    = f' 🛎️  Error code {transaction_result.broadcast_result.code}'
+                        transaction_result.log     = f' 🛎️  {transaction_result.broadcast_result.raw_log}'
+                    else:
+                        transaction_result.message = 'No broadcast log was available.'
+        else:
+            transaction_result.message = ' 🛎️  The send transaction could not be completed'
+    else:
+        transaction_result.message = ' 🛎️  The send transaction could not be completed'
+
+    return transaction_result
