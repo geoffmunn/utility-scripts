@@ -133,3 +133,5 @@ user_config.yml
 
 # OS X junk
 .DS_Store
+workflows.yml
+user_workflows.yml
