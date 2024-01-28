@@ -24,10 +24,13 @@ from constants.constants import (
 
 from classes.delegation_transaction import DelegationTransaction
 from classes.swap_transaction import SwapTransaction
+from classes.transaction_core import TransactionResult
 from classes.wallet import UserWallet
 from classes.wallets import UserWallets
-from classes.withdrawal_transaction import WithdrawalTransaction
+from classes.withdrawal_transaction import claim_delegation_rewards
     
+from terra_classic_sdk.core.coin import Coin
+
 def main():
     
     # Check if there is a new version we should be using
@@ -132,63 +135,79 @@ def main():
 
                     # Only withdraw the staking rewards if the rewards exceed the threshold (if any)
                     if uluna_reward > multiply_raw_balance(1, ULUNA):
-                        print (f'Withdrawing {wallet.formatUluna(uluna_reward, ULUNA, False)} rewards')
 
-                        # Update the balances so we know what we have to pay the fee with
-                        wallet.getBalances()
-                        
-                        # Set up the withdrawal object
-                        withdrawal_tx = WithdrawalTransaction().create(seed = wallet.seed, delegator_address = delegations[validator]['delegator'], validator_address = delegations[validator]['validator'])
+                        print (f'Withdrawing {wallet.formatUluna(uluna_reward, ULUNA, False)} rewards.')
 
-                        # We need to populate some details
-                        withdrawal_tx.balances       = wallet.balances
-                        withdrawal_tx.sender_address = wallet.address
-                        withdrawal_tx.sender_prefix  = wallet.getPrefix(wallet.address)
-                        withdrawal_tx.wallet_denom   = wallet.denom
+                        transaction_result:TransactionResult = claim_delegation_rewards(wallet, validator_address = delegations[validator]['validator'])
 
-                        # Simulate it
-                        result = withdrawal_tx.simulate()
-
-                        if result == True:
-
-                            print (withdrawal_tx.readableFee())
-
-                            # Now we know what the fee is, we can do it again and finalise it
-                            result = withdrawal_tx.withdraw()
-
-                            if result == True:
-                                withdrawal_tx.broadcast()
-                            
-                                if withdrawal_tx.broadcast_result is not None and withdrawal_tx.broadcast_result.code == 32:
-                                    while True:
-                                        print (' 🛎️  Boosting sequence number and trying again...')
-
-                                        withdrawal_tx.sequence = withdrawal_tx.sequence + 1
-                                        
-                                        withdrawal_tx.simulate()
-                                        withdrawal_tx.withdraw()
-                                        withdrawal_tx.broadcast()
-
-                                        if withdrawal_tx is None:
-                                            break
-
-                                        # Code 32 = account sequence mismatch
-                                        if withdrawal_tx.broadcast_result.code != 32:
-                                            break
-                                        
-                                if withdrawal_tx.broadcast_result is None or withdrawal_tx.broadcast_result.is_tx_error():
-                                    if withdrawal_tx.broadcast_result is None:
-                                        print (' 🛎️  The withdrawal transaction failed, no broadcast object was returned.')
-                                    else:
-                                        print (' 🛎️  The withdrawal failed, an error occurred:')
-                                        print (f' 🛎️  {withdrawal_tx.broadcast_result.raw_log}')
-                            
-                                else:
-                                    print (f' ✅ Withdrawn amount: {wallet.formatUluna(uluna_reward, ULUNA, True)}')
-                                    print (f' ✅ Received amount: {wallet.formatUluna(withdrawal_tx.result_received.amount, ULUNA, True)}')
-                                    print (f' ✅ Tx Hash: {withdrawal_tx.broadcast_result.txhash}')
+                        if transaction_result.transaction_confirmed == True:
+                            print (f' ✅ Received amount: ')
+                            received_coin:Coin
+                            for received_coin in transaction_result.result_received:
+                                print ('    * ' + wallet.formatUluna(received_coin.amount, received_coin.denom, True))
+                            print (f' ✅ Tx Hash: {transaction_result.broadcast_result.txhash}')
                         else:
-                            print (' 🛎️  The withdrawal could not be completed')
+                            print (transaction_result.message)
+                            if transaction_result.log is not None:
+                                print (transaction_result.log)
+
+                        # print (f'Withdrawing {wallet.formatUluna(uluna_reward, ULUNA, False)} rewards')
+
+                        # # Update the balances so we know what we have to pay the fee with
+                        # wallet.getBalances()
+                        
+                        # # Set up the withdrawal object
+                        # withdrawal_tx = WithdrawalTransaction().create(seed = wallet.seed, delegator_address = delegations[validator]['delegator'], validator_address = delegations[validator]['validator'])
+
+                        # # We need to populate some details
+                        # withdrawal_tx.balances       = wallet.balances
+                        # withdrawal_tx.sender_address = wallet.address
+                        # withdrawal_tx.sender_prefix  = wallet.getPrefix(wallet.address)
+                        # withdrawal_tx.wallet_denom   = wallet.denom
+
+                        # # Simulate it
+                        # result = withdrawal_tx.simulate()
+
+                        # if result == True:
+
+                        #     print (withdrawal_tx.readableFee())
+
+                        #     # Now we know what the fee is, we can do it again and finalise it
+                        #     result = withdrawal_tx.withdraw()
+
+                        #     if result == True:
+                        #         withdrawal_tx.broadcast()
+                            
+                        #         if withdrawal_tx.broadcast_result is not None and withdrawal_tx.broadcast_result.code == 32:
+                        #             while True:
+                        #                 print (' 🛎️  Boosting sequence number and trying again...')
+
+                        #                 withdrawal_tx.sequence = withdrawal_tx.sequence + 1
+                                        
+                        #                 withdrawal_tx.simulate()
+                        #                 withdrawal_tx.withdraw()
+                        #                 withdrawal_tx.broadcast()
+
+                        #                 if withdrawal_tx is None:
+                        #                     break
+
+                        #                 # Code 32 = account sequence mismatch
+                        #                 if withdrawal_tx.broadcast_result.code != 32:
+                        #                     break
+                                        
+                        #         if withdrawal_tx.broadcast_result is None or withdrawal_tx.broadcast_result.is_tx_error():
+                        #             if withdrawal_tx.broadcast_result is None:
+                        #                 print (' 🛎️  The withdrawal transaction failed, no broadcast object was returned.')
+                        #             else:
+                        #                 print (' 🛎️  The withdrawal failed, an error occurred:')
+                        #                 print (f' 🛎️  {withdrawal_tx.broadcast_result.raw_log}')
+                            
+                        #         else:
+                        #             print (f' ✅ Withdrawn amount: {wallet.formatUluna(uluna_reward, ULUNA, True)}')
+                        #             print (f' ✅ Received amount: {wallet.formatUluna(withdrawal_tx.result_received.amount, ULUNA, True)}')
+                        #             print (f' ✅ Tx Hash: {withdrawal_tx.broadcast_result.txhash}')
+                        # else:
+                        #     print (' 🛎️  The withdrawal could not be completed')
                     else:
                         print (' 🛎️  The amount of LUNC in this wallet does not exceed the withdrawal threshold')
 
