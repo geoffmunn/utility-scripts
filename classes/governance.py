@@ -352,6 +352,7 @@ def cast_governance_vote(user_wallets:dict, proposal_id:int, user_vote:int, memo
                     
                     governance.simulate()
                     governance.send()
+
                     transaction_result = governance.broadcast()
 
                     if governance is None:
@@ -366,7 +367,9 @@ def cast_governance_vote(user_wallets:dict, proposal_id:int, user_vote:int, memo
                     transaction_result.message = ' 🛎️  The vote transaction failed, no broadcast object was returned.'
                 else:
                     if transaction_result.broadcast_result.raw_log is not None:
-                        transaction_result.message = f' 🛎️  {transaction_result.broadcast_result.raw_log}'
+                        transaction_result.message = ' 🛎️ The governance vote failed, an error occurred.'
+                        transaction_result.code    = f' 🛎️  Error code {transaction_result.broadcast_result.code}'
+                        transaction_result.log     = f' 🛎️  {transaction_result.broadcast_result.raw_log}'
                     else:
                         transaction_result.message = 'No broadcast log was available.'
         else:

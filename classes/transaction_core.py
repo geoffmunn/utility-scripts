@@ -591,6 +591,7 @@ class TransactionResult():
     def __init__(self):
         
         self.broadcast_result:BlockTxBroadcastResult = None
+        self.code:int                                = None
         self.log:str                                 = None
         self.log_found:bool                          = False
         self.message:str                             = ''

@@ -284,6 +284,7 @@ def delegate_to_validator(wallet:UserWallet, validator_address:str, delegated_ul
         
             if transaction_result.broadcast_result is None or transaction_result.broadcast_result.is_tx_error():
                 transaction_result.message = ' 🛎️ The delegation failed, an error occurred.'
+                transaction_result.code    = f' 🛎️  Error code {transaction_result.broadcast_result.code}'
                 transaction_result.log     = f' 🛎️  {transaction_result.broadcast_result.raw_log}'
             
         else:

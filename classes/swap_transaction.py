@@ -861,6 +861,5 @@ class SwapTransaction(TransactionCore):
                     #print (f'An error occured getting prices for swapping {self.swap_denom} to {self.swap_request_denom}')
                     #print (err)
                     pass
-
                 
         return estimated_amount

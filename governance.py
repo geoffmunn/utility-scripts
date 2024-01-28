@@ -98,8 +98,10 @@ def main():
             print (f' ✅ Vote successful on the {transaction_result} wallet!')
             print (f' ✅ Tx Hash: {transaction.broadcast_result.txhash}\n')
         else:
-            print (f' 🛎️  An error occured on the {transaction_result} wallet:')
+            print (f' 🛎️ An error occured on the {transaction_result} wallet:')
             print (transaction.message)
+            if transaction.code is not None:
+                print (transaction.code)
             if transaction.log is not None:
                 print (transaction.log)
 
