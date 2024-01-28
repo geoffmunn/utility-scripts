@@ -96,7 +96,25 @@ class Validators():
         self.sorted_validators = sorted_validators
 
         return self.validators
+    
+    def findValidatorByName(self, validator_name:str) -> str:
+        """
+        Get the validator details of the validator that matches the provided name
 
+        @params:
+            - validator_name: the name of the validator we are looking for
+
+        @return: the operator address of the validator (if we have found it)
+        """
+
+        result:str = ''
+        for validator in self.sorted_validators:
+            if validator.lower() == validator_name.lower():
+                result = self.sorted_validators[validator]['operator_address']
+                break
+
+        return result
+    
     def getValidatorSingleChoice(self, question:str, validators:dict, filter_list:list, delegations:dict):
         """
         Get a single user selection from a list.
