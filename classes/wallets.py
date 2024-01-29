@@ -91,6 +91,35 @@ class UserWallets:
 
         return self.wallets
     
+    def findAddressInWallet(self, user_address:str) -> str:
+        """
+        Go through the list of wallets to find a match for the user address.
+        This might be either a wallet name or an address.
+
+        @params:
+            - user_adderss: wallet name or actual terra/osmo address
+
+        @return: actual terra/osmo address
+        """
+
+        result = ''
+        wallet:UserWallet
+        for wallet in self.wallets:
+            if wallet.name.lower() == user_address.lower():
+                result = wallet.address
+                break
+            if wallet.address.lower() == user_address.lower():
+                result = wallet.address
+        
+        for wallet in self.addresses:
+            if wallet.name.lower() == user_address.lower():
+                result = wallet.address
+                break
+            if wallet.address.lower() == user_address.lower():
+                result = wallet.address
+
+        return result
+
     def getAddresses(self) -> dict:
         """
         Return the dictionary of addresses.
