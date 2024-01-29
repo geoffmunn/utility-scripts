@@ -28,20 +28,12 @@ from constants.constants import (
 )
 
 from terra_classic_sdk.client.lcd import LCDClient
-from terra_classic_sdk.client.lcd.api.tx import (
-    Tx,
-    TxInfo
-)
+from terra_classic_sdk.client.lcd.api.tx import TxInfo
 from terra_classic_sdk.client.lcd.wallet import Wallet
-from terra_classic_sdk.core.broadcast import (
-    BlockTxBroadcastResult,
-    TxLog,
-)
+from terra_classic_sdk.core.broadcast import BlockTxBroadcastResult, TxLog
 from terra_classic_sdk.core.coin import Coin
 from terra_classic_sdk.core.coins import Coins
 from terra_classic_sdk.core.fee import Fee
-from terra_classic_sdk.core.tx import Tx
-
 class TransactionCore():
     """
     The core class for all transactions.
@@ -349,9 +341,7 @@ class TransactionCore():
                         filtered_list:list = []
                         for coin in coin_list:
                             if coin.denom in [ULUNA, UUSD]:
-                                #transaction_result.result_received.append(Coins.from_proto([coin]))
                                 filtered_list.append(coin)
-                                #break
                         
                         transaction_result.result_received = Coins.from_proto(filtered_list)
                         transaction_result.log_found = True
@@ -376,58 +366,56 @@ class TransactionCore():
                     # Send to Osmosis
                     if 'module' in log.events_by_type['message'] and 'transfer' in log.events_by_type['message']['module']:
                         transaction_result.result_sent     = Coin.from_str(log.events_by_type['coin_spent']['amount'][0])
-                        transaction_result.result_received = Coin.from_str(log.events_by_type['coin_received']['amount'][-1])
+                        transaction_result.result_received = Coins.from_proto([Coin.from_str(log.events_by_type['coin_received']['amount'][-1])])
                         transaction_result.log_found       = True
 
                     # Send to on-chain address
                     if 'module' in log.events_by_type['message'] and 'bank' in log.events_by_type['message']['module']:
                         transaction_result.result_sent     = Coin.from_str(log.events_by_type['coin_spent']['amount'][0])
-                        transaction_result.result_received = Coin.from_str(log.events_by_type['coin_received']['amount'][-1])
+                        transaction_result.result_received = Coins.from_proto([Coin.from_str(log.events_by_type['coin_received']['amount'][-1])])
                         transaction_result.log_found       = True
                 
                 if 'wasm' in log.events_by_type:
                     # Standard swaps ('LUNC -> USTC'):
                     if 'action' in log.events_by_type['wasm'] and log.events_by_type['wasm']['action'][0] == 'swap':
                         transaction_result.result_sent     = Coin.from_str(log.events_by_type['coin_spent']['amount'][0])
-                        transaction_result.result_received = Coin.from_str(log.events_by_type['coin_received']['amount'][-1])
+                        transaction_result.result_received = Coins.from_proto([Coin.from_str(log.events_by_type['coin_received']['amount'][-1])])
                         transaction_result.log_found       = True
 
                     # Send transactions
                     if 'action' in log.events_by_type['wasm'] and log.events_by_type['wasm']['action'][0] == 'transfer':
                         transaction_result.result_sent     = Coin.from_str(f"{log.events_by_type['wasm']['amount'][0]}{self.denom}")
-                        transaction_result.result_received = Coin.from_str(f"{log.events_by_type['wasm']['amount'][0]}{self.denom}")
+                        transaction_result.result_received = Coins.from_proto([Coin.from_str(f"{log.events_by_type['wasm']['amount'][0]}{self.denom}")])
                         transaction_result.log_found       = True
 
                     # Base swaps/undelegations
                     if '_contract_address' in log.events_by_type['wasm'] and log.events_by_type['wasm']['_contract_address'][0] == BASE_SMART_CONTRACT_ADDRESS:
                         transaction_result.result_sent = None
                         if log.events_by_type['wasm']['action'][0] == 'buy':
-                            transaction_result.result_received = Coin.from_data({'amount': log.events_by_type['wasm']['BASE Minted:'][0], 'denom': UBASE})
+                            transaction_result.result_received = Coins.from_proto([Coin.from_data({'amount': log.events_by_type['wasm']['BASE Minted:'][0], 'denom': UBASE})])
                         else:
                             # Assumes swaps back from BASE -> LUNC
-                            transaction_result.result_received = Coin.from_data({'amount': log.events_by_type['wasm']['Net Unstake:'][0], 'denom': ULUNA})
+                            transaction_result.result_received = Coins.from_proto([Coin.from_data({'amount': log.events_by_type['wasm']['Net Unstake:'][0], 'denom': ULUNA})])
                         
                         transaction_result.log_found = True
 
                     # GRDX swaps (will override the standard swaps detection done earlier)
                     if '_contract_address' in log.events_by_type['wasm'] and GRDX_SMART_CONTRACT_ADDRESS in log.events_by_type['wasm']['_contract_address']:
                         transaction_result.result_sent     = Coin.from_data({'amount': log.events_by_type['wasm']['offer_amount'][0], 'denom': log.events_by_type['wasm']['offer_asset'][0]})
-                        transaction_result.result_received = Coin.from_data({'amount': log.events_by_type['wasm']['return_amount'][0], 'denom': GRDX})
+                        transaction_result.result_received = Coins.from_proto([Coin.from_data({'amount': log.events_by_type['wasm']['return_amount'][0], 'denom': GRDX})])
                         transaction_result.log_found       = True
 
                 if transaction_result.log_found == False:
-                    print ('@TODO: events by type not returned, please check the results:')
+                    print ('\n@TODO: events by type not returned, please check the results:')
                     print (log)
 
                 if result['txs'][0].code == 0:
                     print ('\n ⭐ Found the hash!')
                     time.sleep(1)
                     transaction_result.transaction_confirmed = True
-                    #transaction_found = True
                     break
                 if result['txs'][0].code == 5:
-                    print (' 🛑 A transaction error occurred.')
-                    #transaction_found = False
+                    print ('\n 🛑 A transaction error occurred.')
                     break
 
             retry_count += 1
@@ -598,5 +586,3 @@ class TransactionResult():
         self.result_received:Coins                   = None     # Even if we only get one coin, we'll treat it as a list of coins
         self.result_sent:Coin                        = None
         self.transaction_confirmed:bool              = None
-        
-        
