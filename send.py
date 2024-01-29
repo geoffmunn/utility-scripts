@@ -186,15 +186,14 @@ def main():
         transaction_result:TransactionResult = send_transaction(wallet,recipient_address, send_coin, memo)
 
         if transaction_result.transaction_confirmed == True:
-            print (f' ✅ Sent amount: {wallet.formatUluna(transaction_result.result_sent.amount, send_coin.denom)} {FULL_COIN_LOOKUP[send_coin.denom]}')
-            #print (f' ✅ Received amount: {wallet.formatUluna(transaction_result.result_received.amount, send_coin.denom)} {FULL_COIN_LOOKUP[send_coin.denom]}')
+            print (f'\n ✅ Sent amount: {wallet.formatUluna(transaction_result.result_sent.amount, send_coin.denom)} {FULL_COIN_LOOKUP[send_coin.denom]}')
             print (f' ✅ Received amount: ')
             received_coin:Coin
             for received_coin in transaction_result.result_received:
                 print ('    * ' + wallet.formatUluna(received_coin.amount, received_coin.denom, True))
             print (f' ✅ Tx Hash: {transaction_result.broadcast_result.txhash}')
         else:
-            print (f' 🛎️ An error occured on the {wallet.name} wallet.')
+            print (f'\n 🛎️ An error occured on the {wallet.name} wallet.')
             print (transaction_result.message)
             if transaction_result.code is not None:
                 print (transaction_result.code)
