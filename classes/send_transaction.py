@@ -458,28 +458,28 @@ def send_transaction(wallet:UserWallet, recipient_address:str, send_coin:Coin, m
                         send_tx.simulateOffchain()
                         send_tx.sendOffchain()
 
-                    if send_tx is None:
-                        break
-
                     transaction_result:TransactionResult = send_tx.broadcast()
 
+                    if transaction_result is None:
+                        break
+                    
                     # Code 32 = account sequence mismatch
                     if transaction_result.broadcast_result.code != 32:
                         break
 
             if transaction_result.broadcast_result is None or transaction_result.broadcast_result.is_tx_error():
                 if transaction_result.broadcast_result is None:
-                    transaction_result.message = ' 🛎️  The send transaction failed, no broadcast object was returned.'
+                    transaction_result.message = f' 🛎️ The send transaction on {wallet.name} failed, no broadcast object was returned.'
                 else:
                     if transaction_result.broadcast_result.raw_log is not None:
-                        transaction_result.message = ' 🛎️  The send transaction failed, an error occurred.'
-                        transaction_result.code    = f' 🛎️  Error code {transaction_result.broadcast_result.code}'
-                        transaction_result.log     = f' 🛎️  {transaction_result.broadcast_result.raw_log}'
+                        transaction_result.message = f' 🛎️ The send transaction on {wallet.name} failed, an error occurred.'
+                        transaction_result.code    = f' 🛎️ Error code {transaction_result.broadcast_result.code}'
+                        transaction_result.log     = f' 🛎️ {transaction_result.broadcast_result.raw_log}'
                     else:
-                        transaction_result.message = 'No broadcast log was available.'
+                        transaction_result.message = f' 🛎️ No broadcast log on {wallet.name} was available.'
         else:
-            transaction_result.message = ' 🛎️  The send transaction could not be completed'
+            transaction_result.message = f' 🛎️ The send transaction on {wallet.name} could not be completed'
     else:
-        transaction_result.message = ' 🛎️  The send transaction could not be completed'
+        transaction_result.message = f' 🛎️ The send transaction on {wallet.name} could not be completed'
 
     return transaction_result
