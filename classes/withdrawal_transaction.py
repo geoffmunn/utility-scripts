@@ -176,10 +176,10 @@ def claim_delegation_rewards(wallet:UserWallet, validator_address:str):
                     withdrawal_tx.simulate()
                     withdrawal_tx.withdraw()
 
-                    if withdrawal_tx is None:
-                        break
-
                     transaction_result:TransactionResult = withdrawal_tx.broadcast()
+
+                    if transaction_result is None:
+                        break
 
                     # Code 32 = account sequence mismatch
                     if transaction_result.broadcast_result.code != 32:
@@ -187,16 +187,16 @@ def claim_delegation_rewards(wallet:UserWallet, validator_address:str):
                     
             if transaction_result.broadcast_result is None or transaction_result.broadcast_result.is_tx_error():
                 if transaction_result.broadcast_result is None:
-                    transaction_result.message = ' 🛎️  The withdrawal transaction failed, no broadcast object was returned.'
+                    transaction_result.message = f' 🛎️ The withdrawal transaction on {wallet.name} failed, no broadcast object was returned.'
                 else:
                     if transaction_result.broadcast_result.raw_log is not None:
-                        transaction_result.message = ' 🛎️  The withdrawal transaction failed, an error occurred.'
-                        transaction_result.code    = f' 🛎️  Error code {transaction_result.broadcast_result.code}'
-                        transaction_result.log     = f' 🛎️  {transaction_result.broadcast_result.raw_log}'
+                        transaction_result.message = f' 🛎️ The withdrawal transaction on {wallet.name} failed, an error occurred:'
+                        transaction_result.code    = f' 🛎️ Error code {transaction_result.broadcast_result.code}'
+                        transaction_result.log     = f' 🛎️ {transaction_result.broadcast_result.raw_log}'
                     else:
-                        transaction_result.message = 'No broadcast log was available.'
+                        transaction_result.message = f' 🛎️ No broadcast log on {wallet.name} was available.'
         
     else:
-        transaction_result.message = ' 🛎️  The withdrawal could not be completed.'
+        transaction_result.message = f' 🛎️ The withdrawal on {wallet.name} could not be completed.'
 
     return transaction_result
