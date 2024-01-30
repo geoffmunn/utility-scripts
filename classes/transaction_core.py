@@ -28,7 +28,7 @@ from constants.constants import (
 )
 
 from terra_classic_sdk.client.lcd import LCDClient
-from terra_classic_sdk.client.lcd.api.tx import TxInfo
+from terra_classic_sdk.client.lcd.api.tx import TxInfo, Tx
 from terra_classic_sdk.client.lcd.wallet import Wallet
 from terra_classic_sdk.core.broadcast import BlockTxBroadcastResult, TxLog
 from terra_classic_sdk.core.coin import Coin
@@ -580,9 +580,37 @@ class TransactionResult():
         
         self.broadcast_result:BlockTxBroadcastResult = None
         self.code:int                                = None
+        self.label:str                               = ''       # For display purposes, it will be something like 'Sent amount', or 'Delegated amount'
         self.log:str                                 = None
         self.log_found:bool                          = False
         self.message:str                             = ''
         self.result_received:Coins                   = None     # Even if we only get one coin, we'll treat it as a list of coins
         self.result_sent:Coin                        = None
+        self.transacted_amount:str                   = None     # This holds the sent/delegated/whatever amount. It has already been through the formatUluna function.
         self.transaction_confirmed:bool              = None
+
+    def showResults(self) -> bool:
+        """
+        Show the results of the transaction result.
+
+        @params:
+            - none
+
+        @return: True
+        """
+
+        if self.transaction_confirmed == True:
+            if self.transacted_amount is not None:
+                print (f'\n ✅ {self.label}: {self.transacted_amount}')
+            print (f' ✅ Received amount: ')
+            received_coin:Coin
+            for received_coin in self.result_received:
+                print ('    * ' + str(self.transacted_amount))
+            print (f' ✅ Tx Hash: {self.broadcast_result.txhash}')
+            print ('\n')
+        else:
+            print (self.message)
+            if self.log is not None:
+                print (self.log)
+
+        return True
