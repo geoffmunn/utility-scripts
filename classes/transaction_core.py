@@ -56,7 +56,7 @@ class TransactionCore():
         self.sequence:int                            = None
         self.tax_rate:json                           = None
         self.terra:LCDClient                         = None
-        #self.transaction:Tx                          = None
+        self.transaction:Tx                          = None
         self.wallet_denom:str                        = None # Used so we can identify the chain that this transaction is using
 
         # Initialise the basic variables:
