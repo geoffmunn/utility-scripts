@@ -175,14 +175,13 @@ class UserWallet:
 
         return self
     
-    def createCoin(self, denom:str, amount: float) -> Coin:
+    def createCoin(self, denom:str, amount:int) -> Coin:
         """
         A basic helper function to create a valid Coin object with the provided details.
         """
 
-        return Coin.from_data({'amount': amount, 'denom': denom})
+        return Coin.from_data({'amount': int(amount), 'denom': denom})
 
-    
     def denomTrace(self, ibc_address:str):
         """
         Based on the wallet prefix, get the IBC denom trace details for this IBC address.
