@@ -391,6 +391,10 @@ def send_transaction(wallet:UserWallet, recipient_address:str, send_coin:Coin, m
 
     transaction_result:TransactionResult = TransactionResult()
 
+    # Store the sent amount for display purposes
+    transaction_result.transacted_amount = wallet.formatUluna(send_coin.amount, send_coin.denom, True)
+    transaction_result.label             = 'Sent amount'
+
     send_tx = SendTransaction().create(wallet.seed, wallet.denom)
         
     # Populate it with required details:
@@ -471,17 +475,17 @@ def send_transaction(wallet:UserWallet, recipient_address:str, send_coin:Coin, m
 
             if transaction_result.broadcast_result is None or transaction_result.broadcast_result.is_tx_error():
                 if transaction_result.broadcast_result is None:
-                    transaction_result.message = f' 🛎️ The send transaction on {wallet.name} failed, no broadcast object was returned.'
+                    transaction_result.message = f' 🛎️  The send transaction on {wallet.name} failed, no broadcast object was returned.'
                 else:
                     if transaction_result.broadcast_result.raw_log is not None:
-                        transaction_result.message = f' 🛎️ The send transaction on {wallet.name} failed, an error occurred.'
-                        transaction_result.code    = f' 🛎️ Error code {transaction_result.broadcast_result.code}'
-                        transaction_result.log     = f' 🛎️ {transaction_result.broadcast_result.raw_log}'
+                        transaction_result.message = f' 🛎️  The send transaction on {wallet.name} failed, an error occurred.'
+                        transaction_result.code    = f' 🛎️  Error code {transaction_result.broadcast_result.code}'
+                        transaction_result.log     = f' 🛎️  {transaction_result.broadcast_result.raw_log}'
                     else:
-                        transaction_result.message = f' 🛎️ No broadcast log on {wallet.name} was available.'
+                        transaction_result.message = f' 🛎️  No broadcast log on {wallet.name} was available.'
         else:
-            transaction_result.message = f' 🛎️ The send transaction on {wallet.name} could not be completed'
+            transaction_result.message = f' 🛎️  The send transaction on {wallet.name} could not be completed'
     else:
-        transaction_result.message = f' 🛎️ The send transaction on {wallet.name} could not be completed'
+        transaction_result.message = f' 🛎️  The send transaction on {wallet.name} could not be completed'
 
     return transaction_result
