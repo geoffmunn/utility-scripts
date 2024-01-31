@@ -373,7 +373,7 @@ class SendTransaction(TransactionCore):
         else:
             return False
         
-def send_transaction(wallet:UserWallet, recipient_address:str, send_coin:Coin, memo:str = ''):
+def send_transaction(wallet:UserWallet, recipient_address:str, send_coin:Coin, memo:str = '', prompt_user:bool = True):
     """
     A wrapper function for workflows and wallet management.
     This lets the user send a LUNC or USTC amount to supported address.
@@ -428,14 +428,16 @@ def send_transaction(wallet:UserWallet, recipient_address:str, send_coin:Coin, m
     
     # Now complete it
     if send_result == True:
-        print(f'You are about to send {wallet.formatUluna(send_coin.amount, send_coin.denom)} {FULL_COIN_LOOKUP[send_coin.denom]} to {recipient_address}')
 
-        print (send_tx.readableFee())
+        if prompt_user == True:
+            print(f'You are about to send {wallet.formatUluna(send_coin.amount, send_coin.denom)} {FULL_COIN_LOOKUP[send_coin.denom]} to {recipient_address}')
 
-        user_choice = get_user_choice('Do you want to continue? (y/n) ', [])
+            print (send_tx.readableFee())
 
-        if user_choice == False:
-            exit()
+            user_choice = get_user_choice('Do you want to continue? (y/n) ', [])
+
+            if user_choice == False:
+                exit()
 
         # Now we know what the fee is, we can do it again and finalise it
         if send_tx.is_on_chain == True:
