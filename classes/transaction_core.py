@@ -10,7 +10,8 @@ from hashlib import sha256
 from sqlite3 import Cursor, Connection
 
 from classes.common import (
-    divide_raw_balance
+    divide_raw_balance,
+    getPrecision
 )
 
 from constants.constants import (
@@ -569,15 +570,16 @@ class TransactionCore():
             self.tax_rate = 0
 
         return self.tax_rate
-    
-class TransactionResult():
+class TransactionResult(TransactionCore):
     """
     Holds the details of the transaction result.
     We're moving the results into a separate class so it's cleaner.
     """
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         
+        super(TransactionResult, self).__init__(*args, **kwargs)
+
         self.broadcast_result:BlockTxBroadcastResult = None
         self.code:int                                = None
         self.label:str                               = ''       # For display purposes, it will be something like 'Sent amount', or 'Delegated amount'
@@ -589,6 +591,29 @@ class TransactionResult():
         self.transacted_amount:str                   = None     # This holds the sent/delegated/whatever amount. It has already been through the formatUluna function.
         self.transaction_confirmed:bool              = None
 
+    def formatCoin(self, coin:Coin, add_suffix:bool = False) -> str:
+        """
+        Format the coin into a human-readable string.
+
+        @params:
+            - coin: a Coin object holding the amount and denom
+            - add_suffix: if True, then the denom is added to the string
+
+        @return string
+        """
+
+        denom         = self.denomTrace(coin.denom)
+        precision:int = getPrecision(denom)
+        lunc:float    = round(float(divide_raw_balance(coin.amount, denom)), precision)
+
+        target:str = '%.' + str(precision) + 'f'
+        lunc:str   = (target % (lunc)).rstrip('0').rstrip('.')
+
+        if add_suffix:
+            lunc = str(lunc) + ' ' + FULL_COIN_LOOKUP[denom]
+        
+        return str(lunc)
+    
     def showResults(self) -> bool:
         """
         Show the results of the transaction result.
@@ -600,12 +625,13 @@ class TransactionResult():
         """
 
         if self.transaction_confirmed == True:
+            print ('')
             if self.transacted_amount is not None:
-                print (f'\n ✅ {self.label}: {self.transacted_amount}')
+                print (f'✅ {self.label}: {self.transacted_amount}')
             print (f' ✅ Received amount: ')
             received_coin:Coin
             for received_coin in self.result_received:
-                print ('    * ' + str(self.transacted_amount))
+                print ('    * ' + str(self.formatCoin(received_coin, True)))
             print (f' ✅ Tx Hash: {self.broadcast_result.txhash}')
             print ('\n')
         else:
