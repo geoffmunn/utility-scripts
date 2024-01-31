@@ -94,6 +94,7 @@ def main():
 
     for transaction_result in transaction_results:
         transaction:TransactionResult = transaction_results[transaction_result]
+        print ('')
         if transaction.transaction_confirmed == True:
             print (f' ✅ Vote successful on the {transaction_result} wallet!')
             print (f' ✅ Tx Hash: {transaction.broadcast_result.txhash}\n')
