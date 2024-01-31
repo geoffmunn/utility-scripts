@@ -127,7 +127,7 @@ class WithdrawalTransaction(TransactionCore):
         except:
             return False
         
-def claim_delegation_rewards(wallet:UserWallet, validator_address:str):
+def claim_delegation_rewards(wallet:UserWallet, validator_address:str) -> TransactionResult:
     """
     A wrapper function for workflows and wallet management.
     This lets the user claim any delegation rewards for the provided validator.
@@ -139,7 +139,7 @@ def claim_delegation_rewards(wallet:UserWallet, validator_address:str):
       - wallet: a fully complete wallet object
       - validator_address: the address of the validator in question
 
-    @returns a transaction_result object
+    @return: a TransactionResult object
     """
 
     transaction_result:TransactionResult = TransactionResult()

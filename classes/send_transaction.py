@@ -373,7 +373,7 @@ class SendTransaction(TransactionCore):
         else:
             return False
         
-def send_transaction(wallet:UserWallet, recipient_address:str, send_coin:Coin, memo:str = '', prompt_user:bool = True):
+def send_transaction(wallet:UserWallet, recipient_address:str, send_coin:Coin, memo:str = '', prompt_user:bool = True) -> TransactionResult:
     """
     A wrapper function for workflows and wallet management.
     This lets the user send a LUNC or USTC amount to supported address.
@@ -386,7 +386,7 @@ def send_transaction(wallet:UserWallet, recipient_address:str, send_coin:Coin, m
       - send_coin: a fully complete Coin object. We get the amount and denom from this
       - memo: optional text to include
 
-    @returns a transaction_result object
+    @return: a TransactionResult object
     """
 
     transaction_result:TransactionResult = TransactionResult()

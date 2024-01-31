@@ -240,7 +240,7 @@ class DelegationTransaction(TransactionCore):
         except:
            return False
         
-def delegate_to_validator(wallet:UserWallet, validator_address:str, delegation_coin:Coin ):
+def delegate_to_validator(wallet:UserWallet, validator_address:str, delegation_coin:Coin) -> TransactionResult:
     """
     A wrapper function for workflows and wallet management.
     This lets the user delegate uluna to a supplied validator.
@@ -252,7 +252,7 @@ def delegate_to_validator(wallet:UserWallet, validator_address:str, delegation_c
       - validator_address: the address of the validator in question
       - delegation_coin: the amount (in uluna) that we are delegating
 
-    @returns a transaction_result object
+    @return: a TransactionResult object
     """
 
     transaction_result:TransactionResult = TransactionResult()
