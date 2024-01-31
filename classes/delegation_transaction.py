@@ -240,7 +240,7 @@ class DelegationTransaction(TransactionCore):
         except:
            return False
         
-def delegate_to_validator(wallet:UserWallet, validator_address:str, delegated_uluna:int ):
+def delegate_to_validator(wallet:UserWallet, validator_address:str, delegation_coin:Coin ):
     """
     A wrapper function for workflows and wallet management.
     This lets the user delegate uluna to a supplied validator.
@@ -250,12 +250,16 @@ def delegate_to_validator(wallet:UserWallet, validator_address:str, delegated_ul
     @params:
       - wallet: a fully complete wallet object
       - validator_address: the address of the validator in question
-      - delegated_uluna: the amount (in uluna) that we are delegating
+      - delegation_coin: the amount (in uluna) that we are delegating
 
     @returns a transaction_result object
     """
 
     transaction_result:TransactionResult = TransactionResult()
+
+    # Store the delegated amount for display purposes
+    transaction_result.transacted_amount = wallet.formatUluna(delegation_coin.amount, delegation_coin.denom, True)
+    transaction_result.label             = 'Delegated amount'
 
     # Create the delegation object
     delegation_tx = DelegationTransaction().create(seed = wallet.seed, denom = ULUNA)
@@ -264,7 +268,7 @@ def delegate_to_validator(wallet:UserWallet, validator_address:str, delegated_ul
     delegation_tx.balances          = wallet.balances
     delegation_tx.delegator_address = wallet.address
     delegation_tx.validator_address = validator_address #user_validator['operator_address']
-    delegation_tx.delegated_uluna   = delegated_uluna
+    delegation_tx.delegated_uluna   = delegation_coin.amount
     delegation_tx.sender_address    = wallet.address
     delegation_tx.sender_prefix     = wallet.getPrefix(wallet.address)
     delegation_tx.wallet_denom      = wallet.denom
@@ -283,13 +287,13 @@ def delegate_to_validator(wallet:UserWallet, validator_address:str, delegated_ul
             transaction_result = delegation_tx.broadcast()
         
             if transaction_result.broadcast_result is None or transaction_result.broadcast_result.is_tx_error():
-                transaction_result.message = f' 🛎️ The delegation on {wallet.name} failed, an error occurred:'
-                transaction_result.code    = f' 🛎️ Error code {transaction_result.broadcast_result.code}'
-                transaction_result.log     = f' 🛎️ {transaction_result.broadcast_result.raw_log}'
+                transaction_result.message = f' 🛎️  {wallet.name} failed, an error occurred:'
+                transaction_result.code    = f' 🛎️  Error code {transaction_result.broadcast_result.code}'
+                transaction_result.log     = f' 🛎️  {transaction_result.broadcast_result.raw_log}'
             
         else:
-            transaction_result.message = f' 🛎️ The delegation on {wallet.name} could not be completed.'
+            transaction_result.message = f' 🛎️  The delegation on {wallet.name} could not be completed.'
     else:
-        transaction_result.message = f' 🛎️ The delegation on {wallet.name} could not be completed.'
+        transaction_result.message = f' 🛎️  The delegation on {wallet.name} could not be completed.'
     
     return transaction_result
