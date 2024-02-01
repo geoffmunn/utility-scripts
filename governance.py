@@ -90,7 +90,7 @@ def main():
     # Get a memo value from the user
     memo:str = UserWallet().getUserText('\n 🖊  Provide a memo (optional): ', 255, True)
 
-    transaction_results = cast_governance_vote(user_wallets, proposal['id'], vote_options[user_vote], memo)
+    transaction_results:dict = cast_governance_vote(user_wallets, proposal['id'], vote_options[user_vote], memo)
 
     for transaction_result in transaction_results:
         transaction:TransactionResult = transaction_results[transaction_result]
