@@ -257,10 +257,6 @@ def delegate_to_validator(wallet:UserWallet, validator_address:str, delegation_c
 
     transaction_result:TransactionResult = TransactionResult()
 
-    # Store the delegated amount for display purposes
-    transaction_result.transacted_amount = wallet.formatUluna(delegation_coin.amount, delegation_coin.denom, True)
-    transaction_result.label             = 'Delegated amount'
-
     # Create the delegation object
     delegation_tx = DelegationTransaction().create(seed = wallet.seed, denom = ULUNA)
 
@@ -296,4 +292,8 @@ def delegate_to_validator(wallet:UserWallet, validator_address:str, delegation_c
     else:
         transaction_result.message = f' 🛎️  The delegation on {wallet.name} could not be completed.'
     
+    # Store the delegated amount for display purposes
+    transaction_result.transacted_amount = wallet.formatUluna(delegation_coin.amount, delegation_coin.denom, True)
+    transaction_result.label             = 'Delegated amount'
+
     return transaction_result
