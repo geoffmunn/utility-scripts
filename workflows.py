@@ -45,7 +45,7 @@ from classes.withdrawal_transaction import claim_delegation_rewards
     
 from terra_classic_sdk.core.coin import Coin
 
-def check_amount(amount:str, balances:dict, denom:str = 'LUNC', preserve_minimum:bool = False) -> (bool, Coin):
+def check_amount(amount:str, balances:dict, preserve_minimum:bool = False) -> (bool, Coin):
     """
     The amount will be either a percentage or a specific amount.
     If it's a percentage, then ee need to convert this to an actual amount.
@@ -54,15 +54,14 @@ def check_amount(amount:str, balances:dict, denom:str = 'LUNC', preserve_minimum
     @NOTE: denom is only required for percentage amounts, because precise amounts should include the denom
 
     @params:
-        - amount: the amount we want to perform an action with
+        - amount: the amount we want to perform an action with. It can be either specific or a percentage, ie: 50% LUNC or 2000 LUNC
         - balances: a dictionary of coins. This can be from the wallet.balances list, or the validator withdrawals
-        - denom: the denomination we want to use. If it's missing, it's presumed to be LUNC
         - include_minimim: if True, then deduct the WITHDRAWAL_REMAINDER value off the available amount
 
     @return: can we proceed? and converted uluna amount
     """
 
-    amount_ok:bool  = True
+    amount_ok:bool  = False
     coin_denom:str  = ''
     coin_amount:int = 0
     coin_result:Coin = None
@@ -70,59 +69,43 @@ def check_amount(amount:str, balances:dict, denom:str = 'LUNC', preserve_minimum
     # We need a wallet to create coins with
     wallet:UserWallet = UserWallet()
 
-    if isPercentage(amount):
-        # Should be something like '100%', with a denom provided separately
+    # Figure out the coin and denom. If no denom can be found, then assume it's ULUNA
+    amount_bits:list = amount.split(' ')
 
-        # Adjust the available balance depending on requirements
-        if preserve_minimum == True:
-            available_balance = balances[coin_denom] - (WITHDRAWAL_REMAINDER * (10 ** getPrecision(coin_denom)))
-        else:
-            available_balance = balances[coin_denom]
-            
-        # Create a wallet object so we can figure out the denom
-        coin_denom:str = list(FULL_COIN_LOOKUP.keys())[list(FULL_COIN_LOOKUP.values()).index(denom)]
-        amount         = float(amount[0:-1]) / 100
-        coin_amount    = float(available_balance * amount)
-
-        coin_result = wallet.createCoin(coin_denom, coin_amount)
-                                            
+    # Get the denom.
+    if len(amount_bits) >= 2:
+        coin_denom:str    = list(FULL_COIN_LOOKUP.keys())[list(FULL_COIN_LOOKUP.values()).index(amount_bits[1])]
     else:
-        # Should be something like '1000 LUNC' - it needs a space in between
-        # If it's just a number, then assume it's LUNC
-        amount_bits:list = amount.split(' ')
-        if len(amount_bits) == 2 and amount_bits[0].isnumeric():
-            coin_amount:float = float(amount_bits[0]) * (10 ** getPrecision(coin_denom))
-            coin_denom:str    = list(FULL_COIN_LOOKUP.keys())[list(FULL_COIN_LOOKUP.values()).index(amount_bits[1])]
+        # If it's a single item list, then assume it's something like '100%' and then denom is ULUNA
+        coin_denom:str == ULUNA
+
+    if coin_denom in balances:
+        # Adjust the available balance depending on requirements
+        if preserve_minimum == True and coin_denom == ULUNA:
+            available_balance:int = int(balances[coin_denom] - (WITHDRAWAL_REMAINDER * (10 ** getPrecision(coin_denom))))
+        else:
+            available_balance:int = int(balances[coin_denom])
+
+        #print ('amount_bits:', amount_bits)
+        if len(amount_bits) >= 2:
+            if amount_bits[0].isnumeric():
+                coin_amount:float = float(amount_bits[0]) * (10 ** getPrecision(coin_denom))
+                
+            elif isPercentage(amount_bits[0]):
+                amount         = float(amount_bits[0][0:-1]) / 100
+                coin_amount    = float(available_balance * amount)
+
         elif len(amount_bits) == 1 and amount_bits[0].isnumeric():
             coin_amount:float = float(amount_bits[0]) * (10 ** getPrecision(coin_denom))
             coin_denom:str    = ULUNA
-
-        # Adjust the available balance depending on requirements
-        if preserve_minimum == True:
-            available_balance = balances[coin_denom] - (WITHDRAWAL_REMAINDER * (10 ** getPrecision(coin_denom)))
-        else:
-            available_balance = balances[coin_denom]
             
-        # If this is a fixed amount, make sure that we have enough in the balance
+        # If we are requesting too much, then this is not ok
         if coin_amount > available_balance:
             amount_ok = False
         else:
+            # Create a coin with the final denom and amount
+            amount_ok = True
             coin_result = wallet.createCoin(coin_denom, coin_amount)
-
-    # if preserve_minimum == True:
-    #     print ('original amount:', coin_amount)
-    #     print ('remainder:', (WITHDRAWAL_REMAINDER * (10 ** getPrecision(coin_denom))))
-    #     available_balance = balances[coin_denom] - (WITHDRAWAL_REMAINDER * (10 ** getPrecision(coin_denom))
-                                                    
-        
-    #     #coin_amount = coin_amount - (WITHDRAWAL_REMAINDER * (10 ** getPrecision(coin_denom)))
-    #     print ('preserved amount:', coin_amount)
-
-    #     coin_result = wallet.createCoin(coin_denom, coin_amount)
-
-    #     if coin_amount < 0:
-    #         coin_result = None
-    #         amount_ok   = False
 
     return amount_ok, coin_result
 
@@ -324,7 +307,7 @@ def main():
                                 
                             if is_triggered == True:
                                 # We will redelegate an amount based on the 'amount' value, calculated from the returned rewards
-                                amount_ok, delegation_coin = check_amount(step['amount'], validator_withdrawals[validator], 'LUNC', False)
+                                amount_ok, delegation_coin = check_amount(step['amount'], validator_withdrawals[validator], False)
 
                                 if amount_ok == True:
                                     
@@ -349,7 +332,7 @@ def main():
                             # We only support LUNC for this action
                             #delegated_uluna = wallet.balances[ULUNA]
                             
-                            amount_ok, delegation_coin = check_amount(step['amount'], wallet.balances, 'LUNC', True)
+                            amount_ok, delegation_coin = check_amount(step['amount'], wallet.balances, True)
 
                             if amount_ok == True:
                                 # Find the validator
@@ -357,7 +340,7 @@ def main():
                                     # Find the validator details
                                     validators = Validators()
                                     validators.create()
-                                    validator_address = validators.findValidatorByName(step['validator'])
+                                    validator_address:str = validators.findValidatorByName(step['validator'])
 
                                     if validator_address != '':
 
@@ -382,21 +365,18 @@ def main():
                         is_triggered = check_trigger(step['when'], wallet.balances)
                                 
                         if is_triggered == True:
-                            denom:str = ''
-                            if 'send denom' in step:
-                                denom = step['send denom']
-
-                            amount_ok, send_coin = check_amount(step['amount'], wallet.balances, denom, True)
+                            amount_ok, send_coin = check_amount(step['amount'], wallet.balances, True)
 
                             if amount_ok == True:
                                 # Get the address based on the recipient value
                                 # We will restrict recipients to just whats in the address book for safety reasons
-                                recipient_address = find_address_in_wallet(user_wallets, step['recipient'])
+                                recipient_address:str = find_address_in_wallet(user_wallets, step['recipient'])
 
                                 if recipient_address != '':
                                     # We should be ok to send by this stage
 
                                     # Memos are optional
+                                    memo:str = ''
                                     if 'memo' in step:
                                         memo = step['memo']
 
