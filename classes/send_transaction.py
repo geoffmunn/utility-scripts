@@ -391,10 +391,6 @@ def send_transaction(wallet:UserWallet, recipient_address:str, send_coin:Coin, m
 
     transaction_result:TransactionResult = TransactionResult()
 
-    # Store the sent amount for display purposes
-    transaction_result.transacted_amount = wallet.formatUluna(send_coin.amount, send_coin.denom, True)
-    transaction_result.label             = 'Sent amount'
-
     send_tx = SendTransaction().create(wallet.seed, wallet.denom)
         
     # Populate it with required details:
@@ -487,5 +483,9 @@ def send_transaction(wallet:UserWallet, recipient_address:str, send_coin:Coin, m
             transaction_result.message = f' 🛎️  The send transaction on {wallet.name} could not be completed'
     else:
         transaction_result.message = f' 🛎️  The send transaction on {wallet.name} could not be completed'
+
+    # Store the delegated amount for display purposes
+    transaction_result.transacted_amount = wallet.formatUluna(send_coin.amount, send_coin.denom, True)
+    transaction_result.label             = 'Sent amount'
 
     return transaction_result
