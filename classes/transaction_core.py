@@ -627,7 +627,7 @@ class TransactionResult(TransactionCore):
         if self.transaction_confirmed == True:
             print ('')
             if self.transacted_amount is not None:
-                print (f'✅ {self.label}: {self.transacted_amount}')
+                print (f' ✅ {self.label}: {self.transacted_amount}')
             print (f' ✅ Received amount: ')
             received_coin:Coin
             for received_coin in self.result_received:
