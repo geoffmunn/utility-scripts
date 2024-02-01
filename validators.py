@@ -128,19 +128,19 @@ def main():
         print (f'Delegating {wallet.formatUluna(delegated_uluna, ULUNA, True)}...')
         
         transaction_result:TransactionResult = delegate_to_validator(wallet, user_validator['operator_address'], delegated_uluna)
-
-        if transaction_result.transaction_confirmed == True:
-            print (f'\n ✅ Delegated amount: {wallet.formatUluna(delegated_uluna, ULUNA, True)}')
-            print (f' ✅ Received amount: ')
-            received_coin:Coin
-            for received_coin in transaction_result.result_received:
-                print ('    * ' + wallet.formatUluna(received_coin.amount, received_coin.denom, True))
-            print (f' ✅ Tx Hash: {transaction_result.broadcast_result.txhash}')
-            print ('\n')
-        else:
-            print (transaction_result.message)
-            if transaction_result.log is not None:
-                print (transaction_result.log)
+        transaction_result.showResults()
+        # if transaction_result.transaction_confirmed == True:
+        #     print (f'\n ✅ Delegated amount: {wallet.formatUluna(delegated_uluna, ULUNA, True)}')
+        #     print (f' ✅ Received amount: ')
+        #     received_coin:Coin
+        #     for received_coin in transaction_result.result_received:
+        #         print ('    * ' + wallet.formatUluna(received_coin.amount, received_coin.denom, True))
+        #     print (f' ✅ Tx Hash: {transaction_result.broadcast_result.txhash}')
+        #     print ('\n')
+        # else:
+        #     print (transaction_result.message)
+        #     if transaction_result.log is not None:
+        #         print (transaction_result.log)
 
     if user_action == USER_ACTION_VALIDATOR_UNDELEGATE:
         print (f'Select a validator to undelegate from:')
