@@ -184,21 +184,21 @@ def main():
         print (f'Sending {wallet.formatUluna(send_coin.amount, send_coin.denom)} {FULL_COIN_LOOKUP[send_coin.denom]}')
 
         transaction_result:TransactionResult = send_transaction(wallet,recipient_address, send_coin, memo)
-
-        if transaction_result.transaction_confirmed == True:
-            print (f'\n ✅ Sent amount: {wallet.formatUluna(transaction_result.result_sent.amount, send_coin.denom)} {FULL_COIN_LOOKUP[send_coin.denom]}')
-            print (f' ✅ Received amount: ')
-            received_coin:Coin
-            for received_coin in transaction_result.result_received:
-                print ('    * ' + wallet.formatUluna(received_coin.amount, received_coin.denom, True))
-            print (f' ✅ Tx Hash: {transaction_result.broadcast_result.txhash}')
-        else:
-            print (f'\n 🛎️ An error occured on the {wallet.name} wallet.')
-            print (transaction_result.message)
-            if transaction_result.code is not None:
-                print (transaction_result.code)
-            if transaction_result.log is not None:
-                print (transaction_result.log)
+        transaction_result.showResults()
+        # if transaction_result.transaction_confirmed == True:
+        #     print (f'\n ✅ Sent amount: {wallet.formatUluna(transaction_result.result_sent.amount, send_coin.denom)} {FULL_COIN_LOOKUP[send_coin.denom]}')
+        #     print (f' ✅ Received amount: ')
+        #     received_coin:Coin
+        #     for received_coin in transaction_result.result_received:
+        #         print ('    * ' + wallet.formatUluna(received_coin.amount, received_coin.denom, True))
+        #     print (f' ✅ Tx Hash: {transaction_result.broadcast_result.txhash}')
+        # else:
+        #     print (f'\n 🛎️ An error occured on the {wallet.name} wallet.')
+        #     print (transaction_result.message)
+        #     if transaction_result.code is not None:
+        #         print (transaction_result.code)
+        #     if transaction_result.log is not None:
+        #         print (transaction_result.log)
 
     else:
         print (" 🛑 This wallet has no LUNC - you need a small amount to be present to pay for fees.")
