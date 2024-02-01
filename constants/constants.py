@@ -196,7 +196,7 @@ FULL_COIN_LOOKUP = {
     'ueur':    'EUTC',
     AEVMOS:    'Evmos',
     AFET:      'Fetch.ai',
-    GRDX:      'GarudaX Token',
+    GRDX:      'GRDX',
     'ugbp':    'GBTC',
     UGRAVITON: 'Gravity Bridge',
     'uhkd':    'HKTC',
