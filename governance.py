@@ -95,16 +95,19 @@ def main():
     for transaction_result in transaction_results:
         transaction:TransactionResult = transaction_results[transaction_result]
         print ('')
-        if transaction.transaction_confirmed == True:
-            print (f' ✅ Vote successful on the {transaction_result} wallet!')
-            print (f' ✅ Tx Hash: {transaction.broadcast_result.txhash}\n')
-        else:
-            print (f' 🛎️ An error occured on the {transaction_result} wallet.')
-            print (transaction.message)
-            if transaction.code is not None:
-                print (transaction.code)
-            if transaction.log is not None:
-                print (transaction.log)
+        transaction.showResults()
+        # transaction:TransactionResult = transaction_results[transaction_result]
+        # print ('')
+        # if transaction.transaction_confirmed == True:
+        #     print (f' ✅ Vote successful on the {transaction_result} wallet!')
+        #     print (f' ✅ Tx Hash: {transaction.broadcast_result.txhash}\n')
+        # else:
+        #     print (f' 🛎️  An error occured on the {transaction_result} wallet.')
+        #     print (transaction.message)
+        #     if transaction.code is not None:
+        #         print (transaction.code)
+        #     if transaction.log is not None:
+        #         print (transaction.log)
 
     print (' 💯 Done!\n')
 
