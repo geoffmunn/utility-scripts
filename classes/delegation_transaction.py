@@ -41,6 +41,12 @@ class DelegationTransaction(TransactionCore):
     def create(self, seed:str, denom:str = 'uluna'):
         """
         Create a delegation object and set it up with the provided details.
+
+        @params:
+            - seed: the wallet seed so we can create the wallet
+            - denom: what denomination are we delegating? It will usually be LUNC
+
+        @return: self
         """
 
         # Create the terra instance
@@ -61,6 +67,11 @@ class DelegationTransaction(TransactionCore):
         """
         Make a delegation with the information we have so far.
         If fee is None then it will be a simulation.
+
+        @params:
+            - None. It requires the simulate function to be run first which will populate it correctly
+
+        @return: bool (True if sucessful, False if errors were found)
         """
 
         try:
@@ -105,7 +116,6 @@ class DelegationTransaction(TransactionCore):
             self.transaction = tx
 
             return True
-        
         except:
             return False
         
@@ -113,6 +123,11 @@ class DelegationTransaction(TransactionCore):
         """
         Redelegate funds from one validator to another.
         If fee is None then it will be a simulation.
+
+        @params:
+            - None. It requires the simulate function to be run first which will populate it correctly
+
+        @return: bool (True if sucessful, False if errors were found)
         """
 
         try:
@@ -163,8 +178,13 @@ class DelegationTransaction(TransactionCore):
     
     def simulate(self, action) -> bool:
         """
-        Simulate a delegation so we can get the fee details.
-        The fee details are saved so the actual delegation will work.
+        Simulate the transaction so we can get the fee details
+        The fee details are saved so the actual transaction will work.
+
+        @params:
+            - action: this is a function, either delegate, redelegate (switch validators), or undelegate
+
+        @return: bool (True if sucessful, False if errors were found)
         """
 
         # Set the fee to be None so it is simulated
@@ -192,7 +212,12 @@ class DelegationTransaction(TransactionCore):
     def undelegate(self):
         """
         Undelegate funds from the provided validator
-        If fee is None then it will be a simulation.
+        The fee details are saved so the actual transaction will work.
+
+        @params:
+            - None. It requires the simulate function to be run first which will populate it correctly
+
+        @return: bool (True if sucessful, False if errors were found)
         """
 
         try:
