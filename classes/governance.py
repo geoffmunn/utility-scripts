@@ -408,6 +408,9 @@ def cast_governance_vote(user_wallets:dict, proposal_id:int, user_vote:int, memo
         else:
             transaction_result.message = f' 🛎️ The vote transaction on {wallet.name} could not be completed'
 
+        # Give this a label:
+        transaction_result.label = f'Vote successful on the {wallet.name} wallet!'
+
         # Add this result to the returned dictionary
         transaction_results[wallet_name] = transaction_result
 
