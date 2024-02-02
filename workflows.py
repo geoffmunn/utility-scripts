@@ -36,6 +36,7 @@ from constants.constants import (
 # from classes.swap_transaction import SwapTransaction
 from classes.delegation_transaction import delegate_to_validator
 from classes.send_transaction import send_transaction
+from classes.swap_transaction import swap_coins
 from classes.transaction_core import TransactionResult
 from classes.validators import Validators
 from classes.wallet import UserWallet
@@ -51,8 +52,6 @@ def check_amount(amount:str, balances:dict, preserve_minimum:bool = False) -> (b
     If it's a percentage, then ee need to convert this to an actual amount.
     If it's a specific amount, we need to check that we have this amount in the provided balance
 
-    @NOTE: denom is only required for percentage amounts, because precise amounts should include the denom
-
     @params:
         - amount: the amount we want to perform an action with. It can be either specific or a percentage, ie: 50% LUNC or 2000 LUNC
         - balances: a dictionary of coins. This can be from the wallet.balances list, or the validator withdrawals
@@ -61,9 +60,9 @@ def check_amount(amount:str, balances:dict, preserve_minimum:bool = False) -> (b
     @return: can we proceed? and converted uluna amount
     """
 
-    amount_ok:bool  = False
-    coin_denom:str  = ''
-    coin_amount:int = 0
+    amount_ok:bool   = False
+    coin_denom:str   = ''
+    coin_amount:int  = 0
     coin_result:Coin = None
 
     # We need a wallet to create coins with
@@ -74,7 +73,8 @@ def check_amount(amount:str, balances:dict, preserve_minimum:bool = False) -> (b
 
     # Get the denom.
     if len(amount_bits) >= 2:
-        coin_denom:str    = list(FULL_COIN_LOOKUP.keys())[list(FULL_COIN_LOOKUP.values()).index(amount_bits[1])]
+        # @TODO: conjoine everything after the first list item so we can support token names with spaces
+        coin_denom:str = list(FULL_COIN_LOOKUP.keys())[list(FULL_COIN_LOOKUP.values()).index(amount_bits[1])]
     else:
         # If it's a single item list, then assume it's something like '100%' and then denom is ULUNA
         coin_denom:str == ULUNA
@@ -92,8 +92,8 @@ def check_amount(amount:str, balances:dict, preserve_minimum:bool = False) -> (b
                 coin_amount:float = float(amount_bits[0]) * (10 ** getPrecision(coin_denom))
                 
             elif isPercentage(amount_bits[0]):
-                amount         = float(amount_bits[0][0:-1]) / 100
-                coin_amount    = float(available_balance * amount)
+                amount:float      = float(amount_bits[0][0:-1]) / 100
+                coin_amount:float = float(available_balance * amount)
 
         elif len(amount_bits) == 1 and amount_bits[0].isnumeric():
             coin_amount:float = float(amount_bits[0]) * (10 ** getPrecision(coin_denom))
@@ -249,6 +249,9 @@ def main():
                 # Go through each step
                 for step in steps:
                     action = step['action'].lower()
+
+                    print (f'# Performing {action} step...')
+
                     if action == 'withdraw':
                         
                         # Get an updated list of delegations on this wallet
@@ -274,24 +277,8 @@ def main():
                                     # validator_withdrawals[delegations[validator]['validator']][ULUNA] = uluna_reward
 
                                     transaction_result:TransactionResult = claim_delegation_rewards(wallet, validator_address = delegations[validator]['validator'])
-
-                                    if transaction_result.transaction_confirmed == True:
-                                        print (f' ✅ Received amount: ')
-                                        received_coin:Coin
-                                        for received_coin in transaction_result.result_received:
-                                            print ('    * ' + wallet.formatUluna(received_coin.amount, received_coin.denom, True))
-
-                                            # Update the list of validators with what we've just received
-                                            if delegations[validator]['validator'] not in validator_withdrawals:
-                                               validator_withdrawals[delegations[validator]['validator']] = {}
-                                            validator_withdrawals[delegations[validator]['validator']][received_coin.denom] = received_coin.amount
-
-                                        print (f' ✅ Tx Hash: {transaction_result.broadcast_result.txhash}')
-
-                                    else:
-                                        print (transaction_result.message)
-                                        if transaction_result.log is not None:
-                                            print (transaction_result.log)
+                                    transaction_result.showResults()
+                                    
                                 else:
                                     print ("'when' trigger not fired!")
                                     print (f"- when: {step['when']}")
@@ -329,9 +316,7 @@ def main():
                                 
                         if is_triggered == True:
                             # We will delegate a specific amount of LUNC from the wallet balance
-                            # We only support LUNC for this action
-                            #delegated_uluna = wallet.balances[ULUNA]
-                            
+                            # We only support LUNC for this action                            
                             amount_ok, delegation_coin = check_amount(step['amount'], wallet.balances, True)
 
                             if amount_ok == True:
@@ -373,7 +358,7 @@ def main():
                                 recipient_address:str = find_address_in_wallet(user_wallets, step['recipient'])
 
                                 if recipient_address != '':
-                                    # We should be ok to send by this stage
+                                    # We should be ok to send at this point
 
                                     # Memos are optional
                                     memo:str = ''
@@ -390,6 +375,32 @@ def main():
                         else:
                             print ("'when' trigger not fired!")
                             print (f"- when: {step['when']}")
+
+                    if action == 'swap':
+
+                        # We are sending an amount to a specific address (could be terra or osmo)
+                        wallet.getBalances()
+
+                        is_triggered = check_trigger(step['when'], wallet.balances)
+                                
+                        if is_triggered == True:
+                            amount_ok, swap_coin = check_amount(step['amount'], wallet.balances, True)
+                            
+                            if amount_ok == True:
+
+                                if 'swap to' in step:
+                                    swap_to_denom:str = list(FULL_COIN_LOOKUP.keys())[list(FULL_COIN_LOOKUP.values()).index(step['swap to'])]
+
+                                    transaction_result:TransactionResult = swap_coins(wallet, swap_coin, swap_to_denom, '', False)
+                                    transaction_result.showResults()
+                                else:
+                                    print ("'swap to' not specified in this workflow.")
+                            else:
+                                print ('No valid amount was available in this wallet!')
+                        else:
+                            print ("'when' trigger not fired!")
+                            print (f"- when: {step['when']}")
+                        
 
     # print (' 💯 Done!\n')
 
