@@ -385,6 +385,7 @@ def send_transaction(wallet:UserWallet, recipient_address:str, send_coin:Coin, m
       - recipient: the address of the recipient in question
       - send_coin: a fully complete Coin object. We get the amount and denom from this
       - memo: optional text to include
+      - prompt_user: do we want to pause for user confirmation?
 
     @return: a TransactionResult object
     """
