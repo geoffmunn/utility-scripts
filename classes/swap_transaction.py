@@ -6,13 +6,13 @@ import json
 import math
 import sqlite3
 
-#from hashlib import sha256
 from sqlite3 import Cursor, Connection
 
 from constants.constants import (
     BASE_SMART_CONTRACT_ADDRESS,
     CHAIN_DATA,
     DB_FILE_NAME,
+    FULL_COIN_LOOKUP,
     GAS_ADJUSTMENT_OSMOSIS,
     GAS_ADJUSTMENT_SWAPS,
     GRDX,
@@ -35,16 +35,14 @@ from constants.constants import (
 from classes.common import (
     divide_raw_balance,
     getPrecision,
+    get_user_choice,
     multiply_raw_balance
 )
 
 from classes.terra_instance import TerraInstance    
-from classes.transaction_core import TransactionCore
+from classes.transaction_core import TransactionCore, TransactionResult
 
-from terra_classic_sdk.client.lcd.api.tx import (
-    CreateTxOptions,
-    Tx
-)
+from terra_classic_sdk.client.lcd.api.tx import CreateTxOptions, Tx
 from terra_classic_sdk.core.coin import Coin
 from terra_classic_sdk.core.coins import Coins
 from terra_classic_sdk.core.fee import Fee
@@ -81,8 +79,13 @@ class SwapTransaction(TransactionCore):
     def beliefPrice(self) -> float:
         """
         Figure out the belief price for this swap.
-        """
+        
+        @params:
+            - None
 
+        @return: a price that we use to calculate the swap amount with
+        """
+            
         belief_price:float = 0
 
         if self.contract is not None:
@@ -135,6 +138,12 @@ class SwapTransaction(TransactionCore):
     def create(self, seed:str, denom:str = 'uluna'):
         """
         Create a swap object and set it up with the provided details.
+        
+        @params:
+            - seed: the wallet seed so we can create the wallet
+            - denom: what denomination are we swapping from?
+
+        @return: self
         """
 
         # Create the terra instance
@@ -154,10 +163,15 @@ class SwapTransaction(TransactionCore):
         else:
             return self
     
-    def marketSimulate(self):
+    def marketSimulate(self) -> bool:
         """
         Simulate a market swap so we can get the fee details.
         The fee details are saved so the actual market swap will work.
+        
+        @params:
+            - None
+
+        @return: bool
         """
 
         # Reset these values in case this is a re-used object:
@@ -189,10 +203,15 @@ class SwapTransaction(TransactionCore):
         else:
             return False
 
-    def marketSwap(self):
+    def marketSwap(self) -> bool:
         """
         Make a market swap with the information we have so far.
         If fee is None then it will be a simulation.
+        
+        @params:
+            - None
+
+        @return: bool
         """
 
         try:
@@ -239,10 +258,17 @@ class SwapTransaction(TransactionCore):
             print (err)
             return False
     
-    def getRoute(self, denom_in:str, denom_out:str, initial_amount:float):
+    def getRoute(self, denom_in:str, denom_out:str, initial_amount:float) -> dict:
         """
         Get the recommended route for this this swap combination.
-        We will pick the lowest fee while still having a good level of liquidity
+        We will pick the lowest fee while still having a good level of liquidity.
+        
+        @params:
+            - denom_in: the denomination we are starting with
+            - denom_out: the denomination we want
+            - initial_amount: the amount we want to swap
+
+        @return: a dictionary containing the recommended route details
         """
 
         path_query:str      = "SELECT pool.pool_id, token_denom, token_readable_denom, pool_swap_fee FROM pool INNER JOIN asset ON pool.pool_id=asset.pool_id WHERE pool.pool_id IN (SELECT pool_id FROM asset WHERE token_readable_denom = ?) AND token_readable_denom=? ORDER BY pool_swap_fee ASC;"
@@ -288,10 +314,15 @@ class SwapTransaction(TransactionCore):
                 
         return current_option
     
-    def isOffChainSwap(self):
+    def isOffChainSwap(self) -> bool:
         """
         Figure out if this swap is based on off-chain (non-terra) coins.
         You can swap from lunc to osmo from columbus-5, and swap lunc to wBTC on osmosis-1
+        
+        @params:
+            - None
+
+        @return: true or false if this is offChain or not
         """
 
         if self.swap_request_denom in OFFCHAIN_COINS or self.swap_denom in OFFCHAIN_COINS:
@@ -308,10 +339,15 @@ class SwapTransaction(TransactionCore):
 
         return is_offchain_swap
 
-    def offChainSimulate(self):
+    def offChainSimulate(self) -> bool:
         """
         Simulate an offchain swap so we can get the fee details.
         The fee details are saved so the actual market swap will work.
+        
+        @params:
+            - None
+
+        @return: bool
         """
 
         # Reset these values in case this is a re-used object:
@@ -479,12 +515,17 @@ class SwapTransaction(TransactionCore):
         else:
             return False
 
-    def offChainSwap(self):
+    def offChainSwap(self) -> bool:
         """
         Make an offchain swap with the information we have so far.
         Currently we only support MsgSwapExactAmountIn via the GAMM module.
 
         If fee is None then it will be a simulation.
+        
+        @params:
+            - None
+
+        @return: bool
         """
 
         try:
@@ -527,6 +568,11 @@ class SwapTransaction(TransactionCore):
         """
         Get the pool details for the provided pool id.
         Save them in memory so we can access individual details and discover the best paths.
+
+        @params:
+            - pool_id: the Pool ID that we want to get info on
+
+        @return: a Pool object matching the provided ID
         """
 
         result:Pool = None
@@ -550,6 +596,11 @@ class SwapTransaction(TransactionCore):
         Depending on what the 'from' denom is and the 'to' denom, change the contract endpoint.
 
         If this is going to use a market swap, then we don't need a contract.
+
+        @params:
+            - None
+
+        @return: True/False on can we use the market swap function?
         """
         
         use_market_swap:bool = True
@@ -602,10 +653,14 @@ class SwapTransaction(TransactionCore):
         The fee details are saved so the actual delegation will work.
 
         Outputs:
-        self.fee - requested_fee object with fee + tax as separate coins (unless both are lunc)
-        self.tax - the tax component
-        self.fee_deductables - the amount we need to deduct off the transferred amount
+            - self.fee - requested_fee object with fee + tax as separate coins (unless both are lunc)
+            - self.tax - the tax component
+            - self.fee_deductables - the amount we need to deduct off the transferred amount
 
+        @params:
+            - None
+
+        @return: bool
         """
 
         # Reset these values in case this is a re-used object:
@@ -684,6 +739,11 @@ class SwapTransaction(TransactionCore):
         """
         Make a swap with the information we have so far.
         If fee is None then it will be a simulation.
+
+        @params:
+            - None
+
+        @return: bool
         """
 
         if self.belief_price is not None:
@@ -822,7 +882,12 @@ class SwapTransaction(TransactionCore):
     def swapRate(self) -> float:
         """
         Get the swap rate based on the provided details.
-        Returns a float value of the amount
+        Returns a float value of the amount.
+
+        @params:
+            - None
+
+        @return: the swap rate
         """
         
         estimated_amount:float = None
