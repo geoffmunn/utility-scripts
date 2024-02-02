@@ -250,7 +250,7 @@ def delegate_to_validator(wallet:UserWallet, validator_address:str, delegation_c
     @params:
       - wallet: a fully complete wallet object
       - validator_address: the address of the validator in question
-      - delegation_coin: the amount (in uluna) that we are delegating
+      - delegation_coin: a Coin object holding the delegation amount
 
     @return: a TransactionResult object
     """
@@ -270,7 +270,7 @@ def delegate_to_validator(wallet:UserWallet, validator_address:str, delegation_c
     delegation_tx.wallet_denom      = wallet.denom
 
     # Simulate it
-    delegation_result = delegation_tx.simulate(delegation_tx.delegate)
+    delegation_result:bool = delegation_tx.simulate(delegation_tx.delegate)
 
     if delegation_result == True:
             
@@ -283,7 +283,7 @@ def delegate_to_validator(wallet:UserWallet, validator_address:str, delegation_c
             transaction_result = delegation_tx.broadcast()
         
             if transaction_result.broadcast_result is None or transaction_result.broadcast_result.is_tx_error():
-                transaction_result.message = f' 🛎️  {wallet.name} failed, an error occurred:'
+                transaction_result.message = f' 🛎️  The delegation on {wallet.name} failed, an error occurred:'
                 transaction_result.code    = f' 🛎️  Error code {transaction_result.broadcast_result.code}'
                 transaction_result.log     = f' 🛎️  {transaction_result.broadcast_result.raw_log}'
             
@@ -295,5 +295,120 @@ def delegate_to_validator(wallet:UserWallet, validator_address:str, delegation_c
     # Store the delegated amount for display purposes
     transaction_result.transacted_amount = wallet.formatUluna(delegation_coin.amount, delegation_coin.denom, True)
     transaction_result.label             = 'Delegated amount'
+
+    return transaction_result
+
+def switch_validator(wallet:UserWallet, new_validator_address:str, old_validator_address, delegated_coin:Coin) -> TransactionResult:
+    """
+    A wrapper function for workflows and wallet management.
+    This lets the user switch delegated amounts between validators
+
+    The wrapper function adds any error messages depending on the results that got returned.
+    
+    @params:
+      - wallet: a fully complete wallet object
+      - new_validator_address: the validator we are joining
+      - old_validator_address: the validator we are leaving
+      - delegation_coin: a Coin object holding the amount we are redelegating
+
+    @return: a TransactionResult object
+    """
+
+    transaction_result:TransactionResult = TransactionResult()
+
+    # Create the delegation object
+    delegation_tx = DelegationTransaction().create(seed = wallet.seed, denom = ULUNA)
+
+    # Assign the details
+    delegation_tx.balances              = wallet.balances
+    delegation_tx.delegator_address     = wallet.address
+    delegation_tx.validator_address     = new_validator_address
+    delegation_tx.validator_address_old = old_validator_address
+    delegation_tx.delegated_uluna       = int(delegated_coin.amount)
+    delegation_tx.wallet_denom          = wallet.denom
+    
+    # Simulate it
+    switch_result:bool = delegation_tx.simulate(delegation_tx.redelegate)
+
+    if switch_result == True:
+            
+        print (delegation_tx.readableFee())
+
+        # Now we know what the fee is, we can do it again and finalise it
+        switch_result = delegation_tx.redelegate()
+
+        if switch_result == True:
+            transaction_result = delegation_tx.broadcast()
+        
+            if transaction_result is not None:    
+                if transaction_result.broadcast_result.is_tx_error():
+                    transaction_result.message = f' 🛎️  The validator change on {wallet.name} failed, an error occurred:'
+                    transaction_result.code    = f' 🛎️  Error code {transaction_result.broadcast_result.code}'
+                    transaction_result.log     = f' 🛎️  {transaction_result.broadcast_result.raw_log}'
+
+            else:
+                transaction_result.message = ' 🛎️ Please check the validator list to see what the current status is. This transaction returned an error but may have completed.'
+        else:
+            transaction_result.message = ' 🛎️  The validator change could not be completed'
+    else:
+        transaction_result.message = '🛎️  The validator change could not be completed'
+
+    # Store the undelegated amount for display purposes
+    transaction_result.transacted_amount = wallet.formatUluna(delegated_coin.amount, delegated_coin.denom, True)
+    transaction_result.label             = 'Moved amount'
+
+    return transaction_result
+
+def undelegate_from_validator(wallet:UserWallet, validator_address:str, undelegation_coin:Coin) -> TransactionResult:
+    """
+    A wrapper function for workflows and wallet management.
+    This lets the user undelegate uluna from a supplied validator.
+
+    The wrapper function adds any error messages depending on the results that got returned.
+    
+    @params:
+      - wallet: a fully complete wallet object
+      - validator_address: the address of the validator in question
+      - undelegation_coin: a Coin object holding the undelegation amount
+
+    @return: a TransactionResult object
+    """
+
+    transaction_result:TransactionResult = TransactionResult()
+
+    # Create the undelegation object    
+    undelegation_tx = DelegationTransaction().create(seed = wallet.seed, denom = ULUNA)
+
+    # Assign the details
+    undelegation_tx.balances          = wallet.balances
+    undelegation_tx.delegator_address = wallet.address
+    undelegation_tx.validator_address = validator_address
+    undelegation_tx.delegated_uluna   = undelegation_coin
+    undelegation_tx.wallet_denom      = wallet.denom
+    
+    # Simulate it
+    undelegation_result:bool = undelegation_tx.simulate(undelegation_tx.undelegate)
+
+    if undelegation_result == True:
+            
+        print (undelegation_tx.readableFee())
+
+        # Now we know what the fee is, we can do it again and finalise it
+        undelegation_result = undelegation_tx.undelegate()
+
+        if undelegation_result == True:
+            transaction_result = undelegation_tx.broadcast()
+            if transaction_result.broadcast_result.is_tx_error():
+                transaction_result.message = f' 🛎️  The undelegation on {wallet} failed, an error occurred.'
+                transaction_result.code    = f' 🛎️  Error code {transaction_result.broadcast_result.code}'
+                transaction_result.log     = f' 🛎️  {transaction_result.broadcast_result.raw_log}'
+        else:
+            transaction_result.message = ' 🛎️  The undelegation could not be completed'
+    else:
+        transaction_result.message = '🛎️  The undelegation could not be completed'
+
+    # Store the undelegated amount for display purposes
+    transaction_result.transacted_amount = wallet.formatUluna(undelegation_coin.amount, undelegation_coin.denom, True)
+    transaction_result.label             = 'Undelegated amount'
 
     return transaction_result
