@@ -631,10 +631,12 @@ class TransactionResult(TransactionCore):
             elif self.label != '':
                 print (f' ✅ {self.label}')
 
-            print (f' ✅ Received amount: ')
-            received_coin:Coin
-            for received_coin in self.result_received:
-                print ('    * ' + str(self.formatCoin(received_coin, True)))
+            if self.result_received is not None:
+                print (f' ✅ Received amount: ')
+                received_coin:Coin
+                for received_coin in self.result_received:
+                    print ('    * ' + str(self.formatCoin(received_coin, True)))
+                    
             print (f' ✅ Tx Hash: {self.broadcast_result.txhash}')
             print ('\n')
         else:
