@@ -20,7 +20,7 @@ from classes.common import (
     get_user_choice,
 )
 
-from classes.delegation_transaction import DelegationTransaction, delegate_to_validator, undelegate_from_validator, switch_validator
+from classes.delegation_transaction import delegate_to_validator, undelegate_from_validator, switch_validator
 from classes.transaction_core import TransactionResult
 from classes.wallets import UserWallets
 from classes.validators import Validators
