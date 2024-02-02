@@ -8,7 +8,6 @@ from constants.constants import (
     ULUNA,
     USER_ACTION_QUIT,
     PROPOSAL_STATUS_VOTING_PERIOD
-    
 )
 
 from classes.terra_instance import TerraInstance
@@ -23,10 +22,7 @@ from terra_classic_sdk.client.lcd import LCDClient
 from terra_classic_sdk.client.lcd.params import PaginationOptions
 from terra_classic_sdk.core.gov import MsgVote, Proposal
 from terra_classic_sdk.key.mnemonic import MnemonicKey
-from terra_classic_sdk.client.lcd.api.tx import (
-    CreateTxOptions,
-    Tx
-)
+from terra_classic_sdk.client.lcd.api.tx import CreateTxOptions, Tx
 class Governance(TransactionCore):
 
     def __init__(self, *args, **kwargs):
@@ -46,7 +42,13 @@ class Governance(TransactionCore):
 
     def create(self):
         """
-        Create a basic terra LCDClient object
+        Create a basic terra LCDClient object.
+        For governance stuff, the network will be Terra.
+
+        @params:
+            - None
+
+        @return: self
         """
 
         # Defaults to uluna/terra
@@ -54,10 +56,15 @@ class Governance(TransactionCore):
 
         return self
     
-    def getUserSingleChoice(self, question:str):
+    def getUserSingleChoice(self, question:str) -> [int, int]:
         """
         Get a single user selection from a list.
         This is a custom function because the options are specific to this list.
+
+        @params:
+            - question: The text prompting the user
+
+        @return: the proposal ID, and the user answer
         """
 
         # Get the active proposals:
@@ -149,6 +156,11 @@ class Governance(TransactionCore):
     def tally(self) -> dict:
         """
         Get the vote percentages of the current proposal ID
+        
+        @params:
+            - None
+
+        @return: a dictionary of the different vote types and percentage vote for each
         """
 
         votes = {'yes': 0, 'no': 0, 'no with veto': 0, 'abstain': 0}
@@ -171,8 +183,13 @@ class Governance(TransactionCore):
     def proposals(self) -> list:
         """
         Create a dictionary of all the active proposals
-        """
         
+        @params:
+            - None
+
+        @return: a list of the active proposals
+        """
+
         proposal_list:list = []
         
         # The parameters we pass. You can do pagination & filters at the same time apparently.
@@ -199,6 +216,12 @@ class Governance(TransactionCore):
     def simulate(self):
         """
         Simulate a vote so we can get the fee details.
+        The fee will be added to the governance object.
+        
+        @params:
+            - None
+
+        @return: bool (True if sucessful, False if errors were found)
         """
 
         # Reset these values in case this is a re-used object:
@@ -241,6 +264,11 @@ class Governance(TransactionCore):
         """
         Update this object with the wallet details that we want to cast votes on.
         This allows us to reuse the existing Terra connection.
+        
+        @params:
+            - None
+
+        @return: self
         """
 
         # Create the wallet based on the calculated key
@@ -256,10 +284,15 @@ class Governance(TransactionCore):
 
         return self
     
-    def vote(self):
+    def vote(self) -> bool:
         """
         Cast the vote with the details provided by the user.
         The simulate function needs to have been called first.
+        
+        @params:
+            - None
+
+        @return: bool (only returns True)
         """
 
         msg = MsgVote(
