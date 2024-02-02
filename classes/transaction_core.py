@@ -628,6 +628,9 @@ class TransactionResult(TransactionCore):
             print ('')
             if self.transacted_amount is not None:
                 print (f' ✅ {self.label}: {self.transacted_amount}')
+            elif self.label != '':
+                print (f' ✅ {self.label}')
+
             print (f' ✅ Received amount: ')
             received_coin:Coin
             for received_coin in self.result_received:
