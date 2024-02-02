@@ -863,3 +863,132 @@ class SwapTransaction(TransactionCore):
                     pass
                 
         return estimated_amount
+
+def swap_coins(wallet, swap_coin:Coin, swap_to_denom:str, estimated_amount:int = 0, prompt_user:bool = True):
+    """
+    A wrapper function for workflows and wallet management.
+
+    This lets the user swap coins between denominations and chains.
+    
+    This could be a terra, osmo, or an IBC destination.
+
+    The wrapper function adds any error messages depending on the results that got returned.
+    
+    @params:
+      - wallet: a fully complete wallet object
+      - swap_coin: a fully complete Coin object. We get the amount and denom from this
+      - swap_to_denom: what are we swapping this for?
+      - esimated amount: required for display purposes only
+      - prompt_user: do we want to pause for user confirmation?
+
+    @return: a TransactionResult object
+    """
+
+    transaction_result:TransactionResult = TransactionResult()
+
+    # Create the swap object
+    swap_tx = SwapTransaction().create(seed = wallet.seed, denom = wallet.denom)
+
+    # Assign the details:
+    swap_tx.balances           = wallet.balances
+    swap_tx.swap_amount        = int(swap_coin.amount)
+    swap_tx.swap_denom         = swap_coin.denom
+    swap_tx.swap_request_denom = swap_to_denom
+    swap_tx.sender_address     = wallet.address
+    swap_tx.sender_prefix      = wallet.getPrefix(wallet.address)
+    swap_tx.wallet_denom       = wallet.denom
+
+    # Bump up the gas adjustment - it needs to be higher for swaps it turns out
+    swap_tx.terra.gas_adjustment = float(GAS_ADJUSTMENT_SWAPS)
+
+    # Set the contract based on what we've picked
+    # As long as the swap_denom and swap_request_denom values are set, the correct contract should be picked
+    use_market_swap:bool  = swap_tx.setContract()
+    is_offchain_swap:bool = swap_tx.isOffChainSwap()
+
+    if is_offchain_swap == True:
+        # This is an off-chain swap. Something like LUNC(terra)->OSMO or LUNC(Osmosis) -> wETH
+        swap_result:bool = swap_tx.offChainSimulate()
+
+        if swap_result == True:
+            if prompt_user == True:
+                print (f'You will be swapping {wallet.formatUluna(swap_coin.amount, swap_coin.denom, False)} {FULL_COIN_LOOKUP[swap_coin.denom]} for approximately {estimated_amount} {FULL_COIN_LOOKUP[swap_to_denom]}')
+                print (swap_tx.readableFee())
+
+                user_choice = get_user_choice('Do you want to continue? (y/n) ', [])
+
+                if user_choice == False:
+                    exit()
+
+            swap_result:bool = swap_tx.offChainSwap()
+    else:
+        if use_market_swap == True:
+            # uluna -> umnt, uluna -> ujpy etc
+            # This is for terra-native swaps ONLY
+            swap_result:bool = swap_tx.marketSimulate()
+            if swap_result == True:
+                if prompt_user == True:
+                    print (f'You will be swapping {wallet.formatUluna(swap_coin.amount, swap_coin.denom, False)} {FULL_COIN_LOOKUP[swap_coin.denom]} for approximately {estimated_amount} {FULL_COIN_LOOKUP[swap_to_denom]}')
+                    print (swap_tx.readableFee())
+                    user_choice = get_user_choice('Do you want to continue? (y/n) ', [])
+
+                    if user_choice == False:
+                        exit()
+
+                swap_result:bool = swap_tx.marketSwap()
+        else:
+            # This is for uluna -> uusd swaps ONLY. We use the contract addresses to support this
+            swap_result:bool = swap_tx.simulate()
+
+            if swap_result == True:
+                if prompt_user == True:
+                    print (f'You will be swapping {wallet.formatUluna(swap_coin.amount, swap_coin.denom, False)} {FULL_COIN_LOOKUP[swap_coin.denom]} for approximately {estimated_amount} {FULL_COIN_LOOKUP[swap_to_denom]}')
+                    print (swap_tx.readableFee())
+                    user_choice = get_user_choice('Do you want to continue? (y/n) ', [])
+
+                    if user_choice == False:
+                        exit()
+
+                swap_result:bool = swap_tx.swap()
+    
+    if swap_result == True:
+        transaction_result = swap_tx.broadcast()
+
+        if transaction_result.broadcast_result is not None and transaction_result.broadcast_result.code == 32:
+            while True:
+                print (' 🛎️  Boosting sequence number and trying again...')
+
+                swap_tx.sequence = swap_tx.sequence + 1
+                swap_tx.simulate()
+                print (swap_tx.readableFee())
+
+                swap_tx.swap()
+                transaction_result = swap_tx.broadcast()
+
+                if swap_tx is None:
+                    break
+
+                # Code 32 = account sequence mismatch
+                if transaction_result.broadcast_result.code != 32:
+                    break
+
+        if transaction_result.broadcast_result is None or transaction_result.broadcast_result.is_tx_error():
+            if transaction_result.broadcast_result is None:
+                transaction_result.message = ' 🛎️  The swap transaction failed, no broadcast object was returned.'
+            else:
+                transaction_result.message = ' 🛎️  The swap transaction failed, an error occurred'
+                if transaction_result.broadcast_result.raw_log is not None:
+                    transaction_result.message = f' 🛎️  The swap transaction on {wallet.name} failed, an error occurred.'
+                    transaction_result.code    = f' 🛎️  Error code {transaction_result.broadcast_result.code}'
+                    transaction_result.log     = f' 🛎️  {transaction_result.broadcast_result.raw_log}'
+                else:
+                    transaction_result.message = f' 🛎️  No broadcast log on {wallet.name} was available.'
+        
+    else:
+        print (' 🛎️  The swap transaction could not be completed')
+
+    # Store the delegated amount for display purposes
+    transaction_result.transacted_amount = wallet.formatUluna(swap_coin.amount, swap_coin.denom, True)
+    transaction_result.label             = 'Swapped amount'
+
+    return transaction_result
