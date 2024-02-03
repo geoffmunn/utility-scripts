@@ -77,17 +77,18 @@ def check_amount(amount:str, balances:dict, preserve_minimum:bool = False) -> (b
         coin_denom:str = list(FULL_COIN_LOOKUP.keys())[list(FULL_COIN_LOOKUP.values()).index(amount_bits[1])]
     else:
         # If it's a single item list, then assume it's something like '100%' and then denom is ULUNA
-        coin_denom:str == ULUNA
+        coin_denom:str = ULUNA
 
     if coin_denom in balances:
         # Adjust the available balance depending on requirements
         if preserve_minimum == True and coin_denom == ULUNA:
-            available_balance:int = int(balances[coin_denom] - (WITHDRAWAL_REMAINDER * (10 ** getPrecision(coin_denom))))
+            available_balance:int = int(int(balances[coin_denom]) - (WITHDRAWAL_REMAINDER * (10 ** getPrecision(coin_denom))))
         else:
             available_balance:int = int(balances[coin_denom])
 
-        #print ('amount_bits:', amount_bits)
-        if len(amount_bits) >= 2:
+        if available_balance > 0:
+
+            #if len(amount_bits) >= 2:
             if amount_bits[0].isnumeric():
                 coin_amount:float = float(amount_bits[0]) * (10 ** getPrecision(coin_denom))
                 
@@ -95,17 +96,14 @@ def check_amount(amount:str, balances:dict, preserve_minimum:bool = False) -> (b
                 amount:float      = float(amount_bits[0][0:-1]) / 100
                 coin_amount:float = float(available_balance * amount)
 
-        elif len(amount_bits) == 1 and amount_bits[0].isnumeric():
-            coin_amount:float = float(amount_bits[0]) * (10 ** getPrecision(coin_denom))
-            coin_denom:str    = ULUNA
-            
-        # If we are requesting too much, then this is not ok
-        if coin_amount > available_balance:
-            amount_ok = False
+            if coin_amount > available_balance:
+                amount_ok = False
+            else:
+                # Create a coin with the final denom and amount
+                amount_ok = True
+                coin_result = wallet.createCoin(coin_denom, coin_amount)
         else:
-            # Create a coin with the final denom and amount
-            amount_ok = True
-            coin_result = wallet.createCoin(coin_denom, coin_amount)
+            amount_ok = False
 
     return amount_ok, coin_result
 
