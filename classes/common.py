@@ -29,7 +29,7 @@ def check_version():
         local_json:json  = None
         remote_json:json = None
 
-        print ('Checking for new version on Github...', end = '')
+        print ('\nChecking for new version on Github...')
         try:
             with open('version.json') as file:
                 contents = file.read()
@@ -66,10 +66,10 @@ def check_version():
                 elif int(local_bits[0]) > int(remote_bits[0]) or int(local_bits[1]) > int(remote_bits[1]) or int(local_bits[2]) > int(remote_bits[2]):
                     print (' 🛎️  You are running a version ahead of the official release!')
                     
-                print (' 🛎️  Please check https://github.com/geoffmunn/utility-scripts for updates.')
+                print (' 🛎️  Please check https://github.com/geoffmunn/utility-scripts for updates.\n')
                 return False
             else:
-                print ('... you have the latest version.')
+                print ('... you have the latest version.\n')
                 return True
         else:
             return False
@@ -94,8 +94,8 @@ def check_database():
                     previous_date:datetime  = datetime.now() - timedelta(weeks = 2)
                     
                     if last_scan_date < previous_date:
-                        print (' 🗄 This database is out of date - you should get the latest Osmosis data.')
-                        print (' 🗄 Run the get_osmosis_pools.py script to update the database.')
+                        print (' 🗄  This database is out of date - you should get the latest Osmosis data.')
+                        print (' 🗄  Run the get_osmosis_pools.py script to update the database.\n')
 
             except:
                 print (' 🛑 The Osmosis pool database could accessed...')
