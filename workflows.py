@@ -11,25 +11,14 @@ from classes.common import (
 #     check_version,
 #     get_user_choice,
     getPrecision,
-    isPercentage,
-    multiply_raw_balance
+    isPercentage
 )
 
 from constants.constants import (
     FULL_COIN_LOOKUP,
+    ULUNA,
+    WITHDRAWAL_REMAINDER,
     WORKFLOWS_FILE_NAME,
-#     TERRASWAP_UUSD_TO_ULUNA_ADDRESS,
-     ULUNA,
-     WITHDRAWAL_REMAINDER
-#     USER_ACTION_ALL,
-#     USER_ACTION_DELEGATE,
-#     USER_ACTION_QUIT,
-#     USER_ACTION_SWAP,
-#     USER_ACTION_SWAP_DELEGATE,
-#     USER_ACTION_WITHDRAW,
-#     USER_ACTION_WITHDRAW_DELEGATE,
-#     UUSD,
-#     WITHDRAWAL_REMAINDER
 )
 
 # from classes.delegation_transaction import DelegationTransaction
