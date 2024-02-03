@@ -152,7 +152,7 @@ def find_address_in_wallet(wallet_list:dict, user_address:str) -> str:
     This might be either a wallet name or an address.
 
     @params:
-        - user_adderss: wallet name or actual terra/osmo address
+        - user_address: wallet name or actual terra/osmo address
 
     @return: actual terra/osmo address
     """
