@@ -269,14 +269,21 @@ def main():
                                     print (f"Withdrawing rewards from {delegations[validator]['validator_name']}...")
                                     print (f'Withdrawing {wallet.formatUluna(uluna_reward, ULUNA, False)} rewards.')
 
-                                    # DELETE ME:
-                                    # if delegations[validator]['validator'] not in validator_withdrawals:
-                                    #     validator_withdrawals[delegations[validator]['validator']] = {}
-                                    # validator_withdrawals[delegations[validator]['validator']][ULUNA] = uluna_reward
+                                    # Ideally this should get the uluna rewards from the transaction result
+                                    # just in case the numbers are different
+                                    #if delegations[validator]['validator'] not in validator_withdrawals:
+                                    #    validator_withdrawals[delegations[validator]['validator']] = {}
+                                    #validator_withdrawals[delegations[validator]['validator']][ULUNA] = uluna_reward
 
                                     transaction_result:TransactionResult = claim_delegation_rewards(wallet, validator_address = delegations[validator]['validator'])
                                     transaction_result.showResults()
                                     
+                                    received_coin:Coin
+                                    for received_coin in transaction_result.result_received:
+                                        if delegations[validator]['validator'] not in validator_withdrawals:
+                                            validator_withdrawals[delegations[validator]['validator']] = {}
+                                        validator_withdrawals[delegations[validator]['validator']][received_coin.denom] = received_coin.amount
+
                                 else:
                                     print ("'when' trigger not fired!")
                                     print (f"- when: {step['when']}")
