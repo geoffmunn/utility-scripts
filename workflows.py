@@ -96,25 +96,26 @@ def check_amount(amount:str, balances:dict, preserve_minimum:bool = False) -> (b
 
     return amount_ok, coin_result
 
-def check_trigger(trigger:str, balances:dict) -> bool:
+def check_trigger(triggers:list, balances:dict) -> bool:
     """
     Check the 'when' clause. 
     If it's got a balance check, then compare the requirements against the wallet.
     If this is a validator check, then compare the requirements against the available rewards.
 
     @params:
-      - trigger: the simple equation to check with
+      - triggers: a list of triggers, which are simple equations to check with. All of them must be true to proceed
       - balances: a dictionary of coins. This can be from the wallet.balances list, or the validator withdrawals
 
     @return true/false, this step can proceed
     """
 
     # Check the trigger
-    is_triggered:bool = False
+    is_triggered:bool = True
 
-    if trigger == 'always':
-        is_triggered = True
-    else:
+    for trigger in triggers:
+        #if trigger == 'always':
+        #    is_triggered = True
+        #else:
         trigger_bits:list = trigger.split(' ')
         if len(trigger_bits) == 3:
             # Should be something like LUNC >= 1000
@@ -130,8 +131,8 @@ def check_trigger(trigger:str, balances:dict) -> bool:
             # Evaluate this string and return the value
             value:bool = eval(eval_string)
 
-            if value == True:
-                is_triggered = True
+            if value == False:
+                 is_triggered = False
 
     return is_triggered
 
@@ -206,7 +207,6 @@ def main():
                     workflow['user_wallets'].append(user_wallets[wallet])
             
     # Now go through each workflow and run the steps
-    
     for workflow in user_workflows['workflows']:
 
         # Only proceed if we have a wallet attached to this workflow:
@@ -220,6 +220,7 @@ def main():
             wallets:list = workflow['user_wallets']
             steps:list   = workflow['steps']
 
+            print ('')
             print ('#' * len(workflow['name']))
             print (f"# {workflow['name']}")
             if description != '':
@@ -253,7 +254,7 @@ def main():
                                 # Check that the 'when' clause is triggered
                                 # We will pass a dictionary of the validator LUNC rewards that we are expecting
                                 is_triggered:bool = check_trigger(step['when'], {ULUNA: uluna_reward})
-                                                            
+
                                 if is_triggered == True:
                                     print (f"Withdrawing rewards from {delegations[validator]['validator_name']}...")
                                     print (f'Withdrawing {wallet.formatUluna(uluna_reward, ULUNA, False)} rewards.')
@@ -281,12 +282,12 @@ def main():
 
                     if action == 'redelegate':
                         # Check the trigger
-                        delegations:dict = wallet.delegations
-                        
+                        #print ('validator withdrawals:', validator_withdrawals)
                         for validator in validator_withdrawals:
                             is_triggered = check_trigger(step['when'], validator_withdrawals[validator])
                                 
                             if is_triggered == True:
+                                #print ('trigger is ok')
                                 # We will redelegate an amount based on the 'amount' value, calculated from the returned rewards
                                 amount_ok, delegation_coin = check_amount(step['amount'], validator_withdrawals[validator], False)
 
