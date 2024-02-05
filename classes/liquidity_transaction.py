@@ -7,7 +7,8 @@ import sqlite3
 from sqlite3 import Cursor, Connection
 
 from classes.common import (
-    getPrecision
+    getPrecision,
+    get_user_choice
 )
 
 from constants.constants import (
@@ -23,7 +24,7 @@ from constants.constants import (
 )
 
 from classes.terra_instance import TerraInstance    
-from classes.transaction_core import TransactionCore
+from classes.transaction_core import TransactionCore, TransactionResult
 from classes.wallet import UserWallet
 
 from terra_classic_sdk.client.lcd.api.tx import (
@@ -37,7 +38,7 @@ from terra_classic_sdk.core.tx import Tx
 from terra_classic_sdk.exceptions import LCDResponseError
 from terra_classic_sdk.key.mnemonic import MnemonicKey
 
-from terra_classic_sdk.core.osmosis import MsgJoinPool, MsgJoinSwapExternAmountIn, PoolAsset, MsgExitPool
+from terra_classic_sdk.core.osmosis import MsgJoinSwapExternAmountIn, PoolAsset, MsgExitPool
 
 class LiquidityTransaction(TransactionCore):
 
@@ -640,4 +641,147 @@ class LiquidityTransaction(TransactionCore):
 
         return token_out_list
     
+def join_liquidity_pool(wallet:UserWallet, pool_id:int, amount_in:int, prompt_user:bool == True):
+
+    transaction_result:TransactionResult = TransactionResult()
+
+    liquidity_tx = LiquidityTransaction().create(wallet.seed, wallet.denom)
+    liquidity_tx.amount_in       = amount_in
+    liquidity_tx.balances        = wallet.balances
+    liquidity_tx.pool_id         = pool_id
+    liquidity_tx.pools           = wallet.pools
+    liquidity_tx.sender_address  = wallet.address
+    liquidity_tx.source_channel  = CHAIN_DATA[wallet.denom]['ibc_channels'][ULUNA]
+    liquidity_tx.wallet          = wallet
+    liquidity_tx.wallet_denom    = wallet.denom
+
+    # Simulate it
+    liquidity_result:bool = liquidity_tx.joinSimulate()
     
+    if liquidity_result == True:
+
+        if prompt_user == True:
+            print (liquidity_tx.readableFee())
+
+            user_choice = get_user_choice('Do you want to continue? (y/n) ', [])
+
+            if user_choice == False:
+                print (' 🛑 Exiting...\n')
+                exit()
+
+        # Now we know what the fee is, we can do it again and finalise it
+        liquidity_result:bool = liquidity_tx.joinPool()
+            
+        if liquidity_result == True:
+            transaction_result:TransactionResult = liquidity_tx.broadcast()
+
+            # if liquidity_tx.broadcast_result is not None and liquidity_tx.broadcast_result.code == 32:
+            #     while True:
+            #         print (' 🛎️  Boosting sequence number and trying again...')
+
+            #         liquidity_tx.sequence = liquidity_tx.sequence + 1
+                    
+            #         liquidity_tx.joinSimulate()
+            #         liquidity_tx.joinPool()
+                    
+            #         liquidity_tx.broadcast()
+
+            #         if liquidity_tx is None:
+            #             break
+
+            #         # Code 32 = account sequence mismatch
+            #         if liquidity_tx.broadcast_result.code != 32:
+            #             break
+
+            if transaction_result.broadcast_result is None or transaction_result.broadcast_result.is_tx_error():
+                if transaction_result.broadcast_result is None:
+                    transaction_result.message = f' 🛎️  The liquidity transaction failed, no broadcast object was returned.'
+                else:
+                    transaction_result.message = f' 🛎️  The liquidity transaction failed, an error occurred.'
+                    if transaction_result.broadcast_result.raw_log is not None:
+                        transaction_result.message = f' 🛎️  The liquidity transaction on {wallet.name} failed, an error occurred.'
+                        transaction_result.code    = f' 🛎️  Error code {transaction_result.broadcast_result.code}'
+                        transaction_result.log     = f' 🛎️  {transaction_result.broadcast_result.raw_log}'
+                    else:
+                        transaction_result.message = f' 🛎️  No broadcast log on {wallet.name} was available.'  
+
+        else:
+            print (' 🛎️  The liquidity transaction could not be completed')
+
+    # Store the delegated amount for display purposes
+    transaction_result.transacted_amount = wallet.formatUluna(amount_in, ULUNA, True)
+    transaction_result.label             = 'Liquidity addition'
+
+    return transaction_result
+
+def exit_liquidity_pool(wallet:UserWallet, pool_id:int, amount_out:float, prompt_user:bool == True):
+
+    transaction_result:TransactionResult = TransactionResult()
+
+    liquidity_tx = LiquidityTransaction().create(wallet.seed, wallet.denom)
+
+    # Populate it with required details:
+    liquidity_tx.amount_out = amount_out
+    liquidity_tx.balances        = wallet.balances
+    liquidity_tx.pool_id         = pool_id
+    liquidity_tx.pools           = wallet.pools
+    liquidity_tx.sender_address  = wallet.address
+    liquidity_tx.source_channel  = CHAIN_DATA[wallet.denom]['ibc_channels'][ULUNA]
+    liquidity_tx.wallet          = wallet
+    liquidity_tx.wallet_denom    = wallet.denom
+
+    # Simulate it
+    liquidity_result:bool = liquidity_tx.exitSimulate()
+    
+    if liquidity_result == True:
+        if prompt_user == True:
+            print (liquidity_tx.readableFee())
+
+            user_choice = get_user_choice('Do you want to continue? (y/n) ', [])
+
+            if user_choice == False:
+                print (' 🛑 Exiting...\n')
+                exit()
+
+        # Now we know what the fee is, we can do it again and finalise it
+        liquidity_result:bool = liquidity_tx.exitPool()
+            
+        if liquidity_result == True:
+            
+            transaction_result:TransactionResult = liquidity_tx.broadcast()
+
+            # if liquidity_tx.broadcast_result is not None and liquidity_tx.broadcast_result.code == 32:
+            #     while True:
+            #         print (' 🛎️  Boosting sequence number and trying again...')
+
+            #         liquidity_tx.sequence = liquidity_tx.sequence + 1
+                    
+            #         liquidity_tx.exitSimulate()
+            #         liquidity_tx.exitPool()
+
+            #         transaction_result:TransactionResult = liquidity_tx.broadcast()
+
+            #         # Code 32 = account sequence mismatch
+            #         if liquidity_tx.broadcast_result.code != 32:
+            #             break
+
+            if transaction_result.broadcast_result is None or transaction_result.broadcast_result.is_tx_error():
+                if transaction_result.broadcast_result is None:
+                    transaction_result.message = f' 🛎️  The liquidity transaction failed, no broadcast object was returned.'
+                else:
+                    transaction_result.message = f' 🛎️  The liquidity transaction failed, an error occurred.'
+                    if transaction_result.broadcast_result.raw_log is not None:
+                        transaction_result.message = f' 🛎️  The liquidity transaction on {wallet.name} failed, an error occurred.'
+                        transaction_result.code    = f' 🛎️  Error code {transaction_result.broadcast_result.code}'
+                        transaction_result.log     = f' 🛎️  {transaction_result.broadcast_result.raw_log}'
+                    else:
+                        transaction_result.message = f' 🛎️  No broadcast log on {wallet.name} was available.'
+            
+        else:
+            transaction_result.message = f' 🛎️  The liquidity transaction could not be completed'
+
+    # Store the delegated amount for display purposes
+    #transaction_result.transacted_amount = wallet.formatUluna(amount_out, ULUNA, True)
+    #transaction_result.label             = 'Liquidity withdrawal'
+
+    return transaction_result
