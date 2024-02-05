@@ -66,10 +66,10 @@ def check_version():
                 elif int(local_bits[0]) > int(remote_bits[0]) or int(local_bits[1]) > int(remote_bits[1]) or int(local_bits[2]) > int(remote_bits[2]):
                     print (' 🛎️  You are running a version ahead of the official release!')
                     
-                print (' 🛎️  Please check https://github.com/geoffmunn/utility-scripts for updates.\n')
+                print (' 🛎️  Please check https://github.com/geoffmunn/utility-scripts for updates.')
                 return False
             else:
-                print ('... you have the latest version.\n')
+                print ('... you have the latest version.')
                 return True
         else:
             return False
