@@ -494,6 +494,7 @@ class UserWallets:
         result:dict = None
 
         if file_exists:
+            print ('')
             decrypt_password:str = getpass(' 🔑 Wallet password: ') # the secret password that encrypts the seed phrase
 
             if decrypt_password == '':
