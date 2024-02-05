@@ -147,7 +147,7 @@ def find_address_in_wallet(wallet_list:dict, user_address:str) -> str:
     @return: actual terra/osmo address
     """
 
-    result = ''
+    result:str = ''
     wallet:UserWallet
     for wallet_name in wallet_list:
         wallet = wallet_list[wallet_name]
@@ -166,6 +166,34 @@ def find_address_in_wallet(wallet_list:dict, user_address:str) -> str:
             break
         if wallet.address.lower() == user_address.lower():
             result = wallet.address
+
+    return result
+
+def get_wallet(user_wallets:UserWallets, user_wallet:str) -> UserWallet:
+    """
+    Basically a clone of find_address_in_wallet
+    """
+
+    result:UserWallet = None
+
+    wallet:UserWallet
+    for wallet_name in user_wallets:
+        wallet = user_wallets[wallet_name]
+        
+        if wallet.name.lower() == user_wallet.lower():
+            result = wallet
+            break
+        if wallet.address.lower() == user_wallet.lower():
+            result = wallet
+    
+    for wallet_name in user_wallets:
+        wallet = user_wallets[wallet_name]
+        
+        if wallet.name.lower() == user_wallet.lower():
+            result = wallet
+            break
+        if wallet.address.lower() == user_wallet.lower():
+            result = wallet
 
     return result
 
@@ -342,7 +370,11 @@ def main():
                         # We are sending an amount to a specific address (could be terra or osmo)
                         wallet.getBalances()
 
-                        is_triggered = check_trigger(step['when'], wallet.balances)
+                        if 'when' in step:
+                            is_triggered = check_trigger(step['when'], wallet.balances)
+                        else:
+                            print ("No when clause included, defaulting to 'always'")
+                            is_triggered = True
                                 
                         if is_triggered == True:
                             amount_ok, send_coin = check_amount(step['amount'], wallet.balances, True)
@@ -360,7 +392,13 @@ def main():
                                     if 'memo' in step:
                                         memo = step['memo']
 
+                                    test:UserWallet = UserWallet().create('target', recipient_address)
+                                    test_balance = test.getBalances()
+
                                     transaction_result:TransactionResult = send_transaction(wallet, recipient_address, send_coin, memo, False)
+                                    
+                                    test.getBalances(wallet.createCoin(send_coin.denom, test_balance[send_coin.denom]))
+
                                     transaction_result.showResults()
 
                                 else:
@@ -374,19 +412,30 @@ def main():
                     if action == 'swap':
 
                         # We are sending an amount to a specific address (could be terra or osmo)
-                        wallet.getBalances()
 
-                        is_triggered = check_trigger(step['when'], wallet.balances)
+                        # Check if there's a specific wallet to use:
+                        if 'wallet' in step:
+                            print ('using specific wallet:', step['wallet'])
+                            step_wallet:UserWallet = get_wallet(user_wallets, step['wallet'])
+                        else:
+                            print ('using standard wallet')
+                            step_wallet:UserWallet = wallet
+
+                        step_wallet.getBalances()
+
+                        is_triggered = check_trigger(step['when'], step_wallet.balances)
                                 
+                        print ('wallet balances:', step_wallet.balances)
                         if is_triggered == True:
-                            amount_ok, swap_coin = check_amount(step['amount'], wallet.balances, True)
+                            amount_ok, swap_coin = check_amount(step['amount'], step_wallet.balances, True)
                             
                             if amount_ok == True:
 
                                 if 'swap to' in step:
                                     swap_to_denom:str = list(FULL_COIN_LOOKUP.keys())[list(FULL_COIN_LOOKUP.values()).index(step['swap to'])]
 
-                                    transaction_result:TransactionResult = swap_coins(wallet, swap_coin, swap_to_denom, '', False)
+                                    transaction_result:TransactionResult = swap_coins(step_wallet, swap_coin, swap_to_denom, '', False)
+                                    transaction_result.wallet_denom = step_wallet.denom
                                     transaction_result.showResults()
                                 else:
                                     print ("'swap to' not specified in this workflow.")
