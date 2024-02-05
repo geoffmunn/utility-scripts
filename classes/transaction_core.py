@@ -95,16 +95,16 @@ class TransactionCore():
                 return transaction_result
             else:
                 # Find the transaction on the network and return the result
-                #try:
-                transaction_result:TransactionResult = self.findTransaction()
+                try:
+                    transaction_result:TransactionResult = self.findTransaction()
 
-                if transaction_result.transaction_confirmed == True:
-                    transaction_result.message = 'This transaction should be visible in your wallet now.'
-                else:
-                    transaction_result.message = 'The transaction did not appear. Future transactions might fail due to a lack of expected funds.'
-                #except Exception as err:
-                #    transaction_result.message = 'An unexpected error occurred when broadcasting.'
-                #    transaction_result.log     = err
+                    if transaction_result.transaction_confirmed == True:
+                        transaction_result.message = 'This transaction should be visible in your wallet now.'
+                    else:
+                        transaction_result.message = 'The transaction did not appear. Future transactions might fail due to a lack of expected funds.'
+                except Exception as err:
+                   transaction_result.message = 'An unexpected error occurred when broadcasting.'
+                   transaction_result.log     = err
                  
         return transaction_result
     
