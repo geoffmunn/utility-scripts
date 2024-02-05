@@ -602,16 +602,23 @@ class TransactionResult(TransactionCore):
         @return string
         """
 
-        denom         = self.denomTrace(coin.denom)
-        precision:int = getPrecision(denom)
-        lunc:float    = round(float(divide_raw_balance(coin.amount, denom)), precision)
+        denom:str = self.denomTrace(coin.denom)
+        if denom in FULL_COIN_LOOKUP:
+            precision:int = getPrecision(denom)
+            lunc:float    = round(float(divide_raw_balance(coin.amount, denom)), precision)
 
-        target:str = '%.' + str(precision) + 'f'
-        lunc:str   = (target % (lunc)).rstrip('0').rstrip('.')
+            target:str = '%.' + str(precision) + 'f'
+            lunc:str   = (target % (lunc)).rstrip('0').rstrip('.')
 
-        if add_suffix:
-            lunc = str(lunc) + ' ' + FULL_COIN_LOOKUP[denom]
-        
+            if add_suffix:
+                lunc = str(lunc) + ' ' + FULL_COIN_LOOKUP[denom]
+        else:
+            lunc:float = coin.amount
+            if add_suffix:
+                if denom[0:len('gamm/pool')] == 'gamm/pool':
+                    denom_bits:list = denom.split('/')
+                    lunc = str(lunc) + ' shares in pool ' + str(denom_bits[2])
+
         return str(lunc)
     
     def showResults(self) -> bool:
