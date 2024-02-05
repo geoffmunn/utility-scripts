@@ -1028,7 +1028,7 @@ def swap_coins(wallet, swap_coin:Coin, swap_to_denom:str, estimated_amount:int =
                 print (swap_tx.readableFee())
 
                 swap_tx.swap()
-                transaction_result = swap_tx.broadcast()
+                transaction_result:TransactionResult = swap_tx.broadcast()
 
                 if swap_tx is None:
                     break
