@@ -24,6 +24,7 @@ from constants.constants import (
 # from classes.delegation_transaction import DelegationTransaction
 # from classes.swap_transaction import SwapTransaction
 from classes.delegation_transaction import delegate_to_validator
+from classes.liquidity_transaction import join_liquidity_pool, exit_liquidity_pool
 from classes.send_transaction import send_transaction
 from classes.swap_transaction import swap_coins
 from classes.transaction_core import TransactionResult
@@ -263,6 +264,10 @@ def main():
 
                 validator_withdrawals:dict = {}  # This keeps track of what we've removed from each validator in this wallet
                 # Go through each step
+
+                # Each step must complete successfully before the next one starts
+                can_continue:bool = True
+
                 for step in steps:
                     action = step['action'].lower()
 
@@ -270,47 +275,55 @@ def main():
 
                     if action == 'withdraw':
                         
-                        # Get an updated list of delegations on this wallet
-                        wallet.getDelegations()
-                        delegations:dict = wallet.delegations
+                        if can_continue == True:
+                            # Get an updated list of delegations on this wallet
+                            wallet.getDelegations()
+                            delegations:dict = wallet.delegations
 
-                        for validator in delegations:
-                            # One last check to make sure LUNC is in the reward list
-                            if ULUNA in delegations[validator]['rewards']:
-                                uluna_reward:int = delegations[validator]['rewards'][ULUNA]
+                            for validator in delegations:
+                                # One last check to make sure LUNC is in the reward list
+                                if ULUNA in delegations[validator]['rewards']:
+                                    uluna_reward:int = delegations[validator]['rewards'][ULUNA]
 
-                                # Check that the 'when' clause is triggered
-                                # We will pass a dictionary of the validator LUNC rewards that we are expecting
-                                is_triggered:bool = check_trigger(step['when'], {ULUNA: uluna_reward})
+                                    # Check that the 'when' clause is triggered
+                                    # We will pass a dictionary of the validator LUNC rewards that we are expecting
+                                    is_triggered:bool = check_trigger(step['when'], {ULUNA: uluna_reward})
 
-                                if is_triggered == True:
-                                    print (f"Withdrawing rewards from {delegations[validator]['validator_name']}...")
-                                    print (f'Withdrawing {wallet.formatUluna(uluna_reward, ULUNA, False)} rewards.')
+                                    if is_triggered == True:
+                                        print (f"Withdrawing rewards from {delegations[validator]['validator_name']}...")
+                                        print (f'Withdrawing {wallet.formatUluna(uluna_reward, ULUNA, False)} rewards.')
 
-                                    # Ideally this should get the uluna rewards from the transaction result
-                                    # just in case the numbers are different
-                                    #if delegations[validator]['validator'] not in validator_withdrawals:
-                                    #    validator_withdrawals[delegations[validator]['validator']] = {}
-                                    #validator_withdrawals[delegations[validator]['validator']][ULUNA] = uluna_reward
+                                        # Ideally this should get the uluna rewards from the transaction result
+                                        # just in case the numbers are different
+                                        #if delegations[validator]['validator'] not in validator_withdrawals:
+                                        #    validator_withdrawals[delegations[validator]['validator']] = {}
+                                        #validator_withdrawals[delegations[validator]['validator']][ULUNA] = uluna_reward
 
-                                    transaction_result:TransactionResult = claim_delegation_rewards(wallet, validator_address = delegations[validator]['validator'])
-                                    transaction_result.showResults()
-                                    
-                                    received_coin:Coin
-                                    for received_coin in transaction_result.result_received:
-                                        if delegations[validator]['validator'] not in validator_withdrawals:
-                                            validator_withdrawals[delegations[validator]['validator']] = {}
-                                        validator_withdrawals[delegations[validator]['validator']][received_coin.denom] = received_coin.amount
+                                        transaction_result:TransactionResult = claim_delegation_rewards(wallet, validator_address = delegations[validator]['validator'])
+                                        transaction_result.showResults()
+                                        
+                                        received_coin:Coin
+                                        for received_coin in transaction_result.result_received:
+                                            if delegations[validator]['validator'] not in validator_withdrawals:
+                                                validator_withdrawals[delegations[validator]['validator']] = {}
+                                            validator_withdrawals[delegations[validator]['validator']][received_coin.denom] = received_coin.amount
 
+                                    else:
+                                        print ("'when' trigger not fired!")
+                                        print (f"- when: {step['when']}")
+                                        can_continue = False
                                 else:
-                                    print ("'when' trigger not fired!")
-                                    print (f"- when: {step['when']}")
-                            else:
-                                print ('No LUNC in the validator to withdraw!')
+                                    #print ('No LUNC in the validator to withdraw!')
+                                    can_continue = False
+                        else:
+                            print (f'A previous step has failed, not proceeding with this workflow on {wallet.name}')
 
                     if action == 'redelegate':
                         # Check the trigger
                         #print ('validator withdrawals:', validator_withdrawals)
+
+                        # We don't support specific wallet selection on the 'redelegate' step
+
                         for validator in validator_withdrawals:
                             is_triggered = check_trigger(step['when'], validator_withdrawals[validator])
                                 
@@ -329,88 +342,121 @@ def main():
                             else:
                                 print ("'when' trigger not fired!")
                                 print (f"- when: {step['when']}")
+                                can_continue = False
                  
                     if action == 'delegate':
                         # This is going to a specific validator, and is from the wallet balance
 
-                        wallet.getBalances()
-
-                        is_triggered = check_trigger(step['when'], wallet.balances)
-                                
-                        if is_triggered == True:
-                            # We will delegate a specific amount of LUNC from the wallet balance
-                            # We only support LUNC for this action                            
-                            amount_ok, delegation_coin = check_amount(step['amount'], wallet.balances, True)
-
-                            if amount_ok == True:
-                                # Find the validator
-                                if 'validator' in step:
-                                    # Find the validator details
-                                    validators = Validators()
-                                    validators.create()
-                                    validator_address:str = validators.findValidatorByName(step['validator'])
-
-                                    if validator_address != '':
-
-                                        transaction_result:TransactionResult = delegate_to_validator(wallet, validator_address, delegation_coin)
-                                        transaction_result.showResults()
-                                                
-                                    else:
-                                        print ('The validator could not be found, please check the name')
-
-                                else:
-                                    print ('No validator specified to delegated to!')
-                            else:
-                                print ('Not enough LUNC in the rewards to make this delegation.')
+                        # Check if there's a specific wallet to use:
+                        if 'wallet' in step:
+                            step_wallet:UserWallet = get_wallet(user_wallets, step['wallet'])
                         else:
-                            print ("'when' trigger not fired!")
-                            print (f"- when: {step['when']}")
-                    
+                            step_wallet:UserWallet = wallet
+
+                        if step_wallet is not None:
+                            step_wallet.getBalances()
+
+                            is_triggered = check_trigger(step['when'], step_wallet.balances)
+                                    
+                            if is_triggered == True:
+                                # We will delegate a specific amount of LUNC from the wallet balance
+                                # We only support LUNC for this action                            
+                                amount_ok, delegation_coin = check_amount(step['amount'], step_wallet.balances, True)
+
+                                if amount_ok == True:
+                                    # Find the validator
+                                    if 'validator' in step:
+                                        # Find the validator details
+                                        validators = Validators()
+                                        validators.create()
+                                        validator_address:str = validators.findValidatorByName(step['validator'])
+
+                                        if validator_address != '':
+
+                                            transaction_result:TransactionResult = delegate_to_validator(step_wallet, validator_address, delegation_coin)
+                                            transaction_result.showResults()
+                                                    
+                                        else:
+                                            print ('The validator could not be found, please check the name')
+                                            can_continue = False
+
+                                    else:
+                                        print ('No validator specified to delegated to!')
+                                        can_continue = False
+                                else:
+                                    print ('Not enough LUNC in the rewards to make this delegation.')
+                                    can_continue = False
+                            else:
+                                print ("'when' trigger not fired!")
+                                print (f"- when: {step['when']}")
+                                can_continue = False
+                        else:
+                            print ('No valid wallet could be found for this step.')
+                            can_continue = False
+
                     if action == 'send':
                         # We are sending an amount to a specific address (could be terra or osmo)
-                        wallet.getBalances()
-
-                        if 'when' in step:
-                            is_triggered = check_trigger(step['when'], wallet.balances)
+                        
+                        # Check if there's a specific wallet to use:
+                        if 'wallet' in step:
+                            step_wallet:UserWallet = get_wallet(user_wallets, step['wallet'])
                         else:
-                            print ("No when clause included, defaulting to 'always'")
-                            is_triggered = True
-                                
-                        if is_triggered == True:
-                            amount_ok, send_coin = check_amount(step['amount'], wallet.balances, True)
+                            step_wallet:UserWallet = wallet
 
-                            if amount_ok == True:
-                                # Get the address based on the recipient value
-                                # We will restrict recipients to just whats in the address book for safety reasons
-                                recipient_address:str = find_address_in_wallet(user_wallets, step['recipient'])
+                        if step_wallet is not None:
+                            step_wallet.getBalances()
 
-                                if recipient_address != '':
-                                    # We should be ok to send at this point
-
-                                    # Memos are optional
-                                    memo:str = ''
-                                    if 'memo' in step:
-                                        memo = step['memo']
-
-                                    # We need to check if this amount is in the recipient wallet before moving on
-                                    # Get the current balance...
-                                    recipient_wallet:UserWallet = UserWallet().create('target', recipient_address)
-                                    recipient_balance = recipient_wallet.getBalances()
-
-                                    transaction_result:TransactionResult = send_transaction(wallet, recipient_address, send_coin, memo, False)
-                                    
-                                    # Now check the balance to see if it's arrived at the recipient wallet
-                                    recipient_wallet.getBalances(wallet.createCoin(send_coin.denom, (int(send_coin.amount) + int(recipient_balance[send_coin.denom]))))
-
-                                    transaction_result.showResults()
-
-                                else:
-                                    print ('No valid recipient was included!')
+                            if 'when' in step:
+                                is_triggered = check_trigger(step['when'], step_wallet.balances)
                             else:
-                                print ('No valid amount was available in this wallet!')
+                                print ("No when clause included, defaulting to 'always'")
+                                is_triggered = True
+                                    
+                            if is_triggered == True:
+                                amount_ok, send_coin = check_amount(step['amount'], step_wallet.balances, True)
+
+                                if amount_ok == True:
+                                    # Get the address based on the recipient value
+                                    # We will restrict recipients to just whats in the address book for safety reasons
+                                    recipient_address:str = find_address_in_wallet(user_wallets, step['recipient'])
+
+                                    if recipient_address != '':
+                                        # We should be ok to send at this point
+
+                                        # Memos are optional
+                                        memo:str = ''
+                                        if 'memo' in step:
+                                            memo = step['memo']
+
+                                        # We need to check if this amount is in the recipient wallet before moving on
+                                        # Get the current balance...
+                                        recipient_wallet:UserWallet = UserWallet().create('target', recipient_address)
+                                        recipient_balance = recipient_wallet.getBalances()
+
+                                        transaction_result:TransactionResult = send_transaction(step_wallet, recipient_address, send_coin, memo, False)
+                                        
+                                        # Now check the balance to see if it's arrived at the recipient wallet
+                                        if send_coin.denom in recipient_balance:
+                                            current_balance:int = recipient_balance[send_coin.denom]
+                                        else:
+                                            current_balance:int = 0
+                                        recipient_wallet.getBalances(step_wallet.createCoin(send_coin.denom, (int(send_coin.amount) + current_balance)))
+
+                                        transaction_result.showResults()
+
+                                    else:
+                                        print ('No valid recipient was included!')
+                                        can_continue = False
+                                else:
+                                    print ('No valid amount was available in this wallet!')
+                                    can_continue = False
+                            else:
+                                print ("'when' trigger not fired!")
+                                print (f"- when: {step['when']}")
+                                can_continue = False
                         else:
-                            print ("'when' trigger not fired!")
-                            print (f"- when: {step['when']}")
+                            print ('No valid wallet could be found for this step.')
+                            can_continue = False
 
                     if action == 'swap':
 
@@ -418,36 +464,77 @@ def main():
 
                         # Check if there's a specific wallet to use:
                         if 'wallet' in step:
-                            print ('using specific wallet:', step['wallet'])
                             step_wallet:UserWallet = get_wallet(user_wallets, step['wallet'])
                         else:
-                            print ('using standard wallet')
                             step_wallet:UserWallet = wallet
 
-                        step_wallet.getBalances()
+                        if step_wallet is not None:
+                            step_wallet.getBalances()
 
-                        is_triggered = check_trigger(step['when'], step_wallet.balances)
+                            is_triggered = check_trigger(step['when'], step_wallet.balances)
+                                    
+                            print ('wallet balances:', step_wallet.balances)
+                            if is_triggered == True:
+                                amount_ok, swap_coin = check_amount(step['amount'], step_wallet.balances, True)
                                 
-                        print ('wallet balances:', step_wallet.balances)
-                        if is_triggered == True:
-                            amount_ok, swap_coin = check_amount(step['amount'], step_wallet.balances, True)
-                            
-                            if amount_ok == True:
+                                if amount_ok == True:
 
-                                if 'swap to' in step:
-                                    swap_to_denom:str = list(FULL_COIN_LOOKUP.keys())[list(FULL_COIN_LOOKUP.values()).index(step['swap to'])]
+                                    if 'swap to' in step:
+                                        swap_to_denom:str = list(FULL_COIN_LOOKUP.keys())[list(FULL_COIN_LOOKUP.values()).index(step['swap to'])]
 
-                                    transaction_result:TransactionResult = swap_coins(step_wallet, swap_coin, swap_to_denom, '', False)
-                                    transaction_result.wallet_denom = step_wallet.denom
-                                    transaction_result.showResults()
+                                        transaction_result:TransactionResult = swap_coins(step_wallet, swap_coin, swap_to_denom, '', False)
+                                        transaction_result.wallet_denom = step_wallet.denom
+                                        transaction_result.showResults()
+                                    else:
+                                        print ("'swap to' not specified in this workflow.")
+                                        can_continue = False
                                 else:
-                                    print ("'swap to' not specified in this workflow.")
+                                    print ('No valid amount was available in this wallet!')
+                                    can_continue = False
                             else:
-                                print ('No valid amount was available in this wallet!')
+                                print ("'when' trigger not fired!")
+                                print (f"- when: {step['when']}")
+                                can_continue = False
                         else:
-                            print ("'when' trigger not fired!")
-                            print (f"- when: {step['when']}")
-                        
+                            print ('No valid wallet could be found for this step.')
+                            can_continue = False
+
+                    if action == 'join pool':
+
+                        # Check if there's a specific wallet to use:
+                        if 'wallet' in step:
+                            step_wallet:UserWallet = get_wallet(user_wallets, step['wallet'])
+                        else:
+                            step_wallet:UserWallet = wallet
+
+                        if step_wallet is not None:
+                            step_wallet.getBalances()
+
+                            is_triggered = check_trigger(step['when'], step_wallet.balances)
+
+                            if is_triggered == True:
+                                amount_ok, swap_coin = check_amount(step['amount'], step_wallet.balances, True)
+                                
+                                if amount_ok == True:
+
+                                    if 'pool id' in step:
+                                        pool_id:int = step['pool id']
+
+                                        transaction_result:TransactionResult = join_liquidity_pool(step_wallet, pool_id, swap_coin.amount, False)
+                                        transaction_result.showResults()
+                                    else:
+                                        print ('No pool ID provided in this step!')
+                                else:
+                                    print ('No valid amount was available in this wallet!')
+                                    can_continue = False
+                            else:
+                                print ("'when' trigger not fired!")
+                                print (f"- when: {step['when']}")
+                                can_continue = False
+                        else:
+                            print ('No valid wallet could be found for this step.')
+                            can_continue = False
+
 
     # print (' 💯 Done!\n')
 
