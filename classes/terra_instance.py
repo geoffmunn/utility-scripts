@@ -19,6 +19,11 @@ class TerraInstance:
     def create(self, denom:str = 'uluna') -> LCDClient:
         """
         Create an LCD client instance and store it in this object.
+        
+        @params:
+            - denom: the denomination we expect to be using. This will help identify the chain details.
+            
+        @return: LCDCLient
         """
         
         if denom in CHAIN_DATA:
@@ -47,7 +52,13 @@ class TerraInstance:
 
     def instance(self) -> LCDClient:
         """
-        Return the LCD client instance that we have created.
+        Returns the LCD Client of this particular instance.
+        
+        @params:
+            - None
+            
+        @return: LCDClient
         """
+
         return self.terra
     
