@@ -350,7 +350,7 @@ class UserWallet:
 
                 if target_coin is not None:
                     # If the current balance has a higher amount in it than that target coin, then we can exit
-                    if target_coin.denom in balances and balances[target_coin.denom] > target_coin.amount:
+                    if target_coin.denom in balances and int(balances[target_coin.denom]) >= int(target_coin.amount):
                         break
                 else:
                     # We're not checking a specific coin, we can exit now
@@ -359,7 +359,7 @@ class UserWallet:
                 # Wait for one second and try again
                 retry_count += 1
                 if retry_count <= SEARCH_RETRY_COUNT:
-                    print (f'Target denom not found... attempt {retry_count}/{SEARCH_RETRY_COUNT}')
+                    print (f'Target denom balance not found... attempt {retry_count}/{SEARCH_RETRY_COUNT}')
                     time.sleep(1)
                 else:
                     break
