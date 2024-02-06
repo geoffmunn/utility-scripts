@@ -392,12 +392,15 @@ def main():
                                     if 'memo' in step:
                                         memo = step['memo']
 
-                                    test:UserWallet = UserWallet().create('target', recipient_address)
-                                    test_balance = test.getBalances()
+                                    # We need to check if this amount is in the recipient wallet before moving on
+                                    # Get the current balance...
+                                    recipient_wallet:UserWallet = UserWallet().create('target', recipient_address)
+                                    recipient_balance = recipient_wallet.getBalances()
 
                                     transaction_result:TransactionResult = send_transaction(wallet, recipient_address, send_coin, memo, False)
                                     
-                                    test.getBalances(wallet.createCoin(send_coin.denom, test_balance[send_coin.denom]))
+                                    # Now check the balance to see if it's arrived at the recipient wallet
+                                    recipient_wallet.getBalances(wallet.createCoin(send_coin.denom, (int(send_coin.amount) + int(recipient_balance[send_coin.denom]))))
 
                                     transaction_result.showResults()
 
