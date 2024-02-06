@@ -182,9 +182,6 @@ def main():
 
     if ULUNA in wallet.balances:
         print (f'Sending {wallet.formatUluna(send_coin.amount, send_coin.denom)} {FULL_COIN_LOOKUP[send_coin.denom]}')
-
-        test:UserWallet = UserWallet().create('target', recipient_address)
-        test_balance = test.getBalances()
         
         recipient_wallet:UserWallet = UserWallet().create('target', recipient_address)
         recipient_balance = recipient_wallet.getBalances()
@@ -192,7 +189,12 @@ def main():
         transaction_result:TransactionResult = send_transaction(wallet, recipient_address, send_coin, memo)
         
         # Now check the balance to see if it's arrived at the recipient wallet
-        recipient_wallet.getBalances(wallet.createCoin(send_coin.denom, (int(send_coin.amount) + int(recipient_balance[send_coin.denom]))))
+        if send_coin.denom in recipient_balance:
+            current_balance:int = recipient_balance[send_coin.denom]
+        else:
+            current_balance:int = 0
+            
+        recipient_wallet.getBalances(wallet.createCoin(send_coin.denom, (int(send_coin.amount) + current_balance)))
         
         transaction_result.showResults()
         # if transaction_result.transaction_confirmed == True:
