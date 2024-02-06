@@ -7,11 +7,6 @@ from classes.transaction_core import TransactionCore, TransactionResult
 from classes.terra_instance import TerraInstance
 from classes.wallet import UserWallet
 
-from constants.constants import (
-    WORKFLOWS_FILE_NAME,
-    ULUNA
-)
-
 from terra_classic_sdk.client.lcd.api.tx import (
     CreateTxOptions,
     Tx
@@ -34,6 +29,13 @@ class WithdrawalTransaction(TransactionCore):
     def create(self, seed:str, delegator_address:str, validator_address:str):
         """
         Create a withdrawal object and set it up with the provided details.
+        
+        @params:
+            - seed: the wallet seed so we can create the wallet
+            - delegator_address: usually the wallet address that we are currently using
+            - validator_address: the address of the validator we're withdrawing from
+
+        @return: self
         """
 
         # Create the terra instance
@@ -57,6 +59,11 @@ class WithdrawalTransaction(TransactionCore):
         """
         Simulate a withdrawal so we can get the fee details.
         The fee details are saved so the actual withdrawal will work.
+        
+        @params:
+            - None
+
+        @return: True/False if the simulation worked.
         """
 
         # Set the fee to be None so it is simulated
@@ -83,6 +90,11 @@ class WithdrawalTransaction(TransactionCore):
         """
         Make a withdrawal with the information we have so far.
         If fee is None then it will be a simulation.
+        
+        @params:
+            - None
+
+        @return: True/False if the withdrawal worked.
         """
 
         try:
