@@ -11,7 +11,7 @@ from classes.common import (
 #     check_version,
 #     get_user_choice,
     get_precision,
-    isPercentage
+    is_percentage
 )
 
 from constants.constants import (
@@ -82,7 +82,7 @@ def check_amount(amount:str, balances:dict, preserve_minimum:bool = False) -> (b
             if amount_bits[0].isnumeric():
                 coin_amount:float = float(amount_bits[0]) * (10 ** get_precision(coin_denom))
                 
-            elif isPercentage(amount_bits[0]):
+            elif is_percentage(amount_bits[0]):
                 amount:float      = float(amount_bits[0][0:-1]) / 100
                 coin_amount:float = float(available_balance * amount)
 

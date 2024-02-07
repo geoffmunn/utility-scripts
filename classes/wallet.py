@@ -20,7 +20,7 @@ from classes.common import (
     get_precision,
     get_user_choice,
     is_digit,
-    isPercentage,
+    is_percentage,
     multiply_raw_balance
 )
     
@@ -834,7 +834,7 @@ class UserWallet:
                 if answer == '' and empty_allowed == True:
                     break
 
-                is_percentage = isPercentage(answer)
+                is_percentage = is_percentage(answer)
 
                 if 'percentages_allowed' in params and is_percentage == True:
                     answer = answer[0:-1]

@@ -5,7 +5,7 @@ from classes.common import (
     check_database,
     check_version,
     get_user_choice,
-    isPercentage
+    is_percentagee
 )
 
 from constants.constants import (
@@ -106,7 +106,7 @@ def main():
 
         user_withdrawal:str = wallet.getUserNumber('How much LUNC are you withdrawing? ', {'max_number': float(pool_assets[ULUNA]), 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': False, 'keep_minimum': False, 'target_denom': ULUNA})
         
-        if isPercentage(user_withdrawal):
+        if is_percentage(user_withdrawal):
             amount_out:float  = float(user_withdrawal[:-1]) / 100
             coin_amount:float = round(pool_assets[ULUNA] * amount_out, 2)
         else:

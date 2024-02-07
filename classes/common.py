@@ -178,7 +178,7 @@ def is_digit(value) -> bool:
     except ValueError:
         return False
     
-def isPercentage(value:str) -> bool:
+def is_percentage(value:str) -> bool:
     """
     A helpter function to figure out if a value is a percentage or not.
     """
