@@ -56,7 +56,7 @@ def main():
     liquidity_tx.wallet          = wallet
     liquidity_tx.wallet_denom    = wallet.denom
 
-    user_pool, answer = liquidity_tx.getPoolSelection('Enter the pool number you want to use, (X) to continue, or (Q) to quit: ', wallet, ULUNA)
+    user_pool, answer = liquidity_tx.getPoolSelection('Enter the pool number you want to use, (X) to continue, or (Q) to quit: ', wallet)
 
     
     liquidity_tx.pool_id         = user_pool
