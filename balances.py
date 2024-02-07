@@ -26,7 +26,7 @@ def main():
     check_database()
 
     # Get the user wallets. We'll be getting the balances futher on down.
-    user_wallets = UserWallets().loadUserWallets(get_balances = False)
+    user_wallets:dict = UserWallets().loadUserWallets(get_balances = False)
     
     if len(user_wallets) == 0:
         print (" 🛑 This password couldn't decrypt any wallets. Make sure it is correct, or rebuild the wallet list by running the configure_user_wallet.py script again.\n")
