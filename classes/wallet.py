@@ -69,9 +69,14 @@ class UserWallet:
         self.terra:LCDClient    = None
         self.validated: bool    = False
         
-    def __iter_delegator_result__(self, delegator:Delegation) -> dict:
+    def __iter_delegator_result__(self, delegator:Delegation):
         """
-        An internal function which returns a dict object with validator details.
+        An internal function to get delegation results.
+        
+        @params:
+            - delegator: a delegation object that we'll be querying information on
+            
+        @return: None - the internal self.delegation var is updated.
         """
 
         # Get the basic details about the delegator and validator etc
@@ -106,7 +111,12 @@ class UserWallet:
 
     def __iter_undelegation_result__(self, undelegation:UnbondingDelegation) -> dict:
         """
-        An internal function which returns a dict object with validator details.
+        An internal function to get undelegation results.
+        
+        @params:
+            - delegator: a delegation object that we'll be querying information on
+            
+        @return: None - the internal self.undelegation var is updated.
         """
 
         # Get the basic details about the delegator and validator etc
@@ -130,9 +140,17 @@ class UserWallet:
             'entries':           entries
         }
     
-    def convertPercentage(self, percentage:float, keep_minimum:bool, target_amount:float, target_denom:str):
+    def convertPercentage(self, percentage:float, keep_minimum:bool, target_amount:float, target_denom:str) -> int:
         """
         A generic helper function to convert a potential percentage into an actual number.
+        
+        @params:
+            - percentage: the percentage value between 0.0 and 1
+            - keep_minimum: do we retain a base amount inside this wallet
+            - target_amount: the entire amount we can use, usually from the wallet balance in readable form (NOT uluna)
+            - target_denom: convert this amount into the uluna amount (or whatever denom)
+            
+        @return: an integer of the amount based on the percentage.
         """
 
         percentage:float = float(percentage) / 100
@@ -151,6 +169,15 @@ class UserWallet:
     def create(self, name:str = '', address:str = '', seed:str = '', password:str = '', denom:str = '') -> Wallet:
         """
         Create a wallet object based on the provided details.
+        
+        @params:
+            - name: the name of the wallet
+            - address: the address - something like terra123abc
+            - seed: the seed so we can create it for withdrawals etc
+            - password: the decryption password so we can retrieve the seed from the YML file
+            - denom: what denomination is this wallet (usually uluna or uosmo)
+            
+        @return: self
         """
 
         self.name:str    = name
@@ -177,17 +204,28 @@ class UserWallet:
     def createCoin(self, denom:str, amount:int) -> Coin:
         """
         A basic helper function to create a valid Coin object with the provided details.
+        
+        @params:
+            - denom: the denomination of this coin
+            - amount: the amount of this coin
+            
+        @return: Coin
         """
 
         return Coin.from_data({'amount': int(amount), 'denom': denom})
 
-    def denomTrace(self, ibc_address:str):
+    def denomTrace(self, ibc_address:str) -> str:
         """
         Based on the wallet prefix, get the IBC denom trace details for this IBC address.
         This is a slow process, so we do two things:
         First, check the cached results in memory.
         Second, check the database.
         Third, go and get the actual result.
+        
+        @params:
+            - ibc_address: the full address - should start with ibc/
+            
+        @return: the string-based denomination that this resolves to
         """
 
         # First, if this is not even an IBC address, then return the original value:
@@ -258,9 +296,16 @@ class UserWallet:
 
         return result
         
-    def formatUluna(self, uluna:float, denom:str, add_suffix:bool = False):
+    def formatUluna(self, uluna:float, denom:str, add_suffix:bool = False) -> str:
         """
         A generic helper function to convert uluna amounts to LUNC.
+        
+        @params:
+            - uluna: the basic amount we want to format
+            - denom: the denomination that this amount belongs to
+            - add_suffix: do we add the human-readable denom to this amount (for readability purposes)
+            
+        @return: the string-based denomination that this resolves to
         """
 
         denom         = self.denomTrace(denom)
@@ -278,9 +323,17 @@ class UserWallet:
     def getBalances(self, target_coin:Coin = None, core_coins_only:bool = False) -> dict:
         """
         Get the balances associated with this wallet.
+        
         If you pass a target_coin Coin object, this will loop until it sees a change on this denomination.
+        For this to work, the target_coin amount needs to be the current balance + the new balance
 
         If you just want the previously fetched balances, use wallet.balances
+
+        @params:
+            - target_coin: are we monitoring a particular coin for any changes?
+            - core_coins_only: if true, then this will return ULUNA and USTC only
+            
+        @return: a dict of coins and their amounts for this wallet
         """
 
         if self.terra is not None:
@@ -348,7 +401,7 @@ class UserWallet:
 
 
                 if target_coin is not None:
-                    # If the current balance has a higher amount in it than that target coin, then we can exit
+                    # If the current balance has a higher (or equal) amount in it than that target coin, then we can exit
                     if target_coin.denom in balances and int(balances[target_coin.denom]) >= int(target_coin.amount):
                         break
                 else:
@@ -373,6 +426,11 @@ class UserWallet:
     async def getBalancesAsync(self) -> dict:
         """
         An asynchronous wrapper aruond the standard delegation function.
+
+        @params:
+            - None
+            
+        @return: a dict of coins and their amounts for this wallet
         """
 
         balances:dict = self.getBalances(core_coins_only = True)
@@ -384,6 +442,11 @@ class UserWallet:
         Based on the provided list of denominations, get the coingecko details.
 
         It returns the price in US dollars.
+
+        @params:
+            - denom_list: a list of coins we want prices for
+            
+        @return: a dict of coins and their current prices
         """
 
         cg_denoms:list = []
@@ -439,11 +502,20 @@ class UserWallet:
         for denom in denom_list:
             if denom in denom_map and denom_map[denom] in self.cached_prices:
                 result[denom] = self.cached_prices[denom_map[denom]]
+
         return result
 
-    def getCoinSelection(self, question:str, coins:dict, only_active_coins:bool = True, estimation_against:dict = None):
+    def getCoinSelection(self, question:str, coins:dict, only_active_coins:bool = True, estimation_against:dict = None) -> [str, str, float]:
         """
         Return a selected coin based on the provided list.
+
+        @params:
+            - question: what is the user prompt?
+            - coins: a list of coins we can select from. Usually from the wallet balance.
+            - only_active_coins: if false, then we'll use any coin from the FULL_COIN_LOOKUP list
+            - esimation_against: if true, then we'll figure out the swap value against a provided coin
+
+        @return: the selected coin denomination, the answer the user gave, and the estimated swap value (if any)
         """
 
         label_widths:list = []
@@ -618,6 +690,11 @@ class UserWallet:
         """
         Create a dictionary of information about the delegations on this wallet.
         It may contain more than one validator.
+
+        @params:
+            - None
+
+        @return: a dictionary of delegations on this wallet.
         """
 
         if self.terra is not None:
@@ -644,6 +721,11 @@ class UserWallet:
     async def getDelegationsAsync(self) -> dict:
         """
         An asynchronous wrapper aruond the standard delegation function.
+
+        @params:
+            - None
+
+        @return: a dictionary of delegations on this wallet.
         """
 
         delegations:dict = self.getDelegations()
@@ -653,6 +735,11 @@ class UserWallet:
     def getDenomByPrefix(self, prefix:str) -> str:
         """
         Go through the supported chains to find the denom for the provided prefix
+
+        @params:
+            - prefix: the prefix of the wallet address we are interested in
+
+        @return: the actual denomination
         """
 
         result = None
@@ -666,6 +753,11 @@ class UserWallet:
     def getPrefix(self, address:str) -> str:
         """
         Get the first x (usually 4) letters of the address so we can figure out what network it is
+
+        @params:
+            - address: the wallet address that we are interested in
+
+        @return: a string, something like 'terra' or 'osmo'
         """
 
         prefix:str = ''
@@ -679,7 +771,12 @@ class UserWallet:
     
     def getProposalVote(self, proposal_id) -> str:
         """
-        Get the vote that this wallet made on the supplied proposal id
+        Get the vote that this wallet made on the supplied proposal ID
+
+        @params:
+            - proposal_id: the ID of the proposal we are interested in
+
+        @return: a human-readable value of the vote
         """
 
         vote_result:dict = self.terra.gov.vote(proposal_id, self.address)
@@ -706,6 +803,11 @@ class UserWallet:
     def getSupportedPrefixes(self) -> list:
         """
         Return a list of all the supported prefixes, based on what we can find in the CHAIN_DATA dictionary
+
+        @params:
+            - None
+
+        @return: a list of prefixes we support
         """
 
         result:list = []
@@ -719,6 +821,11 @@ class UserWallet:
         Get the undelegations that are in progress for BASE.
 
         This returns a list of the active undelegations.
+
+        @params:
+            - wallet_address: the wallet we want BASE undelegations for
+
+        @return: a list of undelegation details
         """
 
         result:json  = requests.get('https://raw.githubusercontent.com/lbunproject/BASEswap-api-price/main/public/unstaked_plus_hashes.json').json()
@@ -736,8 +843,13 @@ class UserWallet:
     
     def getUndelegations(self) -> dict:
         """
-        Create a dictionary of information about the delegations on this wallet.
+        Create a dictionary of information about the undelegations on this wallet.
         It may contain more than one validator.
+
+        @params:
+            - None
+
+        @return: a dict of active undelegations on this wallet
         """
 
         prefix = self.getPrefix(self.address)
@@ -801,16 +913,35 @@ class UserWallet:
     async def getUnDelegationsAsync(self) -> dict:
         """
         An asynchronous wrapper aruond the standard undelegation function.
+
+        @params:
+            - None
+
+        @return: a dict of active undelegations on this wallet
         """
         
         undelegations:dict = self.getUndelegations()
 
         return undelegations
     
-    def getUserNumber(self, question:str, params:dict):
+    def getUserNumber(self, question:str, params:dict) -> int|float|str:
         """
-        Get ther user input - must be a number.
-        """ 
+        Get the user input - could be a number or a percentage, and is constrained by details in the params parameter
+
+        @params:
+            - question: what is the question we're asking the user?
+            - params: a dict resembling this:
+                {
+                    'empty_allowed': bool,
+                    'convert_to_uluna': bool,
+                    'percentages_allowed': bool,
+                    'min_number': float,
+                    'max_number': float,
+                    'target_denom': str
+                }
+
+        @return: a dict of active undelegations on this wallet
+        """
         
         empty_allowed:bool = False
         if 'empty_allowed' in params:
@@ -880,12 +1011,20 @@ class UserWallet:
 
         return answer
     
-    def getUserRecipient(self, question:str, user_config:dict):
+    def getUserRecipient(self, question:str, user_config:dict) -> str:
         """
         Get the recipient address that we are sending to.
 
         If you don't need to check this against existing wallets, then provide an empty dict object for user_config.
+
+        @params:
+            - question: what question are we prompting the user with?
+            - user_config: the config result holding all the wallets
+
+        @return: the user-provided address
         """
+
+        recipient_address:str = ''
 
         while True:
             answer:str = input(question)
@@ -894,7 +1033,7 @@ class UserWallet:
                 break
 
             # We'll assume it was a terra address to start with (by default)
-            recipient_address = answer
+            recipient_address:str = answer
 
             if answer.isdigit():
                 # Check if this is a wallet number
@@ -927,6 +1066,13 @@ class UserWallet:
     def getUserText(self, question:str, max_length:int, allow_blanks:bool) -> str:
         """
         Get a text string from the user - must be less than a definied length.
+
+        @params:
+            - question: what question are we prompting the user with?
+            - max_length: the longest answer size we are willing to accept
+            - allow_blanks: do we accept empty answers?
+
+        @return: the user-provided answer
         """
 
         while True:    
@@ -944,6 +1090,11 @@ class UserWallet:
     def newWallet(self, prefix:str):
         """
         Creates a new wallet and returns the seed and address
+
+        @params:
+            - prefix: usually terra or osmo
+            
+        @return: the mnemonic and address of the new wallet
         """
 
         mk            = MnemonicKey(prefix = prefix)
@@ -951,10 +1102,15 @@ class UserWallet:
         
         return mk.mnemonic, wallet.key.acc_address
     
-    def validateAddress(self, address:str) -> bool:
+    def validateAddress(self, address:str) -> [bool,bool]:
         """
         Check that the provided address actually resolves to a terra wallet.
         This only applies to addresses which look like terra addresses.
+
+        @params:
+            - address: the wallet address we want to validate
+            
+        @return: is this valid, and is this empty?
         """
 
         prefix:str = self.getPrefix(address)
@@ -983,11 +1139,14 @@ class UserWallet:
         
     def validateWallet(self) -> bool:
         """
-        Check that the password does actually resolve against any wallets
+        Check that the generated wallet matches the address we have saved against it.
         
-        Go through each wallet and create it based on the password that was provided
-        and then check it against the saved address
         If it's not the same, then the password is wrong or the file has been edited.
+
+        @params:
+            - None
+            
+        @return: true/false, does this generated wallet address match the saved address?
         """
 
         try:
