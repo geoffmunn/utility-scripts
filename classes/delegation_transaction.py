@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 
+from __future__ import annotations
+
 from constants.constants import (
     CHAIN_DATA,
     ULUNA
@@ -38,7 +40,7 @@ class DelegationTransaction(TransactionCore):
 
         super(DelegationTransaction, self).__init__(*args, **kwargs)
         
-    def create(self, seed:str, denom:str = 'uluna'):
+    def create(self, seed:str, denom:str = 'uluna') -> DelegationTransaction:
         """
         Create a delegation object and set it up with the provided details.
 

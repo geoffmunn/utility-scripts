@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-
 from hashlib import sha256
 from pycoingecko import CoinGeckoAPI
 import sqlite3

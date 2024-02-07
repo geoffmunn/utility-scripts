@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 
+from __future__ import annotations
+
 import cryptocode
 import json
 import requests
@@ -166,7 +168,7 @@ class UserWallet:
         
         return uluna_amount
     
-    def create(self, name:str = '', address:str = '', seed:str = '', password:str = '', denom:str = '') -> Wallet:
+    def create(self, name:str = '', address:str = '', seed:str = '', password:str = '', denom:str = '') -> UserWallet:
         """
         Create a wallet object based on the provided details.
         

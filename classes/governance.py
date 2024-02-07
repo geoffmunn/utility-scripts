@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 
+from __future__ import annotations
+
 import json
 
 from constants.constants import (
@@ -40,7 +42,7 @@ class Governance(TransactionCore):
         self.user_vote:int      = None
         self.sequence:int       = None
 
-    def create(self):
+    def create(self) -> Governance:
         """
         Create a basic terra LCDClient object.
         For governance stuff, the network will be Terra.
@@ -260,7 +262,7 @@ class Governance(TransactionCore):
         else:
             return False
         
-    def update(self, seed:str):
+    def update(self, seed:str) -> Governance:
         """
         Update this object with the wallet details that we want to cast votes on.
         This allows us to reuse the existing Terra connection.

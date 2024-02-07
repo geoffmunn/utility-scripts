@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 
+from __future__ import annotations
+
 from hashlib import sha256
 import math
 
@@ -61,7 +63,7 @@ class SendTransaction(TransactionCore):
         self.source_channel:str    = None
         self.tax:float             = None
 
-    def create(self, seed:str, denom:str = 'uluna'):
+    def create(self, seed:str, denom:str = 'uluna') -> SendTransaction:
         """
         Create a send object and set it up with the provided details.
         

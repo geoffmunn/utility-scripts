@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 
+from __future__ import annotations
+
 import base64
 import json
 import math
@@ -135,7 +137,7 @@ class SwapTransaction(TransactionCore):
 
         return self.belief_price
     
-    def create(self, seed:str, denom:str = 'uluna'):
+    def create(self, seed:str, denom:str = 'uluna') -> SwapTransaction:
         """
         Create a swap object and set it up with the provided details.
         

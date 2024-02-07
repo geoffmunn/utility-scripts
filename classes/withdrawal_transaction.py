@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 
+from __future__ import annotations
+
 import traceback
 
 from classes.transaction_core import TransactionCore, TransactionResult
@@ -26,7 +28,7 @@ class WithdrawalTransaction(TransactionCore):
         self.delegator_address:str = ''
         self.validator_address:str = ''
 
-    def create(self, seed:str, delegator_address:str, validator_address:str):
+    def create(self, seed:str, delegator_address:str, validator_address:str) -> WithdrawalTransaction:
         """
         Create a withdrawal object and set it up with the provided details.
         
