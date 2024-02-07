@@ -19,7 +19,6 @@ from classes.common import (
     divide_raw_balance,
     get_precision,
     get_user_choice,
-    is_digit,
     is_percentage,
     multiply_raw_balance
 )
@@ -590,7 +589,7 @@ class UserWallet:
             if answer in coin_index:
                 answer = str(coin_index[answer])
 
-            if answer.is_digit() and int(answer) > 0 and int(answer) <= count:
+            if answer.isdigit() and int(answer) > 0 and int(answer) <= count:
                 if estimation_against is not None and estimation_against['denom'] == coin_list[int(answer)]:
                     print ('\nYou can\'t swap to the same coin!')
                 else:
@@ -671,7 +670,7 @@ class UserWallet:
 
         prefix:str = ''
         for char in address:
-            if is_digit(char) == False:
+            if char.isdigit() == False:
                 prefix += char
             else:
                 break
@@ -834,14 +833,14 @@ class UserWallet:
                 if answer == '' and empty_allowed == True:
                     break
 
-                is_percentage = is_percentage(answer)
+                percentage = is_percentage(answer)
 
-                if 'percentages_allowed' in params and is_percentage == True:
+                if 'percentages_allowed' in params and percentage == True:
                     answer = answer[0:-1]
 
-                if is_digit(answer):
+                if answer.isdigit():
 
-                    if 'percentages_allowed' in params and is_percentage == True:
+                    if 'percentages_allowed' in params and percentage == True:
                         if int(answer) > params['min_number'] and int(answer) <= 100:
                             break
                     elif 'max_number' in params:
@@ -865,11 +864,11 @@ class UserWallet:
                                 break
                     else:
                         # This is just a regular number that we'll accept
-                        if is_percentage == False:
+                        if percentage == False:
                             break
 
         if answer != '' and answer != USER_ACTION_QUIT:
-            if 'percentages_allowed' in params and is_percentage == True:
+            if 'percentages_allowed' in params and percentage == True:
                 if 'convert_percentages' in params and params['convert_percentages'] == True:
                     wallet:UserWallet = UserWallet()
                     answer = float(wallet.convertPercentage(answer, params['keep_minimum'], params['max_number'], params['target_denom']))
@@ -897,7 +896,7 @@ class UserWallet:
             # We'll assume it was a terra address to start with (by default)
             recipient_address = answer
 
-            if is_digit(answer):
+            if answer.isdigit():
                 # Check if this is a wallet number
                 if user_config['wallets'][int(answer)] is not None:
                     recipient_address = user_config['wallets'][int(answer)]['address']

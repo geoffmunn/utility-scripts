@@ -166,17 +166,17 @@ def get_precision(denom:str) -> int:
 
     return precision
 
-def is_digit(value) -> bool:
-    """
-    A better method for identifying digits. This one can handle decimal places.
-    """
+# def is_digit(value) -> bool:
+#     """
+#     A better method for identifying digits. This one can handle decimal places.
+#     """
 
-    try:
-        float(value)
-        return True
+#     try:
+#         float(value)
+#         return True
     
-    except ValueError:
-        return False
+#     except ValueError:
+#         return False
     
 def is_percentage(value:str) -> bool:
     """

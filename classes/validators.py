@@ -203,7 +203,7 @@ class Validators():
 
             answer:str = input(question).lower()
             
-            if answer.is_digit() and int(answer) in validator_numbers:
+            if answer.isdigit() and int(answer) in validator_numbers:
 
                 validators_to_use:dict = {}
 
