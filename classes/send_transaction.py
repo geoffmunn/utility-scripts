@@ -64,6 +64,12 @@ class SendTransaction(TransactionCore):
     def create(self, seed:str, denom:str = 'uluna'):
         """
         Create a send object and set it up with the provided details.
+        
+        @params:
+            - seed: the wallet seed so we can create the wallet
+            - denom: what denomination are we sending? It will usually be LUNC
+
+        @return: self
         """
 
         # Create the terra instance
@@ -85,6 +91,11 @@ class SendTransaction(TransactionCore):
         Complete a send transaction with the information we have so far.
         If fee is None then it will be a simulation.
         The fee denomination must be uluna - it is the only one we are supporting.
+        
+        @params:
+            - None
+
+        @return: True/False depending on if the transaction succeeded
         """
 
         send_amount = int(self.amount)
@@ -170,6 +181,11 @@ class SendTransaction(TransactionCore):
         """
         Complete a send transaction with the information we have so far.
         If fee is None then it will be a simulation.
+        
+        @params:
+            - None
+
+        @return: True/False depending on if the transaction succeeded
         """
 
         send_amount = int(self.amount)
@@ -253,6 +269,11 @@ class SendTransaction(TransactionCore):
         self.fee - requested_fee object with fee + tax as separate coins (unless both are lunc)
         self.tax - the tax component
         self.fee_deductables - the amount we need to deduct off the transferred amount
+        
+        @params:
+            - None
+
+        @return: True/False depending on if the transaction succeeded
         """
 
         # Reset these values in case this is a re-used object:
@@ -322,12 +343,16 @@ class SendTransaction(TransactionCore):
     def simulateOffchain(self) -> bool:
         """
         Simulate a delegation so we can get the fee details.
-        The fee details are saved so the actual delegation will work.
 
         Outputs:
         self.fee - requested_fee object with fee + tax as separate coins (unless both are lunc)
-        self.tax - tax is zero for IBC transfers
+        self.tax - the tax component
         self.fee_deductables - the amount we need to deduct off the transferred amount
+        
+        @params:
+            - None
+
+        @return: True/False depending on if the transaction succeeded
         """
 
         # Reset these values in case this is a re-used object:
