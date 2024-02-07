@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 
+from __future__ import annotations
+
 import json
 import requests
 import sqlite3
@@ -35,6 +37,7 @@ from terra_classic_sdk.core.broadcast import BlockTxBroadcastResult, TxLog
 from terra_classic_sdk.core.coin import Coin
 from terra_classic_sdk.core.coins import Coins
 from terra_classic_sdk.core.fee import Fee
+
 class TransactionCore():
     """
     The core class for all transactions.
@@ -64,10 +67,15 @@ class TransactionCore():
         self.gas_price_url = GAS_PRICE_URI
         # The gas list and tax rate values will be updated when the class is properly created
         
-    def broadcast(self) -> BlockTxBroadcastResult:
+    def broadcast(self) -> TransactionResult:
         """
         A core broadcast function for all transactions.
         It will wait until the transaction shows up in the search function before finishing.
+
+        @params:
+            - None
+
+        @return: the transaction result as an object
         """
 
         # Set up the basic transaction result object
@@ -108,9 +116,14 @@ class TransactionCore():
                  
         return transaction_result
     
-    def cachePrices(self):
+    def cachePrices(self) -> bool:
         """
-        Load all the coin prices into a dictionary we can use later
+        Load all the coin prices into a dictionary we can use later.
+
+        @params:
+            - None
+
+        @return: True
         """
 
         retry_count:int  = 0
@@ -157,6 +170,13 @@ class TransactionCore():
         If desired, the fee can specifically be uusd.
 
         convert_to_ibc only applies to the ULUNA value, if it is available.
+
+        @params:
+            - requested_fee: the fee object that was returned in the simulation
+            - specific_denom: a specific denom to return the fee in
+            - convert_to_ibc: convert the denom to and IBC value if required
+
+        @return: a fully complete Fee object
         """
 
         other_coin_list:list      = []
@@ -208,6 +228,11 @@ class TransactionCore():
         First, check the cached results in memory.
         Second, check the database.
         Third, go and get the actual result.
+
+        @params:
+            - ibc_address: the IBC address we want to convert to readable form
+            
+        @return: a human-readable version of the IBC value
         """
 
         # First, if this is not even an IBC address, then return the original value:
@@ -278,10 +303,15 @@ class TransactionCore():
 
         return result
         
-    def findTransaction(self):
+    def findTransaction(self) -> TransactionResult:
         """
         Do a search for any transaction with the current tx hash.
         If it can't be found within 10 attempts, then give up.
+
+        @params:
+            - None
+            
+        @return: a TransactionResult object
         """
 
         retry_count:int                      = 0
@@ -437,6 +467,11 @@ class TransactionCore():
         {'uluna': '28.325', 'usdr': '0.52469', 'uusd': '0.75', 'ukrw': '850.0', 'umnt': '2142.855', 'ueur': '0.625', 'ucny': '4.9', 'ujpy': '81.85', 'ugbp': '0.55', 'uinr': '54.4', 'ucad': '0.95', 'uchf': '0.7', 'uaud': '0.95', 'usgd': '1.0', 'uthb': '23.1', 'usek': '6.25', 'unok': '6.25', 'udkk': '4.5', 'uidr': '10900.0', 'uphp': '38.0', 'uhkd': '5.85', 'umyr': '3.0', 'utwd': '20.0'}
 
         If you only want gas in a particular coin, then pass the gas item like this: {'uluna': self.gas_list['uluna']}
+
+        @params:
+            - None
+            
+        @return: a json object with the relevant gas prices
         """
 
         if self.gas_list is None:
@@ -465,6 +500,12 @@ class TransactionCore():
         To: request_denom
 
         If the prices aren't present already, we'll go and get them.
+
+        @params:
+            - from_denom: coin #1, typically the coin we're swapping from
+            - to_denom: coin #2, the coin we're swapping to
+            
+        @return: a json object with the prices for both coins
         """
 
         from_price:float = None
@@ -485,17 +526,29 @@ class TransactionCore():
     def IBCfromDenom(self, channel_id:str, denom:str) -> str:
         """
         Based on the provided denom and the source channel, figure out the IBC value
+
+        @params:
+            - channel_id: the channel ID, obtained from the CHAIN_DATA list
+            - denom: the denom that we want to convert into IBC form
+            
+        @return: a json object with the prices for both coins
         """
 
-        ibc_value = sha256(f'transfer/{channel_id}/{denom}'.encode('utf-8')).hexdigest().upper()
-        ibc_result = 'ibc/' + ibc_value
+        ibc_value:str = ''
+        ibc_value     = sha256(f'transfer/{channel_id}/{denom}'.encode('utf-8')).hexdigest().upper()
+        ibc_result    = 'ibc/' + ibc_value
 
         return ibc_result
 
     def readableFee(self) -> str:
         """
         Return a description of the fee for the current transaction.
-        If the IBC routes have been populated (ie, this is a swap)l then show them too.
+        If the IBC routes have been populated (ie, this is a swap) then show them too.
+
+        @params:
+            - None
+            
+        @return: a string explaining what's happening
         """
         
         routes:list = self.ibc_routes
@@ -556,12 +609,17 @@ class TransactionCore():
 
         return fee_string
     
-    def taxRate(self) -> json:
+    def taxRate(self) -> float:
         """
         Query the terra treasury object for the current tax rate.
         We are not caching it so that tax changes will be automatically picked up.
 
         If this is not a columbus-5 (Luna Classic) chain, then assume the tax rate is zero.
+
+        @params:
+            - None
+            
+        @return: the tax rate as a float number
         """
 
         if self.terra.chain_id == CHAIN_DATA[ULUNA]['chain_id']:
@@ -599,7 +657,7 @@ class TransactionResult(TransactionCore):
             - coin: a Coin object holding the amount and denom
             - add_suffix: if True, then the denom is added to the string
 
-        @return string
+        @return a human-readable string of the provided coin
         """
 
         denom:str = self.denomTrace(coin.denom)
