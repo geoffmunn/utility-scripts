@@ -181,7 +181,7 @@ def main():
     print (f'\nAccessing the {wallet.name} wallet...')
 
     if ULUNA in wallet.balances:
-        print (f'Sending {wallet.formatUluna(send_coin.amount, send_coin.denom)} {FULL_COIN_LOOKUP[send_coin.denom]}')
+        #print (f'Sending {wallet.formatUluna(send_coin.amount, send_coin.denom)} {FULL_COIN_LOOKUP[send_coin.denom]}')
         
         recipient_wallet:UserWallet = UserWallet().create('target', recipient_address)
         recipient_balance = recipient_wallet.getBalances()
