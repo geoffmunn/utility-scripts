@@ -425,7 +425,7 @@ class LiquidityTransaction(TransactionCore):
             answer:str = input(question).lower()
             
             # Check if a coin name was provided:
-            if answer.isdigit() and int(answer) in pool_list:
+            if answer.is_digit() and int(answer) in pool_list:
                 pool_to_use = int(answer)
 
             if answer == USER_ACTION_CONTINUE:

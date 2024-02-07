@@ -136,7 +136,7 @@ class Governance(TransactionCore):
 
             answer:str = input(question).lower()
             
-            if answer.isdigit() and (0 < int(answer) < (len(proposals) + 1)):
+            if answer.is_digit() and (0 < int(answer) < (len(proposals) + 1)):
                 proposal_to_use = int(answer)
 
             if answer == 'x':

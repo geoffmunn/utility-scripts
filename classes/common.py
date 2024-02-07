@@ -166,7 +166,7 @@ def get_precision(denom:str) -> int:
 
     return precision
 
-def isDigit(value) -> bool:
+def is_digit(value) -> bool:
     """
     A better method for identifying digits. This one can handle decimal places.
     """

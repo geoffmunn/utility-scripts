@@ -92,7 +92,7 @@ def get_send_to_address(user_wallets:UserWallet):
         if answer in wallets_by_name.keys():
             answer = str(wallets_by_name[answer])
         
-        if answer.isdigit() and int(answer) in wallet_numbers:
+        if answer.is_digit() and int(answer) in wallet_numbers:
 
             wallets_to_use:dict = {}
 

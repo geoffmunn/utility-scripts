@@ -19,7 +19,7 @@ from classes.common import (
     divide_raw_balance,
     get_precision,
     get_user_choice,
-    isDigit,
+    is_digit,
     isPercentage,
     multiply_raw_balance
 )
@@ -590,7 +590,7 @@ class UserWallet:
             if answer in coin_index:
                 answer = str(coin_index[answer])
 
-            if answer.isdigit() and int(answer) > 0 and int(answer) <= count:
+            if answer.is_digit() and int(answer) > 0 and int(answer) <= count:
                 if estimation_against is not None and estimation_against['denom'] == coin_list[int(answer)]:
                     print ('\nYou can\'t swap to the same coin!')
                 else:
@@ -671,7 +671,7 @@ class UserWallet:
 
         prefix:str = ''
         for char in address:
-            if isDigit(char) == False:
+            if is_digit(char) == False:
                 prefix += char
             else:
                 break
@@ -839,7 +839,7 @@ class UserWallet:
                 if 'percentages_allowed' in params and is_percentage == True:
                     answer = answer[0:-1]
 
-                if isDigit(answer):
+                if is_digit(answer):
 
                     if 'percentages_allowed' in params and is_percentage == True:
                         if int(answer) > params['min_number'] and int(answer) <= 100:
@@ -897,7 +897,7 @@ class UserWallet:
             # We'll assume it was a terra address to start with (by default)
             recipient_address = answer
 
-            if isDigit(answer):
+            if is_digit(answer):
                 # Check if this is a wallet number
                 if user_config['wallets'][int(answer)] is not None:
                     recipient_address = user_config['wallets'][int(answer)]['address']

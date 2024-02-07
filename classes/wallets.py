@@ -309,7 +309,7 @@ class UserWallets:
                 
             answer = input(question).lower()
             
-            if answer.isdigit() and int(answer) in wallet_numbers:
+            if answer.is_digit() and int(answer) in wallet_numbers:
                 key = wallet_numbers[int(answer)].name
                 if key not in wallets_to_use:
                     wallets_to_use[key] = wallet_numbers[int(answer)]
@@ -490,7 +490,7 @@ class UserWallets:
 
             answer:str = input(question).lower()
             
-            if answer.isdigit() and int(answer) in wallet_numbers:
+            if answer.is_digit() and int(answer) in wallet_numbers:
 
                 wallets_to_use:dict = {}
 
