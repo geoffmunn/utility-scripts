@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 
+from __future__ import annotations
+
+
 from hashlib import sha256
 from pycoingecko import CoinGeckoAPI
 import sqlite3
@@ -69,6 +72,11 @@ class LiquidityTransaction(TransactionCore):
         NOTE: the amount_out MUST be a percentage decimal value.
 
         This is used for exiting a pool.
+
+        @params:
+            - None
+
+        @return: the number of shares that this transaction will return
         """
 
         # Get the number of shares that this user has
@@ -85,6 +93,11 @@ class LiquidityTransaction(TransactionCore):
         This only works with a single coin liquidity investment.
 
         This is used for joining a pool.
+
+        @params:
+            - coin: a Coin object with the amount that we are joining with
+
+        @return: the number of shares that this transaction will return
         """
 
         # Get the pool details from the network
@@ -106,9 +119,15 @@ class LiquidityTransaction(TransactionCore):
 
         return share_out_amount
 
-    def create(self, seed:str, denom:str = 'uluna'):
+    def create(self, seed:str, denom:str = 'uluna') -> LiquidityTransaction:
         """
-        Create a swap object and set it up with the provided details.
+        Create a liquidity object and set it up with the provided details.
+
+        @params:
+            - seed: the wallet seed so we can create the wallet
+            - denom: what denomination are we sending? It will usually be LUNC
+
+        @return: self
         """
 
         # Create the terra instance
@@ -124,10 +143,15 @@ class LiquidityTransaction(TransactionCore):
 
         return self
     
-    def exitPool(self):
+    def exitPool(self) -> bool:
         """
         Join a pool with the information we have so far.
         If fee is None then it will be a simulation.
+
+        @params:
+            - None
+
+        @return: true/false depending on if the transaction succeeded
         """
 
         try:
@@ -193,6 +217,11 @@ class LiquidityTransaction(TransactionCore):
 
         Outputs:
         - self.fee - requested_fee object
+
+        @params:
+            - None
+
+        @return: true/false depending on if the transaction succeeded
         """
 
         # Reset these values in case this is a re-used object:
@@ -230,9 +259,14 @@ class LiquidityTransaction(TransactionCore):
         else:
             return False
         
-    def getAssetValues(self, assets) -> dict:
+    def getAssetValues(self, assets:dict) -> dict:
         """
-        Go through the asset list and retrieve a price for each one
+        Go through the asset list and retrieve a price for each one.
+
+        @params:
+            - assets: a dictionary of the assets we want prices for
+
+        @return: a dictionary of assets and their prices
         """
 
         prices:dict = {}
@@ -245,6 +279,11 @@ class LiquidityTransaction(TransactionCore):
         """
         Get the pool from Osmosis.
         Cache the results so we don't have to do this again.
+
+        @params:
+            - assets: a dictionary of the assets we want prices for
+
+        @return: a dictionary of assets and their prices
         """
 
         if pool_id in self.cached_pools:
@@ -262,6 +301,11 @@ class LiquidityTransaction(TransactionCore):
         """
         Get the assets for the pool, but converted into an actual amount.
         If this pool does not exist in the wallet pool list, then it will return an empty set.
+
+        @params:
+            - None
+
+        @return: a dictionary of assets and amounts for the current pool
         """
 
         asset_list:dict = {}
@@ -284,10 +328,15 @@ class LiquidityTransaction(TransactionCore):
 
         return asset_list
     
-    def getPoolSelection(self, question:str, wallet:dict, denom:str):
-        #def getCoinSelection(self, question:str, coins:dict, only_active_coins:bool = True, estimation_against:dict = None):
+    def getPoolSelection(self, question:str, wallet:UserWallet) -> [int, str]:
         """
         Return a selected pool based on the provided list.
+
+        @params:
+            - question: what question are we prompting the user with?
+            - wallet: the wallet we will be using for this transaction
+
+        @return: the selected pool and the answer
         """
 
         label_widths:list = []
@@ -443,6 +492,11 @@ class LiquidityTransaction(TransactionCore):
         """
         Join a pool with the information we have so far.
         If fee is None then it will be a simulation.
+
+        @params:
+            - None
+
+        @return: true/false depending on if the transaction succeeded
         """
 
         try:
@@ -498,8 +552,13 @@ class LiquidityTransaction(TransactionCore):
 
         Outputs:
         self.fee - requested_fee object
-        """
 
+        @params:
+            - None
+
+        @return: true/false depending on if the transaction succeeded
+        """
+        
         # Reset these values in case this is a re-used object:
         self.account_number:int = self.current_wallet.account_number()
         self.fee:Fee            = None
@@ -547,9 +606,14 @@ class LiquidityTransaction(TransactionCore):
         else:
             return False
         
-    def poolList(self, liquidity_asset_denom:str):
+    def poolList(self, liquidity_asset_denom:str) -> dict:
         """
         Get the entire list of pools that match the supplied token as a liquidity asset
+
+        @params:
+            - liquidity_asset_denom: the denom we want pools for
+
+        @return: a dict with the pools and the relevant details
         """
 
         all_pools:str = "SELECT pool_id, token_readable_denom FROM asset WHERE pool_id IN (SELECT pool_id FROM asset WHERE token_readable_denom = ?);"
@@ -615,6 +679,11 @@ class LiquidityTransaction(TransactionCore):
         The self.amount_out needs to be a percentage.
 
         This is used for exiting a pool.
+
+        @params:
+            - None
+
+        @return: a list with the coins that this transaction will return
         """
 
         token_out_list:list = []
@@ -642,6 +711,21 @@ class LiquidityTransaction(TransactionCore):
         return token_out_list
     
 def join_liquidity_pool(wallet:UserWallet, pool_id:int, amount_in:int, prompt_user:bool == True):
+    """
+    A wrapper function for workflows and wallet management.
+
+    This lets the user join a liquidity pool on Osmosis.
+    
+    The wrapper function adds any error messages depending on the results that got returned.
+    
+    @params:
+      - wallet: a fully complete wallet object
+      - pool_id: the pool ID that we want to join
+      - amount_in: the amount (LUNC) that we are joining with
+      - prompt_user: do we want to pause for user confirmation?
+
+    @return: a TransactionResult object
+    """
 
     transaction_result:TransactionResult = TransactionResult()
 
@@ -715,6 +799,21 @@ def join_liquidity_pool(wallet:UserWallet, pool_id:int, amount_in:int, prompt_us
     return transaction_result
 
 def exit_liquidity_pool(wallet:UserWallet, pool_id:int, amount_out:float, prompt_user:bool == True):
+    """
+    A wrapper function for workflows and wallet management.
+
+    This lets the user exit a liquidity pool on Osmosis.
+    
+    The wrapper function adds any error messages depending on the results that got returned.
+    
+    @params:
+      - wallet: a fully complete wallet object
+      - pool_id: the pool ID that we want to join
+      - amount_out: the amount (percentage) that we are withdrawing
+      - prompt_user: do we want to pause for user confirmation?
+
+    @return: a TransactionResult object
+    """
 
     transaction_result:TransactionResult = TransactionResult()
 
