@@ -19,10 +19,15 @@ from constants.constants import (
 from terra_classic_sdk.core.coin import Coin
 from terra_classic_sdk.core.coins import Coins
 
-def check_version():
+def check_version() -> bool:
     """
     Check the github repo to see if there's a new version.
     This check can be disabled by changing CHECK_FOR_UPDATES in the constants file.
+
+    @params:
+        - None
+
+    @return: true/false if the script is on the current version
     """
 
     if CHECK_FOR_UPDATES == True:
@@ -76,9 +81,14 @@ def check_version():
     else:
         return True
     
-def check_database():
+def check_database() -> bool:
     """
     Check if the Osmosis database is present.
+
+    @params:
+        - None
+
+    @return: true/false if the database is ok
     """
 
     try:
@@ -127,24 +137,33 @@ def check_database():
         print (' 🛑 Run \'get_osmosis_pools.py\' first to generate the list.\n')
         exit()
 
-    return True
-
-
-def coin_list(input: Coins, existingList: dict) -> dict:
-    """ 
+def coin_list(input: Coins, existing_list: dict) -> dict:
+    """
     Converts the Coins list into a dictionary.
     There might be a built-in function for this, but I couldn't get it working.
+
+    @params:
+        - input: a Coins collection
+        - existing_list: a dictionary of coins we want to add the input coins to
+
+    @return: a dictionary of coins
     """
 
     coin:Coin
     for coin in input:
-        existingList[coin.denom] = coin.amount
+        existing_list[coin.denom] = coin.amount
 
-    return existingList
+    return existing_list
 
 def divide_raw_balance(amount:float, denom:str) -> float:
     """
     Return a human-readable amount depending on what type of coin this is.
+
+    @params:
+        - amount: the amount we want to convert
+        - denom: the denom so we can figure out the precision
+
+    @return: a human-readable amount of this denom
     """
 
     precision:int = get_precision(denom)
@@ -157,6 +176,11 @@ def get_precision(denom:str) -> int:
     Depending on the denomination, return the number of zeros that we need to account for
 
     Be default, it returns 6 digits
+
+    @params:
+        - denom: the denom so we can figure out the precision
+
+    @return: the number of zeros that this denomination has
     """
 
     precision:int = 6
@@ -165,23 +189,17 @@ def get_precision(denom:str) -> int:
         precision = CHAIN_DATA[denom]['precision']
 
     return precision
-
-# def is_digit(value) -> bool:
-#     """
-#     A better method for identifying digits. This one can handle decimal places.
-#     """
-
-#     try:
-#         float(value)
-#         return True
-    
-#     except ValueError:
-#         return False
     
 def is_percentage(value:str) -> bool:
     """
     A helpter function to figure out if a value is a percentage or not.
+
+    @params:
+        - value: the value which needs to have a '%' character at the end
+
+    @return: true/false this value is a percentage
     """
+
     last_char = str(value).strip(' ')[-1]
     if last_char == '%':
         return True
@@ -192,6 +210,12 @@ def is_percentage(value:str) -> bool:
 def multiply_raw_balance(amount:int, denom:str) -> float:
     """
     Return a human-readable amount depending on what type of coin this is.
+
+    @params:
+        - amount: the amount we want to convert
+        - denom: the denom so we can figure out the precision
+
+    @return: a human-readable amount of this denom
     """
 
     precision:int = get_precision(denom)
@@ -199,12 +223,17 @@ def multiply_raw_balance(amount:int, denom:str) -> float:
 
     return result
 
-def strtobool(val):
+def strtobool(val:str) -> bool:
     """
     Convert a string representation of truth to true (1) or false (0).
     True values are 'y', 'yes', 't', 'true', 'on', and '1'; false values
     are 'n', 'no', 'f', 'false', 'off', and '0'.  Returns -1 if
     'val' is anything else.
+
+    @params:
+        - val: the amount we want to check
+
+    @return: true/false this value is a boolean
     """
 
     val = val.lower()
@@ -216,13 +245,19 @@ def strtobool(val):
         #raise ValueError("invalid truth value %r" % (val,))
         return -1
 
-def get_user_choice(question:str, allowed_options:list):
+def get_user_choice(question:str, allowed_options:list) -> str:
     """
     Get the user selection for a prompt and convert it to a standard value.
     This is typically a yes/no decision.
+
+    @params:
+        - question: what question are we prompting the user with?
+        - allowed_options: the available answers for the user
+
+    @return: the answer the user provides
     """
 
-    result = ''
+    result:str = ''
 
     while True:    
         answer = input(question).lower()
