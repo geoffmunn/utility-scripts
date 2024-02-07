@@ -10,7 +10,7 @@ from classes.common import (
 #     check_database,
 #     check_version,
 #     get_user_choice,
-    getPrecision,
+    get_precision,
     isPercentage
 )
 
@@ -72,7 +72,7 @@ def check_amount(amount:str, balances:dict, preserve_minimum:bool = False) -> (b
     if coin_denom in balances:
         # Adjust the available balance depending on requirements
         if preserve_minimum == True and coin_denom == ULUNA:
-            available_balance:int = int(int(balances[coin_denom]) - (WITHDRAWAL_REMAINDER * (10 ** getPrecision(coin_denom))))
+            available_balance:int = int(int(balances[coin_denom]) - (WITHDRAWAL_REMAINDER * (10 ** get_precision(coin_denom))))
         else:
             available_balance:int = int(balances[coin_denom])
 
@@ -80,7 +80,7 @@ def check_amount(amount:str, balances:dict, preserve_minimum:bool = False) -> (b
 
             #if len(amount_bits) >= 2:
             if amount_bits[0].isnumeric():
-                coin_amount:float = float(amount_bits[0]) * (10 ** getPrecision(coin_denom))
+                coin_amount:float = float(amount_bits[0]) * (10 ** get_precision(coin_denom))
                 
             elif isPercentage(amount_bits[0]):
                 amount:float      = float(amount_bits[0][0:-1]) / 100
@@ -126,7 +126,7 @@ def check_trigger(triggers:list, balances:dict) -> bool:
 
             # Get this coin's technical name (ie, uluna)
             coin_denom:str     = list(FULL_COIN_LOOKUP.keys())[list(FULL_COIN_LOOKUP.values()).index(coin_denom)]
-            coin_balance:float = balances[coin_denom] / (10 ** getPrecision(coin_denom))
+            coin_balance:float = balances[coin_denom] / (10 ** get_precision(coin_denom))
             eval_string:str    = f'{coin_balance}{comparison}{target_amount}'
 
             # Evaluate this string and return the value

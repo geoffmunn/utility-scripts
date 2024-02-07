@@ -147,12 +147,12 @@ def divide_raw_balance(amount:float, denom:str) -> float:
     Return a human-readable amount depending on what type of coin this is.
     """
 
-    precision:int = getPrecision(denom)
+    precision:int = get_precision(denom)
     result:float  = float(amount) / (10 ** precision)
     
     return result
 
-def getPrecision(denom:str) -> int:
+def get_precision(denom:str) -> int:
     """
     Depending on the denomination, return the number of zeros that we need to account for
 
@@ -194,7 +194,7 @@ def multiply_raw_balance(amount:int, denom:str) -> float:
     Return a human-readable amount depending on what type of coin this is.
     """
 
-    precision:int = getPrecision(denom)
+    precision:int = get_precision(denom)
     result:float  = float(amount) * (10 ** precision)
 
     return result

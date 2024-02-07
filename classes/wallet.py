@@ -17,7 +17,7 @@ from sqlite3 import Cursor, Connection
 from classes.common import (
     coin_list,
     divide_raw_balance,
-    getPrecision,
+    get_precision,
     get_user_choice,
     isDigit,
     isPercentage,
@@ -265,7 +265,7 @@ class UserWallet:
         """
 
         denom         = self.denomTrace(denom)
-        precision:int = getPrecision(denom)
+        precision:int = get_precision(denom)
         lunc:float    = round(float(divide_raw_balance(uluna, denom)), precision)
 
         target:str = '%.' + str(precision) + 'f'

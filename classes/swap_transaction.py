@@ -34,7 +34,7 @@ from constants.constants import (
 
 from classes.common import (
     divide_raw_balance,
-    getPrecision,
+    get_precision,
     get_user_choice,
     multiply_raw_balance
 )
@@ -430,8 +430,8 @@ class SwapTransaction(TransactionCore):
             #Step 3: multiple by Cosmo precision
             #step 4: round to cosmo precision
 
-            from_precision:int   = getPrecision(current_denom)
-            target_precision:int = getPrecision(token_out_denom)
+            from_precision:int   = get_precision(current_denom)
+            target_precision:int = get_precision(token_out_denom)
 
             if from_precision != target_precision:
                 base_amount:float = divide_raw_balance(base_amount, current_denom)
@@ -455,16 +455,16 @@ class SwapTransaction(TransactionCore):
             prev_denom:str       = current_denom
             current_denom:str    = token_out_denom        
             current_amount:float = base_amount_minus_swap_fee
-            precision:int        = getPrecision(token_out_denom)
+            precision:int        = get_precision(token_out_denom)
 
-        from_precision:int   = getPrecision(prev_denom)
-        target_precision:int = getPrecision(current_denom)
+        from_precision:int   = get_precision(prev_denom)
+        target_precision:int = get_precision(current_denom)
                     
         if target_precision > from_precision:
             current_amount = multiply_raw_balance(current_amount, current_denom)
             
         # Finish off the final value and store it:
-        precision:int  = getPrecision(current_denom)
+        precision:int  = get_precision(current_denom)
         current_amount = round(current_amount, precision)
         self.min_out   = math.floor(current_amount)
         

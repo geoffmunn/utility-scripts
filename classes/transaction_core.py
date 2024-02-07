@@ -11,7 +11,7 @@ from sqlite3 import Cursor, Connection
 
 from classes.common import (
     divide_raw_balance,
-    getPrecision
+    get_precision
 )
 
 from constants.constants import (
@@ -604,7 +604,7 @@ class TransactionResult(TransactionCore):
 
         denom:str = self.denomTrace(coin.denom)
         if denom in FULL_COIN_LOOKUP:
-            precision:int = getPrecision(denom)
+            precision:int = get_precision(denom)
             lunc:float    = round(float(divide_raw_balance(coin.amount, denom)), precision)
 
             target:str = '%.' + str(precision) + 'f'

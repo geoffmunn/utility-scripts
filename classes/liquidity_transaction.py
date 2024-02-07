@@ -7,7 +7,7 @@ import sqlite3
 from sqlite3 import Cursor, Connection
 
 from classes.common import (
-    getPrecision,
+    get_precision,
     get_user_choice
 )
 
@@ -277,7 +277,7 @@ class LiquidityTransaction(TransactionCore):
             asset:PoolAsset
             for asset in pool.pool_assets:
                 denom:str     = self.denomTrace(asset.token.denom)
-                precision:int = getPrecision(denom)
+                precision:int = get_precision(denom)
             
                 # Add this to the list
                 asset_list[denom] = int(asset.token.amount) / share_fraction / (10 ** precision)
@@ -595,7 +595,7 @@ class LiquidityTransaction(TransactionCore):
                         valid_pool = False
                         break
 
-                    asset_amount:float = int(pool_asset.token.amount) / (10 ** getPrecision(readable_denom))
+                    asset_amount:float = int(pool_asset.token.amount) / (10 ** get_precision(readable_denom))
 
                     price:float   = prices[readable_denom]
                     pool_balance += (price * asset_amount)
