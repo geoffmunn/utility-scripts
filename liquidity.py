@@ -5,7 +5,7 @@ from classes.common import (
     check_database,
     check_version,
     get_user_choice,
-    is_percentagee
+    is_percentage
 )
 
 from constants.constants import (
