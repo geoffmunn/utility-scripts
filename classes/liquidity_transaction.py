@@ -746,7 +746,7 @@ def join_liquidity_pool(wallet:UserWallet, pool_id:int, amount_in:int, prompt_us
         if prompt_user == True:
             print (liquidity_tx.readableFee())
 
-            user_choice = get_user_choice('Do you want to continue? (y/n) ', [])
+            user_choice = get_user_choice(' ❓ Do you want to continue? (y/n) ', [])
 
             if user_choice == False:
                 print (' 🛑 Exiting...\n')
@@ -835,7 +835,7 @@ def exit_liquidity_pool(wallet:UserWallet, pool_id:int, amount_out:float, prompt
         if prompt_user == True:
             print (liquidity_tx.readableFee())
 
-            user_choice = get_user_choice('Do you want to continue? (y/n) ', [])
+            user_choice = get_user_choice(' ❓ Do you want to continue? (y/n) ', [])
 
             if user_choice == False:
                 print (' 🛑 Exiting...\n')
