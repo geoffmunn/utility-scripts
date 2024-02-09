@@ -36,7 +36,7 @@ def main():
     wallet:UserWallet  = UserWallet().create(denom = ULUNA)
 
     wallet_name:str    = wallet.getUserText('Wallet name: ', 255, False)
-    entire_wallet:bool = get_user_choice('Are you adding an entire wallet? (y/n) ', [])
+    entire_wallet:bool = get_user_choice(' ❓ Are you adding an entire wallet? (y/n) ', [])
 
     if entire_wallet == False:
         wallet_address:str = wallet.getUserRecipient("What is the wallet address address? (or type 'Q' to quit) ", {})
@@ -48,9 +48,9 @@ def main():
         wallet_seed_encrypted:str = ''
     else:
         user_password:str  = getpass('Secret password (do not forget what this is):')
-        is_new_wallet:bool = get_user_choice('You want to generate a new wallet address? (y/n) ', [])
+        is_new_wallet:bool = get_user_choice(' ❓ You want to generate a new wallet address? (y/n) ', [])
         
-        chain:str = get_user_choice('Is this a Terra Classic address (T) or an Osmosis address (O)? (T/O) ', [CHAIN_TERRA, CHAIN_OSMO])
+        chain:str = get_user_choice(' ❓ Is this a Terra Classic address (T) or an Osmosis address (O)? (T/O) ', [CHAIN_TERRA, CHAIN_OSMO])
 
         if chain == CHAIN_TERRA:
             prefix:str = 'terra'
@@ -61,7 +61,7 @@ def main():
             wallet_seed, wallet_address = wallet.newWallet(prefix)
 
             print (f'Your seed and address for the new wallet "{wallet_name}" are about to be displayed on the screen')
-            wallet_continue:bool = get_user_choice('Do you want to continue? (y/n) ', [])
+            wallet_continue:bool = get_user_choice(' ❓ Do you want to continue? (y/n) ', [])
             
             if wallet_continue == False:
                 print (' 🛑 Exiting...\n')
@@ -119,7 +119,7 @@ def main():
             data[existing_name] = item
 
         if wallet_name in data:
-            update_wallet:bool = get_user_choice('\nThis wallet already exists, do you want to update it? (y/n) ', [])
+            update_wallet:bool = get_user_choice('\n ❓ This wallet already exists, do you want to update it? (y/n) ', [])
 
             if update_wallet == False:
                 print ('Exiting...')
