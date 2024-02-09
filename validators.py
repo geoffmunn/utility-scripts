@@ -65,8 +65,9 @@ def main():
     print ('  (S)  Switch validators')
     print ('  (L)  List undelegations in progress')
     print ('  (Q)  Quit\n')
-    
-    user_action = get_user_choice('Pick an option: ', [
+    print ('')
+
+    user_action = get_user_choice(' ❓ Pick an option: ', [
         USER_ACTION_VALIDATOR_DELEGATE,
         USER_ACTION_VALIDATOR_LIST_UNDELEGATIONS,
         USER_ACTION_VALIDATOR_UNDELEGATE,
@@ -119,7 +120,7 @@ def main():
             exit()
 
         print (f"You are about to delegate {wallet.formatUluna(delegated_uluna, ULUNA, True)} to {user_validator['moniker']}.")
-        complete_transaction = get_user_choice('Do you want to continue? (y/n) ', [])
+        complete_transaction = get_user_choice(' ❓ Do you want to continue? (y/n) ', [])
 
         if complete_transaction == False:
             print (' 🛑 Exiting...\n')
@@ -158,7 +159,7 @@ def main():
         
         print (f"You are about to undelegate {wallet.formatUluna(undelegated_uluna, ULUNA, True)} from {user_validator['moniker']}.")
         print (' 🛎️  Undelegated funds will not be available for 21 days.')
-        complete_transaction = get_user_choice('Do you want to continue? (y/n) ', [])
+        complete_transaction = get_user_choice(' ❓ Do you want to continue? (y/n) ', [])
 
         if complete_transaction == False:
             print (' 🛑 Exiting...\n')
@@ -239,7 +240,7 @@ def main():
         switched_uluna:float = wallet.getUserNumber('How much are you switching? ', {'max_number': float(wallet.formatUluna(total_delegated_uluna, ULUNA, False)), 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': True, 'keep_minimum': False, 'target_denom': ULUNA})
         
         print (f"You are about to switch {wallet.formatUluna(switched_uluna, ULUNA, True)} from {from_validator['moniker']} and move it to {to_validator['moniker']}.")
-        complete_transaction = get_user_choice('Do you want to continue? (y/n) ', [])
+        complete_transaction = get_user_choice(' ❓ Do you want to continue? (y/n) ', [])
 
         if complete_transaction == False:
             print (' 🛑 Exiting...\n')
