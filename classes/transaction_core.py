@@ -55,8 +55,6 @@ class TransactionCore():
         self.gas_price_url:str                       = None
         self.ibc_routes:list                         = None # Only used by swaps
         self.prices:dict                             = None
-        #self.result_recieved:Coin                    = None
-        #self.result_sent:Coin                        = None
         self.sequence:int                            = None
         self.tax_rate:json                           = None
         self.terra:LCDClient                         = None
@@ -105,6 +103,10 @@ class TransactionCore():
                 # Find the transaction on the network and return the result
                 try:
                     transaction_result:TransactionResult = self.findTransaction()
+
+                    # Check to see if this TX has appeared on the recipient wallet
+                    #if self.recipient_wallet is not None:
+                    #    tx_found:bool = self.recipient_wallet.confirmTxReceipt(self.sender_address, self.broadcast_result.txhash)
 
                     if transaction_result.transaction_confirmed == True:
                         transaction_result.message = 'This transaction should be visible in your wallet now.'
@@ -319,8 +321,9 @@ class TransactionCore():
         
         # Set up the default values:
         transaction_result.transaction_confirmed = False
+        
         # Put the broadcast result here - the displayed hash comes from this
-        transaction_result.broadcast_result      = self.broadcast_result
+        transaction_result.broadcast_result = self.broadcast_result
 
         print (f'\n 🔎︎ Looking for the TX hash...')
         while True:
