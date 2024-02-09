@@ -982,7 +982,7 @@ def swap_coins(wallet, swap_coin:Coin, swap_to_denom:str, estimated_amount:int =
                 print (f'You will be swapping {wallet.formatUluna(swap_coin.amount, swap_coin.denom, False)} {FULL_COIN_LOOKUP[swap_coin.denom]} for approximately {estimated_amount} {FULL_COIN_LOOKUP[swap_to_denom]}')
                 print (swap_tx.readableFee())
 
-                user_choice = get_user_choice('Do you want to continue? (y/n) ', [])
+                user_choice = get_user_choice(' ❓ Do you want to continue? (y/n) ', [])
 
                 if user_choice == False:
                     exit()
@@ -997,7 +997,7 @@ def swap_coins(wallet, swap_coin:Coin, swap_to_denom:str, estimated_amount:int =
                 if prompt_user == True:
                     print (f'You will be swapping {wallet.formatUluna(swap_coin.amount, swap_coin.denom, False)} {FULL_COIN_LOOKUP[swap_coin.denom]} for approximately {estimated_amount} {FULL_COIN_LOOKUP[swap_to_denom]}')
                     print (swap_tx.readableFee())
-                    user_choice = get_user_choice('Do you want to continue? (y/n) ', [])
+                    user_choice = get_user_choice(' ❓ Do you want to continue? (y/n) ', [])
 
                     if user_choice == False:
                         exit()
@@ -1011,7 +1011,7 @@ def swap_coins(wallet, swap_coin:Coin, swap_to_denom:str, estimated_amount:int =
                 if prompt_user == True:
                     print (f'You will be swapping {wallet.formatUluna(swap_coin.amount, swap_coin.denom, False)} {FULL_COIN_LOOKUP[swap_coin.denom]} for approximately {estimated_amount} {FULL_COIN_LOOKUP[swap_to_denom]}')
                     print (swap_tx.readableFee())
-                    user_choice = get_user_choice('Do you want to continue? (y/n) ', [])
+                    user_choice = get_user_choice(' ❓ Do you want to continue? (y/n) ', [])
 
                     if user_choice == False:
                         exit()
