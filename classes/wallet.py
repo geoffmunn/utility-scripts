@@ -142,6 +142,60 @@ class UserWallet:
             'entries':           entries
         }
     
+    # def confirmTxReceipt(self, sender_address, tx_hash):
+    #     """
+    #     Check if this wallet has had a transaction from the sender address.
+    #     This wallet instance needs to have been created with the address of the recipient.
+
+    #     @params:
+    #         - sender_address: the address of who sent the transaction
+    #         - tx_hash: the hash we're looking for
+
+    #     @return true/false if the transaction could be found
+    #     """
+
+    #     retry_count:int        = 0
+    #     receipt_confirmed:bool = False
+
+    #     print (f'\n 🔎︎ Checking that the recipient has this transaction...')
+
+    #     #block_height:int = int(self.terra.tendermint.block_info()['block']['header']['height']) - 1
+    #     block_height:int = 13694664
+    #     while True:
+            
+    #         print ('sender address:', sender_address)
+    #         print ('self address:', self.address)
+    #         print ('block_height:', block_height)
+
+    #         print (self.terra.chain_id)
+    #         result:dict = self.terra.tx.search([
+    #             #("message.sender", sender_address),
+    #             #("message.recipient", "self.address"),
+    #             #('tx.hash', tx_hash),
+    #             ('tx.height', block_height)
+    #         ])
+
+    #         print (result)
+    #         if len(result['txs']) > 0:
+    #             if result['txs'][0].code == 0:
+    #                 print ('\n ⭐ Transaction received!')
+    #                 receipt_confirmed = True
+    #                 break
+    #             if result['txs'][0].code == 5:
+    #                 print ('\n 🛑 A transaction error occurred.')
+    #                 break
+
+    #         retry_count += 1
+
+    #         if retry_count <= SEARCH_RETRY_COUNT:
+    #             print (f'    Search attempt {retry_count}/{SEARCH_RETRY_COUNT}')
+    #             time.sleep(1)
+    #             block_height +=1
+    #         else:
+    #             break
+
+    #     return receipt_confirmed
+    
     def convertPercentage(self, percentage:float, keep_minimum:bool, target_amount:float, target_denom:str) -> int:
         """
         A generic helper function to convert a potential percentage into an actual number.
@@ -197,8 +251,7 @@ class UserWallet:
                     if CHAIN_DATA[chain_key]['bech32_prefix'] == prefix and 'lcd_urls' in CHAIN_DATA[chain_key]:
                         denom = chain_key
 
-        self.denom = denom
-        
+        self.denom = denom        
         self.terra = TerraInstance().create(denom)
 
         return self
@@ -339,84 +392,84 @@ class UserWallet:
         """
 
         if self.terra is not None:
-            retry_count:int = 0
+            #retry_count:int = 0
 
             balances:dict = {}
             pools:dict    = {}
-            while True:
+            #while True:
                 
-                # Default pagination options
-                pagOpt:PaginationOptions = PaginationOptions(limit=50, count_total=True)
+            # Default pagination options
+            pagOpt:PaginationOptions = PaginationOptions(limit=50, count_total=True)
 
-                # Get the current balance in this wallet
-                result:Coins
-                try:
+            # Get the current balance in this wallet
+            result:Coins
+            try:
+                result, pagination = self.terra.bank.balance(address = self.address, params = pagOpt)
+
+                # Convert the result into a friendly list
+                for coin in result:
+                    
+                    if core_coins_only == True:
+                        if coin.denom in [ULUNA, UUSD]:
+                            balances[coin.denom] = coin.amount
+                        
+                    else:
+                        denom_trace           = self.denomTrace(coin.denom)
+                        balances[denom_trace] = coin.amount
+                        # We only get pools if the entire coin list is requested
+                        if denom_trace[0:len('gamm/pool/')] == 'gamm/pool/':
+                            pool_id = denom_trace[len('gamm/pool/'):]
+                            pools[int(pool_id)] = coin.amount
+                    
+                # Go through the pagination (if any)
+                while pagination['next_key'] is not None:
+                    pagOpt.key         = pagination["next_key"]
                     result, pagination = self.terra.bank.balance(address = self.address, params = pagOpt)
-
+                    
                     # Convert the result into a friendly list
                     for coin in result:
-                        
                         if core_coins_only == True:
                             if coin.denom in [ULUNA, UUSD]:
                                 balances[coin.denom] = coin.amount
-                            
                         else:
                             denom_trace           = self.denomTrace(coin.denom)
                             balances[denom_trace] = coin.amount
+
                             # We only get pools if the entire coin list is requested
                             if denom_trace[0:len('gamm/pool/')] == 'gamm/pool/':
                                 pool_id = denom_trace[len('gamm/pool/'):]
                                 pools[int(pool_id)] = coin.amount
-                        
-                    # Go through the pagination (if any)
-                    while pagination['next_key'] is not None:
-                        pagOpt.key         = pagination["next_key"]
-                        result, pagination = self.terra.bank.balance(address = self.address, params = pagOpt)
-                        
-                        # Convert the result into a friendly list
-                        for coin in result:
-                            if core_coins_only == True:
-                                if coin.denom in [ULUNA, UUSD]:
-                                    balances[coin.denom] = coin.amount
-                            else:
-                                denom_trace           = self.denomTrace(coin.denom)
-                                balances[denom_trace] = coin.amount
+                
+            except Exception as err:
+                print (f'Pagination error for {self.name}:', err)
 
-                                # We only get pools if the entire coin list is requested
-                                if denom_trace[0:len('gamm/pool/')] == 'gamm/pool/':
-                                    pool_id = denom_trace[len('gamm/pool/'):]
-                                    pools[int(pool_id)] = coin.amount
-                    
-                except Exception as err:
-                    print (f'Pagination error for {self.name}:', err)
+            if core_coins_only == False:
+                # Add the extra coins (Base, GarudaX, etc)
+                if self.terra is not None and self.terra.chain_id == CHAIN_DATA[ULUNA]['chain_id']:
+                    coin_balance = self.terra.wasm.contract_query(BASE_SMART_CONTRACT_ADDRESS, {'balance':{'address':self.address}})
+                    if int(coin_balance['balance']) > 0:
+                        balances[UBASE] = coin_balance['balance']
 
-                if core_coins_only == False:
-                    # Add the extra coins (Base, GarudaX, etc)
-                    if self.terra is not None and self.terra.chain_id == CHAIN_DATA[ULUNA]['chain_id']:
-                        coin_balance = self.terra.wasm.contract_query(BASE_SMART_CONTRACT_ADDRESS, {'balance':{'address':self.address}})
-                        if int(coin_balance['balance']) > 0:
-                            balances[UBASE] = coin_balance['balance']
-
-                        coin_balance = self.terra.wasm.contract_query(TERRASWAP_GRDX_TO_LUNC_ADDRESS, {'balance':{'address':self.address}})
-                        if int(coin_balance['balance']) > 0:
-                            balances[GRDX] = coin_balance['balance']
+                    coin_balance = self.terra.wasm.contract_query(TERRASWAP_GRDX_TO_LUNC_ADDRESS, {'balance':{'address':self.address}})
+                    if int(coin_balance['balance']) > 0:
+                        balances[GRDX] = coin_balance['balance']
 
 
-                if target_coin is not None:
-                    # If the current balance has a higher (or equal) amount in it than that target coin, then we can exit
-                    if target_coin.denom in balances and int(balances[target_coin.denom]) >= int(target_coin.amount):
-                        break
-                else:
-                    # We're not checking a specific coin, we can exit now
-                    break
+            #if target_coin is not None:
+            #    # If the current balance has a higher (or equal) amount in it than that target coin, then we can exit
+            #    if target_coin.denom in balances and int(balances[target_coin.denom]) >= int(target_coin.amount):
+            #        break
+            #else:
+            #    # We're not checking a specific coin, we can exit now
+            #    break
 
-                # Wait for one second and try again
-                retry_count += 1
-                if retry_count <= SEARCH_RETRY_COUNT:
-                    print (f'Target denom balance not found... attempt {retry_count}/{SEARCH_RETRY_COUNT}')
-                    time.sleep(1)
-                else:
-                    break
+            # Wait for one second and try again
+            #retry_count += 1
+            #if retry_count <= SEARCH_RETRY_COUNT:
+            #    print (f'Target denom balance not found... attempt {retry_count}/{SEARCH_RETRY_COUNT}')
+            #    time.sleep(1)
+            #else:
+            #    break
         else:
             balances:dict = {}
 
@@ -1054,7 +1107,7 @@ class UserWallet:
             is_valid, is_empty = self.validateAddress(recipient_address)
 
             if is_valid == False and is_empty == True:
-                continue_action = get_user_choice('This wallet seems to be empty - do you want to continue? (y/n) ', [])
+                continue_action = get_user_choice(' ❓ This wallet seems to be empty - do you want to continue? (y/n) ', [])
                 if continue_action == True:
                     break
 
