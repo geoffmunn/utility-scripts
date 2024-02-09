@@ -24,7 +24,7 @@ from constants.constants import (
 # from classes.delegation_transaction import DelegationTransaction
 # from classes.swap_transaction import SwapTransaction
 from classes.delegation_transaction import delegate_to_validator
-from classes.liquidity_transaction import join_liquidity_pool, exit_liquidity_pool
+from classes.liquidity_transaction import LiquidityTransaction, join_liquidity_pool, exit_liquidity_pool
 from classes.send_transaction import send_transaction
 from classes.swap_transaction import swap_coins
 from classes.transaction_core import TransactionResult
@@ -34,6 +34,7 @@ from classes.wallets import UserWallets
 from classes.withdrawal_transaction import claim_delegation_rewards
 # from classes.withdrawal_transaction import WithdrawalTransaction
     
+
 from terra_classic_sdk.core.coin import Coin
 
 def check_amount(amount:str, balances:dict, preserve_minimum:bool = False) -> (bool, Coin):
@@ -524,6 +525,88 @@ def main():
                                         transaction_result.showResults()
                                     else:
                                         print ('No pool ID provided in this step!')
+                                else:
+                                    print ('No valid amount was available in this wallet!')
+                                    can_continue = False
+                            else:
+                                print ("'when' trigger not fired!")
+                                print (f"- when: {step['when']}")
+                                can_continue = False
+                        else:
+                            print ('No valid wallet could be found for this step.')
+                            can_continue = False
+
+                    if action == 'exit pool':
+
+                        # Check if there's a specific wallet to use:
+                        if 'wallet' in step:
+                            step_wallet:UserWallet = get_wallet(user_wallets, step['wallet'])
+                        else:
+                            step_wallet:UserWallet = wallet
+
+                        if step_wallet is not None:
+                            step_wallet.getBalances()
+
+                            if 'pool id' in step:
+                                pool_id:int = step['pool id']
+
+                            # Create the send tx object
+                            liquidity_tx = LiquidityTransaction().create(wallet.seed, wallet.denom)
+
+                            print ('wallet pools:', wallet.pools)
+                            # Update the liquidity object with the details so we can get the pool assets
+                            liquidity_tx.pools        = wallet.pools
+                            liquidity_tx.wallet       = wallet
+                            liquidity_tx.wallet_denom = wallet.denom
+                            liquidity_tx.pool_id      = pool_id
+                            
+                            # This is the exit pool logic
+                            # Get the assets for the summary list
+                            pool_assets:dict  = liquidity_tx.getPoolAssets()
+                            asset_values:dict = liquidity_tx.getAssetValues(pool_assets)
+                            total_value:float = 0
+
+                            print ('This pool holds:\n')
+                            for asset_denom in pool_assets:
+                                print (' *  ' + str(round(pool_assets[asset_denom], 2)) + ' ' + FULL_COIN_LOOKUP[asset_denom] + ' $' + str(round(asset_values[asset_denom],2)))
+                                total_value += asset_values[asset_denom]
+
+                            total_value = round(total_value, 2)
+
+                            print ('')
+                            print (f'    Total value: ${total_value}')
+
+                            print ('\nHow much do you want to withdraw?')
+                            print ('You can type a percentage (eg 50%), or an exact amount of LUNC.')
+
+                            print ('pool assets:', pool_assets)
+                            #user_withdrawal:str = wallet.getUserNumber('How much LUNC are you withdrawing? ', {'max_number': float(pool_assets[ULUNA]), 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': False, 'keep_minimum': False, 'target_denom': ULUNA})
+                            amount_out = step['amount']
+                            if is_percentage(amount_out):
+                                amount_out:float  = float(amount_out[:-1]) / 100
+                                coin_amount:float = round(pool_assets[ULUNA] * amount_out, 2)
+                            else:
+                                # If this is a precise amount, we need to convert this into a percentage of the total amount of LUNC   
+                                coin_amount:float = wallet.formatUluna(amount_out, ULUNA)
+                                amount_out:float  = round(int(coin_amount) / int(pool_assets[ULUNA]), 2)
+                                
+                            print ('amount out:', amount_out)
+                            exit()
+                            is_triggered = check_trigger(step['when'], step_wallet.balances)
+
+                            if is_triggered == True:
+                                #amount_ok, swap_coin = check_amount(step['amount'], step_wallet.balances, True)
+                                
+
+                                if amount_ok == True:
+
+                                    #if 'pool id' in step:
+                                    #    pool_id:int = step['pool id']
+
+                                    transaction_result:TransactionResult = join_liquidity_pool(step_wallet, pool_id, swap_coin.amount, False)
+                                    transaction_result.showResults()
+                                    #else:
+                                    #    print ('No pool ID provided in this step!')
                                 else:
                                     print ('No valid amount was available in this wallet!')
                                     can_continue = False
