@@ -466,7 +466,6 @@ def main():
 
                             is_triggered = check_trigger(step['when'], step_wallet.balances)
                                     
-                            print ('wallet balances:', step_wallet.balances)
                             if is_triggered == True:
                                 amount_ok, swap_coin = check_amount(step['amount'], step_wallet.balances, True)
                                 
@@ -545,7 +544,6 @@ def main():
                             # Create the send tx object
                             liquidity_tx = LiquidityTransaction().create(wallet.seed, wallet.denom)
 
-                            print ('wallet pools:', wallet.pools)
                             # Update the liquidity object with the details so we can get the pool assets
                             liquidity_tx.pools        = wallet.pools
                             liquidity_tx.wallet       = wallet
@@ -568,10 +566,6 @@ def main():
                             print ('')
                             print (f'    Total value: ${total_value}')
 
-                            print ('\nHow much do you want to withdraw?')
-                            print ('You can type a percentage (eg 50%), or an exact amount of LUNC.')
-
-                            print ('pool assets:', pool_assets)
                             #user_withdrawal:str = wallet.getUserNumber('How much LUNC are you withdrawing? ', {'max_number': float(pool_assets[ULUNA]), 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': False, 'keep_minimum': False, 'target_denom': ULUNA})
                             amount_out = step['amount']
                             if is_percentage(amount_out):
