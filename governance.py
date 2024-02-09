@@ -80,8 +80,9 @@ def main():
     print ('  (N)  Vote no')
     print ('  (V)  No with veto')
     print ('  (Q)  Quit')
-
-    user_vote = get_user_choice('\nPick a vote option: ', vote_options.keys())
+    print ('')
+    
+    user_vote = get_user_choice(' ❓ Pick a vote option: ', vote_options.keys())
         
     if answer == USER_ACTION_QUIT:
         print (' 🛑 Exiting...\n')
