@@ -18,6 +18,8 @@ from constants.constants import (
     USER_ACTION_QUIT,
 )
 
+# https://www.reddit.com/r/CryptoCurrency/comments/1al52up/is_being_a_lp_liquidity_provider_actually/
+
 from classes.wallets import UserWallets
 from classes.liquidity_transaction import LiquidityTransaction, join_liquidity_pool, exit_liquidity_pool
 from classes.transaction_core import TransactionResult
@@ -52,38 +54,39 @@ def main():
     
     # Create the send tx object
     liquidity_tx = LiquidityTransaction().create(wallet.seed, wallet.denom)
-    liquidity_tx.pools = wallet.pools
-    liquidity_tx.wallet          = wallet
-    liquidity_tx.wallet_denom    = wallet.denom
 
+    # Get the pool off the user
     user_pool, answer = liquidity_tx.getPoolSelection('Enter the pool number you want to use, (X) to continue, or (Q) to quit: ', wallet)
 
-    
-    liquidity_tx.pool_id         = user_pool
+    # Update the liquidity object with the details so we can get the pool assets
+    liquidity_tx.pools        = wallet.pools
+    liquidity_tx.wallet       = wallet
+    liquidity_tx.wallet_denom = wallet.denom
+    liquidity_tx.pool_id      = user_pool
 
     if answer == USER_ACTION_QUIT:
         print (' 🛑 Exiting...\n')
         exit()
 
     # Are we joining aliquidity pool, or exiting?
-    join_or_exit = get_user_choice('Do you want to join (J) a liquidity pool, exit a pool(E), or quit this process (Q)? ', [JOIN_POOL, EXIT_POOL, USER_ACTION_QUIT])
+    join_or_exit = get_user_choice(' ❓ Do you want to join (J) a liquidity pool, exit a pool(E), or quit this process (Q)? ', [JOIN_POOL, EXIT_POOL, USER_ACTION_QUIT])
 
     if answer == USER_ACTION_QUIT:
         print (' 🛑 Exiting...\n')
         exit()
 
     amount_out:float = None
-    amount_in:int = None
+    amount_in:int    = None
 
     if join_or_exit == JOIN_POOL:
         print (f"\nThe {wallet.name} wallet holds {wallet.formatUluna(wallet.balances[denom], denom)} {FULL_COIN_LOOKUP[denom]}\n")
         print (f"NOTE: You can send the entire value of this wallet by typing '100%' - no minimum amount will be retained.")
 
-        amount_in:int       = wallet.getUserNumber('How much are you sending? ', {'max_number': float(wallet.formatUluna(wallet.balances[denom], denom, False)), 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': True, 'keep_minimum': False, 'target_denom': denom})
+        amount_in:int = wallet.getUserNumber('How much are you sending? ', {'max_number': float(wallet.formatUluna(wallet.balances[denom], denom, False)), 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': True, 'keep_minimum': False, 'target_denom': denom})
         #liquidity_tx.amount_in = uluna_amount
         
         liquidity_coin:Coin = wallet.createCoin(denom, amount_in)
-        coin_amount:float = wallet.formatUluna(liquidity_coin.amount, liquidity_coin.denom)
+        coin_amount:float   = wallet.formatUluna(liquidity_coin.amount, liquidity_coin.denom)
 
     else:
         # This is the exit pool logic
@@ -99,7 +102,8 @@ def main():
 
         total_value = round(total_value, 2)
 
-        print (f'Total value: ${total_value}')
+        print ('')
+        print (f'    Total value: ${total_value}')
 
         print ('\nHow much do you want to withdraw?')
         print ('You can type a percentage (eg 50%), or an exact amount of LUNC.')
@@ -128,7 +132,6 @@ def main():
         
         transaction_result:TransactionResult = exit_liquidity_pool(wallet, user_pool, amount_out, True)
 
-    
     transaction_result.showResults()
 
     # # Populate it with the details we have so far:
