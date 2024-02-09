@@ -51,7 +51,7 @@ def main():
     print ('  (SD) Swap & Delegate')
     print ('  (Q)  Quit\n')
 
-    user_action = get_user_choice('Pick an option: ', [
+    user_action = get_user_choice(' ❓ Pick an option: ', [
         USER_ACTION_WITHDRAW,
         USER_ACTION_SWAP,
         USER_ACTION_DELEGATE,
@@ -105,7 +105,7 @@ def main():
     for wallet_name in user_wallets:
         print (f' * {wallet_name}')
 
-    continue_action = get_user_choice('\nDo you want to continue? (y/n) ', [])
+    continue_action = get_user_choice('\n ❓ Do you want to continue? (y/n) ', [])
     if continue_action == False:
         print (' 🛑 Exiting...\n')
         exit()
