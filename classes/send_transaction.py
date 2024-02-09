@@ -481,7 +481,7 @@ def send_transaction(wallet:UserWallet, recipient_address:str, send_coin:Coin, m
         
         if send_result == True:
             # Attach the recipietn wallet to this object so we can check if it worked
-            send_tx.recipient_wallet:UserWallet = UserWallet().create(name = 'recipient_wallet', address = recipient_address)
+            #recipient_wallet:UserWallet = UserWallet().create(name = 'recipient_wallet', address = recipient_address)
 
             transaction_result:TransactionResult = send_tx.broadcast()
 
