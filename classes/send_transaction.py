@@ -3,8 +3,8 @@
 
 from __future__ import annotations
 
-from hashlib import sha256
 import math
+import time
 
 from classes.common import (
     get_user_choice
@@ -15,6 +15,7 @@ from constants.constants import (
     CHAIN_DATA,
     FULL_COIN_LOOKUP,
     GRDX,
+    SEARCH_RETRY_COUNT,
     TERRASWAP_GRDX_TO_LUNC_ADDRESS,
     UBASE,
     ULUNA,
@@ -55,10 +56,11 @@ class SendTransaction(TransactionCore):
         self.is_on_chain:bool      = True
         self.memo:str              = ''
         self.receiving_denom:str   = ''
-        self.recipient_address:str = ''
+        self.recipient_address:str = None
         self.recipient_prefix:str  = ''
+        #self.recipient_wallet:UserWallet = None
         self.revision_number:int   = None
-        self.sender_address:str    = ''
+        self.sender_address:str    = None
         self.sender_prefix:str     = ''
         self.source_channel:str    = None
         self.tax:float             = None
@@ -462,10 +464,14 @@ def send_transaction(wallet:UserWallet, recipient_address:str, send_coin:Coin, m
 
             print (send_tx.readableFee())
 
-            user_choice = get_user_choice('Do you want to continue? (y/n) ', [])
+            user_choice = get_user_choice(' ❓ Do you want to continue? (y/n) ', [])
 
             if user_choice == False:
                 exit()
+
+        recipient_wallet:UserWallet = UserWallet().create('Recipient wallet', send_tx.recipient_address)
+        recipient_wallet.getBalances()
+        old_balance:int = int(recipient_wallet.balances[send_tx.denom])
 
         # Now we know what the fee is, we can do it again and finalise it
         if send_tx.is_on_chain == True:
@@ -474,6 +480,9 @@ def send_transaction(wallet:UserWallet, recipient_address:str, send_coin:Coin, m
             send_result = send_tx.sendOffchain()
         
         if send_result == True:
+            # Attach the recipietn wallet to this object so we can check if it worked
+            send_tx.recipient_wallet:UserWallet = UserWallet().create(name = 'recipient_wallet', address = recipient_address)
+
             transaction_result:TransactionResult = send_tx.broadcast()
 
             if send_tx.broadcast_result is not None and send_tx.broadcast_result.code == 32:
@@ -507,10 +516,31 @@ def send_transaction(wallet:UserWallet, recipient_address:str, send_coin:Coin, m
                         transaction_result.log     = f' 🛎️  {transaction_result.broadcast_result.raw_log}'
                     else:
                         transaction_result.message = f' 🛎️  No broadcast log on {wallet.name} was available.'
+            
+            # Check that the recipient wallet has been updated
+            # To keep things simple, we'll only check for increased balances
+            retry_count:int = 0
+            print (f'\n 🔎︎ Checking that the recipient has this transaction...')
+            while True:
+                recipient_wallet.getBalances()
+                new_balance:int = int(recipient_wallet.balances[send_tx.denom])
+                if new_balance > old_balance:
+                    break
+                
+                retry_count += 1
+
+                if retry_count <= SEARCH_RETRY_COUNT:
+                    print (f'    Search attempt {retry_count}/{SEARCH_RETRY_COUNT}')
+                    time.sleep(1)
+                else:
+                    break
+
+
         else:
             transaction_result.message = f' 🛎️  The send transaction on {wallet.name} could not be completed'
     else:
         transaction_result.message = f' 🛎️  The send transaction on {wallet.name} could not be completed'
+
 
     # Store the delegated amount for display purposes
     transaction_result.transacted_amount = wallet.formatUluna(send_coin.amount, send_coin.denom, True)
