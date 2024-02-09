@@ -126,15 +126,19 @@ def check_trigger(triggers:list, balances:dict) -> bool:
             target_amount:float = float(trigger_bits[2])
 
             # Get this coin's technical name (ie, uluna)
-            coin_denom:str     = list(FULL_COIN_LOOKUP.keys())[list(FULL_COIN_LOOKUP.values()).index(coin_denom)]
-            coin_balance:float = balances[coin_denom] / (10 ** get_precision(coin_denom))
-            eval_string:str    = f'{coin_balance}{comparison}{target_amount}'
+            if coin_denom in balances:
+                coin_denom:str     = list(FULL_COIN_LOOKUP.keys())[list(FULL_COIN_LOOKUP.values()).index(coin_denom)]
+                coin_balance:float = int(balances[coin_denom]) / (10 ** get_precision(coin_denom))
+                eval_string:str    = f'{coin_balance}{comparison}{target_amount}'
 
-            # Evaluate this string and return the value
-            value:bool = eval(eval_string)
+                # Evaluate this string and return the value
+                value:bool = eval(eval_string)
 
-            if value == False:
-                 is_triggered = False
+                if value == False:
+                    is_triggered = False
+            else:
+                # denom not in balances
+                is_triggered = False
 
     return is_triggered
 
