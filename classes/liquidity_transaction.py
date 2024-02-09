@@ -794,6 +794,7 @@ def join_liquidity_pool(wallet:UserWallet, pool_id:int, amount_in:int, prompt_us
     # Store the delegated amount for display purposes
     transaction_result.transacted_amount = wallet.formatUluna(amount_in, ULUNA, True)
     transaction_result.label             = 'Liquidity addition'
+    transaction_result.wallet_denom      = wallet.denom
 
     return transaction_result
 
@@ -819,14 +820,14 @@ def exit_liquidity_pool(wallet:UserWallet, pool_id:int, amount_out:float, prompt
     liquidity_tx = LiquidityTransaction().create(wallet.seed, wallet.denom)
 
     # Populate it with required details:
-    liquidity_tx.amount_out = amount_out
-    liquidity_tx.balances        = wallet.balances
-    liquidity_tx.pool_id         = pool_id
-    liquidity_tx.pools           = wallet.pools
-    liquidity_tx.sender_address  = wallet.address
-    liquidity_tx.source_channel  = CHAIN_DATA[wallet.denom]['ibc_channels'][ULUNA]
-    liquidity_tx.wallet          = wallet
-    liquidity_tx.wallet_denom    = wallet.denom
+    liquidity_tx.amount_out     = amount_out
+    liquidity_tx.balances       = wallet.balances
+    liquidity_tx.pool_id        = pool_id
+    liquidity_tx.pools          = wallet.pools
+    liquidity_tx.sender_address = wallet.address
+    liquidity_tx.source_channel = CHAIN_DATA[wallet.denom]['ibc_channels'][ULUNA]
+    liquidity_tx.wallet         = wallet
+    liquidity_tx.wallet_denom   = wallet.denom
 
     # Simulate it
     liquidity_result:bool = liquidity_tx.exitSimulate()
@@ -881,5 +882,6 @@ def exit_liquidity_pool(wallet:UserWallet, pool_id:int, amount_out:float, prompt
     # Store the delegated amount for display purposes
     #transaction_result.transacted_amount = wallet.formatUluna(amount_out, ULUNA, True)
     #transaction_result.label             = 'Liquidity withdrawal'
-
+    transaction_result.wallet_denom      = wallet.denom
+    
     return transaction_result
