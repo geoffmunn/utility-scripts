@@ -568,7 +568,6 @@ class SwapTransaction(TransactionCore):
                 sequence       = self.sequence
             )
 
-            print ('options:', options)
             tx:Tx = self.current_wallet.create_and_sign_tx(options)
             
             self.transaction = tx
@@ -1003,6 +1002,8 @@ def swap_coins(wallet, swap_coin:Coin, swap_to_denom:str, estimated_amount:int =
 
                 if user_choice == False:
                     exit()
+            else:
+                print (swap_tx.readableFee())
 
             swap_result:bool = swap_tx.offChainSwap()
     else:
@@ -1018,7 +1019,9 @@ def swap_coins(wallet, swap_coin:Coin, swap_to_denom:str, estimated_amount:int =
 
                     if user_choice == False:
                         exit()
-
+                else:
+                    print (swap_tx.readableFee())
+                    
                 swap_result:bool = swap_tx.marketSwap()
         else:
             # This is for uluna -> uusd swaps ONLY. We use the contract addresses to support this
@@ -1032,6 +1035,8 @@ def swap_coins(wallet, swap_coin:Coin, swap_to_denom:str, estimated_amount:int =
 
                     if user_choice == False:
                         exit()
+                else:
+                    print (swap_tx.readableFee())
 
                 swap_result:bool = swap_tx.swap()
     

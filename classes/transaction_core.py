@@ -321,7 +321,7 @@ class TransactionCore():
         
         # Set up the default values:
         transaction_result.transaction_confirmed = False
-        
+
         # Put the broadcast result here - the displayed hash comes from this
         transaction_result.broadcast_result = self.broadcast_result
 
@@ -590,7 +590,7 @@ class TransactionCore():
             fee_coins:Coins = self.fee.amount
 
             # Build a human-readable fee description:
-            fee_string:str = 'The fee is '
+            fee_string:str = ' 🪙 The fee is '
             first:bool     = True
             for fee_coin in fee_coins.to_list():
 

@@ -467,6 +467,8 @@ def send_transaction(wallet:UserWallet, recipient_address:str, send_coin:Coin, m
 
             if user_choice == False:
                 exit()
+        else:
+            print (send_tx.readableFee())
 
         recipient_wallet:UserWallet = UserWallet().create('Recipient wallet', send_tx.recipient_address)
         recipient_wallet.getBalances()

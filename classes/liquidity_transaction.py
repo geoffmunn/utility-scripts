@@ -751,6 +751,8 @@ def join_liquidity_pool(wallet:UserWallet, pool_id:int, amount_in:int, prompt_us
             if user_choice == False:
                 print (' 🛑 Exiting...\n')
                 exit()
+        else:
+            print (liquidity_tx.readableFee())
 
         # Now we know what the fee is, we can do it again and finalise it
         liquidity_result:bool = liquidity_tx.joinPool()
@@ -841,7 +843,9 @@ def exit_liquidity_pool(wallet:UserWallet, pool_id:int, amount_out:float, prompt
             if user_choice == False:
                 print (' 🛑 Exiting...\n')
                 exit()
-
+        else:
+            print (liquidity_tx.readableFee())
+            
         # Now we know what the fee is, we can do it again and finalise it
         liquidity_result:bool = liquidity_tx.exitPool()
             
@@ -883,5 +887,5 @@ def exit_liquidity_pool(wallet:UserWallet, pool_id:int, amount_out:float, prompt
     #transaction_result.transacted_amount = wallet.formatUluna(amount_out, ULUNA, True)
     #transaction_result.label             = 'Liquidity withdrawal'
     transaction_result.wallet_denom      = wallet.denom
-    
+
     return transaction_result
