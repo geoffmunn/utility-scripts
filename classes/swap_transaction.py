@@ -513,6 +513,10 @@ class SwapTransaction(TransactionCore):
             # This will be used by the swap function next time we call it
             self.fee.amount = new_coin
 
+            # If the fee denom is the same as what we're swapping, then we need to deduct this
+            if fee_coin.denom == self.swap_denom:
+                self.fee_deductables = int(fee_amount)
+                
             return True
         else:
             return False
@@ -530,6 +534,14 @@ class SwapTransaction(TransactionCore):
         @return: bool
         """
 
+        #print ('old swap amount: ', self.swap_amount)
+
+        if self.fee_deductables is not None:
+            if int(self.swap_amount + self.fee_deductables) > int(self.balances[self.swap_denom]):
+                #print ('fee deductibles:', self.fee_deductables)
+                self.swap_amount = int(self.swap_amount - self.fee_deductables)
+            
+        #print ('new swap amount: ', self.swap_amount)
         try:
             channel_id = CHAIN_DATA[self.wallet_denom]['ibc_channels'][self.swap_denom]
             
@@ -556,6 +568,7 @@ class SwapTransaction(TransactionCore):
                 sequence       = self.sequence
             )
 
+            print ('options:', options)
             tx:Tx = self.current_wallet.create_and_sign_tx(options)
             
             self.transaction = tx
@@ -748,6 +761,10 @@ class SwapTransaction(TransactionCore):
         @return: bool
         """
 
+        if self.fee_deductables is not None:
+            if int(self.swap_amount + self.fee_deductables) > int(self.balances[self.swap_denom]):
+                self.swap_amount = int(self.swap_amount - self.fee_deductables)
+            
         if self.belief_price is not None:
             
             if self.fee is not None:
