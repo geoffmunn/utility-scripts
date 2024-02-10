@@ -4,6 +4,7 @@
 
 import yaml
 
+from datetime import datetime
 from os.path import exists
 
 from classes.common import (
@@ -120,20 +121,45 @@ def check_trigger(triggers:list, balances:dict) -> bool:
         #else:
         trigger_bits:list = trigger.split(' ')
         if len(trigger_bits) == 3:
-            # Should be something like LUNC >= 1000
-            coin_denom:str      = str(trigger_bits[0])
+            # Should be something like LUNC >= 1000 or DAY = SUNDAY or TIME = 13:30
+            condition:str      = str(trigger_bits[0])
             comparison:str      = str(trigger_bits[1])
-            target_amount:float = float(trigger_bits[2])
+            requirement:str = str(trigger_bits[2])
 
             # Get this coin's technical name (ie, uluna)
-            if coin_denom.lower() in balances:
-                coin_denom:str     = list(FULL_COIN_LOOKUP.keys())[list(FULL_COIN_LOOKUP.values()).index(coin_denom)]
-                coin_balance:float = int(balances[coin_denom]) / (10 ** get_precision(coin_denom))
-                eval_string:str    = f'{coin_balance}{comparison}{target_amount}'
+            if condition in FULL_COIN_LOOKUP.values():
+                coin_denom:str = list(FULL_COIN_LOOKUP.keys())[list(FULL_COIN_LOOKUP.values()).index(condition)]
+                if coin_denom.lower() in balances:
+                    coin_balance:float = int(balances[coin_denom]) / (10 ** get_precision(coin_denom))
+                    eval_string:str    = f'{coin_balance}{comparison}{requirement}'
 
-                # Evaluate this string and return the value
-                value:bool = eval(eval_string)
-                if value == False:
+                    # Evaluate this string and return the value
+                    value:bool = eval(eval_string)
+                    if value == False:
+                        is_triggered = False
+            elif condition.lower() == 'day':
+                # Check for days
+                dt = datetime.now()
+                
+                current_day:str = dt.strftime('%A')
+                if requirement.lower() != current_day.lower():
+                    is_triggered = False
+            elif condition.lower() == 'time':
+                # Check the time requirement
+                time_bits:list = requirement.split(':')
+                if len(time_bits) == 1:
+                    # Hour only
+                    hour:str = datetime.today().strftime("%I%p").lower()
+                    if hour != requirement.lower():
+                        is_triggered = False
+                    
+                elif len(time_bits) == 2:
+                    #print(datetime.today().strftime("%I:%M%p")) # 03:31 AM
+                    hourMinute:str = datetime.today().strftime("%I:%M%p").lower()
+                    if hourMinute != requirement.lower():
+                        is_triggered = False
+                else:
+                    # Not a time format we recognise
                     is_triggered = False
             else:
                 # denom not in balances
