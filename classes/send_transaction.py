@@ -233,7 +233,6 @@ class SendTransaction(TransactionCore):
                 fee            = self.fee,
                 gas            = self.gas_limit,
                 gas_prices     = self.gas_list
-                #fee_denoms     = ['uosmo', 'uluna']
             )
 
             # This process often generates sequence errors. If we get a response error, then
@@ -471,7 +470,9 @@ def send_transaction(wallet:UserWallet, recipient_address:str, send_coin:Coin, m
 
         recipient_wallet:UserWallet = UserWallet().create('Recipient wallet', send_tx.recipient_address)
         recipient_wallet.getBalances()
-        old_balance:int = int(recipient_wallet.balances[send_tx.denom])
+        old_balance:int = 0
+        if send_tx.denom in recipient_wallet.balances:
+            old_balance = int(recipient_wallet.balances[send_tx.denom])
 
         # Now we know what the fee is, we can do it again and finalise it
         if send_tx.is_on_chain == True:
@@ -480,6 +481,7 @@ def send_transaction(wallet:UserWallet, recipient_address:str, send_coin:Coin, m
             send_result = send_tx.sendOffchain()
         
         if send_result == True:
+            
             # Attach the recipietn wallet to this object so we can check if it worked
             #recipient_wallet:UserWallet = UserWallet().create(name = 'recipient_wallet', address = recipient_address)
 
@@ -523,7 +525,10 @@ def send_transaction(wallet:UserWallet, recipient_address:str, send_coin:Coin, m
             print (f'\n 🔎︎ Checking that the recipient has this transaction...')
             while True:
                 recipient_wallet.getBalances()
-                new_balance:int = int(recipient_wallet.balances[send_tx.denom])
+                new_balance:int = 0
+                if send_tx.denom in recipient_wallet.balances:
+                    new_balance = int(recipient_wallet.balances[send_tx.denom])
+
                 if new_balance > old_balance:
                     break
                 
