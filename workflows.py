@@ -80,7 +80,6 @@ def check_amount(amount:str, balances:dict, preserve_minimum:bool = False) -> (b
 
         if available_balance > 0:
 
-            #if len(amount_bits) >= 2:
             if amount_bits[0].isnumeric():
                 coin_amount:float = float(amount_bits[0]) * (10 ** get_precision(coin_denom))
                 
@@ -132,7 +131,7 @@ def check_trigger(triggers:list, balances:dict) -> bool:
                 if coin_denom.lower() in balances:
                     coin_balance:float = int(balances[coin_denom]) / (10 ** get_precision(coin_denom))
                     eval_string:str    = f'{coin_balance}{comparison}{requirement}'
-
+                    
                     # Evaluate this string and return the value
                     value:bool = eval(eval_string)
                     if value == False:
@@ -149,7 +148,7 @@ def check_trigger(triggers:list, balances:dict) -> bool:
                 time_bits:list = requirement.split(':')
                 if len(time_bits) == 1:
                     # Hour only
-                    hour:str = datetime.today().strftime("%I%p").lower()
+                    hour:str = datetime.today().strftime("%I%p").lower().lstrip('0')
                     if hour != requirement.lower():
                         is_triggered = False
                     
@@ -573,58 +572,36 @@ def main():
                                 # This is the exit pool logic
                                 # Get the assets for the summary list
                                 pool_assets:dict  = liquidity_tx.getPoolAssets()
-                                asset_values:dict = liquidity_tx.getAssetValues(pool_assets)
-                                total_value:float = 0
+                                #asset_values:dict = liquidity_tx.getAssetValues(pool_assets)
 
-                                print ('This pool holds:\n')
-                                for asset_denom in pool_assets:
-                                    print (' *  ' + str(round(pool_assets[asset_denom], 2)) + ' ' + FULL_COIN_LOOKUP[asset_denom] + ' $' + str(round(asset_values[asset_denom],2)))
-                                    total_value += asset_values[asset_denom]
-
-                                total_value = round(total_value, 2)
-
-                                print ('')
-                                print (f'    Total value: ${total_value}')
-
-                                #user_withdrawal:str = wallet.getUserNumber('How much LUNC are you withdrawing? ', {'max_number': float(pool_assets[ULUNA]), 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': False, 'keep_minimum': False, 'target_denom': ULUNA})
+                                #print ('pool assets:', pool_assets)
+                                #print ('asset values:', asset_values)
+                                
                                 amount_out = step['amount']
                                 if is_percentage(amount_out):
                                     amount_out:float  = float(amount_out[:-1]) / 100
-                                    coin_amount:float = round(pool_assets[ULUNA] * amount_out, 2)
+                                    #coin_amount:float = round(pool_assets[ULUNA] * amount_out, 2)
                                 else:
                                     # If this is a precise amount, we need to convert this into a percentage of the total amount of LUNC   
                                     amount_ok, amount_coin = check_amount(amount_out, {ULUNA:(pool_assets[ULUNA] * (10 ** get_precision(ULUNA)))})
-                                    print (amount_ok)
-                                    print (amount_coin)
+                                    #print ('amount ok?', amount_ok)
+                                    #print ('amount coin:', amount_coin)
                                     if amount_ok == True:
-                                        coin_amount:float = wallet.formatUluna(amount_coin.amount, amount_coin.denom)
-                                        amount_out:float  = round(int(coin_amount) / int(pool_assets[ULUNA]), 2)
+                                        #coin_amount:float = wallet.formatUluna(amount_coin.amount, amount_coin.denom)
+                                        amount_out:float  = round(int(amount_coin.amount) / int(pool_assets[ULUNA]), 2)
                                     else:
                                         amount_out:float = 0
 
-                                print ('amount out:', amount_out)
+                                #print ('amount out:', amount_out)
                                 if amount_out > 0 and amount_out <= 1:
 
-                                    is_triggered = check_trigger(step['when'], step_wallet.balances)
+                                    #print ('pool assets:', pool_assets)
+                                    is_triggered = check_trigger(step['when'], pool_assets)
 
                                     if is_triggered == True:
-                                        #amount_ok, swap_coin = check_amount(step['amount'], step_wallet.balances, True)
-                                        
-
-                                        #if amount_ok == True:
-
-                                            #if 'pool id' in step:
-                                            #    pool_id:int = step['pool id']
-
-                                        #transaction_result:TransactionResult = join_liquidity_pool(step_wallet, pool_id, swap_coin.amount, False)
                                         transaction_result:TransactionResult = exit_liquidity_pool(step_wallet, pool_id, amount_out, False)
                                         transaction_result.wallet_denom = wallet.denom
                                         transaction_result.showResults()
-                                            #else:
-                                            #    print ('No pool ID provided in this step!')
-                                        #else:
-                                        #    print ('No valid amount was available in this wallet!')
-                                        #    can_continue = False
                                     else:
                                         print (" ❗ 'when' trigger not fired!")
                                         print (f"    - when: {step['when']}")
