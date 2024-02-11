@@ -331,8 +331,8 @@ def main():
                                     is_triggered:bool = check_trigger(step['when'], {ULUNA: uluna_reward})
 
                                     if is_triggered == True:
-                                        print (f" ➜ Withdrawing rewards from {delegations[validator]['validator_name']}...")
-                                        print (f' ➜ Withdrawing {wallet.formatUluna(uluna_reward, ULUNA, False)} rewards.')
+                                        print (f"  ➜ Withdrawing rewards from {delegations[validator]['validator_name']}...")
+                                        print (f'  ➜ Withdrawing {wallet.formatUluna(uluna_reward, ULUNA, False)} rewards.')
 
                                         transaction_result:TransactionResult = claim_delegation_rewards(wallet, validator_address = delegations[validator]['validator'])
                                         transaction_result.showResults()
