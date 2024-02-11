@@ -270,7 +270,7 @@ class LiquidityTransaction(TransactionCore):
 
         prices:dict = {}
         for asset_denom in assets:
-            prices[asset_denom] = assets[asset_denom] * self.wallet.getCoinPrice([asset_denom])[asset_denom]
+            prices[asset_denom] = (assets[asset_denom] / (10 ** get_precision(asset_denom))) * self.wallet.getCoinPrice([asset_denom])[asset_denom]
 
         return prices
     
@@ -320,10 +320,9 @@ class LiquidityTransaction(TransactionCore):
             asset:PoolAsset
             for asset in pool.pool_assets:
                 denom:str     = self.denomTrace(asset.token.denom)
-                precision:int = get_precision(denom)
-            
+                
                 # Add this to the list
-                asset_list[denom] = int(asset.token.amount) / share_fraction / (10 ** precision)
+                asset_list[denom] = int(asset.token.amount) / share_fraction
 
         return asset_list
     
@@ -397,8 +396,8 @@ class LiquidityTransaction(TransactionCore):
             # Store this so we don't have to do this again
             pool_balances[pool_id] = user_balance
 
-            if len(user_balance) > label_widths[3]:
-                label_widths[3] = user_balance
+            if len(user_balance) > int(label_widths[3]):
+                label_widths[3] = int(user_balance)
             
         padding_str:str   = ' ' * 100
         header_string:str = ''
@@ -845,7 +844,7 @@ def exit_liquidity_pool(wallet:UserWallet, pool_id:int, amount_out:float, prompt
                 exit()
         else:
             print (liquidity_tx.readableFee())
-            
+
         # Now we know what the fee is, we can do it again and finalise it
         liquidity_result:bool = liquidity_tx.exitPool()
             
