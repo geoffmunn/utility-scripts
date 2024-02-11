@@ -4,6 +4,7 @@
 from classes.common import (
     check_database,
     check_version,
+    get_precision,
     get_user_choice,
     is_percentage
 )
@@ -96,7 +97,7 @@ def main():
 
         print ('This pool holds:\n')
         for asset_denom in pool_assets:
-            print (' *  ' + str(round(pool_assets[asset_denom], 2)) + ' ' + FULL_COIN_LOOKUP[asset_denom] + ' $' + str(round(asset_values[asset_denom],2)))
+            print (' *  ' + str(round(pool_assets[asset_denom] / (10 ** get_precision(asset_denom)), 2)) + ' ' + FULL_COIN_LOOKUP[asset_denom] + ' $' + str(round(asset_values[asset_denom],2)))
             total_value += asset_values[asset_denom]
 
         total_value = round(total_value, 2)
@@ -114,7 +115,7 @@ def main():
             coin_amount:float = round(pool_assets[ULUNA] * amount_out, 2)
         else:
             # If this is a precise amount, we need to convert this into a percentage of the total amount of LUNC   
-            coin_amount:float = wallet.formatUluna(user_withdrawal, ULUNA)
+            coin_amount = user_withdrawal
             amount_out:float  = round(int(coin_amount) / int(pool_assets[ULUNA]), 2)
 
     if join_or_exit == JOIN_POOL:
