@@ -1,27 +1,72 @@
+# Workflows
+
+This is probably the most useful part of the utility scripts project. Workflows allow you to chain actions together, across multiple wallets, on an automated basis.
+All you need to do is to describe your actions in YML file, and follow a simple structure.
+
+There are no limitations to what you can do (within the constraints of YML though).
+
+Full examples can be found at the end of this document, and in the ```user_workflows.example.yml``` file
+
+**terra1sk06e3dyexuq4shw77y3dsv480xv42mq73anxu** is the burn address for Terra Classic. Do not send anything to this address!
+
+## Introduction
+
+A workflow has 3 components: the header, the wallets, and the steps.
+
 ## Header
 
-## Name
-Each workflow needs a name. This is purely for display purposes.
+This is contains the name of the workflow and an optional extended decription.
+Technically, the name is optional but I highly recommend that you include one just so it's obvious what workflow is being run.
 
-## Description
-This is optional. You can put in a longer description of what is happening here.
+Example:
+```yml
+workflows:
+  - name: Weekly withdrawal 1
+    description: Redelegate 100% of staking rewards in most wallets
+```
 
 ## Wallets
 You can provide a list of wallets that this workflow will be applied to. This can be a single wallet, or a long list.
+The wallet value can be either the name or the address, but for clarity I recommend that you use the wallet name. These need to be set up in the ```configure_user_wallets.py``` script.
+
+**Workflows do not support non-managed addresses for security and safety reasons.**
 
 Examples:
 
 ```yml
-wallets:
-  - Workflow wallet 1
+# Single wallet example
+workflows:
+    - name: Weekly withdrawal 1
+      description: Redelegate 100% of staking rewards in most wallets
+      wallets:
+        - Workflow wallet 1
 ```
 
 ```yml
-wallets:
-  - Workflow wallet 1
-  - Workflow wallet 2
-  - Workflow wallet 3
+# Multiple wallets with an address
+workflows:
+    - name: Weekly withdrawal 1
+    description: Redelegate 100% of staking rewards in most wallets
+    wallets:
+      - Workflow wallet 1
+      - Workflow wallet 2
+      - terra1sk06e3dyexuq4shw77y3dsv480xv42mq73anxu
 ```
+
+## Steps
+
+This is where the magic happens.
+
+Steps can consist of one or more of the following:
+ - withdraw
+ - redelegate
+ - delegate
+ - send
+ - swap
+ - join pool
+ - exit pool
+ 
+
 
 General notes:
 Delegations will retain a minimum amount of LUNC, so you have enough to pay for transfers with other actions.
@@ -119,3 +164,8 @@ Example:
     steps:
       - action: withdraw
         when: LUNC >= 1000
+
+
+# NOTES:
+
+Sometimes IBC transfers might fail. Try again.
