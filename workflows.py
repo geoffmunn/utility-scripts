@@ -279,6 +279,9 @@ def main():
             wallets:list = workflow['user_wallets']
             steps:list   = workflow['steps']
 
+            if workflow['name'] is None:
+                workflow['name'] = ''
+
             print ('')
             if len(workflow['name']) > len(description):
                 header:str = '#' * (len(workflow['name']) + 4)
