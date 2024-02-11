@@ -47,7 +47,7 @@ def check_amount(amount:str, balances:dict, preserve_minimum:bool = False) -> (b
     @params:
         - amount: the amount we want to perform an action with. It can be either specific or a percentage, ie: 50% LUNC or 2000 LUNC
         - balances: a dictionary of coins. This can be from the wallet.balances list, or the validator withdrawals
-        - include_minimim: if True, then deduct the WITHDRAWAL_REMAINDER value off the available amount
+        - preserve_minimum: if True, then deduct the WITHDRAWAL_REMAINDER value off the available amount
 
     @return: can we proceed? and converted uluna amount
     """
