@@ -919,7 +919,7 @@ class UserWallet:
                     unbonding:UnbondingDelegation
                     for unbonding in result:
 
-                        self.__iter_result__(unbonding)
+                        self.__iter_undelegation_result__(unbonding)
 
                     while pagination['next_key'] is not None:
 
