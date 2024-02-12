@@ -27,11 +27,19 @@ workflows:
 
 ## Wallets
 You can provide a list of wallets that this workflow will be applied to. This can be a single wallet, or a long list.
+
+```yml
+- wallets:
+    - wallet name 1 (required, must have at least 1)
+    - wallet name 2 (optional)
+    - address (optional)
+```
+
 The wallet value can be either the name or the address, but for clarity I recommend that you use the wallet name. These need to be set up in the ```configure_user_wallets.py``` script.
 
 **Workflows do not support non-managed addresses for security and safety reasons.**
 
-Examples:
+Example 1: A very basic configuration.
 
 ```yml
 workflows:
@@ -40,6 +48,8 @@ workflows:
       wallets:
         - Workflow wallet 1
 ```
+
+Example 2: This shows multiple wallets, with one being a terra address.
 
 ```yml
 workflows:
