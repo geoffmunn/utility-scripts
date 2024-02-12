@@ -89,7 +89,7 @@ Steps can consist of one or more of the following:
 
  If you find that a step fails on a regular basis (problems with Osmosis for example, or unstable infrastructure), then it would be a good idea to have a tidy-up workflow that takes care of any transactions that left coins in limbo.
 
- ### Withdraw
+ ### Withdraw rewards - *withdraw*
 
  This lets you withdraw rewards from a validator. You can only withdraw 100% of the available rewards.
 
@@ -105,7 +105,9 @@ Steps can consist of one or more of the following:
 
  Pick a combination of the 'when' values to match your requirements.
 
- **Example 1** - *always withdraw all rewards*
+ Putting a reward condition in the 'when' section is a good idea so you don't withdraw tiny amounts of rewards and incur fees each time.
+
+ **Example 1** - *always withdraw all rewards.*
 
  ```yml
  workflows:
@@ -119,7 +121,7 @@ Steps can consist of one or more of the following:
             - always
  ```
 
- **Example 2** - *only withdraw rewards on Sunday at 5pm, when the rewards exceed 1000 LUNC*
+ **Example 2** - *only withdraw rewards on Sunday at 5pm, when the rewards exceed 1000 LUNC.*
 
 ```yml
 workflows:
