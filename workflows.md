@@ -82,6 +82,16 @@ Steps can consist of one or more of the following:
 
  This lets you withdraw rewards from a validator. You can only withdraw 100% of the available rewwards.
 
+ ```yml
+ - action: withdraw
+   when:
+     - always (optional, always run this step)
+     - LUNC > 1000 (optional, only run when the LUNC amount is greater than 1000)
+     - Day = Sun (optional, only run this on Sunday)
+     - Time = 5pm (optional, only run this at any point between 5pm and 6pm)
+     - Time = 5:30pm (optional, only run this at exactly 5:30pm)
+ ```
+
  Example 1 - always withdraw all rewards:
 
  ```yml
