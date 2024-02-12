@@ -627,7 +627,7 @@ def main():
 
                                     wallet.getBalances()
                                     wallet.getDelegations()
-                                    delegations:dict = {ULUNA: wallet.delegations[step['old validator']]['rewards'][ULUNA]}
+                                    delegations:dict = {ULUNA: wallet.delegations[step['old validator']]['balance_amount']}
 
                                     amount_ok, amount_coin = check_amount(step['amount'], delegations)
 
@@ -665,7 +665,8 @@ def main():
 
                                 wallet.getBalances()
                                 wallet.getDelegations()
-                                delegations:dict = {ULUNA: wallet.delegations[step['validator']]['rewards'][ULUNA]}
+                                
+                                delegations:dict = {ULUNA: wallet.delegations[step['validator']]['balance_amount']}
 
                                 amount_ok, amount_coin = check_amount(step['amount'], delegations)
 
@@ -674,8 +675,11 @@ def main():
                                     is_triggered = check_trigger(step['when'], delegations)
 
                                     if is_triggered == True:
-                                        print (f"You are unstaking {wallet.formatUluna(amount_coin.amount, amount_coin.denom, True)} from {step['validator']}.")
-                                        print ('IMPORTANT NOTE: this will be unavailable for 21 days. Please check the status by using the validator.py script.')
+                                        print ('')
+                                        print (f"    This validator has a total amount of {wallet.formatUluna(wallet.delegations[step['validator']]['balance_amount'], ULUNA, True)}.")
+                                        print (f"    You are unstaking {wallet.formatUluna(amount_coin.amount, amount_coin.denom, True)} from {step['validator']}.")
+                                        print ('    IMPORTANT NOTE: this will be unavailable for 21 days. Please check the status by using the validator.py script.')
+                                        
                                         transaction_result:TransactionResult = undelegate_from_validator(wallet, validator_address, amount_coin)
                                         transaction_result.showResults()
                                     else:
