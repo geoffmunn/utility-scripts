@@ -636,7 +636,9 @@ def main():
                                         is_triggered = check_trigger(step['when'], delegations)
 
                                         if is_triggered == True:
-                                            print (f"Switching {wallet.formatUluna(amount_coin.amount, amount_coin.denom, True)} from {step['old validator']} to {step['new validator']}")
+                                            print ('')
+                                            print (f"    Switching {wallet.formatUluna(amount_coin.amount, amount_coin.denom, True)} from {step['old validator']} to {step['new validator']}")
+                                            print ('')
                                             transaction_result:TransactionResult = switch_validator(wallet, new_validator_address, old_validator_address, amount_coin)
                                             transaction_result.showResults()
                                         else:
@@ -679,6 +681,7 @@ def main():
                                         print (f"    This validator has a total amount of {wallet.formatUluna(wallet.delegations[step['validator']]['balance_amount'], ULUNA, True)}.")
                                         print (f"    You are unstaking {wallet.formatUluna(amount_coin.amount, amount_coin.denom, True)} from {step['validator']}.")
                                         print ('    IMPORTANT NOTE: this will be unavailable for 21 days. Please check the status by using the validator.py script.')
+                                        print ('')
                                         
                                         transaction_result:TransactionResult = undelegate_from_validator(wallet, validator_address, amount_coin)
                                         transaction_result.showResults()
