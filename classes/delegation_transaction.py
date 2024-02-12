@@ -351,7 +351,7 @@ def switch_validator(wallet:UserWallet, new_validator_address:str, old_validator
     delegation_tx.delegator_address     = wallet.address
     delegation_tx.validator_address     = new_validator_address
     delegation_tx.validator_address_old = old_validator_address
-    delegation_tx.delegated_uluna       = int(delegated_coin.amount)
+    delegation_tx.delegated_uluna       = delegated_coin.amount
     delegation_tx.wallet_denom          = wallet.denom
     
     # Simulate it
@@ -410,7 +410,7 @@ def undelegate_from_validator(wallet:UserWallet, validator_address:str, undelega
     undelegation_tx.balances          = wallet.balances
     undelegation_tx.delegator_address = wallet.address
     undelegation_tx.validator_address = validator_address
-    undelegation_tx.delegated_uluna   = undelegation_coin
+    undelegation_tx.delegated_uluna   = undelegation_coin.amount
     undelegation_tx.wallet_denom      = wallet.denom
     
     # Simulate it
