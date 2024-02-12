@@ -141,7 +141,7 @@ workflows:
 
 You can try different combinations of the LUNC amount, day and time to get the result you want.
 
-### Redelegate
+### Redelegate rewards - *redelegate*
 
 Redelegation is a special action because it only works if you have completed a 'withdraw' step beforehand. The redelegation action keeps track of what has been withdrawn and will redelegate some or all of this amount back. This allows you to hold an amount in the wallet balance which will not be touched in the redelegation step.
 
@@ -155,7 +155,7 @@ Redelegation is a special action because it only works if you have completed a '
     - Time = 5pm (optional, only run this at any point between 5pm and 6pm)
     - Time = 5:30pm (optional, only run this at exactly 5:30pm)
 ```
-Example 1: Withdraw the rewards if they exceed 1000 LUNC and redelegate all of it back to the same validator.
+**Example 1** - *Withdraw the rewards if they exceed 1000 LUNC and redelegate all of it back to the same validator.*
 
 ```yml
 workflows:
@@ -173,7 +173,7 @@ workflows:
           - always
 ```
 
-Example 2: Withdraw the rewards if they exceed 1000 LUNC, and redelegate 50% but only if it's Sunday.
+**Example 2** - *Withdraw the rewards if they exceed 1000 LUNC, and redelegate 50% but only if it's Sunday.*
 
 ```yml
 workflows:
@@ -192,7 +192,7 @@ workflows:
           - always
 ```
 
-Example 3: Withdraw the rewards from multiple validators if they exceed 1000 LUNC, and redelegate 600 LUNC but only if it's 5pm on Sunday.
+**Example 3** - *Withdraw the rewards from multiple validators if they exceed 1000 LUNC, and redelegate 600 LUNC but only if it's 5pm on Sunday.*
 
 ```yml
 workflows:
