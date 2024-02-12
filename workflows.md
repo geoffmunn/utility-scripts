@@ -83,6 +83,11 @@ Steps can consist of one or more of the following:
 
  Each step has its own set of required and optional parameters.
 
+ Steps are run in the order they appear, and if a step fails then all successive steps will be skipped.
+ If this is part of a multi-wallet workflow, then next wallet will have the entire set of steps applied to it, regardless of if it failed on a previous wallet.
+
+ If you find that a step fails on a regular basis (problems with Osmosis for example, or unstable infrastructure), then it would be a good idea to have a tidy-up workflow that takes care of any transactions that left coins in limbo.
+
  ### Withdraw
 
  This lets you withdraw rewards from a validator. You can only withdraw 100% of the available rewwards.
