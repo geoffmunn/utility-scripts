@@ -90,7 +90,7 @@ Steps can consist of one or more of the following:
 
  ### Withdraw
 
- This lets you withdraw rewards from a validator. You can only withdraw 100% of the available rewwards.
+ This lets you withdraw rewards from a validator. You can only withdraw 100% of the available rewards.
 
  ```yml
  - action: withdraw
@@ -101,6 +101,8 @@ Steps can consist of one or more of the following:
      - Time = 5pm (optional, only run this at any point between 5pm and 6pm)
      - Time = 5:30pm (optional, only run this at exactly 5:30pm)
  ```
+
+ Pick a combination of the 'when' values to match your requirements. Typically, 'always' will be the only when condition and you wouldn't include anything else.
 
  Example 1 - always withdraw all rewards:
 
