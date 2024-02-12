@@ -20,7 +20,8 @@ Technically, the name is optional but I highly recommend that you include one ju
 
 **This is a required section.**
 
-Example:
+**Example** - *standard header*
+
 ```yml
 workflows:
   - name: Weekly withdrawal 1
@@ -43,7 +44,7 @@ The wallet value can be either the name or the address, but for clarity I recomm
 
 **Workflows do not support non-managed addresses for security and safety reasons.**
 
-Example 1: A very basic configuration.
+**Example 1** - *A very basic configuration*
 
 ```yml
 workflows:
@@ -53,7 +54,7 @@ workflows:
         - Workflow wallet 1
 ```
 
-Example 2: This shows multiple wallets, with one being a terra address.
+**Example 2** - *This shows multiple wallets, with one being a terra address*
 
 ```yml
 workflows:
@@ -71,15 +72,15 @@ This is where the magic happens.
 
 Steps can consist of one or more of the following:
 
- - Withdraw rewards ('withdraw')
- - Redelegate rewards ('redelegate')
- - Delegate LUNC to a validator ('delegate')
- - Send LUNC or any other coin ('send')
- - Swap LUNC or any other coin ('swap')
- - Join a liquidity pool on Osmosis ('join pool')
- - Exit a liquidity pool on Osmosis ('exit pool')
- - Switch delegations between validators ('switch validator')
- - Unstake delegations from a validator ('unstake delegation')
+ - **Withdraw rewards** - *withdraw*
+ - **Redelegate rewards** - *redelegate*
+ - **Delegate LUNC to a validator** - *delegate*
+ - **Send LUNC or any other coin** - *send*
+ - **Swap LUNC or any other coin** - *swap*
+ - **Join a liquidity pool on Osmosis** - *join pool*
+ - **Exit a liquidity pool on Osmosis** - *exit pool*
+ - **Switch delegations between validators** - *switch validator*
+ - **Unstake delegations from a validator** - *unstake delegation*
 
  Each step has its own set of required and optional parameters.
 
