@@ -24,7 +24,7 @@ from constants.constants import (
 
 # from classes.delegation_transaction import DelegationTransaction
 # from classes.swap_transaction import SwapTransaction
-from classes.delegation_transaction import delegate_to_validator
+from classes.delegation_transaction import delegate_to_validator, switch_validator, undelegate_from_validator
 from classes.liquidity_transaction import LiquidityTransaction, join_liquidity_pool, exit_liquidity_pool
 from classes.send_transaction import send_transaction
 from classes.swap_transaction import swap_coins
@@ -613,6 +613,83 @@ def main():
                             else:
                                 print ('No valid wallet could be found for this step.')
                                 can_continue = False
+
+                        if action == 'switch validator':
+                            # Move from one validator to another
+
+                            validators = Validators()
+                            validators.create()
+                            old_validator_address:str = validators.findValidatorByName(step['old validator'])
+                            new_validator_address:str = validators.findValidatorByName(step['new validator'])
+
+                            if old_validator_address != '':
+                                if new_validator_address != '':
+
+                                    wallet.getBalances()
+                                    wallet.getDelegations()
+                                    delegations:dict = {ULUNA: wallet.delegations[step['old validator']]['rewards'][ULUNA]}
+
+                                    amount_ok, amount_coin = check_amount(step['amount'], delegations)
+
+                                    if amount_ok == True:
+                                                
+                                        is_triggered = check_trigger(step['when'], delegations)
+
+                                        if is_triggered == True:
+                                            print (f"Switching {wallet.formatUluna(amount_coin.amount, amount_coin.denom, True)} from {step['old validator']} to {step['new validator']}")
+                                            transaction_result:TransactionResult = switch_validator(wallet, new_validator_address, old_validator_address, amount_coin)
+                                            transaction_result.showResults()
+                                        else:
+                                            print (" ❗ 'when' trigger not fired!")
+                                            print (f"    - when: {step['when']}")
+                                            can_continue = False
+                                    else:
+                                        print ('No valid amount to exit with was specified.')
+                                        print (f"- amount: {step['amount']}")
+                                        can_continue = False
+                                else:
+                                    print ('The new validator name is invalid, please check the workflow.')
+                                    can_continue = False
+                            else:
+                                print ('The old validator name is invalid, please check the workflow.')
+                                can_continue = False
+
+                        if action == 'unstake delegation':
+                            # Withdraw a delegation entirely
+
+                            validators = Validators()
+                            validators.create()
+                            validator_address:str = validators.findValidatorByName(step['validator'])
+                            
+                            if old_validator_address != '':
+
+                                wallet.getBalances()
+                                wallet.getDelegations()
+                                delegations:dict = {ULUNA: wallet.delegations[step['validator']]['rewards'][ULUNA]}
+
+                                amount_ok, amount_coin = check_amount(step['amount'], delegations)
+
+                                if amount_ok == True:
+                                            
+                                    is_triggered = check_trigger(step['when'], delegations)
+
+                                    if is_triggered == True:
+                                        print (f"You are unstaking {wallet.formatUluna(amount_coin.amount, amount_coin.denom, True)} from {step['validator']}.")
+                                        print ('IMPORTANT NOTE: this will be unavailable for 21 days. Please check the status by using the validator.py script.')
+                                        transaction_result:TransactionResult = undelegate_from_validator(wallet, validator_address, amount_coin)
+                                        transaction_result.showResults()
+                                    else:
+                                        print (" ❗ 'when' trigger not fired!")
+                                        print (f"    - when: {step['when']}")
+                                        can_continue = False
+                                else:
+                                    print ('No valid amount to exit with was specified.')
+                                    print (f"- amount: {step['amount']}")
+                                    can_continue = False
+                            else:
+                                print ('The old validator name is invalid, please check the workflow.')
+                                can_continue = False
+                            
 
 
     # print (' 💯 Done!\n')
