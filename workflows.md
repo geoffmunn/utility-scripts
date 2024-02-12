@@ -34,19 +34,17 @@ The wallet value can be either the name or the address, but for clarity I recomm
 Examples:
 
 ```yml
-# Single wallet example
 workflows:
     - name: Weekly withdrawal 1
-      description: Redelegate 100% of staking rewards in most wallets
+      description: Withdraw 100% of staking rewards in one wallet
       wallets:
         - Workflow wallet 1
 ```
 
 ```yml
-# Multiple wallets with an address
 workflows:
     - name: Weekly withdrawal 1
-    description: Redelegate 100% of staking rewards in most wallets
+    description: Withdraw 100% of staking rewards in most wallets
     wallets:
       - Workflow wallet 1
       - Workflow wallet 2
@@ -65,17 +63,116 @@ Steps can consist of one or more of the following:
  - swap
  - join pool
  - exit pool
- 
+ - switch validator
+ - unstake delegation
 
+ Each step has its own set of required and optional parameters.
+
+ ### Withdraw
+
+ This lets you withdraw rewards from a validator. You can only withdraw 100% of the available rewwards.
+
+ Example 1 - always withdraw all rewards:
+
+ ```yml
+ workflows:
+    - name: Weekly withdrawal 1
+      description: Withdraw 100% of staking rewards in one wallet
+      wallets:
+        - Workflow wallet 1
+      steps:
+        - action: withdraw
+          when:
+            - always
+ ```
+
+ Example 2 - only withdraw rewards on Sunday at 5pm, when the rewards exceed 1000 LUNC
+
+```yml
+workflows:
+  - name: Weekly withdrawal 1
+    description: Withdraw 100% of staking rewards in multiple wallet, if the balance exceeds 1000 LUNC, and only on sundays at 5pm
+    wallets:
+      - Workflow wallet 1
+      - Workflow wallet 2
+      - terra1sk06e3dyexuq4shw77y3dsv480xv42mq73anxu
+    steps:
+      - action: withdraw
+        when:
+          - LUNC > 1000
+          - Day = Sunday
+          - Time = 5pm
+ ```
+
+You can try different combinations of the LUNC amount, day and time to get the result you want.
+
+### Redelegate
+
+Redelegation is a special action because it only works if you have completed a 'withdraw' step beforehand. The redelegation action keeps track of what has been withdrawn and will redelegate some or all of this amount back. This allows you to hold an amount in the wallet balance which will not be touched in the delegation step.
+
+Example 1: Withdraw the rewards if they exceed 1000 LUNC and redelegate all of it back to the same validator.
+
+```yml
+workflows:
+  - name: Withdraw and full redelegation
+    description: Redelegate 100% of staking rewards in one wallet
+    wallets: 
+      - Workflow wallet 1
+    steps:
+      - action: withdraw
+        when: 
+          - LUNC > 1000
+      - action: redelegate
+        amount: 100% LUNC
+        when: 
+          - always
+```
+
+Example 2: Withdraw the rewards if they exceed 1000 LUNC, and redelegate 50% but only if it's 5pm on Sunday.
+
+```yml
+workflows:
+  - name: Withdraw and full redelegation
+    description: Redelegate 50% of staking rewards in one wallet, but only on Sundays
+    wallets: 
+      - Workflow wallet 1
+    steps:
+      - action: withdraw
+        when: 
+          - LUNC > 1000
+      - action: redelegate
+        amount: 50% LUNC
+        when: 
+          - Day = Sunday
+```
+
+Example 3: Withdraw the rewards from multiple validators if they exceed 1000 LUNC, and redelegate 600 LUNC but only if it's 5pm on Sunday.
+
+```yml
+workflows:
+  - name: Withdraw and full redelegation
+    description: Redelegate 600 LUNC from multiple wallets, but only on Sundays at 5pm
+    wallets: 
+      - Workflow wallet 1
+      - Workflow wallet 2
+      - terra1sk06e3dyexuq4shw77y3dsv480xv42mq73anxu
+    steps:
+      - action: withdraw
+        when: 
+          - LUNC > 1000
+      - action: redelegate
+        amount: 600 LUNC
+        when: 
+          - Day = Sunday
+          - Time = 5pm
+```
 
 General notes:
 Delegations will retain a minimum amount of LUNC, so you have enough to pay for transfers with other actions.
 
-## Actions
 
-### Withdraw
 
-### Redelegate
+
 
 ### Delegate
 
