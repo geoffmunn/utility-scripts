@@ -102,9 +102,9 @@ Steps can consist of one or more of the following:
      - Time = 5:30pm (optional, only run this at exactly 5:30pm)
  ```
 
- Pick a combination of the 'when' values to match your requirements. Typically, 'always' will be the only when condition and you wouldn't include anything else.
+ Pick a combination of the 'when' values to match your requirements.
 
- Example 1 - always withdraw all rewards:
+ **Example 1** - *always withdraw all rewards*
 
  ```yml
  workflows:
@@ -118,12 +118,12 @@ Steps can consist of one or more of the following:
             - always
  ```
 
- Example 2 - only withdraw rewards on Sunday at 5pm, when the rewards exceed 1000 LUNC
+ **Example 2** - *only withdraw rewards on Sunday at 5pm, when the rewards exceed 1000 LUNC*
 
 ```yml
 workflows:
-  - name: Weekly withdrawal 1
-    description: Withdraw 100% of staking rewards in multiple wallet, if the balance exceeds 1000 LUNC, and only on sundays at 5pm
+  - name: Weekly withdrawal 2
+    description: Withdraw 100% of staking rewards in multiple wallets
     wallets:
       - Workflow wallet 1
       - Workflow wallet 2
