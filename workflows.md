@@ -1,6 +1,6 @@
 # Workflows
 
-This is probably the most useful part of the utility scripts project. Workflows allow you to chain actions together, across multiple wallets, on an automated basis.
+This is probably the most useful part of the utility scripts project. Workflows allow you to chain actions together, across multiple wallets, and on an automated basis.
 All you need to do is to describe your actions in YML file, and follow a simple structure.
 
 There are no limitations to what you can do (within the constraints of YML though).
@@ -17,6 +17,7 @@ A workflow has 3 components: the header, the wallets, and the steps.
 
 This is contains the name of the workflow and an optional extended decription.
 Technically, the name is optional but I highly recommend that you include one just so it's obvious what workflow is being run.
+**This is a required section.**
 
 Example:
 ```yml
@@ -26,7 +27,8 @@ workflows:
 ```
 
 ## Wallets
-You can provide a list of wallets that this workflow will be applied to. This can be a single wallet, or a long list.
+This is can provide a list of wallets that this workflow will be applied to. This can be a single wallet, or a long list.
+**This is a required section**
 
 ```yml
 - wallets:
