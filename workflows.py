@@ -330,9 +330,10 @@ def main():
                                     is_triggered:bool = check_trigger(step['when'], {ULUNA: uluna_reward})
 
                                     if is_triggered == True:
+                                        print ('')
                                         print (f"  ➜ Withdrawing rewards from {delegations[validator]['validator_name']}...")
                                         print (f'  ➜ Withdrawing {wallet.formatUluna(uluna_reward, ULUNA, False)} rewards.')
-
+                                        print ('')
                                         transaction_result:TransactionResult = claim_delegation_rewards(wallet, validator_address = delegations[validator]['validator'])
                                         transaction_result.showResults()
                                         
@@ -362,6 +363,10 @@ def main():
 
                                     if amount_ok == True:
                                         
+                                        print ('')
+                                        print (f'  ➜ Redelegating {wallet.formatUluna(delegation_coin.amount, delegation_coin.denom, True)} back to {validator}.')
+                                        print ('')
+
                                         transaction_result:TransactionResult = delegate_to_validator(wallet, validator, delegation_coin)
                                         transaction_result.showResults()
                                         
@@ -400,6 +405,10 @@ def main():
 
                                             if validator_address != '':
 
+                                                print ('')
+                                                print (f"  ➜ Delegating {wallet.formatUluna(delegation_coin.amount, delegation_coin.denom, True)} to {step['validator']}.")
+                                                print ('')
+                                                
                                                 transaction_result:TransactionResult = delegate_to_validator(step_wallet, validator_address, delegation_coin)
                                                 transaction_result.showResults()
                                                         
@@ -495,6 +504,10 @@ def main():
                                         if 'swap to' in step:
                                             swap_to_denom:str = list(FULL_COIN_LOOKUP.keys())[list(FULL_COIN_LOOKUP.values()).index(step['swap to'])]
 
+                                            print ('')
+                                            print (f' ➜  You are swapping {wallet.formatUluna(swap_coin.amount, swap_coin.denom, True)} for {swap_to_denom}.')
+                                            print ('')
+
                                             transaction_result:TransactionResult = swap_coins(step_wallet, swap_coin, swap_to_denom, '', False)
                                             transaction_result.wallet_denom = step_wallet.denom
                                             transaction_result.showResults()
@@ -532,6 +545,10 @@ def main():
                                         if 'pool id' in step:
                                             pool_id:int = step['pool id']
 
+                                            print ('')
+                                            print (f'   ➜  You are joining pool {pool_id} by adding {wallet.formatUluna(swap_coin.amount, swap_coin.denom, True)}.')
+                                            print ('')
+                                            
                                             transaction_result:TransactionResult = join_liquidity_pool(step_wallet, pool_id, swap_coin.amount, False)
                                             transaction_result.showResults()
                                         else:
@@ -572,33 +589,26 @@ def main():
                                 # This is the exit pool logic
                                 # Get the assets for the summary list
                                 pool_assets:dict  = liquidity_tx.getPoolAssets()
-                                #asset_values:dict = liquidity_tx.getAssetValues(pool_assets)
-
-                                #print ('pool assets:', pool_assets)
-                                #print ('asset values:', asset_values)
-                                
                                 amount_out = step['amount']
                                 if is_percentage(amount_out):
                                     amount_out:float  = float(amount_out[:-1]) / 100
-                                    #coin_amount:float = round(pool_assets[ULUNA] * amount_out, 2)
                                 else:
                                     # If this is a precise amount, we need to convert this into a percentage of the total amount of LUNC   
                                     amount_ok, amount_coin = check_amount(amount_out, {ULUNA:(pool_assets[ULUNA] * (10 ** get_precision(ULUNA)))})
-                                    #print ('amount ok?', amount_ok)
-                                    #print ('amount coin:', amount_coin)
                                     if amount_ok == True:
-                                        #coin_amount:float = wallet.formatUluna(amount_coin.amount, amount_coin.denom)
                                         amount_out:float  = round(int(amount_coin.amount) / int(pool_assets[ULUNA]), 2)
                                     else:
                                         amount_out:float = 0
 
-                                #print ('amount out:', amount_out)
                                 if amount_out > 0 and amount_out <= 1:
 
-                                    #print ('pool assets:', pool_assets)
                                     is_triggered = check_trigger(step['when'], pool_assets)
 
                                     if is_triggered == True:
+                                        print ('')
+                                        print (f' ➜  You are exiting pool {pool_id} by withdrawing {amount_out * 100}%.')
+                                        print ('')
+                                        
                                         transaction_result:TransactionResult = exit_liquidity_pool(step_wallet, pool_id, amount_out, False)
                                         transaction_result.wallet_denom = wallet.denom
                                         transaction_result.showResults()
@@ -637,7 +647,7 @@ def main():
 
                                         if is_triggered == True:
                                             print ('')
-                                            print (f"    Switching {wallet.formatUluna(amount_coin.amount, amount_coin.denom, True)} from {step['old validator']} to {step['new validator']}")
+                                            print (f" ➜  Switching {wallet.formatUluna(amount_coin.amount, amount_coin.denom, True)} from {step['old validator']} to {step['new validator']}")
                                             print ('')
                                             transaction_result:TransactionResult = switch_validator(wallet, new_validator_address, old_validator_address, amount_coin)
                                             transaction_result.showResults()
@@ -678,11 +688,11 @@ def main():
 
                                     if is_triggered == True:
                                         print ('')
-                                        print (f"    This validator has a total amount of {wallet.formatUluna(wallet.delegations[step['validator']]['balance_amount'], ULUNA, True)}.")
-                                        print (f"    You are unstaking {wallet.formatUluna(amount_coin.amount, amount_coin.denom, True)} from {step['validator']}.")
-                                        print ('    IMPORTANT NOTE: this will be unavailable for 21 days. Please check the status by using the validator.py script.')
+                                        print (f" ➜   This validator has a total amount of {wallet.formatUluna(wallet.delegations[step['validator']]['balance_amount'], ULUNA, True)}.")
+                                        print (f" ➜   You are unstaking {wallet.formatUluna(amount_coin.amount, amount_coin.denom, True)} from {step['validator']}.")
+                                        print (' ➜   IMPORTANT NOTE: this will be unavailable for 21 days. Please check the status by using the validator.py script.')
                                         print ('')
-                                        
+
                                         transaction_result:TransactionResult = undelegate_from_validator(wallet, validator_address, amount_coin)
                                         transaction_result.showResults()
                                     else:
