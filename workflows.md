@@ -70,15 +70,16 @@ workflows:
 This is where the magic happens.
 
 Steps can consist of one or more of the following:
- - withdraw
- - redelegate
- - delegate
- - send
- - swap
- - join pool
- - exit pool
- - switch validator
- - unstake delegation
+
+ - Withdraw rewards ('withdraw')
+ - Redelegate rewards ('redelegate')
+ - Delegate LUNC to a validator ('delegate')
+ - Send LUNC or any other coin ('send')
+ - Swap LUNC or any other coin ('swap')
+ - Join a liquidity pool on Osmosis ('join pool')
+ - Exit a liquidity pool on Osmosis ('exit pool')
+ - Switch delegations between validators ('switch validator')
+ - Unstake delegations from a validator ('unstake delegation')
 
  Each step has its own set of required and optional parameters.
 
