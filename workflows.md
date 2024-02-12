@@ -140,8 +140,18 @@ You can try different combinations of the LUNC amount, day and time to get the r
 
 ### Redelegate
 
-Redelegation is a special action because it only works if you have completed a 'withdraw' step beforehand. The redelegation action keeps track of what has been withdrawn and will redelegate some or all of this amount back. This allows you to hold an amount in the wallet balance which will not be touched in the delegation step.
+Redelegation is a special action because it only works if you have completed a 'withdraw' step beforehand. The redelegation action keeps track of what has been withdrawn and will redelegate some or all of this amount back. This allows you to hold an amount in the wallet balance which will not be touched in the redelegation step.
 
+```yml
+- action: redelegate
+  amount: 100% LUNC/500 LUNC (required, takes either a percentage or a specific amount)
+  when: 
+    - always (optional, always run this step)
+    - LUNC > 1000 (optional, only run when the LUNC amount is greater than 1000)
+    - Day = Sun (optional, only run this on Sunday)
+    - Time = 5pm (optional, only run this at any point between 5pm and 6pm)
+    - Time = 5:30pm (optional, only run this at exactly 5:30pm)
+```
 Example 1: Withdraw the rewards if they exceed 1000 LUNC and redelegate all of it back to the same validator.
 
 ```yml
@@ -160,7 +170,7 @@ workflows:
           - always
 ```
 
-Example 2: Withdraw the rewards if they exceed 1000 LUNC, and redelegate 50% but only if it's 5pm on Sunday.
+Example 2: Withdraw the rewards if they exceed 1000 LUNC, and redelegate 50% but only if it's Sunday.
 
 ```yml
 workflows:
@@ -172,10 +182,11 @@ workflows:
       - action: withdraw
         when: 
           - LUNC > 1000
+          - Day = Sunday
       - action: redelegate
         amount: 50% LUNC
         when: 
-          - Day = Sunday
+          - always
 ```
 
 Example 3: Withdraw the rewards from multiple validators if they exceed 1000 LUNC, and redelegate 600 LUNC but only if it's 5pm on Sunday.
@@ -192,8 +203,13 @@ workflows:
       - action: withdraw
         when: 
           - LUNC > 1000
+          - Day = Sunday
+          - Time = 5pm
       - action: redelegate
         amount: 600 LUNC
+        when:
+          - always
+```
         when: 
           - Day = Sunday
           - Time = 5pm
