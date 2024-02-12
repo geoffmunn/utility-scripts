@@ -213,19 +213,48 @@ workflows:
         when:
           - always
 ```
+
+### Delegate LUNC to a validator - *delegate*
+
+Delegation will take an amount in the wallet balance and delegate it to the supplied validator.
+If you specify '100% LUNC', a small amount will be retained so you can still do other actions.
+
+**Example 1** - *Delegate everything in the wallet to the listed validator.*
+
+```yml
+workflows:
+  - name: Full delegation to a specific validator
+    description: Delegate all the available balance in the wallet list
+    wallets: 
+      - Workflow wallet 1
+    steps:
+      - action: delegate
+        validator: 🦅 Garuda Universe - 🎮 Airdrop Gaming Token💰
+        amount: 100% LUNC
         when: 
-          - Day = Sunday
-          - Time = 5pm
+          - always
 ```
 
-General notes:
-Delegations will retain a minimum amount of LUNC, so you have enough to pay for transfers with other actions.
+**Example 2** - *Delegate 500 LUNC in the wallet to the supplied validator, if there is more than 500 LUNC available.*
 
+```yml
+workflows:
+  - name: Full delegation to a specific validator
+    description: Delegate 500 LUNC to the wallets in the list
+    wallets: 
+      - Workflow wallet 1
+      - Workflow wallet 2
+      - terra1sk06e3dyexuq4shw77y3dsv480xv42mq73anxu
+    steps:
+      - action: delegate
+        validator: 🦅 Garuda Universe - 🎮 Airdrop Gaming Token💰
+        amount: 500 LUNC
+        when: 
+          - LUNC >= 500
+```
+Technnically the 'when' clause could be replaced with 'always' but you'll get an error if the wallet balance isn't enough and all successive steps will be skipped.
 
-
-
-
-### Delegate
+**Reminder**: Delegations will retain a minimum amount of LUNC, so you have enough to pay for transfers with other actions.
 
 ### Send
 
