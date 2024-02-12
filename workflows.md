@@ -17,6 +17,7 @@ A workflow has 3 components: the header, the wallets, and the steps.
 
 This is contains the name of the workflow and an optional extended decription.
 Technically, the name is optional but I highly recommend that you include one just so it's obvious what workflow is being run.
+
 **This is a required section.**
 
 Example:
@@ -27,8 +28,9 @@ workflows:
 ```
 
 ## Wallets
-This is can provide a list of wallets that this workflow will be applied to. This can be a single wallet, or a long list.
-**This is a required section**
+This is a list of wallets that this workflow will be applied to. This can be a single wallet, or a long list.
+
+**This is a required section.**
 
 ```yml
 - wallets:
