@@ -178,7 +178,7 @@ def main():
     # NOTE: I'm pretty sure the memo size is int64, but I've capped it at 255 so python doens't panic
     memo:str = wallet.getUserText('Provide a memo (optional): ', 255, True)
 
-    print (f'\nAccessing the {wallet.name} wallet...')
+    print (f'\n  ➜ Accessing the {wallet.name} wallet...')
 
     if ULUNA in wallet.balances:
         #print (f'Sending {wallet.formatUluna(send_coin.amount, send_coin.denom)} {FULL_COIN_LOOKUP[send_coin.denom]}')
@@ -197,20 +197,6 @@ def main():
         recipient_wallet.getBalances(wallet.createCoin(send_coin.denom, (int(send_coin.amount) + current_balance)))
         
         transaction_result.showResults()
-        # if transaction_result.transaction_confirmed == True:
-        #     print (f'\n ✅ Sent amount: {wallet.formatUluna(transaction_result.result_sent.amount, send_coin.denom)} {FULL_COIN_LOOKUP[send_coin.denom]}')
-        #     print (f' ✅ Received amount: ')
-        #     received_coin:Coin
-        #     for received_coin in transaction_result.result_received:
-        #         print ('    * ' + wallet.formatUluna(received_coin.amount, received_coin.denom, True))
-        #     print (f' ✅ Tx Hash: {transaction_result.broadcast_result.txhash}')
-        # else:
-        #     print (f'\n 🛎️ An error occured on the {wallet.name} wallet.')
-        #     print (transaction_result.message)
-        #     if transaction_result.code is not None:
-        #         print (transaction_result.code)
-        #     if transaction_result.log is not None:
-        #         print (transaction_result.log)
 
     else:
         print (" 🛑 This wallet has no LUNC - you need a small amount to be present to pay for fees.")
