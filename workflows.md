@@ -20,7 +20,7 @@ Technically, the name is optional but I highly recommend that you include one ju
 
 **This is a required section.**
 
-**Example** - *standard header*
+**Example** - *standard header.*
 
 ```yml
 workflows:
@@ -44,7 +44,7 @@ The wallet value can be either the name or the address, but for clarity I recomm
 
 **Workflows do not support non-managed addresses for security and safety reasons.**
 
-**Example 1** - *A very basic configuration*
+**Example 1** - *A very basic configuration.*
 
 ```yml
 workflows:
@@ -54,7 +54,7 @@ workflows:
         - Workflow wallet 1
 ```
 
-**Example 2** - *This shows multiple wallets, with one being a terra address*
+**Example 2** - *This shows multiple wallets, with one being a terra address.*
 
 ```yml
 workflows:
@@ -147,7 +147,7 @@ Redelegation is a special action because it only works if you have completed a '
 
 ```yml
 - action: redelegate
-  amount: 100% LUNC/500 LUNC (required, takes either a percentage or a specific amount)
+  amount: 100% LUNC / 500 LUNC (required, takes either a percentage or a specific amount)
   when: 
     - always (optional, always run this step)
     - LUNC > 1000 (optional, only run when the LUNC amount is greater than 1000)
@@ -219,6 +219,18 @@ workflows:
 Delegation will take an amount in the wallet balance and delegate it to the supplied validator.
 If you specify '100% LUNC', a small amount will be retained so you can still do other actions.
 
+```yml
+- action: delegate
+  amount: 100% LUNC / 500 LUNC (required, takes either a percentage or a specific amount)
+  validator: validator name (required)
+  when: 
+    - always (optional, always run this step)
+    - LUNC > 1000 (optional, only run when the LUNC amount is greater than 1000)
+    - Day = Sun (optional, only run this on Sunday)
+    - Time = 5pm (optional, only run this at any point between 5pm and 6pm)
+    - Time = 5:30pm (optional, only run this at exactly 5:30pm)
+```
+
 **Example 1** - *Delegate everything in the wallet to the listed validator.*
 
 ```yml
@@ -229,8 +241,8 @@ workflows:
       - Workflow wallet 1
     steps:
       - action: delegate
-        validator: 🦅 Garuda Universe - 🎮 Airdrop Gaming Token💰
         amount: 100% LUNC
+        validator: 🦅 Garuda Universe - 🎮 Airdrop Gaming Token💰
         when: 
           - always
 ```
@@ -247,8 +259,8 @@ workflows:
       - terra1sk06e3dyexuq4shw77y3dsv480xv42mq73anxu
     steps:
       - action: delegate
-        validator: 🦅 Garuda Universe - 🎮 Airdrop Gaming Token💰
         amount: 500 LUNC
+        validator: 🦅 Garuda Universe - 🎮 Airdrop Gaming Token💰
         when: 
           - LUNC >= 500
 ```
@@ -256,9 +268,153 @@ Technnically the 'when' clause could be replaced with 'always' but you'll get an
 
 **Reminder**: Delegations will retain a minimum amount of LUNC, so you have enough to pay for transfers with other actions.
 
-### Send
+### Send LUNC or any other coin - *send*
 
 You can send any supported coin to another wallet. This is especially useful for cleaning up airdrops, or chaining rewards into an Osmosis swap or liquidity pool.
+
+```yml
+- action: send
+  amount: 100% LUNC / 500 LUNC (required, takes either a percentage or a specific amount)
+  memo: A specific message (optional)
+  recipient: The recipient address (required)
+  wallet: Workflow Wallet 1 (optional, see notes in the swap section)
+  when: 
+    - always (optional, always run this step)
+    - LUNC > 1000 (optional, only run when the LUNC amount is greater than 1000)
+    - Day = Sun (optional, only run this on Sunday)
+    - Time = 5pm (optional, only run this at any point between 5pm and 6pm)
+    - Time = 5:30pm (optional, only run this at exactly 5:30pm)
+```
+
+**Example 1** - *Move all GRDX tokens to Workflow Wallet 3, but only if the GRDX amount is greater than 10.*
+
+```yml
+workflows:
+  - name: Clean up wallets
+    description: Move all GRDX coins into the one wallet
+    wallets:
+      - Workflow wallet 1
+    steps:
+      - action: send
+        amount: 100% GRDX
+        memo: Tidying up GRDX amounts
+        recipient: Workflow Wallet 3
+        when: 
+          - GRDX > 10
+```
+
+Example 2: Withdraw all the rewards, and send an exact amount to another address. Then delegate everything that's left over back to a particular validator.
+
+```yml
+workflows:
+  - name: Withdraw and send exact amount
+    description: Withdraw all the rewards and send an exact amount to another address. Then delegate back.
+    wallets:
+      - Workflow wallet 1
+      - Workflow wallet 2
+      - terra1sk06e3dyexuq4shw77y3dsv480xv42mq73anxu
+    steps:
+      - action: withdraw
+        when: 
+          - LUNC >= 1000
+      - action: send
+        amount: 200 LUNC
+        memo: Here is 200 LUNC
+        recipient: Workflow Wallet 3
+        when: 
+          - LUNC >= 1000
+      - action: delegate
+        amount: 100% LUNC
+        validator: FireFi Capital
+        when: 
+          - always
+```
+
+### Swap
+Swapping is really useful and quite complicated. There is a lot that can go wrong, but the process tries to accommodate most issues.
+Chaining across different wallets introduces a new parameter concept:
+
+```yml
+wallet:  [wallet name or address]
+```
+
+This will apply the current step to the named wallet. You can actually use this on any of the prior examples but it's not really necessary most of the time.
+
+**Example 1** - Swap all the rewards into USTC.
+
+```yml
+workflows:
+  - name: Withdraw and on-chain swap full amount
+    description: Withdraw all the rewards and swap all of the LUNC into USTC
+    wallets:
+      - Workflow Wallet 1
+    steps:
+      - action: withdraw
+        when: 
+          - LUNC > 1000
+      - action: swap
+        amount: 100% LUNC
+        swap to: USTC
+        when: 
+          - LUNC > 1000
+```
+
+**Example 2** - *Swap all the rewards into LUNC and GRDX (50/50 split).*
+
+```yml
+workflows:
+  - name: Withdraw and on-chain swap full amount in 2 parts
+    description: Withdraw all the rewards and to a multipart swap into different coins.
+    wallets:
+      - Workflow Wallet 8
+    steps:
+      - action: withdraw
+        when: 
+          - LUNC > 1000
+      - action: swap
+        amount: 50% LUNC
+        swap to: BASE
+        when: 
+          - always
+      - action: swap
+        amount: 100%
+        swap to: GRDX
+        when: 
+          - always
+```
+
+**Example 3** - *Send the rewards to Osmosis and swap them into KUJI and CRO (50/50 split).*
+
+```yml
+workflows:
+  - name: Withdraw, send to Osmosis, swap to 2 coins
+    description: Send coins to Osmosis and swap all of them to 2 separate coins
+    wallets:
+      - Workflow Wallet 11
+    steps:
+      - action: withdraw
+        when: 
+          - LUNC > 1000
+      - action: send
+        amount: 100% LUNC
+        recipient:  Osmosis Workflow 2
+        when:
+          - LUNC > 1000
+      - action: swap
+        wallet:  Osmosis Workflow 2
+        amount: 50% LUNC
+        swap to: KUJI
+        when:
+          - always
+      - action: swap
+        wallet:  Osmosis Workflow 2
+        amount: 100% LUNC
+        swap to: CRO
+        when:
+          - always
+```
+
+If you move coins to a new chain (Osmosis in this case), then all actions from that point on will need a 'wallet' parameter to be specified. Otherwise it will try to use the current wallet which is probably a Terra address.
 
 #### Parameters
 
@@ -271,23 +427,7 @@ Examples:
 
 You can transfer the entire amount out of a wallet, no minimum amount will be retained. If you don't specify a denomination, it will be assumed to be LUNC but for clarity, I highly recomment specifying a denomination.
 
-**recipient**: Required. Who are you sending this to? It can be either a wallet name, or the actual address.
 
-Example:
-```yml
-- recipient: Workflow wallet 1
-- recipient: terra1sk06e3dyexuq4shw77y3dsv480xv42mq73anxu
-```
-**when**: Required. Please see the 'Trigger' section for the available options.
-
-**wallet**: Optional. You can run this action on a different wallet if required. You would normally only need to do this if you have chained several actions together. This value can be either a wallet name, or the actual address.
-
-Example:
-```yml
-- wallet: Osmosis Wallet
-- wallet: terra1sk06e3dyexuq4shw77y3dsv480xv42mq73anxu
-```
-**memo**: Optional. A message you want to include in this transaction.
 
 **Complete examples**
 
