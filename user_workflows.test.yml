@@ -1,0 +1,23 @@
+---
+
+workflows:
+
+  - name: Clean up wallets
+    description: Move all GRDX coins into the one wallet
+    wallets:
+      - Lunc Original
+      - Lunc Longterm
+      - Lunc Batch 3
+      - Lunc last batch
+      - Lunc 20 Million
+      - Workflow Wallet 1
+      - Workflow Wallet 2
+      - Workflow Wallet 3
+    steps:
+      - action: send
+        amount: 100% GRDX
+        recipient: Onyx
+        when: 
+          - always
+          - Sunday
+...

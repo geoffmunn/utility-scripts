@@ -33,8 +33,8 @@ workflows:
 ## Wallets
 This is a list of wallets that this workflow will be applied to. This can be a single wallet, or a long list.
 
-[!NOTE]
-**This is a required section.**
+> [!NOTE]
+> **This is a required section.**
 
 ```yml
 - wallets:
@@ -45,8 +45,8 @@ This is a list of wallets that this workflow will be applied to. This can be a s
 
 The wallet value can be either the name or the address, but for clarity I recommend that you use the wallet name. These need to be set up in the ```configure_user_wallets.py``` script.
 
-[!IMPORTANT] 
-**Workflows do not support non-managed addresses for security and safety reasons.**
+> [!IMPORTANT] 
+> **Workflows do not support non-managed addresses for security and safety reasons.**
 
 **Example 1** - *A very basic configuration.*
 
@@ -277,8 +277,8 @@ workflows:
 ```
 Technnically the 'when' clause could be replaced with 'always' but you'll get an error if the wallet balance isn't enough and all successive steps will be skipped.
 
-[!IMPORTANT]
-**Reminder**: Delegations will retain a minimum amount of LUNC, so you have enough to pay for transfers with other actions.
+> [!IMPORTANT]
+> **Reminder**: Delegations will retain a minimum amount of LUNC, so you have enough to pay for transfers with other actions.
 
 ### Send LUNC or any other coin - *send*
 

@@ -1,0 +1,264 @@
+---
+
+workflows:
+
+  # - name: Clean up wallets
+  #   description: Move all GRDX coins into the one wallet
+  #   wallets:
+  #     - Lunc Original
+  #     - Lunc Longterm
+  #     - Lunc Batch 3
+  #     - Lunc last batch
+  #     - Lunc 20 Million
+  #     - Workflow Wallet 1
+  #     - Workflow Wallet 2
+  #     - Workflow Wallet 3
+  #   steps:
+  #     - action: send
+  #       amount: 100% GRDX
+  #       recipient: Onyx
+  #       when: always
+
+  - name: Withdraw and full redelegation (WORKING)
+    description: Redelegate 100% of staking rewards in wallet 1
+    wallets: 
+      - Workflow wallet 1
+    steps:
+      - action: withdraw
+        when: 
+          - LUNC > 1000
+      - action: redelegate
+        amount: 100% LUNC
+        when: 
+          - always
+
+  - name: Withdraw and partial percentage redelegation (WORKING)
+    description: Redelegate 50% of staking rewards in wallet 2
+    wallets: 
+      - Workflow wallet 2
+    steps:
+      - action: withdraw
+        when: 
+          - LUNC > 1000
+      - action: redelegate
+        amount: 50% LUNC
+        when: 
+          - always
+
+  - name: Exact amount redelegation (WORKING)
+    description: Redelegate 1000 LUNC from the staking rewards in wallet 3
+    wallets:
+      - Workflow wallet 3
+    steps:
+      - action: withdraw
+        when: 
+          - LUNC > 1000
+      - action: redelegate
+        amount: 1000 LUNC
+        when: 
+          - always
+    
+  - name: Full delegation to a specific validator (WORKING)
+    description: Delegate all the available balance in wallet 2
+    wallets: 
+      - Workflow wallet 2
+      - Workflow wallet 3
+    steps:
+      - action: delegate
+        validator: 🦅 Garuda Universe - 🎮 Airdrop Gaming Token💰
+        amount: 100%
+        when: 
+          - always
+ 
+  - name: Withdraw and send full amount (WORKING)
+    description: Withdraw all the rewards and send them to the same address. Then delegate back.
+    wallets: 
+      - Workflow wallet 4
+    steps:
+      - action: withdraw
+        when: 
+          - LUNC >= 1000
+      - action: send
+        amount: 100% LUNC
+        memo: This is a workflow test
+        recipient: Workflow Wallet 4
+        when: 
+          - always
+      - action: delegate
+        amount: 100% LUNC
+        validator: FireFi Capital
+        when: 
+          - always
+
+  - name: Withdraw and send exact amount (WORKING)
+    description: Withdraw all the rewards and send an exact amount to the same address. Then delegate back.
+    wallets:
+      - Workflow Wallet 5
+    steps:
+      - action: withdraw
+        when: 
+          - LUNC >= 1000
+      - action: send
+        amount: 200 LUNC
+        recipient: Workflow Wallet 5
+        when: 
+          - LUNC > 1000
+      - action: delegate
+        amount: 100% LUNC
+        validator: FireFi Capital
+        when: 
+          - always
+
+  - name: Withdraw and on-chain swap full amount (WORKING)
+    description: Withdraw all the rewards and swap all of the LUNC into USTC
+    wallets:
+      - Workflow Wallet 6
+    steps:
+      # - action: withdraw
+      #   when: 
+      #     - LUNC > 1000
+      - action: swap
+        amount: 100% LUNC
+        swap to: USTC
+        when: 
+          - LUNC > 1000
+
+  - name: Withdraw and on-chain swap exact amount
+    description: Withdraw all the rewards and swap an exact amount into USTC. Then redelegate the rest
+    wallets:
+      - Workflow Wallet 7
+    steps:
+      - action: withdraw
+        when: 
+          - LUNC > 1000
+      - action: swap
+        amount: 500 LUNC
+        swap to: USTC
+        when: 
+          - LUNC >= 1000
+      - action: delegate
+        amount: 100% LUNC
+        validator: FireFi Capital
+        when: 
+          - always
+
+  - name: Withdraw and on-chain swap full amount in 2 parts
+    description: Withdraw all the rewards and to a multipart swap into different coins.
+    wallets:
+      - Workflow Wallet 8
+    steps:
+      - action: withdraw
+        when: 
+          - LUNC > 1000
+      - action: swap
+        amount: 50% LUNC
+        swap to: BASE
+        when: 
+          - always
+      - action: swap
+        amount: 100%
+        swap to: GRDX
+        when: 
+          - always
+
+  - name: Withdraw and send to Osmosis
+    description: Send coins to an offchain destination
+    wallets:
+      - Workflow Wallet 9
+    steps:
+      - action: withdraw
+        when: 
+          - LUNC > 1000
+      - action: send
+        amount: 100% LUNC
+        recipient: Osmosis Workflow 1
+        send denom: LUNC
+        when:
+          - always
+
+  # - name: Withdraw, send to Osmosis, swap to OSMO
+  #   steps:
+  #     - action: withdraw
+  #       when: always
+  #     - action: send
+  #       amount: 100%
+  #       recipient: osmo12345
+  #     - action: swap
+  #       amount: 100%
+  #       swap_to_coin: OSMO
+
+  # - name: Withdraw, send to Osmosis, swap to 2 coins
+  #   steps:
+  #     - action: withdraw
+  #       when: always
+  #     - action: send
+  #       amount: 100%
+  #       recipient: osmo12345
+  #     - action: swap
+  #       amount: 50%
+  #       swap_to_coin: KUJI
+  #     - action: swap
+  #       amount: 100%
+  #       swap_to_coin: CRO
+
+  # - name: Withdraw, send to Osmosis, add to pool
+  #   steps:
+  #     - action: withdraw
+  #       when: always
+  #     - action: send
+  #       amount: 100%
+  #       recipient: osmo12345
+  #     - action: join pool
+  #       amount: 100%
+  #       pool id: 562
+
+  # - name: Exit liquidity pool
+  #   steps:
+  #     - action: exit pool
+  #       amount: 500
+  #       pool id: 562
+  #       where: LUNC >= 500
+
+  # - name: Send from Osmosis to terra wallet
+  #   steps:
+  #     - action: send
+  #       amount: 100%
+  #       recipient: terra12345
+  #       send denom: USTC
+  #     - action: send
+  #       amount: 100%
+  #       recipient: terra12345
+  #       send denom: LUNC
+
+  # These are tidy-up jobs just in case anything failed.
+  - name: Full delegation to a specific validator
+    description: Delegate anything left over back to FireFi
+    wallets: 
+      - Workflow wallet 4
+      - Workflow wallet 5
+      - Workflow wallet 6
+      - Workflow wallet 7
+      - Workflow wallet 8
+      - Workflow wallet 9
+      - Workflow wallet 10
+      - Workflow wallet 11
+      - Workflow wallet 12
+      #- Workflow wallet 13
+    steps:
+      - action: delegate
+        validator: FireFi Capital
+        amount: 100% LUNC
+        when: always
+
+  - name: Full delegation to a specific validator
+    description: Delegate anything left over back to Garuda
+    wallets: 
+      - Workflow wallet 1
+      - Workflow wallet 2
+      - Workflow wallet 3
+    steps:
+      - action: delegate
+        validator: 🦅 Garuda Universe - 🎮 Airdrop Gaming Token💰
+        amount: 100% LUNC
+        when: always
+...
