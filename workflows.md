@@ -36,6 +36,8 @@ This is a list of wallets that this workflow will be applied to. This can be a s
 > [!NOTE]
 > **This is a required section.**
 
+**Definition:**
+
 ```yml
 - wallets:
     - wallet name 1 (required, must have at least 1)
@@ -50,7 +52,6 @@ The wallet value can be either the name or the address, but for clarity I recomm
 
 **Example 1** - *A very basic configuration.*
 
-**Definition:**
 ```yml
 workflows:
   - name: Weekly withdrawal 1
@@ -352,9 +353,24 @@ Chaining across different wallets introduces a new parameter concept:
 wallet:  [wallet name or address]
 ```
 
+**Definition:**
+
+```yml
+- action: swap
+  amount: 100% LUNC / 500 LUNC (required, takes either a percentage or a specific amount)
+  swap to: Denomination name (required, ie LUNC, OSMO)
+  wallet: Wallet name (optional - required if the network has changed during this workflow)
+  when:
+    - always (optional, always run this step)
+    - LUNC > 1000 (optional, only run when the LUNC amount is greater than 1000)
+    - Day = Sun (optional, only run this on Sunday)
+    - Time = 5pm (optional, only run this at any point between 5pm and 6pm)
+    - Time = 5:30pm (optional, only run this at exactly 5:30pm)
+```
+
 This will apply the current step to the named wallet. You can actually use this on any of the prior examples but it's not really necessary most of the time.
 
-**Example 1** - Swap all the rewards into USTC.
+**Example 1** - *Swap all the rewards into USTC.*
 
 ```yml
 workflows:
@@ -430,71 +446,75 @@ workflows:
 
 If you move coins to a new chain (Osmosis in this case), then all actions from that point on will need a 'wallet' parameter to be specified. Otherwise it will try to use the current wallet which is probably a Terra address.
 
-#### Parameters
+### Join a liquidity pool on Osmosis - *join pool*
 
-**amount**: Required. The amount you want to send. This can be either a fixed amount or a percentage.
-Examples:
+You can join and exit liquidity pools on Osmosis. Currently we only support pools with LUNC as a pool asset.
+To see what pool IDs are available, run the ```liquidity.py``` script.
+
+> [!NOTE]
+> To contribute LUNC into a pool, you need to have sent it to an Osmosis address first. You can't use a Terra address (currently)
+
+**Definition:**
+
 ```yml
-- amount: 1500 LUNC
-- amount: 100% LUNC
+- action: join pool
+  amount: 100% LUNC / 500 LUNC (required, takes either a percentage or a specific amount)
+  pool id: 562
+  wallet: Wallet name (optional - required if the network has changed during this workflow)
+  when:
+    - always (optional, always run this step)
+    - LUNC > 1000 (optional, only run when the LUNC amount is greater than 1000)
+    - Day = Sun (optional, only run this on Sunday)
+    - Time = 5pm (optional, only run this at any point between 5pm and 6pm)
+    - Time = 5:30pm (optional, only run this at exactly 5:30pm)
 ```
 
-You can transfer the entire amount out of a wallet, no minimum amount will be retained. If you don't specify a denomination, it will be assumed to be LUNC but for clarity, I highly recomment specifying a denomination.
+The wallet needs to be an Osmosis wallet at this step. If you started off with a Terra address, then use the 'wallet' parameter to specify an Osmosis address.
 
-
-
-**Complete examples**
+**Example 1** - *Put 100% of LUNC on an Osmosis address into Pool 562.*
 
 ```yml
-  - name: Clean up wallets
-    description: Move all GRDX coins into the one wallet
+workflows:
+  - name: Add to pool 562
+    description: Add the available LUNC to an Osmosis pool
+    wallets:
+      - Osmosis Workflow 1
+    steps:
+      - action: join pool
+        amount: 100% LUNC
+        pool id: 562
+        when:
+          - always
+```
+
+**Example 2** - *Send rewards to an Osmosis address and join a pool.*
+
+```yml
+workflows:
+  - name: Withdraw, send to Osmosis, add to pool
+    description: Add the delegation rewards to an Osmosis pool
     wallets:
       - Workflow Wallet 1
-      - Workflow Wallet 2
-      - Workflow Wallet 3
-    steps:
-      - action: send
-        amount: 100% GRDX
-        memo: Tidying up GRDX amounts
-        recipient: GRDX Wallet
-        when: 
-          - always
-
-  - name: Withdraw and send full amount
-    description: Withdraw all the rewards and send them to another address. Then delegate them.
-    wallets: 
-      - Workflow wallet 1
     steps:
       - action: withdraw
         when: 
-          - LUNC >= 1000
+          - LUNC > 1000
       - action: send
         amount: 100% LUNC
-        memo: This is a workflow test
-        recipient: Workflow Wallet 2
-        when: 
+        memo: Send to Osmosis for Pool 562
+        recipient: Osmosis Workflow 1
+        when:
           - always
-      - action: delegate
-        wallet: Workflow Wallet 2
+      - action: join pool
+        wallet: Osmosis Workflow 1
         amount: 100% LUNC
-        validator: FireFi Capital
-        when: 
+        pool id: 562
+        when:
           - always
 ```
 
-### Swap
-
-## When Triggers
-
-
-
-- name: Withdraw and send exact amount (WORKING)
-    description: Withdraw all the rewards and send an exact amount to the same address. Then delegate back.
-    wallets:
-      - Workflow Wallet 5
-    steps:
-      - action: withdraw
-        when: LUNC >= 1000
+> [!IMPORTANT]
+> Because this workflow started with a terra address (Workflow Wallet 1), the 'wallet' parameter in the 'join pool' step is essential, to provide the Osmosis wallet that this step uses.
 
 
 # NOTES:
