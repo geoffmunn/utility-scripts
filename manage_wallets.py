@@ -115,7 +115,7 @@ def main():
         wallet:UserWallet = user_wallets[wallet_name]
         
         print ('####################################')
-        print (f'Accessing the {wallet.name} wallet...')
+        print (f'  ➜ Accessing the {wallet.name} wallet...')
 
         # Default result answer:
         result:bool = True
@@ -125,18 +125,18 @@ def main():
 
             if ULUNA in delegations[validator]['rewards']:
                 print ('\n------------------------------------')
-                print (f"The {delegations[validator]['validator_name']} validator has a {delegations[validator]['commission']}% commission.")
+                print (f"  ➜ The {delegations[validator]['validator_name']} validator has a {delegations[validator]['commission']}% commission.")
 
                 if user_action in [USER_ACTION_WITHDRAW, USER_ACTION_WITHDRAW_DELEGATE, USER_ACTION_ALL]:
 
-                    print ('Starting withdrawals...')
+                    print ('  ➜ Starting withdrawals...')
 
                     uluna_reward:int = delegations[validator]['rewards'][ULUNA]
 
                     # Only withdraw the staking rewards if the rewards exceed the threshold (if any)
                     if uluna_reward > multiply_raw_balance(1, ULUNA):
 
-                        print (f'Withdrawing {wallet.formatUluna(uluna_reward, ULUNA, False)} rewards.')
+                        print (f'  ➜ Withdrawing {wallet.formatUluna(uluna_reward, ULUNA, False)} rewards.')
 
                         # Complete the transaction and get the result
                         transaction_result:TransactionResult = claim_delegation_rewards(wallet, delegations[validator]['validator'])
@@ -149,7 +149,7 @@ def main():
             if user_action in [USER_ACTION_SWAP, USER_ACTION_SWAP_DELEGATE, USER_ACTION_ALL]:
 
                 print ('\n------------------------------------')
-                print ('Starting swaps...')
+                print ('  ➜ Starting swaps...')
 
                 # Update the balances so we know we have the correct amount
                 wallet.getBalances(wallet.createCoin(UUSD, wallet.balances[UUSD]))
@@ -159,7 +159,7 @@ def main():
                     swap_amount = wallet.balances['uusd']
 
                     if swap_amount > 0:
-                        print (f'Swapping {wallet.formatUluna(swap_amount, UUSD, False)} USTC for LUNC')
+                        print (f'  ➜ Swapping {wallet.formatUluna(swap_amount, UUSD, False)} USTC for LUNC')
 
                         # Set up the basic swap object
                         swap_tx = SwapTransaction().create(seed = wallet.seed, denom = ULUNA)
@@ -226,7 +226,7 @@ def main():
                 if user_action in [USER_ACTION_DELEGATE, USER_ACTION_WITHDRAW_DELEGATE, USER_ACTION_SWAP_DELEGATE, USER_ACTION_ALL]:
             
                     print ('\n------------------------------------')
-                    print ('Starting delegations...')
+                    print ('  ➜ Starting delegations...')
 
                     # Update the balances after having done withdrawals and swaps
                     if user_action in [USER_ACTION_WITHDRAW, USER_ACTION_WITHDRAW_DELEGATE, USER_ACTION_SWAP_DELEGATE, USER_ACTION_ALL]:
@@ -241,7 +241,7 @@ def main():
                             delegated_uluna = int(uluna_balance - multiply_raw_balance(WITHDRAWAL_REMAINDER, ULUNA))
                             
                             if delegated_uluna > 0 and delegated_uluna <= wallet.balances[ULUNA]:
-                                print (f'Delegating {wallet.formatUluna(delegated_uluna, ULUNA, True)}')
+                                print (f'  ➜ Delegating {wallet.formatUluna(delegated_uluna, ULUNA, True)}')
 
                                 # Create the delegation coin
                                 delegation_coin:Coin = wallet.createCoin(ULUNA, delegated_uluna)
@@ -250,62 +250,6 @@ def main():
                                 transaction_result:TransactionResult = delegate_to_validator(wallet, delegations[validator]['validator'], delegation_coin)
                                 transaction_result.showResults()
 
-                                # # Create the delegation object
-                                # delegation_tx = DelegationTransaction().create(seed = wallet.seed, denom = ULUNA)
-
-                                # # Assign the details:
-                                # delegation_tx.balances = wallet.balances
-                                # delegation_tx.delegator_address = delegations[validator]['delegator']
-                                # delegation_tx.validator_address = delegations[validator]['validator']
-                                # delegation_tx.delegated_uluna   = delegated_uluna
-                                # delegation_tx.sender_address    = wallet.address
-                                # delegation_tx.sender_prefix     = wallet.getPrefix(wallet.address)
-                                # delegation_tx.wallet_denom      = wallet.denom
-                                
-                                # # Simulate it
-                                # result = delegation_tx.simulate(delegation_tx.delegate)
-
-                                # if result == True:
-                                        
-                                #     print (delegation_tx.readableFee())
-                                    
-                                #     # Now we know what the fee is, we can do it again and finalise it
-                                #     result = delegation_tx.delegate()
-                                    
-                                #     if result == True:
-                                #         delegation_tx.broadcast()
-
-                                #         if delegation_tx.broadcast_result is not None and delegation_tx.broadcast_result.code == 32:
-                                #             while True:
-                                #                 print (' 🛎️  Boosting sequence number and trying again...')
-
-                                #                 delegation_tx.sequence = delegation_tx.sequence + 1
-
-                                #                 delegation_tx.simulate()
-                                #                 delegation_tx.swap()
-                                #                 delegation_tx.broadcast()
-
-                                #                 if delegation_tx is None:
-                                #                     break
-
-                                #                 # Code 32 = account sequence mismatch
-                                #                 if delegation_tx.broadcast_result.code != 32:
-                                #                     break
-                                            
-                                #         if delegation_tx.broadcast_result is None or delegation_tx.broadcast_result.is_tx_error():
-                                #             if delegation_tx.broadcast_result is None:
-                                #                 print (' 🛎️  The delegation transaction failed, no broadcast object was returned.')
-                                #             else:
-                                #                 print (' 🛎️ The delegation failed, an error occurred:')
-                                #                 print (f' 🛎️  {delegation_tx.broadcast_result.raw_log}')
-                                #         else:
-                                #             print (f' ✅ Delegated amount: {wallet.formatUluna(delegated_uluna, ULUNA, True)}')
-                                #             print (f' ✅ Received amount: {wallet.formatUluna(delegation_tx.result_received.amount, ULUNA, True)}')
-                                #             print (f' ✅ Tx Hash: {delegation_tx.broadcast_result.txhash}')
-                                #     else:
-                                #         print (' 🛎️  The delegation could not be completed')
-                                # else:
-                                #     print ('🛎️  The delegation could not be completed')
                             else:
                                 if delegated_uluna <= 0:
                                     print (' 🛎️  Delegation error: the delegated amount is not greater than zero')
