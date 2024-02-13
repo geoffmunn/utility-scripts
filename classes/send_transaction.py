@@ -459,7 +459,7 @@ def send_transaction(wallet:UserWallet, recipient_address:str, send_coin:Coin, m
     if send_result == True:
 
         if prompt_user == True:
-            print(f'You are about to send {wallet.formatUluna(send_coin.amount, send_coin.denom)} {FULL_COIN_LOOKUP[send_coin.denom]} to {recipient_address}')
+            print(f'  ➜ You are about to send {wallet.formatUluna(send_coin.amount, send_coin.denom)} {FULL_COIN_LOOKUP[send_coin.denom]} to {recipient_address}')
 
             print (send_tx.readableFee())
 
