@@ -459,7 +459,7 @@ def main():
                                         if recipient_address != '':
                                             # We should be ok to send at this point
 
-                                            print (f" ➜  Sending {wallet.formatUluna(send_coin.amount, send_coin.denom)} to {step['recipient']}")
+                                            print (f"  ➜ Sending {wallet.formatUluna(send_coin.amount, send_coin.denom, True)} to {step['recipient']}")
                                             # Memos are optional
                                             memo:str = ''
                                             if 'memo' in step:
@@ -509,7 +509,7 @@ def main():
                                             print ('')
 
                                             transaction_result:TransactionResult = swap_coins(step_wallet, swap_coin, swap_to_denom, '', False)
-                                            transaction_result.wallet_denom = step_wallet.denom
+                                            transaction_result.wallet_denom      = step_wallet.denom
                                             transaction_result.showResults()
                                         else:
                                             print ("'swap to' not specified in this workflow.")
@@ -548,7 +548,7 @@ def main():
                                             print ('')
                                             print (f'   ➜  You are joining pool {pool_id} by adding {wallet.formatUluna(swap_coin.amount, swap_coin.denom, True)}.')
                                             print ('')
-                                            
+
                                             transaction_result:TransactionResult = join_liquidity_pool(step_wallet, pool_id, swap_coin.amount, False)
                                             transaction_result.showResults()
                                         else:
