@@ -7,8 +7,8 @@ There are no limitations to what you can do (within the constraints of YML thoug
 
 Full examples can be found at the end of this document, and in the ```user_workflows.example.yml``` file
 
-[!WARNING]
-**terra1sk06e3dyexuq4shw77y3dsv480xv42mq73anxu** is the burn address for Terra Classic. Do not send anything to this address!
+> [!WARNING]
+> **terra1sk06e3dyexuq4shw77y3dsv480xv42mq73anxu** is the burn address for Terra Classic. Do not send anything to this address!
 
 ## Introduction
 
@@ -19,8 +19,8 @@ A workflow has 3 components: the header, the wallets, and the steps.
 The header contains the name of the workflow and an optional extended decription.
 Technically, the name is optional but I highly recommend that you include one just so it's obvious what workflow is being run.
 
-[!NOTE]
-**This is a required section.**
+> [!NOTE]
+> **This is a required section.**
 
 **Example** - *standard header.*
 
