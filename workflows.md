@@ -7,6 +7,7 @@ There are no limitations to what you can do (within the constraints of YML thoug
 
 Full examples can be found at the end of this document, and in the ```user_workflows.example.yml``` file
 
+[!WARNING]
 **terra1sk06e3dyexuq4shw77y3dsv480xv42mq73anxu** is the burn address for Terra Classic. Do not send anything to this address!
 
 ## Introduction
@@ -18,6 +19,7 @@ A workflow has 3 components: the header, the wallets, and the steps.
 The header contains the name of the workflow and an optional extended decription.
 Technically, the name is optional but I highly recommend that you include one just so it's obvious what workflow is being run.
 
+[!NOTE]
 **This is a required section.**
 
 **Example** - *standard header.*
@@ -31,6 +33,7 @@ workflows:
 ## Wallets
 This is a list of wallets that this workflow will be applied to. This can be a single wallet, or a long list.
 
+[!NOTE]
 **This is a required section.**
 
 ```yml
@@ -42,6 +45,7 @@ This is a list of wallets that this workflow will be applied to. This can be a s
 
 The wallet value can be either the name or the address, but for clarity I recommend that you use the wallet name. These need to be set up in the ```configure_user_wallets.py``` script.
 
+[!IMPORTANT] 
 **Workflows do not support non-managed addresses for security and safety reasons.**
 
 **Example 1** - *A very basic configuration.*
@@ -258,7 +262,7 @@ workflows:
 
 ```yml
 workflows:
-  - name: Full delegation to a specific validator
+  - name: Specific delegation to a validator
     description: Delegate 500 LUNC to the wallets in the list
     wallets: 
       - Workflow wallet 1
@@ -273,6 +277,7 @@ workflows:
 ```
 Technnically the 'when' clause could be replaced with 'always' but you'll get an error if the wallet balance isn't enough and all successive steps will be skipped.
 
+[!IMPORTANT]
 **Reminder**: Delegations will retain a minimum amount of LUNC, so you have enough to pay for transfers with other actions.
 
 ### Send LUNC or any other coin - *send*
