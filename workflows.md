@@ -48,17 +48,17 @@ The wallet value can be either the name or the address, but for clarity I recomm
 
 ```yml
 workflows:
-    - name: Weekly withdrawal 1
-      description: Withdraw 100% of staking rewards in one wallet
-      wallets:
-        - Workflow wallet 1
+  - name: Weekly withdrawal 1
+    description: Withdraw 100% of staking rewards in one wallet
+    wallets:
+      - Workflow wallet 1
 ```
 
 **Example 2** - *This shows multiple wallets, with one being a terra address.*
 
 ```yml
 workflows:
-    - name: Weekly withdrawal 1
+  - name: Weekly withdrawal 1
     description: Withdraw 100% of staking rewards in most wallets
     wallets:
       - Workflow wallet 1
