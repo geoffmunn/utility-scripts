@@ -46,6 +46,7 @@ The wallet value can be either the name or the address, but for clarity I recomm
 
 **Example 1** - *A very basic configuration.*
 
+**Definition:**
 ```yml
 workflows:
   - name: Weekly withdrawal 1
@@ -92,6 +93,8 @@ Steps can consist of one or more of the following:
  ### Withdraw rewards - *withdraw*
 
  This lets you withdraw rewards from a validator. You can only withdraw 100% of the available rewards.
+
+**Definition:**
 
  ```yml
  - action: withdraw
@@ -144,6 +147,8 @@ You can try different combinations of the LUNC amount, day and time to get the r
 ### Redelegate rewards - *redelegate*
 
 Redelegation is a special action because it only works if you have completed a 'withdraw' step beforehand. The redelegation action keeps track of what has been withdrawn and will redelegate some or all of this amount back. This allows you to hold an amount in the wallet balance which will not be touched in the redelegation step.
+
+**Definition:**
 
 ```yml
 - action: redelegate
@@ -219,6 +224,8 @@ workflows:
 Delegation will take an amount in the wallet balance and delegate it to the supplied validator.
 If you specify '100% LUNC', a small amount will be retained so you can still do other actions.
 
+**Definition:**
+
 ```yml
 - action: delegate
   amount: 100% LUNC / 500 LUNC (required, takes either a percentage or a specific amount)
@@ -272,6 +279,8 @@ Technnically the 'when' clause could be replaced with 'always' but you'll get an
 
 You can send any supported coin to another wallet. This is especially useful for cleaning up airdrops, or chaining rewards into an Osmosis swap or liquidity pool.
 
+**Definition:**
+
 ```yml
 - action: send
   amount: 100% LUNC / 500 LUNC (required, takes either a percentage or a specific amount)
@@ -303,7 +312,7 @@ workflows:
           - GRDX > 10
 ```
 
-Example 2: Withdraw all the rewards, and send an exact amount to another address. Then delegate everything that's left over back to a particular validator.
+**Example 2**: *Withdraw all the rewards, and send an exact amount to another address. Then delegate everything that's left over back to a particular validator.*
 
 ```yml
 workflows:
