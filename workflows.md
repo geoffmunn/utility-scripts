@@ -165,6 +165,7 @@ Redelegation is a special action because it only works if you have completed a '
     - Time = 5pm (optional, only run this at any point between 5pm and 6pm)
     - Time = 5:30pm (optional, only run this at exactly 5:30pm)
 ```
+
 **Example 1** - *Withdraw the rewards if they exceed 1000 LUNC and redelegate all of it back to the same validator.*
 
 ```yml
@@ -396,7 +397,7 @@ workflows:
   - name: Withdraw and on-chain swap full amount in 2 parts
     description: Withdraw all the rewards and to a multipart swap into different coins.
     wallets:
-      - Workflow Wallet 8
+      - Workflow Wallet 1
     steps:
       - action: withdraw
         when: 
@@ -420,24 +421,24 @@ workflows:
   - name: Withdraw, send to Osmosis, swap to 2 coins
     description: Send coins to Osmosis and swap all of them to 2 separate coins
     wallets:
-      - Workflow Wallet 11
+      - Workflow Wallet 1
     steps:
       - action: withdraw
         when: 
           - LUNC > 1000
       - action: send
         amount: 100% LUNC
-        recipient:  Osmosis Workflow 2
+        recipient:  Osmosis Workflow 1
         when:
           - LUNC > 1000
       - action: swap
-        wallet:  Osmosis Workflow 2
+        wallet:  Osmosis Workflow 1
         amount: 50% LUNC
         swap to: KUJI
         when:
           - always
       - action: swap
-        wallet:  Osmosis Workflow 2
+        wallet:  Osmosis Workflow 1
         amount: 100% LUNC
         swap to: CRO
         when:
@@ -459,7 +460,7 @@ To see what pool IDs are available, run the ```liquidity.py``` script.
 ```yml
 - action: join pool
   amount: 100% LUNC / 500 LUNC (required, takes either a percentage or a specific amount)
-  pool id: 562
+  pool id: pool ID (required - a pool with LUNC assets)
   wallet: Wallet name (optional - required if the network has changed during this workflow)
   when:
     - always (optional, always run this step)
@@ -516,6 +517,60 @@ workflows:
 > [!IMPORTANT]
 > Because this workflow started with a terra address (Workflow Wallet 1), the 'wallet' parameter in the 'join pool' step is essential, to provide the Osmosis wallet that this step uses.
 
+### Exit a liquidity pool on Osmosis - *exit pool*
+
+You can exit a pool on Osmosis if it contains a LUNC asset - basically the same list of pools as from the 'join pool' action.
+
+**Definition:**
+
+```yml
+- action: exit pool
+  amount: 100% LUNC / 500 LUNC (required, takes either a percentage or a specific amount)
+  pool id: pool ID (required - a pool with LUNC assets)
+  wallet: Wallet name (optional - required if the network has changed during this workflow)
+  when:
+    - always (optional, always run this step)
+    - LUNC > 1000 (optional, only run when the LUNC amount is greater than 1000)
+    - Day = Sun (optional, only run this on Sunday)
+    - Time = 5pm (optional, only run this at any point between 5pm and 6pm)
+    - Time = 5:30pm (optional, only run this at exactly 5:30pm)
+```
+
+As with the 'join pool' action, the wallet needs to be an Osmosis wallet at this step. If you started off with a Terra address, then use the 'wallet' parameter to specify an Osmosis address.
+
+**Example 1** - *Remove 50% of LUNC from Osmosis pool 562, when there's more than 500 LUNC in there.*
+
+```yml
+workflows:
+  - name: Exit 50% from pool 562
+    description: Remove 50% of the available LUNC from an Osmosis pool
+    wallets:
+      - Osmosis Workflow 1
+    steps:
+      - action: exit pool
+        amount: 50% LUNC
+        pool id: 562
+        when:
+          - LUNC > 500
+```
+**Example 2** - *Remove 500 LUNC from Osmosis pool 562, when there's more than 500 LUNC in there.*
+
+```yml
+workflows:
+  - name: Exit 500 LUNC from pool 562
+    description: Remove 500 of the available LUNC from an Osmosis pool
+    wallets:
+      - Osmosis Workflow 1
+    steps:
+      - action: exit pool
+        amount: 500 LUNC
+        pool id: 562
+        when:
+          - LUNC > 500
+```
+
+> [!TIP]
+> When exiting a pool, you will always receive a mixture of LUNC and whatever the other assets are. This is because your exit amount is turned into a percentage of the total number of shares, and this is across the entire asset range. Consider it a gift :)
 
 # NOTES:
 
