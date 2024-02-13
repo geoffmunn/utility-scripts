@@ -15,7 +15,7 @@ A workflow has 3 components: the header, the wallets, and the steps.
 
 ## Header
 
-This is contains the name of the workflow and an optional extended decription.
+The header contains the name of the workflow and an optional extended decription.
 Technically, the name is optional but I highly recommend that you include one just so it's obvious what workflow is being run.
 
 **This is a required section.**
