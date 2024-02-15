@@ -58,7 +58,7 @@ class Governance(TransactionCore):
 
         return self
     
-    def getUserSingleChoice(self, question:str) -> [int, int]:
+    def getUserSingleChoice(self, question:str) -> list[int, int]:
         """
         Get a single user selection from a list.
         This is a custom function because the options are specific to this list.
