@@ -375,7 +375,7 @@ class SwapTransaction(TransactionCore):
 
                 if current_option2['pool_id'] is None: 
                     print (' 🛑 No pool could be found that supported this swap pair.')
-                    print ('Exiting...')    
+                    print ('Exiting...\n')    
                     exit()
 
             routes = [
