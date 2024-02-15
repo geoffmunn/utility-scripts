@@ -38,7 +38,7 @@ from classes.withdrawal_transaction import claim_delegation_rewards
 
 from terra_classic_sdk.core.coin import Coin
 
-def check_amount(amount:str, balances:dict, preserve_minimum:bool = False) -> (bool, Coin):
+def check_amount(amount:str, balances:dict, preserve_minimum:bool = False) -> list[bool, Coin]:
     """
     The amount will be either a percentage or a specific amount.
     If it's a percentage, then ee need to convert this to an actual amount.
