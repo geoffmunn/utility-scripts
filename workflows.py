@@ -458,8 +458,9 @@ def main():
 
                                         if recipient_address != '':
                                             # We should be ok to send at this point
-
+                                            print ('')
                                             print (f"  ➜ Sending {wallet.formatUluna(send_coin.amount, send_coin.denom, True)} to {step['recipient']}")
+                                            print ('')
                                             # Memos are optional
                                             memo:str = ''
                                             if 'memo' in step:
@@ -505,7 +506,7 @@ def main():
                                             swap_to_denom:str = list(FULL_COIN_LOOKUP.keys())[list(FULL_COIN_LOOKUP.values()).index(step['swap to'])]
 
                                             print ('')
-                                            print (f' ➜  You are swapping {wallet.formatUluna(swap_coin.amount, swap_coin.denom, True)} for {swap_to_denom}.')
+                                            print (f'  ➜ You are swapping {wallet.formatUluna(swap_coin.amount, swap_coin.denom, True)} for {FULL_COIN_LOOKUP[swap_to_denom]}.')
                                             print ('')
 
                                             transaction_result:TransactionResult = swap_coins(step_wallet, swap_coin, swap_to_denom, '', False)
