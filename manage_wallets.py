@@ -226,6 +226,7 @@ def main():
                 if user_action in [USER_ACTION_DELEGATE, USER_ACTION_WITHDRAW_DELEGATE, USER_ACTION_SWAP_DELEGATE, USER_ACTION_ALL]:
             
                     print ('\n------------------------------------')
+                    print ('')
                     print ('  ➜ Starting delegations...')
 
                     # Update the balances after having done withdrawals and swaps
@@ -242,7 +243,7 @@ def main():
                             
                             if delegated_uluna > 0 and delegated_uluna <= wallet.balances[ULUNA]:
                                 print (f'  ➜ Delegating {wallet.formatUluna(delegated_uluna, ULUNA, True)}')
-
+                                print ('')
                                 # Create the delegation coin
                                 delegation_coin:Coin = wallet.createCoin(ULUNA, delegated_uluna)
 
