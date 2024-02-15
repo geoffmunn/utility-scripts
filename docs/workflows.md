@@ -5,7 +5,7 @@ All you need to do is to describe your actions in YML file, and follow a simple 
 
 There are no limitations to what you can do (within the constraints of YML though).
 
-Full examples can be found at the end of this document, and in the ```user_workflows.example.yml``` file
+Full examples can be found at the end of this document, and in the ```user_workflows.example.yml``` file.
 
 > [!WARNING]
 > **terra1sk06e3dyexuq4shw77y3dsv480xv42mq73anxu** is the burn address for Terra Classic. Do not send anything to this address!
@@ -17,7 +17,7 @@ A workflow has 3 components: the header, the wallets, and the steps.
 ## Header
 
 The header contains the name of the workflow and an optional extended decription.
-Technically, the name is optional but I highly recommend that you include one just so it's obvious what workflow is being run.
+Technically, the name is optional but I highly recommend that you include a name just so it's obvious what workflow is being run.
 
 > [!NOTE]
 > **This is a required section.**
@@ -78,20 +78,20 @@ This is where the magic happens.
 
 Steps can consist of one or more of the following:
 
- - **Withdraw rewards** - *withdraw*
- - **Redelegate rewards** - *redelegate*
- - **Delegate LUNC to a validator** - *delegate*
- - **Send LUNC or any other coin** - *send*
- - **Swap LUNC or any other coin** - *swap*
- - **Join a liquidity pool on Osmosis** - *join pool*
- - **Exit a liquidity pool on Osmosis** - *exit pool*
- - **Switch delegations between validators** - *switch validator*
- - **Unstake delegations from a validator** - *unstake delegation*
+ - [**Withdraw rewards**](#withdraw-rewards---withdraw) - *withdraw*
+ - [**Redelegate rewards**](#redelegate-rewards---redelegate) - *redelegate*
+ - [**Delegate LUNC to a validator**](#delegate-lunc-to-a-validator---delegate) - *delegate*
+ - [**Send LUNC or any other coin**](#send-lunc-or-any-other-coin---send) - *send*
+ - [**Swap LUNC or any other coin**](#swap-lunc-or-any-other-coin---swap) - *swap*
+ - [**Join a liquidity pool on Osmosis**](#join-a-liquidity-pool-on-osmosis---join-pool) - *join pool*
+ - [**Exit a liquidity pool on Osmosis**](#exit-a-liquidity-pool-on-osmosis---exit-pool) - *exit pool*
+ - [**Switch delegations between validators**](#switch-delegations-between-validators---switch-validator) - *switch validator*
+ - [**Unstake delegations from a validator**](#unstake-delegations-from-a-validator---unstake-delegation) - *unstake delegation*
 
  Each step has its own set of required and optional parameters.
 
- Steps are run in the order they appear, and if a step fails then all successive steps will be skipped.
- If this is part of a multi-wallet workflow, then next wallet will have the entire set of steps applied to it, regardless of if it failed on a previous wallet.
+ Steps are run in the order that they appear, and if a step fails then all successive steps will be skipped.
+ If this is part of a multi-wallet workflow, then next wallet will start with the entire set of steps available, regardless of if it failed on a previous wallet.
 
  If you find that a step fails on a regular basis (problems with Osmosis for example, or unstable infrastructure), then it would be a good idea to have a tidy-up workflow that takes care of any transactions that left coins in limbo.
 
@@ -114,6 +114,8 @@ Steps can consist of one or more of the following:
  Pick a combination of the 'when' values to match your requirements.
 
  Putting a reward condition in the 'when' section is a good idea so you don't withdraw tiny amounts of rewards and incur fees each time.
+
+ Specifing an exact time is risky if you have lots of workflows. These may take a while to complete and the time might change while the workflows are completing. I recommend specifying just an hour, or if you definitley want something run at a precise time, then make a workflow YML file with just this particular workflow.
 
  **Example 1** - *always withdraw all rewards.*
 
@@ -151,7 +153,7 @@ You can try different combinations of the LUNC amount, day and time to get the r
 
 ### Redelegate rewards - *redelegate*
 
-Redelegation is a special action because it only works if you have completed a 'withdraw' step beforehand. The redelegation action keeps track of what has been withdrawn and will redelegate some or all of this amount back. This allows you to hold an amount in the wallet balance which will not be touched in the redelegation step.
+Redelegation is a special action because it only works if you have completed a 'withdraw' step beforehand. The redelegation action keeps track of what has been withdrawn from each validator and will redelegate some or all of this amount back. This allows you to hold an amount in the wallet balance which will not be touched in the redelegation step.
 
 **Definition:**
 
@@ -346,7 +348,7 @@ workflows:
           - always
 ```
 
-### Swap
+### Swap LUNC or any other coin - *swap*
 Swapping is really useful and quite complicated. There is a lot that can go wrong, but the process tries to accommodate most issues.
 Chaining across different wallets introduces a new parameter concept:
 
@@ -572,6 +574,86 @@ workflows:
 > [!TIP]
 > When exiting a pool, you will always receive a mixture of LUNC and whatever the other assets are. This is because your exit amount is turned into a percentage of the total number of shares, and this is across the entire asset range. Consider it a gift :)
 
-# NOTES:
+###  Switch delegations between validators - *switch validator*
 
-Sometimes IBC transfers might fail. Try again.
+You can also switch validators by moving your delegations from one validator to another.
+
+**Definition:**
+
+```yml
+
+- action: switch validator
+  amount: 100% LUNC / 500 LUNC (required, takes either a percentage or a specific amount)
+  old validator: Old validator name (required)
+  new validator: New validator name (required)
+  when:
+    - always (optional, always run this step)
+    - LUNC > 1000 (optional, only run when the LUNC amount is greater than 1000)
+    - Day = Sun (optional, only run this on Sunday)
+    - Time = 5pm (optional, only run this at any point between 5pm and 6pm)
+    - Time = 5:30pm (optional, only run this at exactly 5:30pm)
+```
+
+> [!NOTE]
+> If you move 100% of funds from a validator, then make sure you don't have any workflows trying to withdraw rewards from the old validator. The workflow will probably fail if there are no rewards to use.
+
+**Example 1** - Move 20% of delegations to another validator
+
+```yml
+workflows:
+  - name: Switch validator
+    description: Move from one validator to another
+    wallets:
+      - Workflow Wallet 1
+    steps:
+      - action: switch validator
+        amount: 20% LUNC
+        old validator: FireFi Capital
+        new validator: 🦅 Garuda Universe - 🎮 Airdrop Gaming Token💰
+        when:
+          - Day = Sunday
+          - Time = 11pm
+```
+
+### Unstake delegations from a validator - *unstake delegation*
+
+To be honest, I'm not sure why you'd want to unstake from a validator via a workflow, but the functionality is there and it *is* possible to do it.
+
+**Definition:**
+
+```yml
+- action: unstake delegation
+  amount: 100% LUNC / 500 LUNC (required, takes either a percentage or a specific amount)
+  validator: Validator name (required)
+  when:
+    - always (optional, always run this step)
+    - LUNC > 1000 (optional, only run when the LUNC amount is greater than 1000)
+    - Day = Sun (optional, only run this on Sunday)
+    - Time = 5pm (optional, only run this at any point between 5pm and 6pm)
+    - Time = 5:30pm (optional, only run this at exactly 5:30pm)
+```
+
+**Example 1** - Unstake 10% of delegations from a validator
+
+```yml
+workflows:
+  - name: Unstake test
+    description: Unstake a small amount to make sure this still works
+    wallets:
+      - Workflow Wallet 1unexpected error occurred in the governance vote functi
+    steps:
+      - action: unstake delegation
+        amount: 10% LUNC
+        validator: FireFi Capital
+        when:
+          - Day = Sunday
+          - Time = 3pm
+```
+
+## FINAL NOTES
+
+Sometimes IBC transfers might fail. The transaction search tries 50 times before quitting - 99% of the time this is enough for the transfer to succeed, but sometimes it doesn't. In these cases you'll have to either complete the transaction manually, or adjust your workflow and do it again later.
+
+When you make a delegation to a validator, any existing rewards will be automatically withdrawn, so your balance may actually go up depending on how much you delegated and received. This can be a bit surprising if you haven't made a reward withdrawal for a while.
+
+
