@@ -142,60 +142,6 @@ class UserWallet:
             'entries':           entries
         }
     
-    # def confirmTxReceipt(self, sender_address, tx_hash):
-    #     """
-    #     Check if this wallet has had a transaction from the sender address.
-    #     This wallet instance needs to have been created with the address of the recipient.
-
-    #     @params:
-    #         - sender_address: the address of who sent the transaction
-    #         - tx_hash: the hash we're looking for
-
-    #     @return true/false if the transaction could be found
-    #     """
-
-    #     retry_count:int        = 0
-    #     receipt_confirmed:bool = False
-
-    #     print (f'\n 🔎︎ Checking that the recipient has this transaction...')
-
-    #     #block_height:int = int(self.terra.tendermint.block_info()['block']['header']['height']) - 1
-    #     block_height:int = 13694664
-    #     while True:
-            
-    #         print ('sender address:', sender_address)
-    #         print ('self address:', self.address)
-    #         print ('block_height:', block_height)
-
-    #         print (self.terra.chain_id)
-    #         result:dict = self.terra.tx.search([
-    #             #("message.sender", sender_address),
-    #             #("message.recipient", "self.address"),
-    #             #('tx.hash', tx_hash),
-    #             ('tx.height', block_height)
-    #         ])
-
-    #         print (result)
-    #         if len(result['txs']) > 0:
-    #             if result['txs'][0].code == 0:
-    #                 print ('\n ⭐ Transaction received!')
-    #                 receipt_confirmed = True
-    #                 break
-    #             if result['txs'][0].code == 5:
-    #                 print ('\n 🛑 A transaction error occurred.')
-    #                 break
-
-    #         retry_count += 1
-
-    #         if retry_count <= SEARCH_RETRY_COUNT:
-    #             print (f'    Search attempt {retry_count}/{SEARCH_RETRY_COUNT}')
-    #             time.sleep(1)
-    #             block_height +=1
-    #         else:
-    #             break
-
-    #     return receipt_confirmed
-    
     def convertPercentage(self, percentage:float, keep_minimum:bool, target_amount:float, target_denom:str) -> int:
         """
         A generic helper function to convert a potential percentage into an actual number.
