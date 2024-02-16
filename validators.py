@@ -128,7 +128,7 @@ def main():
 
         print (f'Delegating {wallet.formatUluna(delegated_uluna, ULUNA, True)}...')
         
-        delegated_coin:Coin = wallet.createCoin(ULUNA, delegated_uluna)
+        delegated_coin:Coin = wallet.createCoin(delegated_uluna, ULUNA)
         transaction_result:TransactionResult = delegate_to_validator(wallet, user_validator['operator_address'], delegated_coin)
         transaction_result.showResults()
 
@@ -167,7 +167,7 @@ def main():
 
         print (f'Undelegating {wallet.formatUluna(undelegated_uluna, ULUNA, True)}...')
 
-        undelegated_coin:Coin = wallet.createCoin(ULUNA, undelegated_uluna)
+        undelegated_coin:Coin = wallet.createCoin(undelegated_uluna, ULUNA)
         transaction_result:TransactionResult = undelegate_from_validator(wallet, user_validator['operator_address'], undelegated_coin)
         transaction_result.showResults()
 
@@ -248,7 +248,7 @@ def main():
         
         print (f'Redelegating {wallet.formatUluna(switched_uluna, ULUNA, True)}...')
   
-        delegated_coin:Coin = wallet.createCoin(ULUNA, switched_uluna)
+        delegated_coin:Coin = wallet.createCoin(switched_uluna, ULUNA)
         transaction_result:TransactionResult = switch_validator(wallet, to_validator['operator_address'], from_validator['operator_address'], delegated_coin)
         transaction_result.showResults()
 

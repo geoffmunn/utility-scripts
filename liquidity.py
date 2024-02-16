@@ -85,7 +85,7 @@ def main():
 
         amount_in:int = wallet.getUserNumber('How much are you sending? ', {'max_number': float(wallet.formatUluna(wallet.balances[denom], denom, False)), 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': True, 'keep_minimum': False, 'target_denom': denom})
         
-        liquidity_coin:Coin = wallet.createCoin(denom, amount_in)
+        liquidity_coin:Coin = wallet.createCoin(amount_in, denom)
         coin_amount:float   = wallet.formatUluna(liquidity_coin.amount, liquidity_coin.denom)
 
     else:

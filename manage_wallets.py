@@ -152,7 +152,7 @@ def main():
                 print ('  ➜ Starting swaps...')
 
                 # Update the balances so we know we have the correct amount
-                wallet.getBalances(wallet.createCoin(UUSD, wallet.balances[UUSD]))
+                wallet.getBalances(wallet.createCoin(wallet.balances[UUSD], UUSD))
                 
                 # We are only supporting swaps with uusd (USTC) at the moment
                 if 'uusd' in wallet.balances:
@@ -231,7 +231,7 @@ def main():
 
                     # Update the balances after having done withdrawals and swaps
                     if user_action in [USER_ACTION_WITHDRAW, USER_ACTION_WITHDRAW_DELEGATE, USER_ACTION_SWAP_DELEGATE, USER_ACTION_ALL]:
-                        wallet.getBalances(wallet.createCoin(ULUNA, wallet.balances[ULUNA]))
+                        wallet.getBalances(wallet.createCoin(wallet.balances[ULUNA], ULUNA))
                     
                     # Only proceed if this is an active validator with a non-zero balance
                     if delegations[validator]['balance_amount'] > 0:
@@ -245,7 +245,7 @@ def main():
                                 print (f'  ➜ Delegating {wallet.formatUluna(delegated_uluna, ULUNA, True)}')
                                 print ('')
                                 # Create the delegation coin
-                                delegation_coin:Coin = wallet.createCoin(ULUNA, delegated_uluna)
+                                delegation_coin:Coin = wallet.createCoin(delegated_uluna, ULUNA)
 
                                 # Complete the transaction and get the result
                                 transaction_result:TransactionResult = delegate_to_validator(wallet, delegations[validator]['validator'], delegation_coin)

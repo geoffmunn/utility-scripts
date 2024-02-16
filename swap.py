@@ -13,7 +13,7 @@ from constants.constants import (
 
 from classes.swap_transaction import swap_coins
 from classes.transaction_core import TransactionResult
-from classes.wallets import UserWallets
+from classes.wallets import UserWallet, UserWallets
 
 from terra_classic_sdk.core.coin import Coin
 #from hashlib import sha256
@@ -35,6 +35,7 @@ def main():
     if len(user_wallets) > 0:
         print (f'You can make swaps on the following wallets:')
 
+        wallet:UserWallet
         wallet, answer = wallets.getUserSinglechoice("Select a wallet number 1 - " + str(len(user_wallets)) + ", 'X' to continue, or 'Q' to quit: ")
 
         if answer == USER_ACTION_QUIT:
@@ -64,7 +65,7 @@ def main():
     if swap_uluna == USER_ACTION_QUIT:
         print (' 🛑 Exiting...\n')
         exit()
-
+        
     print ('\nWhat coin do you want to swap TO?')
     coin_to, answer, estimated_amount = wallet.getCoinSelection("Select a coin number 1 - " + str(len(FULL_COIN_LOOKUP)) + ", 'X' to continue, or 'Q' to quit: ", wallet.balances, False, {'denom':coin_from, 'amount':swap_uluna})
 
@@ -74,7 +75,7 @@ def main():
 
     estimated_amount = str(("%.6f" % (estimated_amount)).rstrip('0').rstrip('.'))
 
-    swap_coin:Coin = wallet.createCoin(coin_from, swap_uluna)
+    swap_coin:Coin = wallet.createCoin(swap_uluna, coin_from)
 
     transaction_result:TransactionResult = swap_coins(wallet, swap_coin, coin_to, estimated_amount, True)
     transaction_result.wallet_denom      = wallet.denom
