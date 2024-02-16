@@ -159,10 +159,16 @@ def main():
 
     print (f"The {wallet.name} wallet holds {wallet.formatUluna(wallet.balances[denom], denom)} {FULL_COIN_LOOKUP[denom]}")
     print (f"NOTE: You can send the entire value of this wallet by typing '100%' - no minimum amount will be retained.")
-    uluna_amount:int  = wallet.getUserNumber('How much are you sending? ', {'max_number': float(wallet.formatUluna(wallet.balances[denom], denom, False)), 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': True, 'keep_minimum': False, 'target_denom': denom})
+    uluna_amount:str  = wallet.getUserNumber('How much are you sending? ', {'max_number': float(wallet.formatUluna(wallet.balances[denom], denom, False)), 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': True, 'keep_minimum': False, 'target_denom': denom})
+
+    if uluna_amount == USER_ACTION_QUIT:
+        print (' 🛑 Exiting...\n')
+        exit()
+    else:
+        uluna_amount = float(uluna_amount)
 
     # This is what we will be sending
-    send_coin:Coin = wallet.createCoin(denom, uluna_amount)
+    send_coin:Coin = wallet.createCoin(uluna_amount, denom)
 
     # Print a list of the addresses in the user_config.yml file:
     recipient_address, answer = get_send_to_address(user_addresses)
@@ -194,8 +200,8 @@ def main():
         else:
             current_balance:int = 0
             
-        recipient_wallet.getBalances(wallet.createCoin(send_coin.denom, (int(send_coin.amount) + current_balance)))
-        
+        recipient_wallet.getBalances(wallet.createCoin((int(send_coin.amount) + current_balance), send_coin.denom))
+        transaction_result.wallet_denom = wallet.denom
         transaction_result.showResults()
 
     else:
