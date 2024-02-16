@@ -524,14 +524,13 @@ def send_transaction(wallet:UserWallet, recipient_address:str, send_coin:Coin, m
                     if transaction_result.broadcast_result.code != 32:
                         break
 
-            if transaction_result.broadcast_result is None or transaction_result.broadcast_result.is_tx_error():
+            if transaction_result.broadcast_result is None or transaction_result.broadcast_result.is_tx_error() or transaction_result.is_error == True:
                 if transaction_result.broadcast_result is None:
                     transaction_result.message = f' 🛎️  The send transaction on {wallet.name} failed, no broadcast object was returned.'
                 else:
                     if transaction_result.broadcast_result.raw_log is not None:
                         transaction_result.message = f' 🛎️  The send transaction on {wallet.name} failed, an error occurred.'
-                        transaction_result.code    = f' 🛎️  Error code {transaction_result.broadcast_result.code}'
-                        transaction_result.log     = f' 🛎️  {transaction_result.broadcast_result.raw_log}'
+                        # The findTransaction function will populate the code and log values
                     else:
                         transaction_result.message = f' 🛎️  No broadcast log on {wallet.name} was available.'
             else:
