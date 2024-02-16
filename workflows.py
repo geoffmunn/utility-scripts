@@ -92,7 +92,7 @@ def check_amount(amount:str, balances:dict, preserve_minimum:bool = False) -> li
             else:
                 # Create a coin with the final denom and amount
                 amount_ok = True
-                coin_result = wallet.createCoin(coin_denom, coin_amount)
+                coin_result = wallet.createCoin(coin_amount, coin_denom)
         else:
             amount_ok = False
 
