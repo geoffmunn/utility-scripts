@@ -979,7 +979,7 @@ class UserWallet:
 
         return undelegations
     
-    def getUserNumber(self, question:str, params:dict) -> int|float|str:
+    def getUserNumber(self, question:str, params:dict) -> str:
         """
         Get the user input - could be a number or a percentage, and is constrained by details in the params parameter
 
@@ -995,7 +995,7 @@ class UserWallet:
                     'target_denom': str
                 }
 
-        @return: a dict of active undelegations on this wallet
+        @return: an amount reflecting the amount the user wants to use
         """
         
         empty_allowed:bool = False
@@ -1024,7 +1024,7 @@ class UserWallet:
                 if 'percentages_allowed' in params and percentage == True:
                     answer = answer[0:-1]
 
-                if answer.isdigit():
+                if answer.replace('.', '').lstrip('0').isdigit():
 
                     if 'percentages_allowed' in params and percentage == True:
                         if int(answer) > params['min_number'] and int(answer) <= 100:
@@ -1064,7 +1064,7 @@ class UserWallet:
                 if convert_to_uluna == True:
                     answer = int(multiply_raw_balance(answer, params['target_denom']))
 
-        return answer
+        return str(answer)
     
     def getUserRecipient(self, question:str, user_config:dict) -> str:
         """
