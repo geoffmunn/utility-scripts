@@ -520,27 +520,27 @@ def send_transaction(wallet:UserWallet, recipient_address:str, send_coin:Coin, m
                         transaction_result.log     = f' 🛎️  {transaction_result.broadcast_result.raw_log}'
                     else:
                         transaction_result.message = f' 🛎️  No broadcast log on {wallet.name} was available.'
-            
-            # Check that the recipient wallet has been updated
-            # To keep things simple, we'll only check for increased balances
-            retry_count:int = 0
-            print (f'\n 🔎︎ Checking that the recipient has this transaction...')
-            while True:
-                recipient_wallet.getBalances()
-                new_balance:int = 0
-                if send_tx.denom in recipient_wallet.balances:
-                    new_balance = int(recipient_wallet.balances[send_tx.denom])
+            else:
+                # Check that the recipient wallet has been updated
+                # To keep things simple, we'll only check for increased balances
+                retry_count:int = 0
+                print (f'\n 🔎︎ Checking that the recipient has this transaction...')
+                while True:
+                    recipient_wallet.getBalances()
+                    new_balance:int = 0
+                    if send_tx.denom in recipient_wallet.balances:
+                        new_balance = int(recipient_wallet.balances[send_tx.denom])
 
-                if new_balance > old_balance:
-                    break
-                
-                retry_count += 1
+                    if new_balance > old_balance:
+                        break
+                    
+                    retry_count += 1
 
-                if retry_count <= SEARCH_RETRY_COUNT:
-                    print (f'    Search attempt {retry_count}/{SEARCH_RETRY_COUNT}')
-                    time.sleep(1)
-                else:
-                    break
+                    if retry_count <= SEARCH_RETRY_COUNT:
+                        print (f'    Search attempt {retry_count}/{SEARCH_RETRY_COUNT}')
+                        time.sleep(1)
+                    else:
+                        break
 
 
         else:
