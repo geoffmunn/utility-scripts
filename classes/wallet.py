@@ -256,7 +256,7 @@ class UserWallet:
 
         return self
     
-    def createCoin(self, denom:str, amount:int) -> Coin:
+    def createCoin(self, amount:int, denom:str) -> Coin:
         """
         A basic helper function to create a valid Coin object with the provided details.
         
@@ -267,7 +267,7 @@ class UserWallet:
         @return: Coin
         """
 
-        return Coin.from_data({'amount': int(amount), 'denom': denom})
+        return Coin.from_data({'amount': int(float(amount)), 'denom': denom})
 
     def denomTrace(self, ibc_address:str) -> str:
         """
