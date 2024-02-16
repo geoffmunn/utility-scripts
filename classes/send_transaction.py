@@ -366,6 +366,12 @@ class SendTransaction(TransactionCore):
         self.tax             = None
         self.sequence        = self.current_wallet.sequence()
 
+
+        #self.gas_limit = '241946'
+        # Set a specific gas limit because 'auto' is too high
+        self.gas_limit = '250000'
+        
+        #self.gas_limit = '200000'
         # Perform the swap as a simulation, with no fee details
         self.sendOffchain()
 
@@ -391,6 +397,16 @@ class SendTransaction(TransactionCore):
         
             self.tax = 0
             
+            # For osmosis-1 transfers, we need to adjust the fee:
+            fee_amount       = fee_amount * 1.2
+            fee_denom:str    = fee_bit.denom
+
+            # Create the coin object
+            new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount))})
+
+            # This will be used by the swap function next time we call it
+            self.fee.amount = new_coin
+
             # Store this so we can deduct it off the total amount to swap.
             # If the fee denom is the same as what we're paying the tax in, then combine the two
             # Otherwise the deductible is just the tax value
@@ -484,9 +500,6 @@ def send_transaction(wallet:UserWallet, recipient_address:str, send_coin:Coin, m
         
         if send_result == True:
             
-            # Attach the recipietn wallet to this object so we can check if it worked
-            #recipient_wallet:UserWallet = UserWallet().create(name = 'recipient_wallet', address = recipient_address)
-
             transaction_result:TransactionResult = send_tx.broadcast()
 
             if send_tx.broadcast_result is not None and send_tx.broadcast_result.code == 32:
