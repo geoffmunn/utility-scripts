@@ -482,6 +482,7 @@ def send_transaction(wallet:UserWallet, recipient_address:str, send_coin:Coin, m
             user_choice = get_user_choice(' ❓ Do you want to continue? (y/n) ', [])
 
             if user_choice == False:
+                print (' 🛑 Exiting...\n')
                 exit()
         else:
             print (send_tx.readableFee())

@@ -1001,6 +1001,7 @@ def swap_coins(wallet, swap_coin:Coin, swap_to_denom:str, estimated_amount:int =
                 user_choice = get_user_choice(' ❓ Do you want to continue? (y/n) ', [])
 
                 if user_choice == False:
+                    print (' 🛑 Exiting...\n')
                     exit()
             else:
                 print (swap_tx.readableFee())
@@ -1018,6 +1019,7 @@ def swap_coins(wallet, swap_coin:Coin, swap_to_denom:str, estimated_amount:int =
                     user_choice = get_user_choice(' ❓ Do you want to continue? (y/n) ', [])
 
                     if user_choice == False:
+                        print (' 🛑 Exiting...\n')
                         exit()
                 else:
                     print (swap_tx.readableFee())
@@ -1034,6 +1036,7 @@ def swap_coins(wallet, swap_coin:Coin, swap_to_denom:str, estimated_amount:int =
                     user_choice = get_user_choice(' ❓ Do you want to continue? (y/n) ', [])
 
                     if user_choice == False:
+                        print (' 🛑 Exiting...\n')
                         exit()
                 else:
                     print (swap_tx.readableFee())
