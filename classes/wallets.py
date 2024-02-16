@@ -124,7 +124,7 @@ class UserWallets:
 
         return self.addresses
     
-    def getUserMultiChoice(self, question:str, options:dict) -> [dict,str]:
+    def getUserMultiChoice(self, question:str, options:dict) -> list[dict,str]:
         """
         Get multiple user selections from a list.
         This is a custom function because the options are specific to this list.
@@ -332,7 +332,7 @@ class UserWallets:
 
         return wallets_to_use, answer
     
-    def getUserSinglechoice(self, question:str, show_delegations:bool = False) -> [UserWallet,str]:
+    def getUserSinglechoice(self, question:str, show_delegations:bool = False) -> list[UserWallet,str]:
         """
         Get a single user selection from a list.
         This is a custom function because the options are specific to this list.
