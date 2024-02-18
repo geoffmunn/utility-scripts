@@ -2,6 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 import asyncio
+import netrc
 import yaml
 
 from getpass import getpass
@@ -9,6 +10,7 @@ from os.path import exists
 
 from constants.constants import (
     CONFIG_FILE_NAME,
+    NETRC_MACHINE_NAME,
     ULUNA,
     USER_ACTION_ALL,
     USER_ACTION_CLEAR,
@@ -536,12 +538,24 @@ class UserWallets:
         result:dict = None
 
         if file_exists:
-            print ('')
-            decrypt_password:str = getpass(' 🔑 Wallet password: ') # the secret password that encrypts the seed phrase
+
+            # First, check if we have a .netrc password set up:
+            try:
+                netrc_obj = netrc.netrc()
+                # Get the password for the current in-use machine
+                decrypt_password:str = netrc_obj.authenticators(NETRC_MACHINE_NAME)[2]
+            except:
+                # No .netrc or something went wrong
+                decrypt_password:str = ''
 
             if decrypt_password == '':
-                print (' 🛑 Exiting...\n')  
-                exit()
+
+                print ('')
+                decrypt_password:str = getpass(' 🔑 Wallet password: ') # the secret password that encrypts the seed phrase
+
+                if decrypt_password == '':
+                    print (' 🛑 Exiting...\n')  
+                    exit()
 
             # Now open this file and get the contents
             try:

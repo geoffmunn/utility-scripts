@@ -7,6 +7,9 @@ WITHDRAWAL_REMAINDER = 250   # This is the amount of Lunc we want to keep after 
 SEARCH_RETRY_COUNT   = 50    # This is the number of times we will check for a transaction to appear in the chain before deciding it didn't work.
 HIDE_DISABLED_COINS  = True  # Some coins are not currently available. Functionality is mostly there, but swaps etc won't work
 
+# Used for the .netrc file for passwordless authentication:
+NETRC_MACHINE_NAME   = 'LUNC workflows' 
+
 # System settings - these can be changed, but shouldn't be necessary
 GAS_PRICE_URI            = 'https://terra-classic-fcd.publicnode.com/v1/txs/gas_prices'
 #GAS_PRICE_URI            = 'https://rest.cosmos.directory/terra/v1/txs/gas_prices'
