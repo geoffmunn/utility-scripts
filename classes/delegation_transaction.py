@@ -17,11 +17,13 @@ from terra_classic_sdk.client.lcd.api.tx import (
     Tx
 )
 from terra_classic_sdk.core.coin import Coin
+from terra_classic_sdk.core.coins import Coins
 from terra_classic_sdk.core.staking import (
     MsgBeginRedelegate,
     MsgDelegate,
     MsgUndelegate,
 )
+from terra_classic_sdk.core.fee import Fee
 from terra_classic_sdk.core.tx import Tx
 from terra_classic_sdk.exceptions import LCDResponseError
 from terra_classic_sdk.key.mnemonic import MnemonicKey
@@ -206,7 +208,7 @@ class DelegationTransaction(TransactionCore):
 
             # This will be used by the swap function next time we call it
             self.fee = self.calculateFee(requested_fee, ULUNA)
-
+            
             return True
         else:
             return False
@@ -267,7 +269,7 @@ class DelegationTransaction(TransactionCore):
         except:
            return False
         
-def delegate_to_validator(wallet:UserWallet, validator_address:str, delegation_coin:Coin) -> TransactionResult:
+def delegate_to_validator(wallet:UserWallet, validator_address:str, delegation_coin:Coin, deduct_fee:bool = False) -> TransactionResult:
     """
     A wrapper function for workflows and wallet management.
     This lets the user delegate uluna to a supplied validator.
@@ -278,6 +280,7 @@ def delegate_to_validator(wallet:UserWallet, validator_address:str, delegation_c
       - wallet: a fully complete wallet object
       - validator_address: the address of the validator in question
       - delegation_coin: a Coin object holding the delegation amount
+      - deduct_fee: deduct the fee off the delegation amount
 
     @return: a TransactionResult object
     """
@@ -300,7 +303,17 @@ def delegate_to_validator(wallet:UserWallet, validator_address:str, delegation_c
     delegation_result:bool = delegation_tx.simulate(delegation_tx.delegate)
 
     if delegation_result == True:
-            
+
+        # If this is a redelegation, then we need to subtract the fee off the delegation amount
+        if deduct_fee == True:
+            fee:Fee = delegation_tx.fee
+            fee_coins:Coins = fee.amount
+            fee_coin:Coin
+            for fee_coin in fee_coins.to_list():
+                if fee_coin.denom == ULUNA:
+                    delegation_tx.delegated_uluna -= fee_coin.amount
+                    break
+        
         print (delegation_tx.readableFee())
 
         # Now we know what the fee is, we can do it again and finalise it
