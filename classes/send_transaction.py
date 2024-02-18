@@ -478,30 +478,9 @@ def send_transaction(wallet:UserWallet, recipient_address:str, send_coin:Coin, m
         send_tx.revision_number = 1
         # This is required if the chain id is NOT a terra chain (columbus-5).
         # For example, Osmosis transfers require LUNC to be converted into the IBC denom
-        print (send_tx.terra.chain_id)
         if CHAIN_DATA[send_tx.receiving_denom]['chain_id'] != CHAIN_DATA[ULUNA]['chain_id']:
-            #send_tx.source_channel = CHAIN_DATA[send_tx.receiving_denom]['ibc_channels'][send_coin.denom]
             send_tx.source_channel = CHAIN_DATA[UOSMO]['ibc_channels'][ULUNA]
 
-        print ('source channel is:', send_tx.source_channel)
-
-        # Convert the amount denom into an IBC denom if necessary.
-        # This is for sending coins on a non-terra chain to the same non-terra chain
-        # if wallet.terra.chain_id != CHAIN_DATA[send_coin.denom]['chain_id']:
-        #     send_tx.denom           = send_tx.IBCfromDenom(send_tx.source_channel, send_coin.denom)
-        #     send_tx.is_ibc_transfer = True
-
-        #     # # Adjust the amount
-        #     # # For osmosis-1 transfers, we need to adjust the fee:
-        #     # fee_amount       = fee_amount * 1.2
-        #     # fee_denom:str    = send_tx.denom
-
-        #     # # Create the coin object
-        #     # new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount))})
-
-        #     # # This will be used by the swap function next time we call it
-        #     # self.fee.amount = new_coin
-        # else:
         send_tx.denom = send_coin.denom
 
     else:
@@ -523,20 +502,18 @@ def send_transaction(wallet:UserWallet, recipient_address:str, send_coin:Coin, m
         
     # Simulate it            
     if send_tx.is_on_chain == True:
-        print ('is on chain!')
         send_result = send_tx.simulate()
     else:
-        print ('is off chain!')
         send_result = send_tx.simulateOffchain()
     
     # Now complete it
     if send_result == True:
 
         if prompt_user == True:
+            print ('')
             print(f'  ➜ You are about to send {wallet.formatUluna(send_coin.amount, send_coin.denom)} {FULL_COIN_LOOKUP[send_coin.denom]} to {recipient_address}')
-
             print (send_tx.readableFee())
-
+            print ('')
             user_choice = get_user_choice(' ❓ Do you want to continue? (y/n) ', [])
 
             if user_choice == False:
