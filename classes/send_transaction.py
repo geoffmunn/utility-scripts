@@ -53,12 +53,12 @@ class SendTransaction(TransactionCore):
         self.fee:Fee               = None
         self.fee_deductables:float = None
         self.gas_limit:str         = 'auto'
+        self.is_ibc_transfer:bool  = False
         self.is_on_chain:bool      = True
         self.memo:str              = ''
         self.receiving_denom:str   = ''
         self.recipient_address:str = None
         self.recipient_prefix:str  = ''
-        #self.recipient_wallet:UserWallet = None
         self.revision_number:int   = None
         self.sender_address:str    = None
         self.sender_prefix:str     = ''
@@ -151,6 +151,7 @@ class SendTransaction(TransactionCore):
                 sequence       = self.sequence
             )
 
+            print (options)
             # This process often generates sequence errors. If we get a response error, then
             # bump up the sequence number by one and try again.
             while True:
@@ -287,6 +288,12 @@ class SendTransaction(TransactionCore):
         self.tax             = None
         self.sequence        = self.current_wallet.sequence()
 
+        # If the send amount denom is NOT the native denom of the chain, then convert it to the IBC value
+        # Eg, send LUNC on Osmosis -> Osmosis
+        if self.terra.chain_id == CHAIN_DATA[UOSMO]['chain_id'] and self.denom != UOSMO:
+            print ('source channel:', self.source_channel)
+            self.denom = self.IBCfromDenom(self.source_channel, self.denom)
+
         # Perform the swap as a simulation, with no fee details
         self.send()
 
@@ -299,8 +306,12 @@ class SendTransaction(TransactionCore):
 
             # This will be used by the swap function next time we call it
             # We'll use uluna as the preferred fee currency just to keep things simple
-            self.fee = self.calculateFee(requested_fee = requested_fee, specific_denom = ULUNA)
+            #if wallet.terra.chain_id == CHAIN_DATA[wallet.getDenomByPrefix(send_tx.recipient_prefix)]['chain_id']:
             
+            print ('convert fee to IBC?', self.is_ibc_transfer)
+            self.fee = self.calculateFee(requested_fee = requested_fee, specific_denom = ULUNA, convert_to_ibc = self.is_ibc_transfer)
+            
+            print ('fee:', self.fee)
             # Figure out the fee structure
             fee_bit:Coin = Coin.from_str(str(requested_fee.amount))
             fee_amount   = fee_bit.amount
@@ -320,7 +331,18 @@ class SendTransaction(TransactionCore):
                 new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount))})
             else:
                 new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount)), Coin(self.denom, int(self.tax))})
-                
+
+            # If the chain is Osmosis then adjust the fee amount    
+            if self.terra.chain_id != CHAIN_DATA[ULUNA]['chain_id']:
+                print ('increasing fee!')
+                fee_amount = fee_amount * 1.2
+
+                # Change the denom to an IBC version
+                print ('source channel:', self.source_channel)
+                fee_denom = self.IBCfromDenom(self.source_channel, fee_denom)
+
+                new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount))})
+
             requested_fee.amount = new_coin
             
             # This will be used by the swap function next time we call it
@@ -445,30 +467,66 @@ def send_transaction(wallet:UserWallet, recipient_address:str, send_coin:Coin, m
     send_tx.sender_address    = wallet.address
     send_tx.sender_prefix     = wallet.getPrefix(wallet.address)
     send_tx.wallet_denom      = wallet.denom
-
-    send_tx.receiving_denom = wallet.getDenomByPrefix(send_tx.recipient_prefix)
     
-    if wallet.terra.chain_id == CHAIN_DATA[ULUNA]['chain_id'] and send_tx.recipient_prefix == CHAIN_DATA[ULUNA]['bech32_prefix']:
+    # Based on the recipient prefix, get the receiving denomination
+    send_tx.receiving_denom   = wallet.getDenomByPrefix(send_tx.recipient_prefix)
+
+    # If the chain ID of the wallet and the recipient prefix native chain are then same, then it's an on-chain tx
+    #if wallet.terra.chain_id == CHAIN_DATA[ULUNA]['chain_id'] and send_tx.recipient_prefix == CHAIN_DATA[ULUNA]['bech32_prefix']:
+    if wallet.terra.chain_id == CHAIN_DATA[wallet.getDenomByPrefix(send_tx.recipient_prefix)]['chain_id']:
         send_tx.is_on_chain     = True
         send_tx.revision_number = 1
+        # This is required if the chain id is NOT a terra chain (columbus-5).
+        # For example, Osmosis transfers require LUNC to be converted into the IBC denom
+        print (send_tx.terra.chain_id)
+        if CHAIN_DATA[send_tx.receiving_denom]['chain_id'] != CHAIN_DATA[ULUNA]['chain_id']:
+            #send_tx.source_channel = CHAIN_DATA[send_tx.receiving_denom]['ibc_channels'][send_coin.denom]
+            send_tx.source_channel = CHAIN_DATA[UOSMO]['ibc_channels'][ULUNA]
+
+        print ('source channel is:', send_tx.source_channel)
+
+        # Convert the amount denom into an IBC denom if necessary.
+        # This is for sending coins on a non-terra chain to the same non-terra chain
+        # if wallet.terra.chain_id != CHAIN_DATA[send_coin.denom]['chain_id']:
+        #     send_tx.denom           = send_tx.IBCfromDenom(send_tx.source_channel, send_coin.denom)
+        #     send_tx.is_ibc_transfer = True
+
+        #     # # Adjust the amount
+        #     # # For osmosis-1 transfers, we need to adjust the fee:
+        #     # fee_amount       = fee_amount * 1.2
+        #     # fee_denom:str    = send_tx.denom
+
+        #     # # Create the coin object
+        #     # new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount))})
+
+        #     # # This will be used by the swap function next time we call it
+        #     # self.fee.amount = new_coin
+        # else:
+        send_tx.denom = send_coin.denom
+
     else:
         send_tx.is_on_chain = False
+
         send_tx.source_channel = CHAIN_DATA[wallet.denom]['ibc_channels'][send_tx.receiving_denom]
+        
         if wallet.terra.chain_id == CHAIN_DATA[UOSMO]['chain_id']:
             send_tx.revision_number = 6
         else:
             send_tx.revision_number = 1
+
+        send_tx.denom = send_coin.denom
     
-    # Assign the user provided details:
+    # Assign the remaining user provided details:
     send_tx.memo         = memo
     send_tx.amount       = int(send_coin.amount)
-    send_tx.denom        = send_coin.denom
     send_tx.block_height = send_tx.terra.tendermint.block_info()['block']['header']['height']
         
     # Simulate it            
     if send_tx.is_on_chain == True:
+        print ('is on chain!')
         send_result = send_tx.simulate()
     else:
+        print ('is off chain!')
         send_result = send_tx.simulateOffchain()
     
     # Now complete it
@@ -489,6 +547,8 @@ def send_transaction(wallet:UserWallet, recipient_address:str, send_coin:Coin, m
 
         recipient_wallet:UserWallet = UserWallet().create('Recipient wallet', send_tx.recipient_address)
         recipient_wallet.getBalances()
+
+        # Get the recipient current balance before the tx so we can compare it for success
         old_balance:int = 0
         if send_tx.denom in recipient_wallet.balances:
             old_balance = int(recipient_wallet.balances[send_tx.denom])
@@ -530,7 +590,8 @@ def send_transaction(wallet:UserWallet, recipient_address:str, send_coin:Coin, m
                 else:
                     if transaction_result.broadcast_result.raw_log is not None:
                         transaction_result.message = f' 🛎️  The send transaction on {wallet.name} failed, an error occurred.'
-                        # The findTransaction function will populate the code and log values
+                        transaction_result.code    = transaction_result.broadcast_result.code
+                        transaction_result.log     = transaction_result.broadcast_result.raw_log
                     else:
                         transaction_result.message = f' 🛎️  No broadcast log on {wallet.name} was available.'
             else:
