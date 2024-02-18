@@ -208,8 +208,8 @@ class TransactionCore():
             # Override the calculations if we've been told to use uusd or something else
             if convert_to_ibc == True:
                 # NOTE: this assumes there is enough ULUNA to cover the fee
-                ibc_channel          = CHAIN_DATA[self.wallet_denom]['ibc_channels'][ULUNA]
-                ibc_value            = self.IBCfromDenom(ibc_channel, ULUNA)
+                ibc_channel:str      = CHAIN_DATA[self.wallet_denom]['ibc_channels'][ULUNA]
+                ibc_value:str        = self.IBCfromDenom(ibc_channel, ULUNA)
                 requested_fee.amount = Coins({Coin(ibc_value, has_uluna)})
             else:
                 if specific_denom != '':
