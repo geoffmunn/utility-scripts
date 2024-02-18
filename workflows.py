@@ -341,7 +341,10 @@ def main():
                                         for received_coin in transaction_result.result_received:
                                             if delegations[validator]['validator'] not in validator_withdrawals:
                                                 validator_withdrawals[delegations[validator]['validator']] = {}
-                                            validator_withdrawals[delegations[validator]['validator']][received_coin.denom] = received_coin.amount
+                                                validator_withdrawals[delegations[validator]['validator']]['balances']       = {}
+                                                validator_withdrawals[delegations[validator]['validator']]['validator_name'] = delegations[validator]['validator_name']
+
+                                            validator_withdrawals[delegations[validator]['validator']]['balances'][received_coin.denom] = received_coin.amount
 
                                     else:
                                         print (" ❗ 'when' trigger not fired!")
@@ -353,21 +356,23 @@ def main():
                             
                         if action == 'redelegate':
                             # We don't support specific wallet selection on the 'redelegate' step
+                            delegations:dict = wallet.delegations
+
                             for validator in validator_withdrawals:
-                                is_triggered = check_trigger(step['when'], validator_withdrawals[validator])
+                                is_triggered = check_trigger(step['when'], validator_withdrawals[validator]['balances'])
                                     
                                 if is_triggered == True:
                                     #print ('trigger is ok')
                                     # We will redelegate an amount based on the 'amount' value, calculated from the returned rewards
-                                    amount_ok, delegation_coin = check_amount(step['amount'], validator_withdrawals[validator], False)
+                                    amount_ok, delegation_coin = check_amount(step['amount'], validator_withdrawals[validator]['balances'], False)
 
                                     if amount_ok == True:
                                         
                                         print ('')
-                                        print (f'  ➜ Redelegating {wallet.formatUluna(delegation_coin.amount, delegation_coin.denom, True)} back to {validator}.')
+                                        print (f"  ➜ Redelegating {wallet.formatUluna(delegation_coin.amount, delegation_coin.denom, True)} back to {validator_withdrawals[validator]['validator_name']}.")
                                         print ('')
 
-                                        transaction_result:TransactionResult = delegate_to_validator(wallet, validator, delegation_coin)
+                                        transaction_result:TransactionResult = delegate_to_validator(wallet, validator, delegation_coin, True)
                                         transaction_result.showResults()
                                         
                                     else:
