@@ -171,39 +171,6 @@ def main():
         transaction_result:TransactionResult = undelegate_from_validator(wallet, user_validator['operator_address'], undelegated_coin)
         transaction_result.showResults()
 
-        # # Create the undelegation object    
-        # undelegation_tx = DelegationTransaction().create(seed = wallet.seed, denom = ULUNA)
-
-        # # Assign the details
-        # undelegation_tx.balances          = wallet.balances
-        # undelegation_tx.delegator_address = wallet.address
-        # undelegation_tx.validator_address = user_validator['operator_address']
-        # undelegation_tx.delegated_uluna   = undelegated_uluna
-        # undelegation_tx.wallet_denom      = wallet.denom
-        
-        # # Simulate it
-        # result = undelegation_tx.simulate(undelegation_tx.undelegate)
-
-        # if result == True:
-                
-        #     print (undelegation_tx.readableFee())
-
-        #     # Now we know what the fee is, we can do it again and finalise it
-        #     result = undelegation_tx.undelegate()
-
-        #     if result == True:
-        #         undelegation_tx.broadcast()
-        #         if undelegation_tx.broadcast_result.is_tx_error():
-        #             print (' 🛎️ The undelegation failed, an error occurred:')
-        #             print (f' 🛎️  {undelegation_tx.broadcast_result.raw_log}')
-        #         else:
-        #             print (f' ✅ Undelegated amount: {wallet.formatUluna(undelegated_uluna, ULUNA, True)}')
-        #             print (f' ✅ Tx Hash: {undelegation_tx.broadcast_result.txhash}')
-        #     else:
-        #         print (' 🛎️  The undelegation could not be completed')
-        # else:
-        #     print ('🛎️  The undelegation could not be completed')
-        
     if user_action == USER_ACTION_VALIDATOR_SWITCH:
         # Get the validators currently being used
         
@@ -251,44 +218,6 @@ def main():
         delegated_coin:Coin = wallet.createCoin(switched_uluna, ULUNA)
         transaction_result:TransactionResult = switch_validator(wallet, to_validator['operator_address'], from_validator['operator_address'], delegated_coin)
         transaction_result.showResults()
-
-        # # Create the delegation object
-        # delegation_tx = DelegationTransaction().create(seed = wallet.seed, denom = ULUNA)
-
-        # # Assign the details
-        # delegation_tx.balances              = wallet.balances
-        # delegation_tx.delegator_address     = wallet.address
-        # delegation_tx.validator_address     = to_validator['operator_address']
-        # delegation_tx.validator_address_old = from_validator['operator_address']
-        # delegation_tx.delegated_uluna       = int(switched_uluna)
-        # delegation_tx.wallet_denom          = wallet.denom
-        
-        # # Simulate it
-        # result = delegation_tx.simulate(delegation_tx.redelegate)
-
-        # if result == True:
-                
-        #     print (delegation_tx.readableFee())
-
-        #     # Now we know what the fee is, we can do it again and finalise it
-        #     result = delegation_tx.redelegate()
-
-        #     if result == True:
-        #         delegation_tx.broadcast()
-            
-        #         if delegation_tx is not None:    
-        #             if delegation_tx.broadcast_result.is_tx_error():
-        #                 print (' 🛎️ The delegation failed, an error occurred:')
-        #                 print (f' 🛎️  {delegation_tx.broadcast_result.raw_log}')
-        #             else:
-        #                 print (f' ✅ Delegated amount: {wallet.formatUluna(switched_uluna, ULUNA, True)}')
-        #                 print (f' ✅ Tx Hash: {delegation_tx.broadcast_result.txhash}')
-        #         else:
-        #             print (' 🛎️ Please check the validator list to see what the current status is. This transaction returned an error but may have completed.')
-        #     else:
-        #         print (' 🛎️  The delegation could not be completed')
-        # else:
-        #     print ('🛎️  The delegation could not be completed')
     
     if user_action == USER_ACTION_VALIDATOR_LIST_UNDELEGATIONS:
         
