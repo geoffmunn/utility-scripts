@@ -22,7 +22,7 @@ from classes.transaction_core import TransactionResult
 
 from terra_classic_sdk.core.coin import Coin
 
-def get_send_to_address(user_wallets:UserWallet):
+def get_send_to_address(user_wallets:UserWallet) -> list[str, str]:
     """
     Show a simple list address from what is found in the user_config file
     """
@@ -167,9 +167,6 @@ def main():
     else:
         uluna_amount = float(uluna_amount)
 
-    # This is what we will be sending
-    send_coin:Coin = wallet.createCoin(uluna_amount, denom)
-
     # Print a list of the addresses in the user_config.yml file:
     recipient_address, answer = get_send_to_address(user_addresses)
 
@@ -177,9 +174,8 @@ def main():
         print (' 🛑 Exiting...\n')
         exit()
 
-    if recipient_address == USER_ACTION_QUIT:
-        print (' 🛑 Exiting...\n')
-        exit()
+    # This is what we will be sending
+    send_coin:Coin = wallet.createCoin(uluna_amount, denom)
 
     # NOTE: I'm pretty sure the memo size is int64, but I've capped it at 255 so python doens't panic
     memo:str = wallet.getUserText('Provide a memo (optional): ', 255, True)
