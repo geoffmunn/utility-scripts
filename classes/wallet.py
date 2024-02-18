@@ -321,7 +321,7 @@ class UserWallet:
         
         return lunc
     
-    def getBalances(self, target_coin:Coin = None, core_coins_only:bool = False) -> dict:
+    def getBalances(self, core_coins_only:bool = False) -> dict:
         """
         Get the balances associated with this wallet.
         
@@ -331,7 +331,6 @@ class UserWallet:
         If you just want the previously fetched balances, use wallet.balances
 
         @params:
-            - target_coin: are we monitoring a particular coin for any changes?
             - core_coins_only: if true, then this will return ULUNA and USTC only
             
         @return: a dict of coins and their amounts for this wallet
@@ -342,7 +341,6 @@ class UserWallet:
 
             balances:dict = {}
             pools:dict    = {}
-            #while True:
                 
             # Default pagination options
             pagOpt:PaginationOptions = PaginationOptions(limit=50, count_total=True)
@@ -400,22 +398,6 @@ class UserWallet:
                     if int(coin_balance['balance']) > 0:
                         balances[GRDX] = coin_balance['balance']
 
-
-            #if target_coin is not None:
-            #    # If the current balance has a higher (or equal) amount in it than that target coin, then we can exit
-            #    if target_coin.denom in balances and int(balances[target_coin.denom]) >= int(target_coin.amount):
-            #        break
-            #else:
-            #    # We're not checking a specific coin, we can exit now
-            #    break
-
-            # Wait for one second and try again
-            #retry_count += 1
-            #if retry_count <= SEARCH_RETRY_COUNT:
-            #    print (f'Target denom balance not found... attempt {retry_count}/{SEARCH_RETRY_COUNT}')
-            #    time.sleep(1)
-            #else:
-            #    break
         else:
             balances:dict = {}
 

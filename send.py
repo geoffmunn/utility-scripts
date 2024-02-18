@@ -196,7 +196,7 @@ def main():
         else:
             current_balance:int = 0
             
-        recipient_wallet.getBalances(wallet.createCoin((int(send_coin.amount) + current_balance), send_coin.denom))
+        recipient_wallet.getBalances()
         transaction_result.wallet_denom = wallet.denom
         transaction_result.showResults()
 
