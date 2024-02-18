@@ -274,7 +274,7 @@ Enter these lines:
 
 ```bash
 machine LUNC workflows
-login workflow engine
+login workflow_engine
 password [YOUR WALLET PASSWORD]
 ```
 
