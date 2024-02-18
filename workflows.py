@@ -22,8 +22,6 @@ from constants.constants import (
     WORKFLOWS_FILE_NAME,
 )
 
-# from classes.delegation_transaction import DelegationTransaction
-# from classes.swap_transaction import SwapTransaction
 from classes.delegation_transaction import delegate_to_validator, switch_validator, undelegate_from_validator
 from classes.liquidity_transaction import LiquidityTransaction, join_liquidity_pool, exit_liquidity_pool
 from classes.send_transaction import send_transaction
@@ -33,7 +31,6 @@ from classes.validators import Validators
 from classes.wallet import UserWallet
 from classes.wallets import UserWallets
 from classes.withdrawal_transaction import claim_delegation_rewards
-# from classes.withdrawal_transaction import WithdrawalTransaction
     
 
 from terra_classic_sdk.core.coin import Coin
@@ -246,7 +243,6 @@ def main():
         print (' 🛑 The user_config.yml does not exist - please run configure_user_wallets.py before running this script.')
         exit()
     
-    # Get the wallets
     # Get the user wallets. We'll be getting the balances futher on down.
     user_wallets = UserWallets().loadUserWallets(get_balances = False)
     
