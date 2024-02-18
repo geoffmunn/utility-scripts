@@ -273,7 +273,7 @@ nano .netrc
 Enter these lines:
 
 ```bash
-machine LUNC workflows
+machine LUNCworkflows
 login workflow_engine
 password [YOUR WALLET PASSWORD]
 ```
@@ -282,7 +282,5 @@ Lastly, type: ```chmod 600 .netrc``` so no one else can read it.
 
 > [!NOTE]
 > Machine: Do not change the machine value, unless you also change the NETRC_MACHINE_NAME value in the ```contants.py``` file.
-
 > login: can be anything you want
-
 > password: Obviously, change [YOUR WALLET PASSWORD] to your actual password.
