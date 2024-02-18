@@ -258,3 +258,29 @@ When you run any of the other scripts, you provide the same password you used wh
 To be extra sure, it is recommended that you create a test wallet and make some small transactions with these scripts until you are comfortable that it works and is safe.
 
 If you have any questions or concerns about the security aspect of your seed, then please raise an issue on this project.
+
+## Running as a cron job
+
+If you want to run workflows as a cron job, or you don't want to type in your password each time, then you can set up a profile in ```.netrc```.
+
+In your terminal, type the following:
+
+```bash
+cd ~
+nano .netrc
+```
+
+Enter these lines:
+
+```bash
+machine LUNC workflows
+login workflow engine
+password [YOUR WALLET PASSWORD]
+```
+
+Lastly, type: ```chmod 600 .netrc``` so no one else can read it.
+
+> [!NOTE]
+> Machine: Do not change the machine value, unless you also change the NETRC_MACHINE_NAME value in the ```contants.py``` file.
+> login: can be anything you want
+> password: Obviously, change [YOUR WALLET PASSWORD] to your actual password.
