@@ -31,7 +31,6 @@ from constants.constants import (
     DB_FILE_NAME,
     FULL_COIN_LOOKUP,
     GRDX,
-    SEARCH_RETRY_COUNT,
     TERRASWAP_GRDX_TO_LUNC_ADDRESS,
     UBASE,
     ULUNA,
