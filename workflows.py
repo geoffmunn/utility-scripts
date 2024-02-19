@@ -5,6 +5,7 @@ import argparse
 import yaml
 
 from datetime import datetime
+from enum import Enum
 from os.path import exists
 
 from classes.common import (
@@ -150,7 +151,6 @@ def check_trigger(triggers:list, balances:dict) -> bool:
                         is_triggered = False
                     
                 elif len(time_bits) == 2:
-                    #print(datetime.today().strftime("%I:%M%p")) # 03:31 AM
                     hourMinute:str = datetime.today().strftime("%I:%M%p").lower()
                     if hourMinute != requirement.lower():
                         is_triggered = False
@@ -224,6 +224,91 @@ def get_wallet(user_wallets:UserWallets, user_wallet:str) -> UserWallet:
 
     return result
 
+class MessageType(Enum):
+    MESSAGE = 1
+    ERROR = 2
+class Log():
+
+    def __init__(self, *args, **kwargs):
+        self.silentMode:bool = False
+        self.items:list = []
+
+    def header(self, title:str, description:str) -> bool:
+        """
+        A special method to show a multi-line header for the workflow that has just started.
+
+        @params:
+           - title: the workflow title
+           - description: the longer optional description
+
+        @return: True
+        """
+
+        if len(title) > len(description):
+            header:str = '#' * (len(title) + 4)
+        else:
+            header:str = '#' * (len(description) + 4)
+
+        self.items.append(header)
+        print ('\n' + header)
+
+        self.items.append(f"# {title}")
+        print (f"# {title}")
+        
+        if description != '':
+            self.items.append(f'# {description}')
+            print (f'# {description}')
+
+        self.items.append(header)
+        print (header)
+
+        return True
+
+    def message(self, msg:str) -> bool:
+        """
+        Store a simple message - not an error
+
+        @params:
+            - msg: the message
+
+        @return: True
+        """
+
+        self.items.append({'messsage': msg, 'type': MessageType.MESSAGE})
+
+        if self.silentMode == False:
+            print (msg)
+
+        return True
+    
+    def error(self, msg:str) -> bool:
+        """
+        Store an error message. Will be displayed in the silent mode summary.
+
+        @params:
+            - msg: the error message
+
+        @return: True
+        """
+
+        self.items.append({'messsage': msg, 'type': MessageType.ERROR})
+
+        if self.silentMode == False:
+            print (msg)
+
+        return True
+    
+    def print(self) -> bool:
+        
+        for item in self.items:
+            if self.silentMode == True:
+                if item.type == MessageType.ERROR:
+                    print (item['message'])
+            else:
+                print (item['message'])
+
+        return True
+
 def output(msg:str, silent:bool, type:int = OUTPUT_USER) -> bool:
     """
     Print a message depending on what type it is and what mode we're in
@@ -279,6 +364,9 @@ def main():
         print ("\n 🛑 This password couldn't decrypt any wallets. Make sure it is correct, or rebuild the wallet list by running the configure_user_wallet.py script again.\n")
         exit()
 
+    # Set up the log object
+    logs:Log = Log()
+    
     # Go through each workflow and attach the wallets that they match
     for workflow in user_workflows['workflows']:
         workflow['user_wallets'] = []   
@@ -306,25 +394,12 @@ def main():
             if workflow['name'] is None:
                 workflow['name'] = ''
 
-            output('', silent_mode)
-            if len(workflow['name']) > len(description):
-                header:str = '#' * (len(workflow['name']) + 4)
-            else:
-                header:str = '#' * (len(workflow['description']) + 4)
-
-            output(header, silent_mode)
-            output(f"# {workflow['name']}", silent_mode)
-            if description != '':
-                output(f'# {description}', silent_mode)
-
-            output(header, silent_mode)
+            logs.header(workflow['name'], workflow['description'])
 
             # Go through each wallet
             wallet:UserWallet
             for wallet in wallets:
-                output('', silent_mode)
-                output(f' 📓 {wallet.name}', silent_mode)
-                output('', silent_mode)
+                logs.message(f'\n 📓 {wallet.name}')
 
                 validator_withdrawals:dict = {}  # This keeps track of what we've removed from each validator in this wallet
                 # Go through each step
@@ -339,7 +414,7 @@ def main():
                     action = step['action'].lower()
 
                     if can_continue == True:
-                        output(f' 🪜 Performing {action} step... {step_count}/{len(steps)}', silent_mode)
+                        logs.message(f' 🪜 Performing {action} step... {step_count}/{len(steps)}')
 
                         if action == 'withdraw':
                             # Get an updated list of delegations on this wallet
@@ -356,10 +431,8 @@ def main():
                                     is_triggered:bool = check_trigger(step['when'], {ULUNA: uluna_reward})
 
                                     if is_triggered == True:
-                                        output('')
-                                        output(f"  ➜ Withdrawing rewards from {delegations[validator]['validator_name']}...", silent_mode)
-                                        output(f'  ➜ Withdrawing {wallet.formatUluna(uluna_reward, ULUNA, False)} rewards.', silent_mode)
-                                        output('', silent_mode)
+                                        logs.message(f"  ➜ Withdrawing {wallet.formatUluna(uluna_reward, ULUNA, False)} rewards from {delegations[validator]['validator_name']}.")
+
                                         transaction_result:TransactionResult = claim_delegation_rewards(wallet, validator_address = delegations[validator]['validator'])
                                         transaction_result.showResults()
                                         
@@ -373,11 +446,11 @@ def main():
                                             validator_withdrawals[delegations[validator]['validator']]['balances'][received_coin.denom] = received_coin.amount
 
                                     else:
-                                        output(" ❗ 'when' trigger not fired!", silent_mode, OUTPUT_ERROR)
-                                        output(f"    - when: {step['when']}", silent_mode, OUTPUT_ERROR)
+                                        logs.error(" ❗ 'when' trigger not fired!")
+                                        logs.error(f"    - when: {step['when']}")
                                         can_continue = False
                                 else:
-                                    output(' ❗ No LUNC in the validator to withdraw!', silent_mode, OUTPUT_ERROR)
+                                    logs.error(' ❗ No LUNC in the validator to withdraw!')
                                     can_continue = False
                             
                         if action == 'redelegate':
@@ -388,24 +461,21 @@ def main():
                                 is_triggered = check_trigger(step['when'], validator_withdrawals[validator]['balances'])
                                     
                                 if is_triggered == True:
-                                    #print ('trigger is ok')
                                     # We will redelegate an amount based on the 'amount' value, calculated from the returned rewards
                                     amount_ok, delegation_coin = check_amount(step['amount'], validator_withdrawals[validator]['balances'], False)
 
                                     if amount_ok == True:
                                         
-                                        output('', silent_mode)
-                                        output(f"  ➜ Redelegating {wallet.formatUluna(delegation_coin.amount, delegation_coin.denom, True)} back to {validator_withdrawals[validator]['validator_name']}.", silent_mode)
-                                        output('', silent_mode)
+                                        logs.message(f"  ➜ Redelegating {wallet.formatUluna(delegation_coin.amount, delegation_coin.denom, True)} back to {validator_withdrawals[validator]['validator_name']}.")
 
                                         transaction_result:TransactionResult = delegate_to_validator(wallet, validator, delegation_coin, True)
                                         transaction_result.showResults()
                                         
                                     else:
-                                        output('Not enough LUNC in the rewards to make this delegation.', silent_mode, OUTPUT_ERROR)
+                                        logs.error(' ❗ Not enough LUNC in the rewards to make this delegation.')
                                 else:
-                                    output(" ❗ 'when' trigger not fired!", silent_mode, OUTPUT_ERROR)
-                                    output(f"    - when: {step['when']}", silent_mode, OUTPUT_ERROR)
+                                    logs.error(" ❗ 'when' trigger not fired!")
+                                    logs.error(f"    - when: {step['when']}")
                                     can_continue = False
                     
                         if action == 'delegate':
@@ -436,28 +506,26 @@ def main():
 
                                             if validator_address != '':
 
-                                                output('', silent_mode)
-                                                output(f"  ➜ Delegating {wallet.formatUluna(delegation_coin.amount, delegation_coin.denom, True)} to {step['validator']}.", silent_mode)
-                                                output('', silent_mode)
+                                                logs.message(f"  ➜ Delegating {wallet.formatUluna(delegation_coin.amount, delegation_coin.denom, True)} to {step['validator']}.")
                                                 
                                                 transaction_result:TransactionResult = delegate_to_validator(step_wallet, validator_address, delegation_coin)
                                                 transaction_result.showResults()
                                                         
                                             else:
-                                                output('The validator could not be found, please check the name', silent_mode, OUTPUT_ERROR)
+                                                logs.error(' ❗ The validator could not be found, please check the name')
                                                 can_continue = False
                                         else:
-                                            output('No validator specified to delegated to!', silent_mode, OUTPUT_ERROR)
+                                            logs.error(' ❗ No validator specified to delegated to!')
                                             can_continue = False
                                     else:
-                                        output('Not enough LUNC in the rewards to make this delegation.', silent_mode, OUTPUT_ERROR)
+                                        logs.error(' ❗ Not enough LUNC in the rewards to make this delegation.')
                                         can_continue = False
                                 else:
-                                    output(" ❗ 'when' trigger not fired!", silent_mode, OUTPUT_ERROR)
-                                    output(f"    - when: {step['when']}", silent_mode, OUTPUT_ERROR)
+                                    logs.error(" ❗ 'when' trigger not fired!")
+                                    logs.error(f"    - when: {step['when']}")
                                     can_continue = False
                             else:
-                                output('No valid wallet could be found for this step.', silent_mode, OUTPUT_ERROR)
+                                logs.error(' ❗ No valid wallet could be found for this step.')
                                 can_continue = False
 
                         if action == 'send':
@@ -475,7 +543,7 @@ def main():
                                 if 'when' in step:
                                     is_triggered = check_trigger(step['when'], step_wallet.balances)
                                 else:
-                                    output(" ❗ No when clause included, defaulting to 'always'", silent_mode, OUTPUT_ERROR)
+                                    logs.error(" ❗ No when clause included, defaulting to 'always'.")
                                     is_triggered = True
                                         
                                 if is_triggered == True:
@@ -488,30 +556,28 @@ def main():
 
                                         if recipient_address != '':
                                             # We should be ok to send at this point
-                                            output('', silent_mode)
-                                            output(f"  ➜ Sending {wallet.formatUluna(send_coin.amount, send_coin.denom, True)} to {step['recipient']}", silent_mode)
-                                            output('', silent_mode)
+                                            logs.message(f"  ➜ Sending {wallet.formatUluna(send_coin.amount, send_coin.denom, True)} to {step['recipient']}")
+
                                             # Memos are optional
                                             memo:str = ''
                                             if 'memo' in step:
                                                 memo = step['memo']
 
                                             transaction_result:TransactionResult = send_transaction(step_wallet, recipient_address, send_coin, memo, False)
-                                            
                                             transaction_result.showResults()
 
                                         else:
-                                            output(' ❗ No valid recipient was included!', silent_mode, OUTPUT_ERROR)
+                                            logs.error(' ❗ No valid recipient was included!')
                                             can_continue = False
                                     else:
-                                        output(' ❗ No valid amount was available in this wallet!', silent_mode, OUTPUT_ERROR)
+                                        logs.error(' ❗ No valid amount was available in this wallet!')
                                         can_continue = False
                                 else:
-                                    output(" ❗ 'when' trigger not fired!", silent_mode, OUTPUT_ERROR)
-                                    output(f"    - when: {step['when']}", silent_mode, OUTPUT_ERROR)
+                                    logs.error(" ❗ 'when' trigger not fired!")
+                                    logs.error(f"    - when: {step['when']}")
                                     can_continue = False
                             else:
-                                output('❗ No valid wallet could be found for this step.', silent_mode, OUTPUT_ERROR)
+                                logs.error(' ❗ No valid wallet could be found for this step.')
                                 can_continue = False
 
                         if action == 'swap':
@@ -535,25 +601,23 @@ def main():
                                         if 'swap to' in step:
                                             swap_to_denom:str = list(FULL_COIN_LOOKUP.keys())[list(FULL_COIN_LOOKUP.values()).index(step['swap to'])]
 
-                                            output('', silent_mode)
-                                            output(f'  ➜ You are swapping {wallet.formatUluna(swap_coin.amount, swap_coin.denom, True)} for {FULL_COIN_LOOKUP[swap_to_denom]}.', silent_mode)
-                                            output('', silent_mode)
-
+                                            logs.message(f'  ➜ You are swapping {wallet.formatUluna(swap_coin.amount, swap_coin.denom, True)} for {FULL_COIN_LOOKUP[swap_to_denom]}.')
+                                            
                                             transaction_result:TransactionResult = swap_coins(step_wallet, swap_coin, swap_to_denom, '', False)
                                             transaction_result.wallet_denom      = step_wallet.denom
                                             transaction_result.showResults()
                                         else:
-                                            output("'swap to' not specified in this workflow.", silent_mode, OUTPUT_ERROR)
+                                            logs.error(" ❗ 'swap to' not specified in this workflow.")
                                             can_continue = False
                                     else:
-                                        output('No valid amount was available in this wallet!', silent_mode, OUTPUT_ERROR)
+                                        logs.error(' ❗ No valid amount was available in this wallet!')
                                         can_continue = False
                                 else:
-                                    output(" ❗ 'when' trigger not fired!", silent_mode, OUTPUT_ERROR)
-                                    output(f"    - when: {step['when']}", silent_mode, OUTPUT_ERROR)
+                                    logs.error(" ❗ 'when' trigger not fired!")
+                                    logs.error(f"    - when: {step['when']}")
                                     can_continue = False
                             else:
-                                output('No valid wallet could be found for this step.', silent_mode, OUTPUT_ERROR)
+                                logs.error(' ❗ No valid wallet could be found for this step.')
                                 can_continue = False
 
                         if action == 'join pool':
@@ -576,23 +640,21 @@ def main():
                                         if 'pool id' in step:
                                             pool_id:int = step['pool id']
 
-                                            output('', silent_mode)
-                                            output(f'   ➜  You are joining pool {pool_id} by adding {wallet.formatUluna(swap_coin.amount, swap_coin.denom, True)}.', silent_mode)
-                                            output('', silent_mode)
-
+                                            logs.message(f'   ➜  You are joining pool {pool_id} by adding {wallet.formatUluna(swap_coin.amount, swap_coin.denom, True)}.')
+                                            
                                             transaction_result:TransactionResult = join_liquidity_pool(step_wallet, pool_id, swap_coin.amount, False)
                                             transaction_result.showResults()
                                         else:
-                                            output('No pool ID provided in this step!', silent_mode, OUTPUT_ERROR)
+                                            logs.error(' ❗ No pool ID provided in this step!')
                                     else:
-                                        output('No valid amount was available in this wallet!', silent_mode, OUTPUT_ERROR)
+                                        logs.error(' ❗ No valid amount was available in this wallet!')
                                         can_continue = False
                                 else:
-                                    output(" ❗ 'when' trigger not fired!", silent_mode, OUTPUT_ERROR)
-                                    output(f"    - when: {step['when']}", silent_mode, OUTPUT_ERROR)
+                                    logs.error(" ❗ 'when' trigger not fired!")
+                                    logs.error(f"    - when: {step['when']}")
                                     can_continue = False
                             else:
-                                output('No valid wallet could be found for this step.', silent_mode, OUTPUT_ERROR)
+                                logs.error(' ❗ No valid wallet could be found for this step.')
                                 can_continue = False
 
                         if action == 'exit pool':
@@ -617,9 +679,10 @@ def main():
                                 liquidity_tx.wallet_denom = wallet.denom
                                 liquidity_tx.pool_id      = pool_id
                                 
-                                # This is the exit pool logic
                                 # Get the assets for the summary list
-                                pool_assets:dict  = liquidity_tx.getPoolAssets()
+                                pool_assets:dict = liquidity_tx.getPoolAssets()
+
+                                # This is the amount we want to exit out:
                                 amount_out = step['amount']
                                 if is_percentage(amount_out):
                                     amount_out:float  = float(amount_out[:-1]) / 100
@@ -627,7 +690,7 @@ def main():
                                     # If this is a precise amount, we need to convert this into a percentage of the total amount of LUNC   
                                     amount_ok, amount_coin = check_amount(amount_out, {ULUNA:(pool_assets[ULUNA] * (10 ** get_precision(ULUNA)))})
                                     if amount_ok == True:
-                                        amount_out:float  = round(int(amount_coin.amount) / int(pool_assets[ULUNA]), 2)
+                                        amount_out:float = round(int(amount_coin.amount) / int(pool_assets[ULUNA]), 2)
                                     else:
                                         amount_out:float = 0
 
@@ -636,23 +699,21 @@ def main():
                                     is_triggered = check_trigger(step['when'], pool_assets)
 
                                     if is_triggered == True:
-                                        output('', silent_mode)
-                                        output(f' ➜  You are exiting pool {pool_id} by withdrawing {amount_out * 100}%.', silent_mode)
-                                        output('', silent_mode)
+                                        logs.message(f' ➜  You are exiting pool {pool_id} by withdrawing {amount_out * 100}%.')
                                         
                                         transaction_result:TransactionResult = exit_liquidity_pool(step_wallet, pool_id, amount_out, False)
                                         transaction_result.wallet_denom = wallet.denom
                                         transaction_result.showResults()
                                     else:
-                                        output(" ❗ 'when' trigger not fired!", silent_mode, OUTPUT_ERROR)
-                                        output(f"    - when: {step['when']}", silent_mode, OUTPUT_ERROR)
+                                        logs.error(" ❗ 'when' trigger not fired!")
+                                        logs.error(f"    - when: {step['when']}")
                                         can_continue = False
                                 else:
-                                    output('No valid amount to exit with was specified.', silent_mode, OUTPUT_ERROR)
-                                    output(f"- amount: {step['amount']}", silent_mode, OUTPUT_ERROR)
+                                    logs.error(' ❗ No valid amount to exit with was specified.')
+                                    logs.error(f"    - amount: {step['amount']}")
                                     can_continue = False
                             else:
-                                output('No valid wallet could be found for this step.', silent_mode, OUTPUT_ERROR)
+                                logs.error(' ❗ No valid wallet could be found for this step.')
                                 can_continue = False
 
                         if action == 'switch validator':
@@ -677,24 +738,23 @@ def main():
                                         is_triggered = check_trigger(step['when'], delegations)
 
                                         if is_triggered == True:
-                                            output('', silent_mode)
-                                            output(f" ➜  Switching {wallet.formatUluna(amount_coin.amount, amount_coin.denom, True)} from {step['old validator']} to {step['new validator']}", silent_mode)
-                                            output('', silent_mode)
+                                            logs.message(f" ➜  Switching {wallet.formatUluna(amount_coin.amount, amount_coin.denom, True)} from {step['old validator']} to {step['new validator']}")
+                                            
                                             transaction_result:TransactionResult = switch_validator(wallet, new_validator_address, old_validator_address, amount_coin)
                                             transaction_result.showResults()
                                         else:
-                                            output(" ❗ 'when' trigger not fired!", silent_mode, OUTPUT_ERROR)
-                                            output(f"    - when: {step['when']}", silent_mode, OUTPUT_ERROR)
+                                            logs.error(" ❗ 'when' trigger not fired!")
+                                            logs.error(f"    - when: {step['when']}")
                                             can_continue = False
                                     else:
-                                        output('No valid amount to exit with was specified.', silent_mode, OUTPUT_ERROR)
-                                        output(f"- amount: {step['amount']}", silent_mode, OUTPUT_ERROR)
+                                        logs.error(' ❗ No valid amount to exit with was specified.')
+                                        logs.error(f"    - amount: {step['amount']}")
                                         can_continue = False
                                 else:
-                                    output('The new validator name is invalid, please check the workflow.', silent_mode, OUTPUT_ERROR)
+                                    logs.error(' ❗ The new validator name is invalid, please check the workflow.')
                                     can_continue = False
                             else:
-                                output('The old validator name is invalid, please check the workflow.', silent_mode, OUTPUT_ERROR)
+                                logs.error(' ❗ The old validator name is invalid, please check the workflow.')
                                 can_continue = False
 
                         if action == 'unstake delegation':
@@ -718,29 +778,23 @@ def main():
                                     is_triggered = check_trigger(step['when'], delegations)
 
                                     if is_triggered == True:
-                                        output('', silent_mode)
-                                        output(f" ➜   This validator has a total amount of {wallet.formatUluna(wallet.delegations[step['validator']]['balance_amount'], ULUNA, True)}.", silent_mode)
-                                        output(f" ➜   You are unstaking {wallet.formatUluna(amount_coin.amount, amount_coin.denom, True)} from {step['validator']}.", silent_mode)
-                                        output(' ➜   IMPORTANT NOTE: this will be unavailable for 21 days. Please check the status by using the validator.py script.', silent_mode)
-                                        output('', silent_mode)
-
+                                        logs.message(f" ➜   This validator has a total amount of {wallet.formatUluna(wallet.delegations[step['validator']]['balance_amount'], ULUNA, True)}.")
+                                        logs.message(f" ➜   You are unstaking {wallet.formatUluna(amount_coin.amount, amount_coin.denom, True)} from {step['validator']}.")
+                                        logs.message(' ➜   IMPORTANT NOTE: this will be unavailable for 21 days. Please check the status by using the validator.py script.')
+                                        
                                         transaction_result:TransactionResult = undelegate_from_validator(wallet, validator_address, amount_coin)
                                         transaction_result.showResults()
                                     else:
-                                        output(" ❗ 'when' trigger not fired!", silent_mode, OUTPUT_ERROR)
-                                        output(f"    - when: {step['when']}", silent_mode, OUTPUT_ERROR)
+                                        logs.error(" ❗ 'when' trigger not fired!")
+                                        logs.error(f"    - when: {step['when']}")
                                         can_continue = False
                                 else:
-                                    output('No valid amount to exit with was specified.', silent_mode, OUTPUT_ERROR)
-                                    output(f"- amount: {step['amount']}", silent_mode, OUTPUT_ERROR)
+                                    logs.error(' ❗ No valid amount to exit with was specified.')
+                                    logs.error(f"    - amount: {step['amount']}")
                                     can_continue = False
                             else:
-                                output('The old validator name is invalid, please check the workflow.', silent_mode, OUTPUT_ERROR)
+                                logs.error(' ❗ The old validator name is invalid, please check the workflow.')
                                 can_continue = False
-                            
-
-
-    # print (' 💯 Done!\n')
 
 if __name__ == "__main__":
     """ This is executed when run from the command line """
