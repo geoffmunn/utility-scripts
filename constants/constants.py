@@ -92,6 +92,10 @@ PROPOSAL_VOTE_NO_WITH_VETO = 4
 JOIN_POOL = 'j'
 EXIT_POOL = 'e'
 
+# Output/logging types:
+OUTPUT_USER  = 0
+OUTPUT_ERROR = 1
+
 # Coin constants:
 AACRE     = 'aacre'
 AARCH     = 'aarch'
