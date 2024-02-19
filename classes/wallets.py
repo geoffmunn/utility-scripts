@@ -544,7 +544,8 @@ class UserWallets:
                 netrc_obj = netrc.netrc()
                 # Get the password for the current in-use machine
                 decrypt_password:str = netrc_obj.authenticators(NETRC_MACHINE_NAME)[2]
-            except:
+            except Exception as err:
+                #print (err)
                 # No .netrc or something went wrong
                 decrypt_password:str = ''
 

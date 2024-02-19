@@ -8,7 +8,7 @@ SEARCH_RETRY_COUNT   = 50    # This is the number of times we will check for a t
 HIDE_DISABLED_COINS  = True  # Some coins are not currently available. Functionality is mostly there, but swaps etc won't work
 
 # Used for the .netrc file for passwordless authentication:
-NETRC_MACHINE_NAME   = 'LUNC workflows' 
+NETRC_MACHINE_NAME   = 'LUNCworkflows' 
 
 # System settings - these can be changed, but shouldn't be necessary
 GAS_PRICE_URI            = 'https://terra-classic-fcd.publicnode.com/v1/txs/gas_prices'
