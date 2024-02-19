@@ -199,6 +199,9 @@ Due to how BASE works, you need to wait 21 days for a swap from BASE back to LUN
 
 Workflows are a very useful and powerful way of managing wallets and performing complicated transactions.
 Workflows are triggered by running ```workflows.py``` and any valid workflows inside user_workflows.yml will be completed.
+
+You can also specifiy your own workflow file by providing it as command-line argument like this: ```python workflows.py my_workflows.yml```.
+
 For a thorough guide on how to write your own workflows, plus examples, please read the [workflow guide](docs/workflows.md).
 
 ## Troubleshooting
