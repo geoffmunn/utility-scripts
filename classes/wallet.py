@@ -487,7 +487,7 @@ class UserWallet:
 
         return result
 
-    def getCoinSelection(self, question:str, coins:dict, only_active_coins:bool = True, estimation_against:dict = None) -> [str, str, float]:
+    def getCoinSelection(self, question:str, coins:dict, only_active_coins:bool = True, estimation_against:dict = None) -> list[str, str, float]:
         """
         Return a selected coin based on the provided list.
 
@@ -1084,7 +1084,7 @@ class UserWallet:
         
         return mk.mnemonic, wallet.key.acc_address
     
-    def validateAddress(self, address:str) -> [bool,bool]:
+    def validateAddress(self, address:str) -> list[bool,bool]:
         """
         Check that the provided address actually resolves to a terra wallet.
         This only applies to addresses which look like terra addresses.

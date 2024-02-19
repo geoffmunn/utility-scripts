@@ -326,7 +326,7 @@ class LiquidityTransaction(TransactionCore):
 
         return asset_list
     
-    def getPoolSelection(self, question:str, wallet:UserWallet) -> [int, str]:
+    def getPoolSelection(self, question:str, wallet:UserWallet) -> list[int, str]:
         """
         Return a selected pool based on the provided list.
 
@@ -627,15 +627,16 @@ class LiquidityTransaction(TransactionCore):
         for row in rows:
             if row[0] not in pools:
                 # If this pool is not in the list, then add it
-                pool:list        = self.getOsmosisPool(row[0])
+                pool:list = self.getOsmosisPool(row[0])
 
                 # Based on the assets, get the value of this pool:
                 pool_balance:float = 0
-                pool_asset:PoolAsset
-                valid_pool:bool = True
+                valid_pool:bool    = True
 
                 # To make things faster, we'll query all the denoms in one go:
                 cg_denom_list:list = []
+
+                pool_asset:PoolAsset
                 for pool_asset in pool.pool_assets:
                     readable_denom:str = self.denomTrace(pool_asset.token.denom)
                     
@@ -663,7 +664,7 @@ class LiquidityTransaction(TransactionCore):
                     pool_balance += (price * asset_amount)
 
                 if valid_pool == True:
-                    pools[int(row[0])]    = {'assets': [], 'liquidity': pool_balance}
+                    pools[int(row[0])] = {'assets': [], 'liquidity': pool_balance}
                 
             # Otherwise, add this new asset to the existing pool
             if int(row[0]) in pools:
@@ -702,13 +703,13 @@ class LiquidityTransaction(TransactionCore):
             asset_amount:float = int(asset.token.amount) / share_fraction
 
             # This is the actual amount we're removing, minus the pool tax
-            user_amount:int    = int(int(asset_amount * self.amount_out) * (1 - OSMOSIS_POOL_TAX))
+            user_amount:int = int(int(asset_amount * self.amount_out) * (1 - OSMOSIS_POOL_TAX))
             
             token_out_list.append(Coin.from_data({'amount': user_amount, 'denom': asset.token.denom}))
 
         return token_out_list
     
-def join_liquidity_pool(wallet:UserWallet, pool_id:int, amount_in:int, prompt_user:bool == True):
+def join_liquidity_pool(wallet:UserWallet, pool_id:int, amount_in:int, prompt_user:bool = True) -> TransactionResult:
     """
     A wrapper function for workflows and wallet management.
 
@@ -728,14 +729,14 @@ def join_liquidity_pool(wallet:UserWallet, pool_id:int, amount_in:int, prompt_us
     transaction_result:TransactionResult = TransactionResult()
 
     liquidity_tx = LiquidityTransaction().create(wallet.seed, wallet.denom)
-    liquidity_tx.amount_in       = amount_in
-    liquidity_tx.balances        = wallet.balances
-    liquidity_tx.pool_id         = pool_id
-    liquidity_tx.pools           = wallet.pools
-    liquidity_tx.sender_address  = wallet.address
-    liquidity_tx.source_channel  = CHAIN_DATA[wallet.denom]['ibc_channels'][ULUNA]
-    liquidity_tx.wallet          = wallet
-    liquidity_tx.wallet_denom    = wallet.denom
+    liquidity_tx.amount_in      = amount_in
+    liquidity_tx.balances       = wallet.balances
+    liquidity_tx.pool_id        = pool_id
+    liquidity_tx.pools          = wallet.pools
+    liquidity_tx.sender_address = wallet.address
+    liquidity_tx.source_channel = CHAIN_DATA[wallet.denom]['ibc_channels'][ULUNA]
+    liquidity_tx.wallet         = wallet
+    liquidity_tx.wallet_denom   = wallet.denom
 
     # Simulate it
     liquidity_result:bool = liquidity_tx.joinSimulate()
@@ -799,7 +800,7 @@ def join_liquidity_pool(wallet:UserWallet, pool_id:int, amount_in:int, prompt_us
 
     return transaction_result
 
-def exit_liquidity_pool(wallet:UserWallet, pool_id:int, amount_out:float, prompt_user:bool == True):
+def exit_liquidity_pool(wallet:UserWallet, pool_id:int, amount_out:float, prompt_user:bool = True) -> TransactionResult:
     """
     A wrapper function for workflows and wallet management.
 
@@ -882,9 +883,6 @@ def exit_liquidity_pool(wallet:UserWallet, pool_id:int, amount_out:float, prompt
         else:
             transaction_result.message = f' 🛎️  The liquidity transaction could not be completed'
 
-    # Store the delegated amount for display purposes
-    #transaction_result.transacted_amount = wallet.formatUluna(amount_out, ULUNA, True)
-    #transaction_result.label             = 'Liquidity withdrawal'
-    transaction_result.wallet_denom      = wallet.denom
+    transaction_result.wallet_denom = wallet.denom
 
     return transaction_result
