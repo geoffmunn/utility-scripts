@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 
-
+import argparse
 import yaml
 
 from datetime import datetime
 from os.path import exists
 
 from classes.common import (
-#     check_database,
-#     check_version,
-#     get_user_choice,
+    check_database,
+    check_version,
     get_precision,
     is_percentage
 )
@@ -31,9 +30,8 @@ from classes.validators import Validators
 from classes.wallet import UserWallet
 from classes.wallets import UserWallets
 from classes.withdrawal_transaction import claim_delegation_rewards
-    
 
-from terra_classic_sdk.core.coin import Coin
+from terra_classic_sdk.core.coin import Coin    
 
 def check_amount(amount:str, balances:dict, preserve_minimum:bool = False) -> list[bool, Coin]:
     """
@@ -226,28 +224,35 @@ def get_wallet(user_wallets:UserWallets, user_wallet:str) -> UserWallet:
 
 def main():
     
-    file_exists = exists(WORKFLOWS_FILE_NAME)
+    # Check if there is a new version we should be using
+    check_version()
+    check_database()
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("workflow", nargs='?',default=WORKFLOWS_FILE_NAME)
+    args = parser.parse_args()
+
+    file_exists = exists(args.workflow)
 
     if file_exists:
-        
         # Now open this file and get the contents
         user_workflows:dict = {}
         try:
-            with open(WORKFLOWS_FILE_NAME, 'r') as file:
+            with open(args.workflow, 'r') as file:
                 user_workflows = yaml.safe_load(file)
 
         except:
-               print (' 🛑 The user_config.yml file could not be opened - please run configure_user_wallets.py before running this script.')
+               print (f'\n 🛑 The {args.workflow} file could not be opened - please check the workflow documentation and review it for syntax errors.\n')
                exit()
     else:
-        print (' 🛑 The user_config.yml does not exist - please run configure_user_wallets.py before running this script.')
+        print (f'\n 🛑 The {args.workflow} file does not exist - you can use the default user_workflow.yml file if necessary.\n')
         exit()
     
     # Get the user wallets. We'll be getting the balances futher on down.
     user_wallets = UserWallets().loadUserWallets(get_balances = False)
     
     if len(user_wallets) == 0:
-        print (" 🛑 This password couldn't decrypt any wallets. Make sure it is correct, or rebuild the wallet list by running the configure_user_wallet.py script again.\n")
+        print ("\n 🛑 This password couldn't decrypt any wallets. Make sure it is correct, or rebuild the wallet list by running the configure_user_wallet.py script again.\n")
         exit()
 
     # Go through each workflow and attach the wallets that they match
