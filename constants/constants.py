@@ -45,7 +45,7 @@ TERRASWAP_ULUNA_TO_UUSD_ADDRESS = 'terra1l7vy20x940je7lskm6x9s839vjsmekz9k9mv7g'
 BASE_SMART_CONTRACT_ADDRESS     = 'terra1uewxz67jhhhs2tj97pfm2egtk7zqxuhenm4y4m'
 GRDX_SMART_CONTRACT_ADDRESS     = 'terra1mkl973d34jsuv0whsfl43yw3sktm8kv7lgn35fhe6l88d0vvaukq5nq929'
 TERRASWAP_GRDX_TO_LUNC_ADDRESS  =  'terra12f3f5fzfzxckc0qlv3rmwwkjfhzevpwmx77345n0zuu2678vxf0sm6vvcw'
-
+LENNY_SMART_CONTRACT_ADDRESS    = 'terra1gcr97yaq923qaxa3gzn70kpx29c28m2c3prxn66vev3segea7y4qps5vj4'
 # Do not change these:
 
 # Standard actions:
@@ -138,6 +138,7 @@ UKAVA     = 'ukava'
 UKRW      = 'ukrw'
 UKUJI     = 'ukuji'
 ULAMB     = 'ulamb'
+ULENNY    = 'ulenny'
 ULUNA     = 'uluna'
 ULUNA2    = 'uluna2'
 UMARS     = 'umars'
@@ -219,6 +220,7 @@ FULL_COIN_LOOKUP = {
     'ukrw':    'KRTC',
     UKUJI:     'KUJI',
     ULAMB:     'Lambda',
+    ULENNY:    'Lenny',
     NANOLIKE:  'Likecoin',
     ULUNA2:    'LUNA',
     ULUNA:     'LUNC',

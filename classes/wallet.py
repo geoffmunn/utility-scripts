@@ -31,8 +31,10 @@ from constants.constants import (
     DB_FILE_NAME,
     FULL_COIN_LOOKUP,
     GRDX,
+    LENNY_SMART_CONTRACT_ADDRESS,
     TERRASWAP_GRDX_TO_LUNC_ADDRESS,
     UBASE,
+    ULENNY,
     ULUNA,
     USER_ACTION_CONTINUE,
     USER_ACTION_QUIT,
@@ -396,6 +398,10 @@ class UserWallet:
                     coin_balance = self.terra.wasm.contract_query(TERRASWAP_GRDX_TO_LUNC_ADDRESS, {'balance':{'address':self.address}})
                     if int(coin_balance['balance']) > 0:
                         balances[GRDX] = coin_balance['balance']
+
+                    coin_balance = self.terra.wasm.contract_query(LENNY_SMART_CONTRACT_ADDRESS, {'balance':{'address':self.address}})
+                    if int(coin_balance['balance']) > 0:
+                        balances[ULENNY] = coin_balance['balance']
 
         else:
             balances:dict = {}
