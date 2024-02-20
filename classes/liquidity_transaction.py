@@ -102,11 +102,15 @@ class LiquidityTransaction(TransactionCore):
         # Get the pool details from the network
         pool:list = self.getOsmosisPool(self.pool_id)
         
+        total_weight:int = int(pool.total_weight)
+
         # Get the actual amount of this asset in the pool
+        divisor:float = 0
         asset:PoolAsset
         for asset in pool.pool_assets:
             if asset.token.denom == coin.denom:
                 pool_asset_amount:int = int(asset.token.amount)
+                divisor:float =  total_weight / int(asset.weight)
                 break
                 
         shift_val:int         = 10 ** 18
@@ -114,7 +118,7 @@ class LiquidityTransaction(TransactionCore):
         total_share_exp:float = float(int(pool.total_shares.amount) / shift_val)
 
         # This is the basic amount we expect to receive
-        share_out_amount:int = ((token_in_amount * total_share_exp) / pool_asset_amount) * shift_val
+        share_out_amount:int = (((token_in_amount * total_share_exp) / pool_asset_amount) * shift_val) / divisor
 
         return share_out_amount
 
@@ -567,16 +571,16 @@ class LiquidityTransaction(TransactionCore):
         liquidity_denom:str = self.IBCfromDenom(self.source_channel, ULUNA)
         
         # This is the amount we are adding to the pool
-        token_in_coin:Coin = Coin(liquidity_denom, int(self.amount_in))
+        token_in_coin:Coin = Coin(liquidity_denom, int(float(self.amount_in)))
 
-        # Divide by 2 needs to be replaced with the actual percentage amount
-        self.share_out_amount:int = self.calcShareOutAmount(token_in_coin) / 2
+        # This is the final amount we expect to get
+        self.share_out_amount:int = self.calcShareOutAmount(token_in_coin)
 
         # Reduce it by the spread amount
         self.share_out_amount = round(self.share_out_amount * (1 - self.max_spread))
 
         # This is the amount we are contributing. It will be resized by the pool depending on the share split of each asset
-        token_in_coin      = {'amount': int(self.amount_in), 'denom': liquidity_denom}
+        token_in_coin      = {'amount': int(float(self.amount_in)), 'denom': liquidity_denom}
         self.token_in_coin = token_in_coin
 
         # Perform the liquidity action as a simulation, with no fee details
