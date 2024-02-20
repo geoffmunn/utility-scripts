@@ -383,18 +383,25 @@ def main():
         # Only proceed if we have a wallet attached to this workflow:
         if 'user_wallets' in workflow:
 
-            # Get the relevant wallets from this workflow
-            description:str = ''
-            if 'description' in workflow:
-                description = workflow['description']
-                
+            # Get the relevant wallets from this workflow                
             wallets:list = workflow['user_wallets']
             steps:list   = workflow['steps']
 
-            if workflow['name'] is None:
-                workflow['name'] = ''
+            name:str = ''
+            if 'name' in workflow:
+                if workflow['name'] is None:
+                    name = ''
+                else:
+                    name =  workflow['name']
 
-            logs.header(workflow['name'], workflow['description'])
+            description:str = ''
+            if 'description' in workflow:
+                if workflow['description'] is None:
+                   description = ''
+                else:
+                    description = workflow['description']
+
+            logs.header(name, description)
 
             # Go through each wallet
             wallet:UserWallet
