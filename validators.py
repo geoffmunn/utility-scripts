@@ -221,8 +221,15 @@ def main():
 
         if len (undelegations) > 0:
             for undelegation in undelegations:
-                if undelegation == 'base':
+                if undelegation == UBASE:
                     print ('BASE')
+                    for entry in undelegations[undelegation]['entries']:
+                        # At 9:10pm 21st Feb, I undelegated 2 BASE
+                        #Tx hash: 3061B90D40749DB73DB4DC735BDDDD5F5A1680E2100D5DEDD319FB7F23DD5875
+                        finish_day = datetime.strptime(entry['completion_time'], '%d/%m/%Y').astimezone()
+                        days_until = (finish_day - today).days + 1
+
+                        print (f"{wallet.formatUluna(entry['balance'], UBASE, True)} becomes available in {days_until} days (midnight UTC on {finish_day.year}-{finish_day.month}-{finish_day.day})")
                 else:
                     print (validator_list[undelegations[undelegation]['validator_address']]['moniker'])
                     for entry in undelegations[undelegation]['entries']:
