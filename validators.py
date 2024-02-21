@@ -28,17 +28,7 @@ from classes.validators import Validators
 from terra_classic_sdk.core.coin import Coin
 
 def main():
-
-    # today = datetime.now()
-    # test_date = datetime.strptime('4/23/2023', '%m/%d/%Y')
-
-    # print (today)
-    # print (test_date)
-
-    # diff = (test_date-today).days
-    # print (diff)
-    # exit()
-
+    
     # Check if there is a new version we should be using
     check_version()
 
