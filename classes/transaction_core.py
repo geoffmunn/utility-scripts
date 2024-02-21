@@ -424,7 +424,7 @@ class TransactionCore():
                             # Base swaps/undelegations
                             if '_contract_address' in log.events_by_type['wasm'] and log.events_by_type['wasm']['_contract_address'][0] == BASE_SMART_CONTRACT_ADDRESS:
                                 transaction_result.result_sent = None
-                                if log.events_by_type['wasm']['action'][0] == 'buy':
+                                if 'action' in log.events_by_type['wasm'] and log.events_by_type['wasm']['action'][0] == 'buy':
                                     transaction_result.result_received = Coins.from_proto([Coin.from_data({'amount': log.events_by_type['wasm']['BASE Minted:'][0], 'denom': UBASE})])
                                 else:
                                     # Assumes swaps back from BASE -> LUNC
