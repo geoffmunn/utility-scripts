@@ -215,8 +215,7 @@ def main():
         validator_list:dict = validators.validators_by_address
         undelegations:dict  = wallet.undelegations
         
-        # Use today's date. 
-        today:datetime = datetime.now()
+        today:datetime = datetime.now().astimezone()
 
         print ('')
 
