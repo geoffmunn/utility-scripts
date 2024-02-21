@@ -236,13 +236,13 @@ def main():
                     print ('BASE')
                 else:
                     print (validator_list[undelegations[undelegation]['validator_address']]['moniker'])
+                    for entry in undelegations[undelegation]['entries']:
 
-                for entry in undelegations[undelegation]['entries']:
-                    finish_day = datetime.strptime(entry['completion_time'], '%d/%m/%Y')
+                        finish_day = entry['completion_time']
+                        days_until = (finish_day - today).days
 
-                    days_until = (finish_day - today).days
-
-                    print (f"{wallet.formatUluna(entry['balance'], UBASE, True)} becomes available in {days_until} days")
+                        print (f"{wallet.formatUluna(entry['balance'], ULUNA, True)} becomes available in {days_until} days ({finish_day})")
+                
         else:
             print ('No undelegations are currently in progress')
                 
