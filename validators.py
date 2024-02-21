@@ -60,11 +60,11 @@ def main():
 
     # Get the desired actions
     print ('\nWhat action do you want to take?\n')
-    print ('  (D)  Delegate to a validator')
-    print ('  (U)  Undelegate coins from a validator')
-    print ('  (S)  Switch validators')
-    print ('  (L)  List undelegations in progress')
-    print ('  (Q)  Quit\n')
+    print (' (D)  Delegate to a validator')
+    print (' (U)  Undelegate coins from a validator')
+    print (' (S)  Switch validators')
+    print (' (L)  List undelegations in progress')
+    print (' (Q)  Quit')
     print ('')
 
     user_action = get_user_choice(' ❓ Pick an option: ', [
