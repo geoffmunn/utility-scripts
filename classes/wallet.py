@@ -128,7 +128,9 @@ class UserWallet:
         entries:list          = []
 
         for entry in undelegation.entries:
-            entries.append({'balance': entry.balance, 'completion_time': entry.completion_time.strftime('%m/%d/%Y')})
+            completion_datetime = entry.completion_time.astimezone()
+            offset = completion_datetime.utcoffset()
+            entries.append({'balance': entry.balance, 'completion_time': completion_datetime + offset})
        
         # Get the total balance from all the entries
         balance_total:int = 0
@@ -894,7 +896,8 @@ class UserWallet:
 
             entries.append({'balance': multiply_raw_balance(base_item['luncNetReleased'], UBASE), 'completion_time': utc_string})
         
-        self.undelegations['base'] = {'balance_amount': multiply_raw_balance(undelegated_amount, UBASE), 'entries': entries}
+        if len(entries) > 0:
+            self.undelegations[UBASE] = {'balance_amount': multiply_raw_balance(undelegated_amount, UBASE), 'entries': entries}
 
         return self.undelegations
     
