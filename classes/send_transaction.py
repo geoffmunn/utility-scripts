@@ -151,7 +151,6 @@ class SendTransaction(TransactionCore):
                 sequence       = self.sequence
             )
 
-            print (options)
             # This process often generates sequence errors. If we get a response error, then
             # bump up the sequence number by one and try again.
             while True:
@@ -308,10 +307,8 @@ class SendTransaction(TransactionCore):
             # We'll use uluna as the preferred fee currency just to keep things simple
             #if wallet.terra.chain_id == CHAIN_DATA[wallet.getDenomByPrefix(send_tx.recipient_prefix)]['chain_id']:
             
-            print ('convert fee to IBC?', self.is_ibc_transfer)
             self.fee = self.calculateFee(requested_fee = requested_fee, specific_denom = ULUNA, convert_to_ibc = self.is_ibc_transfer)
             
-            print ('fee:', self.fee)
             # Figure out the fee structure
             fee_bit:Coin = Coin.from_str(str(requested_fee.amount))
             fee_amount   = fee_bit.amount
@@ -334,11 +331,9 @@ class SendTransaction(TransactionCore):
 
             # If the chain is Osmosis then adjust the fee amount    
             if self.terra.chain_id != CHAIN_DATA[ULUNA]['chain_id']:
-                print ('increasing fee!')
                 fee_amount = fee_amount * 1.2
 
                 # Change the denom to an IBC version
-                print ('source channel:', self.source_channel)
                 fee_denom = self.IBCfromDenom(self.source_channel, fee_denom)
 
                 new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount))})
