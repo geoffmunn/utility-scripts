@@ -15,9 +15,11 @@ from constants.constants import (
     CHAIN_DATA,
     FULL_COIN_LOOKUP,
     GRDX,
+    LENNY_SMART_CONTRACT_ADDRESS,
     SEARCH_RETRY_COUNT,
     TERRASWAP_GRDX_TO_LUNC_ADDRESS,
     UBASE,
+    ULENNY,
     ULUNA,
     UOSMO,
     UUSD
@@ -126,6 +128,17 @@ class SendTransaction(TransactionCore):
                 msg = MsgExecuteContract(
                     sender      = self.current_wallet.key.acc_address,
                     contract    = TERRASWAP_GRDX_TO_LUNC_ADDRESS,
+                    msg = {
+                        "transfer": {
+                            "amount": str(send_amount),
+                            "recipient": self.recipient_address
+                        }
+                    }
+                )
+            elif self.denom == ULENNY:
+                msg = MsgExecuteContract(
+                    sender      = self.current_wallet.key.acc_address,
+                    contract    = LENNY_SMART_CONTRACT_ADDRESS,
                     msg = {
                         "transfer": {
                             "amount": str(send_amount),
@@ -314,8 +327,10 @@ class SendTransaction(TransactionCore):
             fee_amount   = fee_bit.amount
             fee_denom    = fee_bit.denom
         
+            non_uluna_coins:list = [UBASE, GRDX, ULENNY]
             # Calculate the tax portion
-            if self.denom == UBASE or self.denom == GRDX:
+            #if self.denom == UBASE or self.denom == GRDX:
+            if self.denom in non_uluna_coins:
                 # No taxes for BASE and GRDX transfers
                 self.tax = 0
             else:
@@ -324,7 +339,8 @@ class SendTransaction(TransactionCore):
             # Build a fee object
             if fee_denom == ULUNA and self.denom == ULUNA:
                 new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount + self.tax))})
-            elif self.denom == UBASE or self.denom == GRDX:
+            #elif self.denom == UBASE or self.denom == GRDX:
+            elif self.denom in non_uluna_coins:
                 new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount))})
             else:
                 new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount)), Coin(self.denom, int(self.tax))})
