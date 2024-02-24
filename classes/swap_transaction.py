@@ -109,10 +109,6 @@ class SwapTransaction(TransactionCore):
                         # GRDX:
                         if result['assets'][0]['info']['token']['contract_addr'] == TERRASWAP_GRDX_TO_LUNC_ADDRESS:
                             parts[GRDX] = int(result['assets'][0]['amount'])
-                        ## LENNY:
-                        #if result['assets'][0]['info']['token']['contract_addr'] == LENNY_SMART_CONTRACT_ADDRESS:
-                        #    print (result)
-                        #    parts[ULENNY] = int(result['assets'][0]['amount'])
                         
                     parts[result['assets'][1]['info']['native_token']['denom']] = int(result['assets'][1]['amount'])
 
