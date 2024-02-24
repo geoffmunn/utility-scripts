@@ -33,19 +33,20 @@ OSMOSIS_POOL_TAX          = 0.025    # What it costs to exit a liquidity pool on
 
 # Swap contracts can be found here
 # https://assets.terra.money/cw20/pairs.dex.json
-TERRASWAP_UUSD_TO_ULUNA_ADDRESS = 'terra1l7vy20x940je7lskm6x9s839vjsmekz9k9mv7g'
+TERRASWAP_UUSD_TO_ULUNA_ADDRESS =  'terra1l7vy20x940je7lskm6x9s839vjsmekz9k9mv7g'
 #TERRASWAP_UKRW_TO_UUSD_ADDRESS  = 'terra1untf85jwv3kt0puyyc39myxjvplagr3wstgs5s'
 #ASTROPORT_UUSD_TO_MINA_ADDRESS  = 'terra134m8n2epp0n40qr08qsvvrzycn2zq4zcpmue48'
 #ASTROPORT_UUSD_TO_UKUJI_ADDRESS  = 'terra1hasy32pvxmgu485x5tujylemqxynsv72lsu7ve'
 #ASTROPORT_UUSD_TO_ULUNA_ADDRESS  = 'terra1m6ywlgn6wrjuagcmmezzz2a029gtldhey5k552'
-KUJI_SMART_CONTACT_ADDRESS      = 'terra1xfsdgcemqwxp4hhnyk4rle6wr22sseq7j07dnn'
-TERRASWAP_UKRW_TO_ULUNA_ADDRESS = 'terra1erfdlgdtt9e05z0j92wkndwav4t75xzyapntkv'
+KUJI_SMART_CONTACT_ADDRESS      =  'terra1xfsdgcemqwxp4hhnyk4rle6wr22sseq7j07dnn'
+TERRASWAP_UKRW_TO_ULUNA_ADDRESS =  'terra1erfdlgdtt9e05z0j92wkndwav4t75xzyapntkv'
 #TERRASWAP_UKUJI_TO_ULUNA_ADDRESS = 'terra19qx5xe6q9ll4w0890ux7lv2p4mf3csd4qvt3ex'
-TERRASWAP_ULUNA_TO_UUSD_ADDRESS = 'terra1l7vy20x940je7lskm6x9s839vjsmekz9k9mv7g'
-BASE_SMART_CONTRACT_ADDRESS     = 'terra1uewxz67jhhhs2tj97pfm2egtk7zqxuhenm4y4m'
-GRDX_SMART_CONTRACT_ADDRESS     = 'terra1mkl973d34jsuv0whsfl43yw3sktm8kv7lgn35fhe6l88d0vvaukq5nq929'
+TERRASWAP_ULUNA_TO_UUSD_ADDRESS =  'terra1l7vy20x940je7lskm6x9s839vjsmekz9k9mv7g'
+BASE_SMART_CONTRACT_ADDRESS     =  'terra1uewxz67jhhhs2tj97pfm2egtk7zqxuhenm4y4m'
+GRDX_SMART_CONTRACT_ADDRESS     =  'terra1mkl973d34jsuv0whsfl43yw3sktm8kv7lgn35fhe6l88d0vvaukq5nq929'
 TERRASWAP_GRDX_TO_LUNC_ADDRESS  =  'terra12f3f5fzfzxckc0qlv3rmwwkjfhzevpwmx77345n0zuu2678vxf0sm6vvcw'
-LENNY_SMART_CONTRACT_ADDRESS    = 'terra1gcr97yaq923qaxa3gzn70kpx29c28m2c3prxn66vev3segea7y4qps5vj4'
+LENNY_SMART_CONTRACT_ADDRESS    =  'terra1gcr97yaq923qaxa3gzn70kpx29c28m2c3prxn66vev3segea7y4qps5vj4'
+TERRAPORT_SWAP_ADDRESS          = 'terra1vrqd7fkchyc7wjumn8fxly88z7kath4djjls3yc5th5g76f3543salu48s'
 # Do not change these:
 
 # Standard actions:

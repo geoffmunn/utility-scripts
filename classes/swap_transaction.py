@@ -24,6 +24,7 @@ from constants.constants import (
     MIN_OSMO_GAS,
     OFFCHAIN_COINS,
     OSMOSIS_FEE_MULTIPLIER,
+    TERRAPORT_SWAP_ADDRESS,
     TERRASWAP_GRDX_TO_LUNC_ADDRESS,
     TERRASWAP_UKRW_TO_ULUNA_ADDRESS,
     TERRASWAP_ULUNA_TO_UUSD_ADDRESS,
@@ -121,7 +122,6 @@ class SwapTransaction(TransactionCore):
                 else:
                     # UBASE does something different
                     if self.swap_denom == UBASE or self.swap_request_denom == UBASE:
-                        #if self.terra.chain_id == CHAIN_DATA[ULUNA]['chain_id']:
                         result           = self.terra.wasm.contract_query(self.contract, {"curve_info": {}})
                         spot_price:float = float(result['spot_price'])
 
@@ -130,8 +130,7 @@ class SwapTransaction(TransactionCore):
                         else:
                             belief_price:float = divide_raw_balance((spot_price - (spot_price * 0.048)), UBASE)
                     if self.swap_denom == ULENNY or self.swap_request_denom == ULENNY:
-                        #print ('lenny contract:', self.contract)
-                        result = self.terra.wasm.contract_query('terra1vrqd7fkchyc7wjumn8fxly88z7kath4djjls3yc5th5g76f3543salu48s', {"simulate_swap_operations":{"offer_amount":"1000000","operations":[{"terra_port":{"offer_asset_info":{"native_token":{"denom":"uluna"}},"ask_asset_info":{"token":{"contract_addr":LENNY_SMART_CONTRACT_ADDRESS}}}}]}})
+                        result = self.terra.wasm.contract_query(TERRAPORT_SWAP_ADDRESS, {"simulate_swap_operations":{"offer_amount":"1000000","operations":[{"terra_port":{"offer_asset_info":{"native_token":{"denom":"uluna"}},"ask_asset_info":{"token":{"contract_addr":LENNY_SMART_CONTRACT_ADDRESS}}}}]}})
                         belief_price:float = float(result['amount']) / (10 ** get_precision(ULUNA))
 
             except Exception as err:
@@ -299,10 +298,10 @@ class SwapTransaction(TransactionCore):
             exit_liquidity:list   = []
             for row2 in cursor.fetchall():
                 if row2[0] == denom_in:
-                    origin_liquidity = row2
+                    origin_liquidity:list = row2
                     
                 if row2[0] == denom_out:
-                    exit_liquidity = row2
+                    exit_liquidity:list        = row2
                     exit_liquidity_value:float = divide_raw_balance(exit_liquidity[1], denom_out) * float(self.prices[CHAIN_DATA[denom_out]['coingecko_id']]['usd'])
 
             # Now we have the origin and exit options, check that the liquidity amounts are sufficient
@@ -818,7 +817,7 @@ class SwapTransaction(TransactionCore):
                     # We are swapping ULUNA to ULENNY
                     tx_msg = MsgExecuteContract(
                         sender   = self.current_wallet.key.acc_address,
-                        contract = 'terra1vrqd7fkchyc7wjumn8fxly88z7kath4djjls3yc5th5g76f3543salu48s',
+                        contract = TERRAPORT_SWAP_ADDRESS,
                         msg =
                             {
                             "execute_swap_operations": {
@@ -860,7 +859,7 @@ class SwapTransaction(TransactionCore):
                         msg = 
                             {
                             "send": {
-                                "contract": "terra1vrqd7fkchyc7wjumn8fxly88z7kath4djjls3yc5th5g76f3543salu48s",
+                                "contract": TERRAPORT_SWAP_ADDRESS,
                                 "amount": str(swap_amount),
                                 "msg": encoded_msg
                             }
@@ -897,7 +896,7 @@ class SwapTransaction(TransactionCore):
                     tx_msg = MsgExecuteContract(
                         sender   = self.current_wallet.key.acc_address,
                         contract = TERRASWAP_GRDX_TO_LUNC_ADDRESS,
-                        msg      = {'send': {'amount': str(swap_amount), 'contract': 'terra1mkl973d34jsuv0whsfl43yw3sktm8kv7lgn35fhe6l88d0vvaukq5nq929','msg': encoded_msg}}
+                        msg      = {'send': {'amount': str(swap_amount), 'contract': GRDX_SMART_CONTRACT_ADDRESS,'msg': encoded_msg}}
                     )
 
                     options = CreateTxOptions(
