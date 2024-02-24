@@ -22,8 +22,8 @@ from constants.constants import (
     DB_FILE_NAME,
     FULL_COIN_LOOKUP,
     GAS_PRICE_URI,
-    GRDX,
     GRDX_SMART_CONTRACT_ADDRESS,
+    LENNY_SMART_CONTRACT_ADDRESS,
     SEARCH_RETRY_COUNT,
     UBASE,
     ULUNA,
@@ -432,10 +432,10 @@ class TransactionCore():
                                 
                                 transaction_result.log_found = True
 
-                            # GRDX swaps (will override the standard swaps detection done earlier)
-                            if '_contract_address' in log.events_by_type['wasm'] and GRDX_SMART_CONTRACT_ADDRESS in log.events_by_type['wasm']['_contract_address']:
+                            # GRDX/ULENNY -> ULUNA swaps (will override the standard swaps detection done earlier)
+                            if '_contract_address' in log.events_by_type['wasm'] and (GRDX_SMART_CONTRACT_ADDRESS in log.events_by_type['wasm']['_contract_address'] or LENNY_SMART_CONTRACT_ADDRESS in log.events_by_type['wasm']['_contract_address']):
                                 transaction_result.result_sent     = Coin.from_data({'amount': log.events_by_type['wasm']['offer_amount'][0], 'denom': log.events_by_type['wasm']['offer_asset'][0]})
-                                transaction_result.result_received = Coins.from_proto([Coin.from_data({'amount': log.events_by_type['wasm']['return_amount'][0], 'denom': GRDX})])
+                                transaction_result.result_received = Coins.from_proto([Coin.from_data({'amount': log.events_by_type['wasm']['return_amount'][0], 'denom': log.events_by_type['wasm']['ask_asset'][0]})])
                                 transaction_result.log_found       = True
 
                         if transaction_result.log_found == False:
