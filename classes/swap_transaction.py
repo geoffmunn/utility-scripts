@@ -93,65 +93,55 @@ class SwapTransaction(TransactionCore):
         belief_price:float = 0
 
         if self.contract is not None:
-            #try:
-            #if self.swap_denom != UBASE and self.swap_request_denom != UBASE:
-            contract_swaps:list = [GRDX, ULUNA, UKRW, UUSD]
-            # Contract swaps must be on the columbus-5 chain
-            #if self.terra.chain_id == CHAIN_DATA[ULUNA]['chain_id']:
-            if self.swap_denom in contract_swaps and self.swap_request_denom in contract_swaps:
-                parts:dict = {}
+            try:
+                #if self.swap_denom != UBASE and self.swap_request_denom != UBASE:
+                contract_swaps:list = [GRDX, ULUNA, UKRW, UUSD]
+                # Contract swaps must be on the columbus-5 chain
+                #if self.terra.chain_id == CHAIN_DATA[ULUNA]['chain_id']:
+                if self.swap_denom in contract_swaps and self.swap_request_denom in contract_swaps:
+                    parts:dict = {}
 
-                # Get the pool details
-                #if self.swap_request_denom == ULENNY:
-                    
-                #    print ('lenny contract:', self.contract)
-                #    result = self.terra.wasm.contract_query('terra1vrqd7fkchyc7wjumn8fxly88z7kath4djjls3yc5th5g76f3543salu48s', {"simulate_swap_operations":{"offer_amount":"1000000","operations":[{"terra_port":{"offer_asset_info":{"native_token":{"denom":"uluna"}},"ask_asset_info":{"token":{"contract_addr":"terra1gcr97yaq923qaxa3gzn70kpx29c28m2c3prxn66vev3segea7y4qps5vj4"}}}}]}})
-                #    print ('lenny result: ', result)
-
-                result = self.terra.wasm.contract_query(self.contract, {"pool": {}})
-                if 'native_token' in result['assets'][0]['info']:
-                    parts[result['assets'][0]['info']['native_token']['denom']] = int(result['assets'][0]['amount'])
-                else:
-                    # GRDX:
-                    if result['assets'][0]['info']['token']['contract_addr'] == TERRASWAP_GRDX_TO_LUNC_ADDRESS:
-                        parts[GRDX] = int(result['assets'][0]['amount'])
-                    ## LENNY:
-                    #if result['assets'][0]['info']['token']['contract_addr'] == LENNY_SMART_CONTRACT_ADDRESS:
-                    #    print (result)
-                    #    parts[ULENNY] = int(result['assets'][0]['amount'])
-                    
-                parts[result['assets'][1]['info']['native_token']['denom']] = int(result['assets'][1]['amount'])
-
-                if self.swap_denom == GRDX and self.swap_request_denom == ULUNA:
-                    belief_price:float = parts[self.swap_request_denom] / parts[self.swap_denom]
-                else:
-                    # Everything except GRDX -> ULUNA goes here:
-                    belief_price:float = parts[self.swap_denom] / parts[self.swap_request_denom]
-
-            else:
-                # UBASE does something different
-                if self.swap_denom == UBASE or self.swap_request_denom == UBASE:
-                    #if self.terra.chain_id == CHAIN_DATA[ULUNA]['chain_id']:
-                    result           = self.terra.wasm.contract_query(self.contract, {"curve_info": {}})
-                    spot_price:float = float(result['spot_price'])
-
-                    if self.swap_request_denom == UBASE:
-                        belief_price:float = divide_raw_balance((spot_price * 1.053), UBASE)
+                    # Get the pool details
+                    result = self.terra.wasm.contract_query(self.contract, {"pool": {}})
+                    if 'native_token' in result['assets'][0]['info']:
+                        parts[result['assets'][0]['info']['native_token']['denom']] = int(result['assets'][0]['amount'])
                     else:
-                        belief_price:float = divide_raw_balance((spot_price - (spot_price * 0.048)), UBASE)
-                if self.swap_denom == ULENNY or self.swap_request_denom == ULENNY:
-                    #print ('lenny contract:', self.contract)
-                    result = self.terra.wasm.contract_query('terra1vrqd7fkchyc7wjumn8fxly88z7kath4djjls3yc5th5g76f3543salu48s', {"simulate_swap_operations":{"offer_amount":"1000000","operations":[{"terra_port":{"offer_asset_info":{"native_token":{"denom":"uluna"}},"ask_asset_info":{"token":{"contract_addr":"terra1gcr97yaq923qaxa3gzn70kpx29c28m2c3prxn66vev3segea7y4qps5vj4"}}}}]}})
-                    belief_price:float = float(result['amount']) / (10 ** get_precision(ULUNA))
+                        # GRDX:
+                        if result['assets'][0]['info']['token']['contract_addr'] == TERRASWAP_GRDX_TO_LUNC_ADDRESS:
+                            parts[GRDX] = int(result['assets'][0]['amount'])
+                        ## LENNY:
+                        #if result['assets'][0]['info']['token']['contract_addr'] == LENNY_SMART_CONTRACT_ADDRESS:
+                        #    print (result)
+                        #    parts[ULENNY] = int(result['assets'][0]['amount'])
+                        
+                    parts[result['assets'][1]['info']['native_token']['denom']] = int(result['assets'][1]['amount'])
 
-                    print ('lenny belief price:', belief_price)
+                    if self.swap_denom == GRDX and self.swap_request_denom == ULUNA:
+                        belief_price:float = parts[self.swap_request_denom] / parts[self.swap_denom]
+                    else:
+                        # Everything except GRDX -> ULUNA goes here:
+                        belief_price:float = parts[self.swap_denom] / parts[self.swap_request_denom]
 
-                    
+                else:
+                    # UBASE does something different
+                    if self.swap_denom == UBASE or self.swap_request_denom == UBASE:
+                        #if self.terra.chain_id == CHAIN_DATA[ULUNA]['chain_id']:
+                        result           = self.terra.wasm.contract_query(self.contract, {"curve_info": {}})
+                        spot_price:float = float(result['spot_price'])
 
-            # except Exception as err:
-            #     print (' 🛑 A connection error has occurred:')
-            #     print (err)
-            #     return None
+                        if self.swap_request_denom == UBASE:
+                            belief_price:float = divide_raw_balance((spot_price * 1.053), UBASE)
+                        else:
+                            belief_price:float = divide_raw_balance((spot_price - (spot_price * 0.048)), UBASE)
+                    if self.swap_denom == ULENNY or self.swap_request_denom == ULENNY:
+                        #print ('lenny contract:', self.contract)
+                        result = self.terra.wasm.contract_query('terra1vrqd7fkchyc7wjumn8fxly88z7kath4djjls3yc5th5g76f3543salu48s', {"simulate_swap_operations":{"offer_amount":"1000000","operations":[{"terra_port":{"offer_asset_info":{"native_token":{"denom":"uluna"}},"ask_asset_info":{"token":{"contract_addr":LENNY_SMART_CONTRACT_ADDRESS}}}}]}})
+                        belief_price:float = float(result['amount']) / (10 ** get_precision(ULUNA))
+
+            except Exception as err:
+                print (' 🛑 A connection error has occurred:')
+                print (err)
+                return None
            
         self.belief_price = round(belief_price, 18)
 
@@ -722,6 +712,9 @@ class SwapTransaction(TransactionCore):
         tx:Tx = self.transaction
 
         if tx is not None:
+
+            non_uluna_coins:list = [UBASE, GRDX, ULENNY]
+
             # Get the stub of the requested fee so we can adjust it
             requested_fee:Fee = tx.auth_info.fee
 
@@ -735,7 +728,7 @@ class SwapTransaction(TransactionCore):
             fee_denom    = fee_bit.denom
 
             # Calculate the tax portion 
-            if self.swap_denom == UBASE or self.swap_denom == GRDX:
+            if self.swap_denom in non_uluna_coins:
                 self.tax = None
             else:
                 self.tax = int(math.ceil(self.swap_amount * float(self.tax_rate)))
@@ -743,7 +736,8 @@ class SwapTransaction(TransactionCore):
             # Build a fee object
             if fee_denom == ULUNA and self.swap_denom == ULUNA:
                 new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount + self.tax))})
-            if self.swap_denom == UBASE or self.swap_denom == GRDX:
+            #if self.swap_denom == UBASE or self.swap_denom == GRDX:
+            if  self.swap_denom in non_uluna_coins:
                 new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount))})
             else:
                 new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount)), Coin(self.swap_denom, int(self.tax))})
@@ -761,7 +755,7 @@ class SwapTransaction(TransactionCore):
                 self.fee_deductables = int(fee_amount + self.tax)
             elif fee_denom == ULUNA and self.swap_denom == UUSD:
                 self.fee_deductables = int(self.tax)
-            elif fee_denom == ULUNA and (self.swap_denom == UBASE or self.swap_denom == GRDX):
+            elif fee_denom == ULUNA and (self.swap_denom == UBASE or self.swap_denom == GRDX or self.swap_denom == ULENNY):
                 self.fee_deductables = 0
             #elif fee_denom == UKUJI and self.swap_denom == UUSD:
             #    self.fee_deductables = int(self.tax)
@@ -842,7 +836,7 @@ class SwapTransaction(TransactionCore):
                                     },
                                     "ask_asset_info": {
                                         "token": {
-                                        "contract_addr": "terra1gcr97yaq923qaxa3gzn70kpx29c28m2c3prxn66vev3segea7y4qps5vj4"
+                                        "contract_addr": LENNY_SMART_CONTRACT_ADDRESS
                                         }
                                     }
                                     }
@@ -851,6 +845,31 @@ class SwapTransaction(TransactionCore):
                             }
                         },
                         coins    = Coins(str(swap_amount) + self.swap_denom)
+                    )
+                    options = CreateTxOptions(
+                        fee        = self.fee,
+                        gas        = 1000000,
+                        gas_prices = {'uluna': self.gas_list['uluna']},
+                        msgs       = [tx_msg],
+                        sequence   = self.sequence,
+                    )
+                elif self.swap_denom == ULENNY and self.swap_request_denom == ULUNA:
+                    # We are swapping ULENNY to ULUNA
+                    encoded_msg = base64.b64encode(bytes(str('{"execute_swap_operations":{"operations":[{"terra_port":{"offer_asset_info":{"token":{"contract_addr":"' + LENNY_SMART_CONTRACT_ADDRESS + '"}},"ask_asset_info":{"native_token":{"denom":"uluna"}}}}]}}'), 'utf-8'))
+                    encoded_msg = encoded_msg.decode("utf-8")
+
+                    tx_msg = MsgExecuteContract(
+                        sender   = self.current_wallet.key.acc_address,
+                        contract = LENNY_SMART_CONTRACT_ADDRESS,
+                        msg = 
+                            {
+                            "send": {
+                                "contract": "terra1vrqd7fkchyc7wjumn8fxly88z7kath4djjls3yc5th5g76f3543salu48s",
+                                "amount": str(swap_amount),
+                                "msg": encoded_msg
+                            }
+                        },
+                        coins    = []
                     )
                     options = CreateTxOptions(
                         fee        = self.fee,
@@ -883,7 +902,6 @@ class SwapTransaction(TransactionCore):
                         sender   = self.current_wallet.key.acc_address,
                         contract = TERRASWAP_GRDX_TO_LUNC_ADDRESS,
                         msg      = {'send': {'amount': str(swap_amount), 'contract': 'terra1mkl973d34jsuv0whsfl43yw3sktm8kv7lgn35fhe6l88d0vvaukq5nq929','msg': encoded_msg}}
-                        
                     )
 
                     options = CreateTxOptions(
@@ -951,7 +969,6 @@ class SwapTransaction(TransactionCore):
 
                 self.transaction = tx
 
-                print (options)
                 return True
             else:
                 return False
@@ -974,9 +991,6 @@ class SwapTransaction(TransactionCore):
         is_offchain_swap:bool  = self.isOffChainSwap()
 
         if self.use_market_swap == False and is_offchain_swap == False:
-            print ('not market swap and not offchain')
-            #print ()
-            #print ('request denom:', self.swap_request_denom)
             if self.swap_denom == UBASE:
                 if self.swap_request_denom == ULUNA:
                     swap_price       = self.beliefPrice()
@@ -986,10 +1000,8 @@ class SwapTransaction(TransactionCore):
                     swap_price       = self.beliefPrice()
                     estimated_amount = float(self.swap_amount * swap_price)
             elif self.swap_request_denom == ULENNY and self.swap_denom == ULUNA:
-                print ('LENNY LOGIC')
                 swap_price = self.beliefPrice()
                 estimated_amount = float(self.swap_amount * swap_price)
-                print ('estimated amount:', estimated_amount)
             else:
                 # This will cover nearly all swap pairs:
                 swap_price = self.beliefPrice()
@@ -1061,7 +1073,6 @@ def swap_coins(wallet, swap_coin:Coin, swap_to_denom:str, estimated_amount:int =
     if is_offchain_swap == True:
         # This is an off-chain swap. Something like LUNC(terra)->OSMO or LUNC(Osmosis) -> wETH
         swap_result:bool = swap_tx.offChainSimulate()
-        print ('boo1')
         if swap_result == True:
             if prompt_user == True:
                 print (f'You will be swapping {wallet.formatUluna(swap_coin.amount, swap_coin.denom, False)} {FULL_COIN_LOOKUP[swap_coin.denom]} for approximately {estimated_amount} {FULL_COIN_LOOKUP[swap_to_denom]}')
@@ -1080,7 +1091,6 @@ def swap_coins(wallet, swap_coin:Coin, swap_to_denom:str, estimated_amount:int =
         if use_market_swap == True:
             # uluna -> umnt, uluna -> ujpy etc
             # This is for terra-native swaps ONLY
-            print ('boo2')
             swap_result:bool = swap_tx.marketSimulate()
             if swap_result == True:
                 if prompt_user == True:
@@ -1099,7 +1109,6 @@ def swap_coins(wallet, swap_coin:Coin, swap_to_denom:str, estimated_amount:int =
             # This is for uluna -> uusd/lenny/grdx swaps ONLY. We use the contract addresses to support this
 
             swap_result:bool = swap_tx.simulate()
-            print ('boo3')
             if swap_result == True:
                 if prompt_user == True:
                     print (f'You will be swapping {wallet.formatUluna(swap_coin.amount, swap_coin.denom, False)} {FULL_COIN_LOOKUP[swap_coin.denom]} for approximately {estimated_amount} {FULL_COIN_LOOKUP[swap_to_denom]}')
