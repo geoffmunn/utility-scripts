@@ -516,6 +516,7 @@ def main():
                                                 logs.message(f"  ➜ Delegating {wallet.formatUluna(delegation_coin.amount, delegation_coin.denom, True)} to {step['validator']}.")
                                                 
                                                 transaction_result:TransactionResult = delegate_to_validator(step_wallet, validator_address, delegation_coin)
+                                                transaction_result.wallet_denom      = step_wallet.denom
                                                 transaction_result.showResults()
                                                         
                                             else:
@@ -571,6 +572,7 @@ def main():
                                                 memo = step['memo']
 
                                             transaction_result:TransactionResult = send_transaction(step_wallet, recipient_address, send_coin, memo, False)
+                                            transaction_result.wallet_denom      = step_wallet.denom
                                             transaction_result.showResults()
 
                                         else:
@@ -650,6 +652,7 @@ def main():
                                             logs.message(f'   ➜  You are joining pool {pool_id} by adding {wallet.formatUluna(swap_coin.amount, swap_coin.denom, True)}.')
                                             
                                             transaction_result:TransactionResult = join_liquidity_pool(step_wallet, pool_id, swap_coin.amount, False)
+                                            transaction_result.wallet_denom      = step_wallet.denom
                                             transaction_result.showResults()
                                         else:
                                             logs.error(' ❗ No pool ID provided in this step!')
@@ -709,7 +712,7 @@ def main():
                                         logs.message(f' ➜  You are exiting pool {pool_id} by withdrawing {amount_out * 100}%.')
                                         
                                         transaction_result:TransactionResult = exit_liquidity_pool(step_wallet, pool_id, amount_out, False)
-                                        transaction_result.wallet_denom = wallet.denom
+                                        transaction_result.wallet_denom      = wallet.denom
                                         transaction_result.showResults()
                                     else:
                                         logs.error(" ❗ 'when' trigger not fired!")
