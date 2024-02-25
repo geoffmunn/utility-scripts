@@ -13,12 +13,14 @@ from classes.common import (
 from constants.constants import (
     BASE_SMART_CONTRACT_ADDRESS,
     CHAIN_DATA,
+    CREMAT_SMART_CONTRACT_ADDRESS,
     FULL_COIN_LOOKUP,
     GRDX,
     LENNY_SMART_CONTRACT_ADDRESS,
     SEARCH_RETRY_COUNT,
     TERRASWAP_GRDX_TO_LUNC_ADDRESS,
     UBASE,
+    UCREMAT,
     ULENNY,
     ULUNA,
     UOSMO,
@@ -139,6 +141,17 @@ class SendTransaction(TransactionCore):
                 msg = MsgExecuteContract(
                     sender      = self.current_wallet.key.acc_address,
                     contract    = LENNY_SMART_CONTRACT_ADDRESS,
+                    msg = {
+                        "transfer": {
+                            "amount": str(send_amount),
+                            "recipient": self.recipient_address
+                        }
+                    }
+                )
+            elif self.denom == UCREMAT:
+                msg = MsgExecuteContract(
+                    sender      = self.current_wallet.key.acc_address,
+                    contract    = CREMAT_SMART_CONTRACT_ADDRESS,
                     msg = {
                         "transfer": {
                             "amount": str(send_amount),
@@ -327,7 +340,7 @@ class SendTransaction(TransactionCore):
             fee_amount   = fee_bit.amount
             fee_denom    = fee_bit.denom
         
-            non_uluna_coins:list = [UBASE, GRDX, ULENNY]
+            non_uluna_coins:list = [GRDX, UBASE, UCREMAT, ULENNY]
             # Calculate the tax portion
             #if self.denom == UBASE or self.denom == GRDX:
             if self.denom in non_uluna_coins:
