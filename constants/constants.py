@@ -279,7 +279,11 @@ BASIC_COIN_LOOKUP = {
     UUSD:  'USTC'
 }
 
-FULL_COIN_LOOKUP[LENNY_SMART_CONTRACT_ADDRESS] = 'LENNY'
+COIN_ALIASES = {
+    LENNY_SMART_CONTRACT_ADDRESS: 'LENNY',
+    CREMAT_SMART_CONTRACT_ADDRESS: 'CREMAT',
+    TERRASWAP_GRDX_TO_LUNC_ADDRESS: 'GRDX'
+}
 
 # These coins will be removed from the full coin lookup
 # They used to work, but were disabled by a change on the columbus-5 chain

@@ -19,6 +19,8 @@ from classes.common import (
 from constants.constants import (
     BASE_SMART_CONTRACT_ADDRESS,
     CHAIN_DATA,
+    COIN_ALIASES,
+    CREMAT_SMART_CONTRACT_ADDRESS,
     DB_FILE_NAME,
     FULL_COIN_LOOKUP,
     GAS_PRICE_URI,
@@ -682,7 +684,7 @@ class TransactionResult(TransactionCore):
         """
 
         denom:str = self.denomTrace(coin.denom)
-        if denom in FULL_COIN_LOOKUP:
+        if denom in FULL_COIN_LOOKUP or denom in COIN_ALIASES :
             precision:int = get_precision(denom)
             lunc:float    = round(float(divide_raw_balance(coin.amount, denom)), precision)
 
@@ -690,7 +692,10 @@ class TransactionResult(TransactionCore):
             lunc:str   = (target % (lunc)).rstrip('0').rstrip('.')
 
             if add_suffix:
-                lunc = str(lunc) + ' ' + FULL_COIN_LOOKUP[denom]
+                if denom in FULL_COIN_LOOKUP:
+                    lunc = str(lunc) + ' ' + FULL_COIN_LOOKUP[denom]
+                else:
+                    lunc = str(lunc) + ' ' + COIN_ALIASES[denom]
         else:
             lunc:float = coin.amount
             if add_suffix:
