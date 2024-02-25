@@ -47,6 +47,7 @@ GRDX_SMART_CONTRACT_ADDRESS     =  'terra1mkl973d34jsuv0whsfl43yw3sktm8kv7lgn35f
 TERRASWAP_GRDX_TO_LUNC_ADDRESS  =  'terra12f3f5fzfzxckc0qlv3rmwwkjfhzevpwmx77345n0zuu2678vxf0sm6vvcw'
 LENNY_SMART_CONTRACT_ADDRESS    =  'terra1gcr97yaq923qaxa3gzn70kpx29c28m2c3prxn66vev3segea7y4qps5vj4'
 TERRAPORT_SWAP_ADDRESS          = 'terra1vrqd7fkchyc7wjumn8fxly88z7kath4djjls3yc5th5g76f3543salu48s'
+CREMAT_SMART_CONTRACT_ADDRESS   = 'terra1zkhwtm4a559emekwj7z4vklzqupgjyad8ncpwvav38y5ef6g5tjse7ceus'
 # Do not change these:
 
 # Standard actions:
@@ -125,6 +126,7 @@ UBASE     = 'ubase'
 UBNT      = 'ubnt'
 UBTSG     = 'ubtsg'
 UCMDX     = 'ucmdx'
+UCREMAT   = 'ucremat'
 UCTK      = 'uctk'
 UDEC      = 'udec'
 UDSM      = 'udsm'
@@ -195,6 +197,7 @@ FULL_COIN_LOOKUP = {
     'uchf':    'CHTC',
     UCMDX:     'Comdex',
     'ucny':    'CNTC',
+    UCREMAT:   'CREMAT',
     BASECRO:   'CRO',
     ACUDOS:    'Cudos',
     UDEC:      'Decentr',

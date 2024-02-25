@@ -432,14 +432,14 @@ class TransactionCore():
                                 
                                 transaction_result.log_found = True
 
-                            # GRDX/ULENNY -> ULUNA swaps (will override the standard swaps detection done earlier)
-                            if '_contract_address' in log.events_by_type['wasm'] and (GRDX_SMART_CONTRACT_ADDRESS in log.events_by_type['wasm']['_contract_address'] or LENNY_SMART_CONTRACT_ADDRESS in log.events_by_type['wasm']['_contract_address']):
+                            # GRDX/UCREMAT/ULENNY -> ULUNA swaps (will override the standard swaps detection done earlier)
+                            if '_contract_address' in log.events_by_type['wasm'] and (GRDX_SMART_CONTRACT_ADDRESS in log.events_by_type['wasm']['_contract_address'] or CREMAT_SMART_CONTRACT_ADDRESS in log.events_by_type['wasm']['_contract_address'] or LENNY_SMART_CONTRACT_ADDRESS in log.events_by_type['wasm']['_contract_address']):
                                 if 'action' in log.events_by_type['wasm'] and log.events_by_type['wasm']['action'][0] == 'transfer':
                                     # Sending GRDX/ULENNY to another wallet
                                     transaction_result.result_sent     = Coin.from_data({'amount': log.events_by_type['wasm']['amount'][0], 'denom': self.denom})
                                     transaction_result.result_received = Coins.from_proto([Coin.from_data({'amount': log.events_by_type['wasm']['amount'][0], 'denom': self.denom})])
                                 else:
-                                    # Assumes swaps between GRDX/ULENN -> ULUNA
+                                    # Assumes swaps between GRDX/UCREMAT/ULENN -> ULUNA
                                     transaction_result.result_sent     = Coin.from_data({'amount': log.events_by_type['wasm']['offer_amount'][0], 'denom': log.events_by_type['wasm']['offer_asset'][0]})
                                     transaction_result.result_received = Coins.from_proto([Coin.from_data({'amount': log.events_by_type['wasm']['return_amount'][0], 'denom': log.events_by_type['wasm']['ask_asset'][0]})])
                                     

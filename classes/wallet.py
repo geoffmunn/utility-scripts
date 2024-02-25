@@ -28,12 +28,14 @@ from classes.common import (
 from constants.constants import (
     BASE_SMART_CONTRACT_ADDRESS,
     CHAIN_DATA,
+    CREMAT_SMART_CONTRACT_ADDRESS,
     DB_FILE_NAME,
     FULL_COIN_LOOKUP,
     GRDX,
     LENNY_SMART_CONTRACT_ADDRESS,
     TERRASWAP_GRDX_TO_LUNC_ADDRESS,
     UBASE,
+    UCREMAT,
     ULENNY,
     ULUNA,
     USER_ACTION_CONTINUE,
@@ -404,6 +406,13 @@ class UserWallet:
                     coin_balance = self.terra.wasm.contract_query(LENNY_SMART_CONTRACT_ADDRESS, {'balance':{'address':self.address}})
                     if int(coin_balance['balance']) > 0:
                         balances[ULENNY] = coin_balance['balance']
+
+                    coin_balance = self.terra.wasm.contract_query(CREMAT_SMART_CONTRACT_ADDRESS, {'balance':{'address':self.address}})
+                    if int(coin_balance['balance']) > 0:
+                        balances[UCREMAT] = coin_balance['balance']
+                        
+                    #test = self.terra.wasm.contract_query('terra1nuwdr5zaul2gnq88xapq8ythmaw4092kt8lxsl6jd36h47u8vpcqnrmdcm', {'balance':{'address':self.address}})
+                    #print (test)
 
         else:
             balances:dict = {}
