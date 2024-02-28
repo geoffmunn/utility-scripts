@@ -16,6 +16,7 @@ from classes.common import (
 )
 
 from constants.constants import (
+    COIN_ALIASES,
     FULL_COIN_LOOKUP,
     OUTPUT_ERROR,
     OUTPUT_USER,
@@ -428,6 +429,9 @@ def main():
                             wallet.getDelegations()
                             delegations:dict = wallet.delegations
 
+                            # Withdrawals are a bit different - we'll set 'can_continue' to be true if ANY of the validator withdrawals work
+                            withdrawal_succeeded:bool = False
+
                             for validator in delegations:
                                 # One last check to make sure LUNC is in the reward list
                                 if ULUNA in delegations[validator]['rewards']:
@@ -443,6 +447,9 @@ def main():
                                         transaction_result:TransactionResult = claim_delegation_rewards(wallet, validator_address = delegations[validator]['validator'])
                                         transaction_result.showResults()
                                         
+                                        if transaction_result.is_error == True:
+                                            can_continue = False
+
                                         received_coin:Coin
                                         for received_coin in transaction_result.result_received:
                                             if delegations[validator]['validator'] not in validator_withdrawals:
@@ -452,6 +459,7 @@ def main():
 
                                             validator_withdrawals[delegations[validator]['validator']]['balances'][received_coin.denom] = received_coin.amount
 
+                                        withdrawal_succeeded = True
                                     else:
                                         logs.error(" ❗ 'when' trigger not fired!")
                                         logs.error(f"    - when: {step['when']}")
@@ -460,6 +468,10 @@ def main():
                                     logs.error(' ❗ No LUNC in the validator to withdraw!')
                                     can_continue = False
                             
+                            # If any of the with validator withdrawals worked, then keep going
+                            if withdrawal_succeeded == True:
+                                can_continue = True
+
                         if action == 'redelegate':
                             # We don't support specific wallet selection on the 'redelegate' step
                             delegations:dict = wallet.delegations
@@ -478,6 +490,9 @@ def main():
                                         transaction_result:TransactionResult = delegate_to_validator(wallet, validator, delegation_coin, True)
                                         transaction_result.showResults()
                                         
+                                        if transaction_result.is_error == True:
+                                            can_continue = False
+
                                     else:
                                         logs.error(' ❗ Not enough LUNC in the rewards to make this delegation.')
                                 else:
@@ -518,7 +533,9 @@ def main():
                                                 transaction_result:TransactionResult = delegate_to_validator(step_wallet, validator_address, delegation_coin)
                                                 transaction_result.wallet_denom      = step_wallet.denom
                                                 transaction_result.showResults()
-                                                        
+
+                                                if transaction_result.is_error == True:
+                                                    can_continue = False       
                                             else:
                                                 logs.error(' ❗ The validator could not be found, please check the name')
                                                 can_continue = False
@@ -575,6 +592,8 @@ def main():
                                             transaction_result.wallet_denom      = step_wallet.denom
                                             transaction_result.showResults()
 
+                                            if transaction_result.is_error == True:
+                                                can_continue = False
                                         else:
                                             logs.error(' ❗ No valid recipient was included!')
                                             can_continue = False
@@ -608,13 +627,23 @@ def main():
                                     if amount_ok == True:
 
                                         if 'swap to' in step:
-                                            swap_to_denom:str = list(FULL_COIN_LOOKUP.keys())[list(FULL_COIN_LOOKUP.values()).index(step['swap to'])]
+                                            key_list:list  = list(FULL_COIN_LOOKUP.values())
+                                            keys:dict      = FULL_COIN_LOOKUP.keys()
+                                            coin_list:dict = FULL_COIN_LOOKUP
+                                            if step['swap to'] not in key_list:
+                                                key_list:list  = list(COIN_ALIASES.values())
+                                                keys:dict      = COIN_ALIASES.keys()
+                                                coin_list:dict = COIN_ALIASES
 
-                                            logs.message(f'  ➜ You are swapping {wallet.formatUluna(swap_coin.amount, swap_coin.denom, True)} for {FULL_COIN_LOOKUP[swap_to_denom]}.')
-                                            
+                                            swap_to_denom:str = list(keys)[key_list.index(step['swap to'])]
+                                            logs.message(f'  ➜ You are swapping {wallet.formatUluna(swap_coin.amount, swap_coin.denom, True)} for {coin_list[swap_to_denom]}.')
+
                                             transaction_result:TransactionResult = swap_coins(step_wallet, swap_coin, swap_to_denom, '', False)
                                             transaction_result.wallet_denom      = step_wallet.denom
                                             transaction_result.showResults()
+
+                                            if transaction_result.is_error == True:
+                                                can_continue = False
                                         else:
                                             logs.error(" ❗ 'swap to' not specified in this workflow.")
                                             can_continue = False
@@ -654,6 +683,9 @@ def main():
                                             transaction_result:TransactionResult = join_liquidity_pool(step_wallet, pool_id, swap_coin.amount, False)
                                             transaction_result.wallet_denom      = step_wallet.denom
                                             transaction_result.showResults()
+
+                                            if transaction_result.is_error == True:
+                                                can_continue = False
                                         else:
                                             logs.error(' ❗ No pool ID provided in this step!')
                                     else:
@@ -714,6 +746,9 @@ def main():
                                         transaction_result:TransactionResult = exit_liquidity_pool(step_wallet, pool_id, amount_out, False)
                                         transaction_result.wallet_denom      = wallet.denom
                                         transaction_result.showResults()
+
+                                        if transaction_result.is_error == True:
+                                            can_continue = False
                                     else:
                                         logs.error(" ❗ 'when' trigger not fired!")
                                         logs.error(f"    - when: {step['when']}")
@@ -752,6 +787,9 @@ def main():
                                             
                                             transaction_result:TransactionResult = switch_validator(wallet, new_validator_address, old_validator_address, amount_coin)
                                             transaction_result.showResults()
+
+                                            if transaction_result.is_error == True:
+                                                can_continue = False
                                         else:
                                             logs.error(" ❗ 'when' trigger not fired!")
                                             logs.error(f"    - when: {step['when']}")
@@ -794,6 +832,9 @@ def main():
                                         
                                         transaction_result:TransactionResult = undelegate_from_validator(wallet, validator_address, amount_coin)
                                         transaction_result.showResults()
+
+                                        if transaction_result.is_error == True:
+                                            can_continue = False
                                     else:
                                         logs.error(" ❗ 'when' trigger not fired!")
                                         logs.error(f"    - when: {step['when']}")
