@@ -1178,19 +1178,24 @@ def swap_coins(wallet, swap_coin:Coin, swap_to_denom:str, estimated_amount:int =
                     break
 
         if transaction_result.broadcast_result is None or transaction_result.broadcast_result.is_tx_error():
+            transaction_result.is_error = True
             if transaction_result.broadcast_result is None:
-                transaction_result.message = ' 🛎️  The swap transaction failed, no broadcast object was returned.'
+                transaction_result.message  = ' 🛎️  The swap transaction failed, no broadcast object was returned.'
+                transaction_result.is_error = True
             else:
                 transaction_result.message = ' 🛎️  The swap transaction failed, an error occurred'
                 if transaction_result.broadcast_result.raw_log is not None:
-                    transaction_result.message = f' 🛎️  The swap transaction on {wallet.name} failed, an error occurred.'
-                    transaction_result.code    = f' 🛎️  Error code {transaction_result.broadcast_result.code}'
-                    transaction_result.log     = f' 🛎️  {transaction_result.broadcast_result.raw_log}'
+                    transaction_result.message  = f' 🛎️  The swap transaction on {wallet.name} failed, an error occurred.'
+                    transaction_result.code     = f' 🛎️  Error code {transaction_result.broadcast_result.code}'
+                    transaction_result.log      = f' 🛎️  {transaction_result.broadcast_result.raw_log}'
+                    transaction_result.is_error = True
                 else:
                     transaction_result.message = f' 🛎️  No broadcast log on {wallet.name} was available.'
+                    transaction_result.is_error = True
         
     else:
-        print (' 🛎️  The swap transaction could not be completed')
+        transaction_result.message  = ' 🛎️  The swap transaction could not be completed'
+        transaction_result.is_error = True
 
     # Store the delegated amount for display purposes
     transaction_result.transacted_amount = wallet.formatUluna(swap_coin.amount, swap_coin.denom, True)

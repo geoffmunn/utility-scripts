@@ -586,6 +586,7 @@ def send_transaction(wallet:UserWallet, recipient_address:str, send_coin:Coin, m
                         break
 
             if transaction_result.broadcast_result is None or transaction_result.broadcast_result.is_tx_error() or transaction_result.is_error == True:
+                transaction_result.is_error = True
                 if transaction_result.broadcast_result is None:
                     transaction_result.message = f' 🛎️  The send transaction on {wallet.name} failed, no broadcast object was returned.'
                 else:
@@ -619,9 +620,11 @@ def send_transaction(wallet:UserWallet, recipient_address:str, send_coin:Coin, m
 
 
         else:
-            transaction_result.message = f' 🛎️  The send transaction on {wallet.name} could not be completed'
+            transaction_result.message  = f' 🛎️  The send transaction on {wallet.name} could not be completed'
+            transaction_result.is_error = True
     else:
-        transaction_result.message = f' 🛎️  The send transaction on {wallet.name} could not be completed'
+        transaction_result.message  = f' 🛎️  The send transaction on {wallet.name} could not be completed'
+        transaction_result.is_error = True
 
 
     # Store the delegated amount for display purposes

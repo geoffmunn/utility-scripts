@@ -165,8 +165,8 @@ def claim_delegation_rewards(wallet:UserWallet, validator_address:str) -> Transa
     withdrawal_tx = WithdrawalTransaction().create(seed = wallet.seed, delegator_address = wallet.address, validator_address = validator_address)
 
     # We need to populate some details
-    withdrawal_tx.balances       = wallet.balances
-    withdrawal_tx.wallet_denom   = wallet.denom
+    withdrawal_tx.balances     = wallet.balances
+    withdrawal_tx.wallet_denom = wallet.denom
 
     # Simulate it
     withdrawal_result = withdrawal_tx.simulate()
@@ -200,6 +200,7 @@ def claim_delegation_rewards(wallet:UserWallet, validator_address:str) -> Transa
                         break
                     
             if transaction_result.broadcast_result is None or transaction_result.broadcast_result.is_tx_error():
+                transaction_result.is_error = True
                 if transaction_result.broadcast_result is None:
                     transaction_result.message = f' 🛎️ The withdrawal transaction on {wallet.name} failed, no broadcast object was returned.'
                 else:
@@ -211,6 +212,7 @@ def claim_delegation_rewards(wallet:UserWallet, validator_address:str) -> Transa
                         transaction_result.message = f' 🛎️ No broadcast log on {wallet.name} was available.'
         
     else:
-        transaction_result.message = f' 🛎️ The withdrawal on {wallet.name} could not be completed.'
+        transaction_result.message  = f' 🛎️ The withdrawal on {wallet.name} could not be completed.'
+        transaction_result.is_error = True
 
     return transaction_result

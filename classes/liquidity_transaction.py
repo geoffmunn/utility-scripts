@@ -783,6 +783,7 @@ def join_liquidity_pool(wallet:UserWallet, pool_id:int, amount_in:int, prompt_us
             #             break
 
             if transaction_result.broadcast_result is None or transaction_result.broadcast_result.is_tx_error():
+                transaction_result.is_error = True
                 if transaction_result.broadcast_result is None:
                     transaction_result.message = f' 🛎️  The liquidity transaction failed, no broadcast object was returned.'
                 else:
@@ -795,7 +796,8 @@ def join_liquidity_pool(wallet:UserWallet, pool_id:int, amount_in:int, prompt_us
                         transaction_result.message = f' 🛎️  No broadcast log on {wallet.name} was available.'  
 
         else:
-            print (' 🛎️  The liquidity transaction could not be completed')
+            transaction_result.message  = ' 🛎️  The liquidity transaction could not be completed'
+            transaction_result.is_error = True
 
     # Store the delegated amount for display purposes
     transaction_result.transacted_amount = wallet.formatUluna(amount_in, ULUNA, True)
@@ -873,6 +875,7 @@ def exit_liquidity_pool(wallet:UserWallet, pool_id:int, amount_out:float, prompt
             #             break
 
             if transaction_result.broadcast_result is None or transaction_result.broadcast_result.is_tx_error():
+                transaction_result.is_error = True
                 if transaction_result.broadcast_result is None:
                     transaction_result.message = f' 🛎️  The liquidity transaction failed, no broadcast object was returned.'
                 else:
@@ -885,7 +888,8 @@ def exit_liquidity_pool(wallet:UserWallet, pool_id:int, amount_out:float, prompt
                         transaction_result.message = f' 🛎️  No broadcast log on {wallet.name} was available.'
             
         else:
-            transaction_result.message = f' 🛎️  The liquidity transaction could not be completed'
+            transaction_result.message  = f' 🛎️  The liquidity transaction could not be completed'
+            transaction_result.is_error = True
 
     transaction_result.wallet_denom = wallet.denom
 
