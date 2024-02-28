@@ -48,6 +48,8 @@ TERRASWAP_GRDX_TO_LUNC_ADDRESS  =  'terra12f3f5fzfzxckc0qlv3rmwwkjfhzevpwmx77345
 LENNY_SMART_CONTRACT_ADDRESS    =  'terra1gcr97yaq923qaxa3gzn70kpx29c28m2c3prxn66vev3segea7y4qps5vj4'
 TERRAPORT_SWAP_ADDRESS          = 'terra1vrqd7fkchyc7wjumn8fxly88z7kath4djjls3yc5th5g76f3543salu48s'
 CREMAT_SMART_CONTRACT_ADDRESS   = 'terra1zkhwtm4a559emekwj7z4vklzqupgjyad8ncpwvav38y5ef6g5tjse7ceus'
+CANDY_SMART_CONTRACT_ADDRESS    = 'terra1nuwdr5zaul2gnq88xapq8ythmaw4092kt8lxsl6jd36h47u8vpcqnrmdcm'
+
 # Do not change these:
 
 # Standard actions:
@@ -125,6 +127,7 @@ UBAND     = 'uband'
 UBASE     = 'ubase'
 UBNT      = 'ubnt'
 UBTSG     = 'ubtsg'
+UCANDY    = 'ucandy'
 UCMDX     = 'ucmdx'
 UCREMAT   = 'ucremat'
 UCTK      = 'uctk'
@@ -189,6 +192,7 @@ FULL_COIN_LOOKUP = {
     UBTSG:     'Bitsong',
     UBNT:      'Bluzelle',
     'busd-wei':'BUSD',          # Only supported in pools
+    UCANDY:    'Candy',
     ACANTO:    'Canto',
     SWTH:      'Carbon',
     'ucad':    'CATC',
@@ -280,9 +284,10 @@ BASIC_COIN_LOOKUP = {
 }
 
 COIN_ALIASES = {
-    LENNY_SMART_CONTRACT_ADDRESS: 'LENNY',
+    CANDY_SMART_CONTRACT_ADDRESS: 'CANDY',
     CREMAT_SMART_CONTRACT_ADDRESS: 'CREMAT',
-    TERRASWAP_GRDX_TO_LUNC_ADDRESS: 'GRDX'
+    LENNY_SMART_CONTRACT_ADDRESS: 'LENNY',
+    TERRASWAP_GRDX_TO_LUNC_ADDRESS: 'GRDX'    
 }
 
 # These coins will be removed from the full coin lookup
