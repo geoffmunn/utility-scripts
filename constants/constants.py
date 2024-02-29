@@ -192,7 +192,6 @@ FULL_COIN_LOOKUP = {
     UBTSG:     'Bitsong',
     UBNT:      'Bluzelle',
     'busd-wei':'BUSD',          # Only supported in pools
-    UCANDY:    'Candy',
     ACANTO:    'Canto',
     SWTH:      'Carbon',
     'ucad':    'CATC',
@@ -230,6 +229,7 @@ FULL_COIN_LOOKUP = {
     ULAMB:     'Lambda',
     ULENNY:    'Lenny',
     NANOLIKE:  'Likecoin',
+    UCANDY:    'LNC',
     ULUNA2:    'LUNA',
     ULUNA:     'LUNC',
     UMARS:     'Mars Protocol',
@@ -284,7 +284,7 @@ BASIC_COIN_LOOKUP = {
 }
 
 COIN_ALIASES = {
-    CANDY_SMART_CONTRACT_ADDRESS: 'CANDY',
+    CANDY_SMART_CONTRACT_ADDRESS: 'LNC',
     CREMAT_SMART_CONTRACT_ADDRESS: 'CREMAT',
     LENNY_SMART_CONTRACT_ADDRESS: 'LENNY',
     TERRASWAP_GRDX_TO_LUNC_ADDRESS: 'GRDX'    
