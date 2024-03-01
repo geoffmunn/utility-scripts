@@ -275,10 +275,11 @@ class Log():
         @return: True
         """
 
-        self.items.append({'messsage': msg, 'type': MessageType.MESSAGE})
+        if msg.trim(' ') != '':
+            self.items.append({'messsage': msg, 'type': MessageType.MESSAGE})
 
-        if self.silentMode == False:
-            print (msg)
+            if self.silentMode == False:
+                print (msg)
 
         return True
     
@@ -423,7 +424,7 @@ def main():
 
                     if can_continue == True:
                         logs.message(f' 🪜 Performing {action} step... {step_count}/{len(steps)}')
-
+                        logs.message(step['description'])
                         if action == 'withdraw':
                             # Get an updated list of delegations on this wallet
                             wallet.getDelegations()
