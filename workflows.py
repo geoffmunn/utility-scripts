@@ -424,7 +424,10 @@ def main():
 
                     if can_continue == True:
                         logs.message(f' 🪜 Performing {action} step... {step_count}/{len(steps)}')
-                        logs.message(step['description'])
+                        
+                        if 'description' in step:
+                            logs.message(step['description'])
+
                         if action == 'withdraw':
                             # Get an updated list of delegations on this wallet
                             wallet.getDelegations()
