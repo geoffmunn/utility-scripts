@@ -627,16 +627,8 @@ def main():
                                     if amount_ok == True:
 
                                         if 'swap to' in step:
-                                            key_list:list  = list(FULL_COIN_LOOKUP.values())
-                                            keys:dict      = FULL_COIN_LOOKUP.keys()
-                                            coin_list:dict = FULL_COIN_LOOKUP
-                                            if step['swap to'] not in key_list:
-                                                key_list:list  = list(COIN_ALIASES.values())
-                                                keys:dict      = COIN_ALIASES.keys()
-                                                coin_list:dict = COIN_ALIASES
-
-                                            swap_to_denom:str = list(keys)[key_list.index(step['swap to'])]
-                                            logs.message(f'  ➜ You are swapping {wallet.formatUluna(swap_coin.amount, swap_coin.denom, True)} for {coin_list[swap_to_denom]}.')
+                                            swap_to_denom:str = list(FULL_COIN_LOOKUP.keys())[list(FULL_COIN_LOOKUP.values()).index(step['swap to'])]
+                                            logs.message(f'  ➜ You are swapping {wallet.formatUluna(swap_coin.amount, swap_coin.denom, True)} for {FULL_COIN_LOOKUP[swap_to_denom]}.')
 
                                             transaction_result:TransactionResult = swap_coins(step_wallet, swap_coin, swap_to_denom, '', False)
                                             transaction_result.wallet_denom      = step_wallet.denom
