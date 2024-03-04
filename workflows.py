@@ -426,7 +426,7 @@ def main():
                         logs.message(f' 🪜 Performing {action} step... {step_count}/{len(steps)}')
                         
                         if 'description' in step:
-                            logs.message(step['description'])
+                            logs.message(f"    {step['description']}")
 
                         if action == 'withdraw':
                             # Get an updated list of delegations on this wallet
