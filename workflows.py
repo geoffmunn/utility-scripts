@@ -275,7 +275,7 @@ class Log():
         @return: True
         """
 
-        if msg.trim(' ') != '':
+        if msg.strip(' ') != '':
             self.items.append({'messsage': msg, 'type': MessageType.MESSAGE})
 
             if self.silentMode == False:
