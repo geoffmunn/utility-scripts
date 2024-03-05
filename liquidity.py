@@ -70,6 +70,7 @@ def main():
         exit()
 
     # Are we joining aliquidity pool, or exiting?
+    print ('')
     join_or_exit = get_user_choice(' ❓ Do you want to join (J) a liquidity pool, exit a pool(E), or quit this process (Q)? ', [JOIN_POOL, EXIT_POOL, USER_ACTION_QUIT])
 
     if answer == USER_ACTION_QUIT:
@@ -108,8 +109,12 @@ def main():
         print ('\nHow much do you want to withdraw?')
         print ('You can type a percentage (eg 50%), or an exact amount of LUNC.')
 
-        user_withdrawal:str = wallet.getUserNumber('How much LUNC are you withdrawing? ', {'max_number': float(pool_assets[ULUNA]), 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': False, 'keep_minimum': False, 'target_denom': ULUNA})
+        user_withdrawal:str = wallet.getUserNumber('How much LUNC are you withdrawing (Q to quit)? ', {'max_number': float(pool_assets[ULUNA]), 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': False, 'keep_minimum': False, 'target_denom': ULUNA})
         
+        if user_withdrawal == USER_ACTION_QUIT:
+            print (' 🛑 Exiting...\n')
+            exit()
+
         if is_percentage(user_withdrawal):
             amount_out:float  = float(user_withdrawal[:-1]) / 100
             coin_amount:float = round(pool_assets[ULUNA] * amount_out, 2)
