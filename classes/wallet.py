@@ -13,6 +13,7 @@ import traceback
 
 from datetime import datetime
 from dateutil.tz import tz
+from enum import Enum
 from pycoingecko import CoinGeckoAPI
 from sqlite3 import Cursor, Connection
 
@@ -60,6 +61,19 @@ from terra_classic_sdk.core.staking.data.delegation import Delegation
 from terra_classic_sdk.core.staking.data.validator import Validator
 from terra_classic_sdk.exceptions import LCDResponseError
 from terra_classic_sdk.key.mnemonic import MnemonicKey
+class UserParameters:
+    """
+    A helper class to store user parameters when using the getUserNumber function.
+    @TODO: maybe move this into the UserWallet class so it's not separate
+    """
+    def __init__(self):
+        self.convert_percentages:bool = True
+        self.keep_minimum:bool        = False
+        self.percentages_allowed:bool = False
+        self.max_number:float         = None
+        self.target_amount:float      = None
+        self.target_denom:str         = ULUNA
+
 class UserWallet:
     def __init__(self):
         self.address:str        = ''
@@ -149,29 +163,30 @@ class UserWallet:
             'entries':           entries
         }
     
-    def convertPercentage(self, percentage:float, keep_minimum:bool, target_amount:float, target_denom:str) -> int:
+    def convertPercentage(self, percentage:float, user_params:UserParameters) -> int:
         """
         A generic helper function to convert a potential percentage into an actual number.
         
         @params:
             - percentage: the percentage value between 0.0 and 1
-            - keep_minimum: do we retain a base amount inside this wallet
-            - target_amount: the entire amount we can use, usually from the wallet balance in readable form (NOT uluna)
-            - target_denom: convert this amount into the uluna amount (or whatever denom)
+            - userparams:
+                - userparams.keep_minimum: do we retain a base amount inside this wallet
+                - userparams.target_amount: the entire amount we can use, usually from the wallet balance in readable form (NOT uluna)
+                - userparams.target_denom: convert this amount into the uluna amount (or whatever denom)
             
         @return: an integer of the amount based on the percentage.
         """
 
         percentage:float = float(percentage) / 100
-        if keep_minimum == True:
-            lunc_amount:float = float((target_amount - WITHDRAWAL_REMAINDER) * percentage)
+        if user_params.keep_minimum == True:
+            lunc_amount:float = float((user_params.target_amount - WITHDRAWAL_REMAINDER) * percentage)
             if lunc_amount < 0:
                 lunc_amount = 0
         else:
-            lunc_amount:float = float(target_amount) * percentage
+            lunc_amount:float = float(user_params.target_amount) * percentage
             
         lunc_amount:float = float(str(lunc_amount))
-        uluna_amount:int  = int(multiply_raw_balance(lunc_amount, target_denom))
+        uluna_amount:int  = int(multiply_raw_balance(lunc_amount, user_params.target_denom))
         
         return uluna_amount
     
@@ -927,90 +942,64 @@ class UserWallet:
 
         return undelegations
     
-    def getUserNumber(self, question:str, params:dict) -> str:
+    def getUserNumber(self, question:str, user_params:UserParameters) -> str:
         """
         Get the user input - could be a number or a percentage, and is constrained by details in the params parameter
 
         @params:
             - question: what is the question we're asking the user?
-            - params: a dict resembling this:
-                {
-                    'empty_allowed': bool,
-                    'convert_to_uluna': bool,
-                    'percentages_allowed': bool,
-                    'min_number': float,
-                    'max_number': float,
-                    'target_denom': str
-                }
+            - params: a userParameters class resembling this:
+                self.convert_percentages:bool = True
+                self.keep_minimum:bool        = False
+                self.percentages_allowed:bool = False
+                self.max_number:float         = None
+                self.target_amount:float      = None
+                self.target_denom:str         = ULUNA
 
         @return: an amount reflecting the amount the user wants to use
         """
         
-        empty_allowed:bool = False
-        if 'empty_allowed' in params:
-            empty_allowed = params['empty_allowed']
-
-        convert_to_uluna = True
-        if 'convert_to_uluna' in params:
-            convert_to_uluna = params['convert_to_uluna']
-
         while True:    
             answer = input(question).strip(' ')
 
             if answer == USER_ACTION_QUIT:
                 break
 
-            if answer == '' and empty_allowed == False:
+            if answer == '':
                 print (f' 🛎️  The value cannot be blank or empty')
             else:
 
-                if answer == '' and empty_allowed == True:
-                    break
-
                 percentage = is_percentage(answer)
 
-                if 'percentages_allowed' in params and percentage == True:
+                #if 'percentages_allowed' in params and percentage == True:
+                if user_params.percentages_allowed == True and percentage == True:
                     answer = answer[0:-1]
 
                 if answer.replace('.', '').lstrip('0').isdigit():
-
-                    if 'percentages_allowed' in params and percentage == True:
-                        if int(answer) > params['min_number'] and int(answer) <= 100:
+                    if user_params.percentages_allowed == True and percentage == True:
+                        if int(answer) <= 100:
                             break
-                    elif 'max_number' in params:
-                        if 'min_equal_to' in params and (float(answer) >= params['min_number'] and float(answer) <= params['max_number']):
-                            break
-                        elif (float(answer) > params['min_number'] and float(answer) <= params['max_number']):
-                            break
-                    elif 'max_number' in params and float(answer) > params['max_number']:
-                        print (f" 🛎️  The amount must be less than {params['max_number']}")
-                    elif 'min_number' in params:
-                        
-                        if 'min_equal_to' in params:
-                            if float(answer) < params['min_number']:
-                                print (f" 🛎️  The amount must be greater than (or equal to) {params['min_number']}")
-                            else:
-                                break
                         else:
-                            if float(answer) <= params['min_number']:
-                                print (f" 🛎️  The amount must be greater than {params['min_number']}")
-                            else:
-                                break
+                            print (f" 🛎️  The percentage must be greater than 0% and less than (or equal to) 100%")
+                    
+                    elif user_params.max_number is not None and float(answer) > user_params.max_number:
+                        print (f" 🛎️  The amount must be less than {user_params.max_number}")
+                    elif user_params.max_number is not None and float(answer) <= user_params.max_number:
+                        break
                     else:
                         # This is just a regular number that we'll accept
+                        # NOTE: this is never triggered by any workflow so far
                         if percentage == False:
                             break
-
+                else:
+                    print (f" 🛎️  Please enter a valid amount.")
         if answer != '' and answer != USER_ACTION_QUIT:
-            if 'percentages_allowed' in params and percentage == True:
-                if 'convert_percentages' in params and params['convert_percentages'] == True:
+            if user_params.percentages_allowed and percentage == True:
+                if user_params.convert_percentages == True:
                     wallet:UserWallet = UserWallet()
-                    answer = float(wallet.convertPercentage(answer, params['keep_minimum'], params['max_number'], params['target_denom']))
+                    answer = float(wallet.convertPercentage(answer, user_params))
                 else:
                     answer = answer + '%'
-            else:
-                if convert_to_uluna == True:
-                    answer = int(multiply_raw_balance(answer, params['target_denom']))
 
         return str(answer)
     

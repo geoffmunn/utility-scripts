@@ -15,7 +15,7 @@ from constants.constants import (
     USER_ACTION_QUIT,
 )
 
-from classes.wallet import UserWallet
+from classes.wallet import UserWallet, UserParameters
 from classes.wallets import UserWallets
 from classes.send_transaction import send_transaction
 from classes.transaction_core import TransactionResult
@@ -159,7 +159,14 @@ def main():
 
     print (f"The {wallet.name} wallet holds {wallet.formatUluna(wallet.balances[denom], denom)} {FULL_COIN_LOOKUP[denom]}")
     print (f"NOTE: You can send the entire value of this wallet by typing '100%' - no minimum amount will be retained.")
-    uluna_amount:str  = wallet.getUserNumber('How much are you sending? ', {'max_number': float(wallet.formatUluna(wallet.balances[denom], denom, False)), 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': True, 'keep_minimum': False, 'target_denom': denom})
+    
+    user_params:UserParameters      = UserParameters()
+    user_params.max_number          = float(wallet.formatUluna(wallet.balances[denom], denom, False))
+    user_params.percentages_allowed = True
+    user_params.target_amount       = wallet.formatUluna(wallet.balances[denom], denom)
+    user_params.target_denom        = denom
+
+    uluna_amount:str  = wallet.getUserNumber('How much are you sending (Q to quit)? ', user_params)
 
     if uluna_amount == USER_ACTION_QUIT:
         print (' 🛑 Exiting...\n')

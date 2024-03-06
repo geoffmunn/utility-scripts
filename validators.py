@@ -22,6 +22,7 @@ from classes.common import (
 
 from classes.delegation_transaction import delegate_to_validator, undelegate_from_validator, switch_validator
 from classes.transaction_core import TransactionResult
+from classes.wallet import UserParameters
 from classes.wallets import UserWallets
 from classes.validators import Validators
 
@@ -83,6 +84,12 @@ def main():
     # Not required for listing undelegations, but no harm having it here:
     delegations:dict = wallet.delegations
 
+    # Set up the basic user params object
+    user_params:UserParameters      = UserParameters()
+    user_params.percentages_allowed = True
+    user_params.target_amount       = wallet.formatUluna(wallet.balances[ULUNA], ULUNA)
+    user_params.target_denom        = ULUNA
+    
     if user_action == USER_ACTION_VALIDATOR_DELEGATE:
 
         if ULUNA not in wallet.balances or wallet.balances[ULUNA] == 0:
@@ -103,7 +110,11 @@ def main():
 
         print (f"The {wallet.name} wallet holds {wallet.formatUluna(wallet.balances[ULUNA], ULUNA, True)}")
         print (f"NOTE: A minimum amount of {WITHDRAWAL_REMAINDER} LUNC will be retained for future transactions.")
-        delegated_uluna:int = int(wallet.getUserNumber('How much are you delegating? ', {'max_number': float(wallet.formatUluna(wallet.balances[ULUNA], ULUNA)), 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': True, 'keep_minimum': True, 'target_denom': ULUNA}))
+
+        # Update the user params object before we use it
+        user_params.max_number = float(wallet.formatUluna(wallet.balances[ULUNA], ULUNA))
+    
+        delegated_uluna:int = int(wallet.getUserNumber('How much are you delegating? ', user_params))
                 
         if delegated_uluna == 0:
             print (' 🛑 Delegated amount is zero, exiting...\n')
@@ -145,7 +156,11 @@ def main():
 
         print (f"The {wallet.name} wallet has {wallet.formatUluna(available_undelegation_uluna, ULUNA, True)} available to be undelegated.")
         print (f"NOTE: You can send the entire value of this delegation by typing '100%' - no minimum amount will be retained.")
-        undelegated_uluna:str = wallet.getUserNumber('How much are you undelegating? ', {'max_number': float(wallet.formatUluna(available_undelegation_uluna, ULUNA, False)), 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': True, 'keep_minimum': False, 'target_denom': ULUNA})
+
+        # Update the user params object before we use it
+        user_params.max_number = float(wallet.formatUluna(available_undelegation_uluna, ULUNA, False))
+        
+        undelegated_uluna:str = wallet.getUserNumber('How much are you undelegating? ', user_params)
         
         print (f"You are about to undelegate {wallet.formatUluna(undelegated_uluna, ULUNA, True)} from {user_validator['moniker']}.")
         print (' 🛎️  Undelegated funds will not be available for 21 days.')
@@ -194,7 +209,11 @@ def main():
         total_delegated_uluna = delegations[from_validator['moniker']]['balance_amount']
         print (f"The {from_validator['moniker']} wallet holds {wallet.formatUluna(total_delegated_uluna, ULUNA, True)}")
         print (f"NOTE: You can switch the entire value of this delegation by typing '100%' - no minimum amount will be retained.")
-        switched_uluna:float = wallet.getUserNumber('How much are you switching? ', {'max_number': float(wallet.formatUluna(total_delegated_uluna, ULUNA, False)), 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': True, 'keep_minimum': False, 'target_denom': ULUNA})
+
+        # Update the user params object before we use it
+        user_params.max_number = float(wallet.formatUluna(total_delegated_uluna, ULUNA, False))
+        
+        switched_uluna:float = wallet.getUserNumber('How much are you switching? ', user_params)
         
         print (f"You are about to switch {wallet.formatUluna(switched_uluna, ULUNA, True)} from {from_validator['moniker']} and move it to {to_validator['moniker']}.")
         complete_transaction = get_user_choice(' ❓ Do you want to continue? (y/n) ', [])

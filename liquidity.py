@@ -21,6 +21,7 @@ from constants.constants import (
 
 # https://www.reddit.com/r/CryptoCurrency/comments/1al52up/is_being_a_lp_liquidity_provider_actually/
 
+from classes.wallet import UserParameters
 from classes.wallets import UserWallets
 from classes.liquidity_transaction import LiquidityTransaction, join_liquidity_pool, exit_liquidity_pool
 from classes.transaction_core import TransactionResult
@@ -84,11 +85,22 @@ def main():
         print (f"\nThe {wallet.name} wallet holds {wallet.formatUluna(wallet.balances[denom], denom)} {FULL_COIN_LOOKUP[denom]}\n")
         print (f"NOTE: You can send the entire value of this wallet by typing '100%' - no minimum amount will be retained.")
 
-        amount_in:int = wallet.getUserNumber('How much are you sending? ', {'max_number': float(wallet.formatUluna(wallet.balances[denom], denom, False)), 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': True, 'keep_minimum': False, 'target_denom': denom})
+        user_params:UserParameters      = UserParameters()
+        user_params.max_number          = float(wallet.formatUluna(wallet.balances[denom], denom, False))
+        user_params.percentages_allowed = True
+        user_params.target_amount       = wallet.formatUluna(wallet.balances[denom], denom)
+        user_params.target_denom        = denom
         
-        liquidity_coin:Coin = wallet.createCoin(amount_in, denom)
-        coin_amount:float   = wallet.formatUluna(liquidity_coin.amount, liquidity_coin.denom)
+        amount_in:int = wallet.getUserNumber('How much are you sending (Q to quit)? ', user_params)
+        
+        if amount_in == USER_ACTION_QUIT:
+            print (' 🛑 Exiting...\n')
+            exit()
 
+        uluna_amount:float = float(amount_in) * ((10 ** get_precision(denom)))
+
+        print (f'You are about to add {wallet.formatUluna(uluna_amount, denom)} {FULL_COIN_LOOKUP[denom]} to Pool #{user_pool}.')
+        transaction_result:TransactionResult = join_liquidity_pool(wallet, user_pool, uluna_amount, True)
     else:
         # This is the exit pool logic
         # Get the assets for the summary list
@@ -109,7 +121,14 @@ def main():
         print ('\nHow much do you want to withdraw?')
         print ('You can type a percentage (eg 50%), or an exact amount of LUNC.')
 
-        user_withdrawal:str = wallet.getUserNumber('How much LUNC are you withdrawing (Q to quit)? ', {'max_number': float(pool_assets[ULUNA]), 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': False, 'keep_minimum': False, 'target_denom': ULUNA})
+        user_params:UserParameters      = UserParameters()
+        user_params.convert_percentages = False
+        user_params.max_number          = float(pool_assets[ULUNA]/ (10 ** get_precision(ULUNA)))
+        user_params.percentages_allowed = True
+        user_params.target_amount       = wallet.formatUluna(wallet.balances[denom], denom)
+        user_params.target_denom        = denom
+
+        user_withdrawal:str = wallet.getUserNumber('How much LUNC are you withdrawing (Q to quit)? ', user_params)
         
         if user_withdrawal == USER_ACTION_QUIT:
             print (' 🛑 Exiting...\n')
@@ -117,18 +136,13 @@ def main():
 
         if is_percentage(user_withdrawal):
             amount_out:float  = float(user_withdrawal[:-1]) / 100
-            coin_amount:float = round(pool_assets[ULUNA] * amount_out, 2)
+            uluna_amount:float = round(pool_assets[ULUNA] * amount_out, 2)
         else:
             # If this is a precise amount, we need to convert this into a percentage of the total amount of LUNC   
-            coin_amount = user_withdrawal
-            amount_out:float  = round(int(coin_amount) / int(pool_assets[ULUNA]), 2)
+            uluna_amount = float(user_withdrawal) * (10 ** get_precision(ULUNA))
+            amount_out:float  = round(int(uluna_amount) / int(pool_assets[ULUNA]), 2)
 
-    if join_or_exit == JOIN_POOL:
-        print (f'You are about to add {wallet.formatUluna(amount_in, denom)} {FULL_COIN_LOOKUP[denom]} to Pool #{user_pool}.')
-        transaction_result:TransactionResult = join_liquidity_pool(wallet, user_pool, amount_in, True)
-    else:
-        print (f'You are about to withdraw {coin_amount} LUNC ({round(int(coin_amount) / int(pool_assets[ULUNA]) * 100, 2)}%) from Pool #{user_pool}.')
-        
+        print (f'You are about to withdraw {wallet.formatUluna(uluna_amount, denom)} LUNC ({round(int(uluna_amount) / int(pool_assets[ULUNA]) * 100, 2)}%) from Pool #{user_pool}.')
         transaction_result:TransactionResult = exit_liquidity_pool(wallet, user_pool, amount_out, True)
 
     transaction_result.showResults()

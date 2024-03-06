@@ -13,6 +13,7 @@ from constants.constants import (
 
 from classes.swap_transaction import swap_coins
 from classes.transaction_core import TransactionResult
+from classes.wallet import UserParameters
 from classes.wallets import UserWallet, UserWallets
 
 from terra_classic_sdk.core.coin import Coin
@@ -60,7 +61,14 @@ def main():
 
     available_balance:float = wallet.formatUluna(wallet.balances[coin_from], coin_from)
     print (f'This coin has a maximum of {available_balance} {FULL_COIN_LOOKUP[coin_from]} available.')
-    swap_uluna = wallet.getUserNumber("How much do you want to swap? (Or type 'Q' to quit) ", {'max_number': float(available_balance), 'min_number': 0, 'percentages_allowed': True, 'convert_percentages': True, 'keep_minimum': False, 'target_denom': coin_from})
+
+    user_params:UserParameters      = UserParameters()
+    user_params.max_number          = float(available_balance)
+    user_params.percentages_allowed = True
+    user_params.target_amount       = wallet.formatUluna(wallet.balances[coin_from], coin_from)
+    user_params.target_denom        = coin_from
+
+    swap_uluna = wallet.getUserNumber("How much do you want to swap? (Or type 'Q' to quit) ", user_params)
 
     if swap_uluna == USER_ACTION_QUIT:
         print (' 🛑 Exiting...\n')
