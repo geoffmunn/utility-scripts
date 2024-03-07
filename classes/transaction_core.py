@@ -18,6 +18,7 @@ from classes.common import (
 
 from constants.constants import (
     BASE_SMART_CONTRACT_ADDRESS,
+    CANDY_SMART_CONTRACT_ADDRESS,
     CHAIN_DATA,
     COIN_ALIASES,
     CREMAT_SMART_CONTRACT_ADDRESS,
@@ -435,17 +436,17 @@ class TransactionCore():
                                 transaction_result.log_found = True
 
                             # GRDX/UCREMAT/ULENNY -> ULUNA swaps (will override the standard swaps detection done earlier)
-                            if '_contract_address' in log.events_by_type['wasm'] and (GRDX_SMART_CONTRACT_ADDRESS in log.events_by_type['wasm']['_contract_address'] or CREMAT_SMART_CONTRACT_ADDRESS in log.events_by_type['wasm']['_contract_address'] or LENNY_SMART_CONTRACT_ADDRESS in log.events_by_type['wasm']['_contract_address']):
+                            if '_contract_address' in log.events_by_type['wasm'] and (GRDX_SMART_CONTRACT_ADDRESS in log.events_by_type['wasm']['_contract_address'] or CANDY_SMART_CONTRACT_ADDRESS in log.events_by_type['wasm']['_contract_address'] or CREMAT_SMART_CONTRACT_ADDRESS in log.events_by_type['wasm']['_contract_address'] or LENNY_SMART_CONTRACT_ADDRESS in log.events_by_type['wasm']['_contract_address']):
                                 if 'action' in log.events_by_type['wasm'] and log.events_by_type['wasm']['action'][0] == 'transfer':
                                     # Sending GRDX/ULENNY to another wallet
                                     transaction_result.result_sent     = Coin.from_data({'amount': log.events_by_type['wasm']['amount'][0], 'denom': self.denom})
                                     transaction_result.result_received = Coins.from_proto([Coin.from_data({'amount': log.events_by_type['wasm']['amount'][0], 'denom': self.denom})])
                                 else:
-                                    # Assumes swaps between GRDX/UCREMAT/ULENN -> ULUNA
+                                    # Assumes swaps between GRDX/UCANDY/UCREMAT/ULENNY -> ULUNA
                                     transaction_result.result_sent     = Coin.from_data({'amount': log.events_by_type['wasm']['offer_amount'][0], 'denom': log.events_by_type['wasm']['offer_asset'][0]})
                                     transaction_result.result_received = Coins.from_proto([Coin.from_data({'amount': log.events_by_type['wasm']['return_amount'][0], 'denom': log.events_by_type['wasm']['ask_asset'][0]})])
                                     
-                                transaction_result.log_found       = True
+                                transaction_result.log_found = True
 
                         if transaction_result.log_found == False:
                             print ('\n@TODO: events by type not returned, please check the results:')
