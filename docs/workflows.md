@@ -103,6 +103,7 @@ Steps can consist of one or more of the following:
 
  ```yml
  - action: withdraw
+   description: (optional) Withdraw rewards from a validator
    when:
      - always (optional, always run this step)
      - LUNC > 1000 (optional, only run when the LUNC amount is greater than 1000)
@@ -127,6 +128,7 @@ Steps can consist of one or more of the following:
         - Workflow wallet 1
       steps:
         - action: withdraw
+          description: Withdraw rewards from the validator
           when:
             - always
  ```
@@ -143,6 +145,7 @@ workflows:
       - terra1sk06e3dyexuq4shw77y3dsv480xv42mq73anxu
     steps:
       - action: withdraw
+        description: Withdraw rewards from the validator if there are more than 1000 LUNC on a Sunday at 5pm
         when:
           - LUNC > 1000
           - Day = Sunday
@@ -159,6 +162,7 @@ Redelegation is a special action because it only works if you have completed a '
 
 ```yml
 - action: redelegate
+  description: (optional) Redelegate rewards back to the same validator
   amount: 100% LUNC / 500 LUNC (required, takes either a percentage or a specific amount)
   when: 
     - always (optional, always run this step)
@@ -178,9 +182,11 @@ workflows:
       - Workflow wallet 1
     steps:
       - action: withdraw
+        description: Withdraw rewards from the validator if there are more than 1000 LUNC
         when: 
           - LUNC > 1000
       - action: redelegate
+        description: Redelegate rewards back to the same validator
         amount: 100% LUNC
         when: 
           - always
@@ -196,10 +202,12 @@ workflows:
       - Workflow wallet 1
     steps:
       - action: withdraw
+        description: Withdraw rewards from the validator if there are more than 1000 LUNC and it is a Sunday
         when: 
           - LUNC > 1000
           - Day = Sunday
       - action: redelegate
+        description: Redelegate 50% of the rewards back to the same validator
         amount: 50% LUNC
         when: 
           - always
@@ -217,11 +225,13 @@ workflows:
       - terra1sk06e3dyexuq4shw77y3dsv480xv42mq73anxu
     steps:
       - action: withdraw
+        description: Withdraw rewards from the validator if there are more than 1000 LUNC and it is 5pm on Sunday
         when: 
           - LUNC > 1000
           - Day = Sunday
           - Time = 5pm
       - action: redelegate
+        description: Redelegate 600 LUNC to the same validator
         amount: 600 LUNC
         when:
           - always
@@ -236,6 +246,7 @@ If you specify '100% LUNC', a small amount will be retained so you can still do 
 
 ```yml
 - action: delegate
+  description: (optional) Delegate a specific amount to a validator
   amount: 100% LUNC / 500 LUNC (required, takes either a percentage or a specific amount)
   validator: validator name (required)
   when: 
@@ -256,6 +267,7 @@ workflows:
       - Workflow wallet 1
     steps:
       - action: delegate
+        description: Delegate all available LUNC to the validator
         amount: 100% LUNC
         validator: 🦅 Garuda Universe - 🎮 Airdrop Gaming Token💰
         when: 
@@ -274,6 +286,7 @@ workflows:
       - terra1sk06e3dyexuq4shw77y3dsv480xv42mq73anxu
     steps:
       - action: delegate
+        description: Delegate 500 LUNC to the validator
         amount: 500 LUNC
         validator: 🦅 Garuda Universe - 🎮 Airdrop Gaming Token💰
         when: 
@@ -292,6 +305,7 @@ You can send any supported coin to another wallet. This is especially useful for
 
 ```yml
 - action: send
+  description: (optional) Delegate a specific amount to a validator
   amount: 100% LUNC / 500 LUNC (required, takes either a percentage or a specific amount)
   memo: A specific message (optional)
   recipient: The recipient address (required)
@@ -314,6 +328,7 @@ workflows:
       - Workflow wallet 1
     steps:
       - action: send
+        description: Send all available GRDX to the Workflow 3 wallet if there is more than 10 GRDX
         amount: 100% GRDX
         memo: Tidying up GRDX amounts
         recipient: Workflow Wallet 3
@@ -333,15 +348,18 @@ workflows:
       - terra1sk06e3dyexuq4shw77y3dsv480xv42mq73anxu
     steps:
       - action: withdraw
+        description: Withdraw rewards from the validator if there are more than 1000 LUNC
         when: 
           - LUNC >= 1000
       - action: send
+        description: Send 200 LUNC to the Workflow 3 wallet
         amount: 200 LUNC
         memo: Here is 200 LUNC
         recipient: Workflow Wallet 3
         when: 
           - LUNC >= 1000
       - action: delegate
+        description: Delegate all remaining LUNC to the validator
         amount: 100% LUNC
         validator: FireFi Capital
         when: 
@@ -360,6 +378,7 @@ wallet:  [wallet name or address]
 
 ```yml
 - action: swap
+  description: (optional) Swap some LUNC to another coin
   amount: 100% LUNC / 500 LUNC (required, takes either a percentage or a specific amount)
   swap to: Denomination name (required, ie LUNC, OSMO)
   wallet: Wallet name (optional - required if the network has changed during this workflow)
@@ -383,9 +402,11 @@ workflows:
       - Workflow Wallet 1
     steps:
       - action: withdraw
+        description: Withdraw rewards from the validator if there are more than 1000 LUNC
         when: 
           - LUNC > 1000
       - action: swap
+        description: Swap all available LUNC to USTC if there are more than 1000 LUNC
         amount: 100% LUNC
         swap to: USTC
         when: 
@@ -402,14 +423,17 @@ workflows:
       - Workflow Wallet 1
     steps:
       - action: withdraw
+        description: Withdraw rewards from the validator if there are more than 1000 LUNC
         when: 
           - LUNC > 1000
       - action: swap
+        description: Swap 50% of all available LUNC to BASE
         amount: 50% LUNC
         swap to: BASE
         when: 
           - always
       - action: swap
+        description: Swap all remaining LUNC to GRDX
         amount: 100%
         swap to: GRDX
         when: 
@@ -426,20 +450,24 @@ workflows:
       - Workflow Wallet 1
     steps:
       - action: withdraw
+        description: Withdraw rewards from the validator if there are more than 1000 LUNC
         when: 
           - LUNC > 1000
       - action: send
+        description: Send all available LUNC to the Osmosis wallet if there is more than 1000 LUNC
         amount: 100% LUNC
         recipient:  Osmosis Workflow 1
         when:
           - LUNC > 1000
       - action: swap
+        description: Swap 50% of all LUNC in the Osmosis wallet to KUJI
         wallet:  Osmosis Workflow 1
         amount: 50% LUNC
         swap to: KUJI
         when:
           - always
       - action: swap
+        description: Swap all remaining LUNC in the Osmosis wallet to CRO
         wallet:  Osmosis Workflow 1
         amount: 100% LUNC
         swap to: CRO
@@ -461,6 +489,7 @@ To see what pool IDs are available, run the ```liquidity.py``` script.
 
 ```yml
 - action: join pool
+  description: (optional) Join a liquidity pool in Osmosis
   amount: 100% LUNC / 500 LUNC (required, takes either a percentage or a specific amount)
   pool id: pool ID (required - a pool with LUNC assets)
   wallet: Wallet name (optional - required if the network has changed during this workflow)
@@ -484,6 +513,7 @@ workflows:
       - Osmosis Workflow 1
     steps:
       - action: join pool
+        description: Add all available LUNC to pool 562
         amount: 100% LUNC
         pool id: 562
         when:
@@ -500,15 +530,18 @@ workflows:
       - Workflow Wallet 1
     steps:
       - action: withdraw
+        description: Withdraw rewards from the validator if there are more than 1000 LUNC
         when: 
           - LUNC > 1000
       - action: send
+        description: Send all available LUNC to the Osmosis Workflow 1 wallet
         amount: 100% LUNC
         memo: Send to Osmosis for Pool 562
         recipient: Osmosis Workflow 1
         when:
           - always
       - action: join pool
+        description: Add all available LUNC in the Osmosis wallet to pool 562
         wallet: Osmosis Workflow 1
         amount: 100% LUNC
         pool id: 562
@@ -527,6 +560,7 @@ You can exit a pool on Osmosis if it contains a LUNC asset - basically the same 
 
 ```yml
 - action: exit pool
+  description: (optional) Exit an Osmosis liquidity pool
   amount: 100% LUNC / 500 LUNC (required, takes either a percentage or a specific amount)
   pool id: pool ID (required - a pool with LUNC assets)
   wallet: Wallet name (optional - required if the network has changed during this workflow)
@@ -550,6 +584,7 @@ workflows:
       - Osmosis Workflow 1
     steps:
       - action: exit pool
+        description: Remove 50% of LUNC from pool 562 if there is more than 500 LUNC there
         amount: 50% LUNC
         pool id: 562
         when:
@@ -565,6 +600,7 @@ workflows:
       - Osmosis Workflow 1
     steps:
       - action: exit pool
+        description: Remove 500 LUNC from pool 562 if there is more than 500 LUNC there
         amount: 500 LUNC
         pool id: 562
         when:
@@ -581,8 +617,8 @@ You can also switch validators by moving your delegations from one validator to 
 **Definition:**
 
 ```yml
-
 - action: switch validator
+  description: (optional) Switch to another validator
   amount: 100% LUNC / 500 LUNC (required, takes either a percentage or a specific amount)
   old validator: Old validator name (required)
   new validator: New validator name (required)
@@ -607,6 +643,7 @@ workflows:
       - Workflow Wallet 1
     steps:
       - action: switch validator
+        description: Move 20% of delegated LUNC to a new validator if it's 11pm on Sunday
         amount: 20% LUNC
         old validator: FireFi Capital
         new validator: 🦅 Garuda Universe - 🎮 Airdrop Gaming Token💰
@@ -623,6 +660,7 @@ To be honest, I'm not sure why you'd want to unstake from a validator via a work
 
 ```yml
 - action: unstake delegation
+  description: (optional) Unstake a delegation from a validator
   amount: 100% LUNC / 500 LUNC (required, takes either a percentage or a specific amount)
   validator: Validator name (required)
   when:
@@ -643,6 +681,7 @@ workflows:
       - Workflow Wallet 1unexpected error occurred in the governance vote functi
     steps:
       - action: unstake delegation
+        description: Undelegate 10% of delegated LUNC if it's 3pm on Sunday
         amount: 10% LUNC
         validator: FireFi Capital
         when:
