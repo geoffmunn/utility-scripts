@@ -3,7 +3,8 @@
 
 from classes.common import (
     check_database,
-    check_version
+    check_version,
+    get_precision
 )
 
 from constants.constants import (
@@ -73,7 +74,9 @@ def main():
     if swap_uluna == USER_ACTION_QUIT:
         print (' 🛑 Exiting...\n')
         exit()
-        
+
+    swap_uluna = float(swap_uluna) * (10 ** get_precision(coin_from))
+                          
     print ('\nWhat coin do you want to swap TO?')
     coin_to, answer, estimated_amount = wallet.getCoinSelection("Select a coin number 1 - " + str(len(FULL_COIN_LOOKUP)) + ", 'X' to continue, or 'Q' to quit: ", wallet.balances, False, {'denom':coin_from, 'amount':swap_uluna})
 
