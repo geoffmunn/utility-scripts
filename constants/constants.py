@@ -7,6 +7,9 @@ WITHDRAWAL_REMAINDER = 250   # This is the amount of Lunc we want to keep after 
 SEARCH_RETRY_COUNT   = 50    # This is the number of times we will check for a transaction to appear in the chain before deciding it didn't work.
 HIDE_DISABLED_COINS  = True  # Some coins are not currently available. Functionality is mostly there, but swaps etc won't work
 
+# Used for the .netrc file for passwordless authentication:
+NETRC_MACHINE_NAME   = 'LUNCworkflows' 
+
 # System settings - these can be changed, but shouldn't be necessary
 GAS_PRICE_URI            = 'https://terra-classic-fcd.publicnode.com/v1/txs/gas_prices'
 #GAS_PRICE_URI            = 'https://rest.cosmos.directory/terra/v1/txs/gas_prices'
@@ -14,6 +17,7 @@ TOKEN_LIST               = 'https://assets.terrarebels.net/cw20/tokens.json'
 
 # File names:
 CONFIG_FILE_NAME         = 'user_config.yml'
+WORKFLOWS_FILE_NAME      = 'user_workflows.yml'
 DB_FILE_NAME             = 'osmosis.db'
 VERSION_URI              = 'https://raw.githubusercontent.com/geoffmunn/utility-scripts/main/version.json'
 
@@ -29,18 +33,22 @@ OSMOSIS_POOL_TAX          = 0.025    # What it costs to exit a liquidity pool on
 
 # Swap contracts can be found here
 # https://assets.terra.money/cw20/pairs.dex.json
-TERRASWAP_UUSD_TO_ULUNA_ADDRESS = 'terra1l7vy20x940je7lskm6x9s839vjsmekz9k9mv7g'
+TERRASWAP_UUSD_TO_ULUNA_ADDRESS =  'terra1l7vy20x940je7lskm6x9s839vjsmekz9k9mv7g'
 #TERRASWAP_UKRW_TO_UUSD_ADDRESS  = 'terra1untf85jwv3kt0puyyc39myxjvplagr3wstgs5s'
 #ASTROPORT_UUSD_TO_MINA_ADDRESS  = 'terra134m8n2epp0n40qr08qsvvrzycn2zq4zcpmue48'
 #ASTROPORT_UUSD_TO_UKUJI_ADDRESS  = 'terra1hasy32pvxmgu485x5tujylemqxynsv72lsu7ve'
 #ASTROPORT_UUSD_TO_ULUNA_ADDRESS  = 'terra1m6ywlgn6wrjuagcmmezzz2a029gtldhey5k552'
-KUJI_SMART_CONTACT_ADDRESS      = 'terra1xfsdgcemqwxp4hhnyk4rle6wr22sseq7j07dnn'
-TERRASWAP_UKRW_TO_ULUNA_ADDRESS = 'terra1erfdlgdtt9e05z0j92wkndwav4t75xzyapntkv'
+KUJI_SMART_CONTACT_ADDRESS      =  'terra1xfsdgcemqwxp4hhnyk4rle6wr22sseq7j07dnn'
+TERRASWAP_UKRW_TO_ULUNA_ADDRESS =  'terra1erfdlgdtt9e05z0j92wkndwav4t75xzyapntkv'
 #TERRASWAP_UKUJI_TO_ULUNA_ADDRESS = 'terra19qx5xe6q9ll4w0890ux7lv2p4mf3csd4qvt3ex'
-TERRASWAP_ULUNA_TO_UUSD_ADDRESS = 'terra1l7vy20x940je7lskm6x9s839vjsmekz9k9mv7g'
-BASE_SMART_CONTRACT_ADDRESS     = 'terra1uewxz67jhhhs2tj97pfm2egtk7zqxuhenm4y4m'
-GRDX_SMART_CONTRACT_ADDRESS     = 'terra1mkl973d34jsuv0whsfl43yw3sktm8kv7lgn35fhe6l88d0vvaukq5nq929'
+TERRASWAP_ULUNA_TO_UUSD_ADDRESS =  'terra1l7vy20x940je7lskm6x9s839vjsmekz9k9mv7g'
+BASE_SMART_CONTRACT_ADDRESS     =  'terra1uewxz67jhhhs2tj97pfm2egtk7zqxuhenm4y4m'
+GRDX_SMART_CONTRACT_ADDRESS     =  'terra1mkl973d34jsuv0whsfl43yw3sktm8kv7lgn35fhe6l88d0vvaukq5nq929'
 TERRASWAP_GRDX_TO_LUNC_ADDRESS  =  'terra12f3f5fzfzxckc0qlv3rmwwkjfhzevpwmx77345n0zuu2678vxf0sm6vvcw'
+LENNY_SMART_CONTRACT_ADDRESS    =  'terra1gcr97yaq923qaxa3gzn70kpx29c28m2c3prxn66vev3segea7y4qps5vj4'
+TERRAPORT_SWAP_ADDRESS          = 'terra1vrqd7fkchyc7wjumn8fxly88z7kath4djjls3yc5th5g76f3543salu48s'
+CREMAT_SMART_CONTRACT_ADDRESS   = 'terra1zkhwtm4a559emekwj7z4vklzqupgjyad8ncpwvav38y5ef6g5tjse7ceus'
+CANDY_SMART_CONTRACT_ADDRESS    = 'terra1nuwdr5zaul2gnq88xapq8ythmaw4092kt8lxsl6jd36h47u8vpcqnrmdcm'
 
 # Do not change these:
 
@@ -88,6 +96,10 @@ PROPOSAL_VOTE_NO_WITH_VETO = 4
 JOIN_POOL = 'j'
 EXIT_POOL = 'e'
 
+# Output/logging types:
+OUTPUT_USER  = 0
+OUTPUT_ERROR = 1
+
 # Coin constants:
 AACRE     = 'aacre'
 AARCH     = 'aarch'
@@ -115,7 +127,9 @@ UBAND     = 'uband'
 UBASE     = 'ubase'
 UBNT      = 'ubnt'
 UBTSG     = 'ubtsg'
+UCANDY    = 'ucandy'
 UCMDX     = 'ucmdx'
+UCREMAT   = 'ucremat'
 UCTK      = 'uctk'
 UDEC      = 'udec'
 UDSM      = 'udsm'
@@ -130,6 +144,7 @@ UKAVA     = 'ukava'
 UKRW      = 'ukrw'
 UKUJI     = 'ukuji'
 ULAMB     = 'ulamb'
+ULENNY    = 'ulenny'
 ULUNA     = 'uluna'
 ULUNA2    = 'uluna2'
 UMARS     = 'umars'
@@ -185,6 +200,7 @@ FULL_COIN_LOOKUP = {
     'uchf':    'CHTC',
     UCMDX:     'Comdex',
     'ucny':    'CNTC',
+    UCREMAT:   'CREMAT',
     BASECRO:   'CRO',
     ACUDOS:    'Cudos',
     UDEC:      'Decentr',
@@ -195,7 +211,7 @@ FULL_COIN_LOOKUP = {
     'ueur':    'EUTC',
     AEVMOS:    'Evmos',
     AFET:      'Fetch.ai',
-    GRDX:      'GarudaX Token',
+    GRDX:      'GRDX',
     'ugbp':    'GBTC',
     UGRAVITON: 'Gravity Bridge',
     'uhkd':    'HKTC',
@@ -211,7 +227,9 @@ FULL_COIN_LOOKUP = {
     'ukrw':    'KRTC',
     UKUJI:     'KUJI',
     ULAMB:     'Lambda',
+    ULENNY:    'Lenny',
     NANOLIKE:  'Likecoin',
+    UCANDY:    'LNC',
     ULUNA2:    'LUNA',
     ULUNA:     'LUNC',
     UMARS:     'Mars Protocol',
@@ -263,6 +281,13 @@ FULL_COIN_LOOKUP = {
 BASIC_COIN_LOOKUP = {
     ULUNA: 'LUNC',
     UUSD:  'USTC'
+}
+
+COIN_ALIASES = {
+    CANDY_SMART_CONTRACT_ADDRESS:   'LNC',
+    CREMAT_SMART_CONTRACT_ADDRESS:  'CREMAT',
+    LENNY_SMART_CONTRACT_ADDRESS:   'Lenny',
+    TERRASWAP_GRDX_TO_LUNC_ADDRESS: 'GRDX'    
 }
 
 # These coins will be removed from the full coin lookup

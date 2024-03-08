@@ -133,3 +133,8 @@ user_config.yml
 
 # OS X junk
 .DS_Store
+
+# Workflows we want to ignore
+workflows.yml
+user_workflows.yml
+test.yml

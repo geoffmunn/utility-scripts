@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 
+from __future__ import annotations
+
 from hashlib import sha256
 from pycoingecko import CoinGeckoAPI
 import sqlite3
 from sqlite3 import Cursor, Connection
 
 from classes.common import (
-    getPrecision
+    get_precision,
+    get_user_choice
 )
 
 from constants.constants import (
@@ -23,7 +26,7 @@ from constants.constants import (
 )
 
 from classes.terra_instance import TerraInstance    
-from classes.transaction_core import TransactionCore
+from classes.transaction_core import TransactionCore, TransactionResult
 from classes.wallet import UserWallet
 
 from terra_classic_sdk.client.lcd.api.tx import (
@@ -37,7 +40,7 @@ from terra_classic_sdk.core.tx import Tx
 from terra_classic_sdk.exceptions import LCDResponseError
 from terra_classic_sdk.key.mnemonic import MnemonicKey
 
-from terra_classic_sdk.core.osmosis import MsgJoinPool, MsgJoinSwapExternAmountIn, PoolAsset, MsgExitPool
+from terra_classic_sdk.core.osmosis import MsgJoinSwapExternAmountIn, PoolAsset, MsgExitPool
 
 class LiquidityTransaction(TransactionCore):
 
@@ -68,6 +71,11 @@ class LiquidityTransaction(TransactionCore):
         NOTE: the amount_out MUST be a percentage decimal value.
 
         This is used for exiting a pool.
+
+        @params:
+            - None
+
+        @return: the number of shares that this transaction will return
         """
 
         # Get the number of shares that this user has
@@ -84,16 +92,25 @@ class LiquidityTransaction(TransactionCore):
         This only works with a single coin liquidity investment.
 
         This is used for joining a pool.
+
+        @params:
+            - coin: a Coin object with the amount that we are joining with
+
+        @return: the number of shares that this transaction will return
         """
 
         # Get the pool details from the network
         pool:list = self.getOsmosisPool(self.pool_id)
         
+        total_weight:int = int(pool.total_weight)
+
         # Get the actual amount of this asset in the pool
+        divisor:float = 0
         asset:PoolAsset
         for asset in pool.pool_assets:
             if asset.token.denom == coin.denom:
                 pool_asset_amount:int = int(asset.token.amount)
+                divisor:float =  total_weight / int(asset.weight)
                 break
                 
         shift_val:int         = 10 ** 18
@@ -101,13 +118,19 @@ class LiquidityTransaction(TransactionCore):
         total_share_exp:float = float(int(pool.total_shares.amount) / shift_val)
 
         # This is the basic amount we expect to receive
-        share_out_amount:int = ((token_in_amount * total_share_exp) / pool_asset_amount) * shift_val
+        share_out_amount:int = (((token_in_amount * total_share_exp) / pool_asset_amount) * shift_val) / divisor
 
         return share_out_amount
 
-    def create(self, seed:str, denom:str = 'uluna'):
+    def create(self, seed:str, denom:str = 'uluna') -> LiquidityTransaction:
         """
-        Create a swap object and set it up with the provided details.
+        Create a liquidity object and set it up with the provided details.
+
+        @params:
+            - seed: the wallet seed so we can create the wallet
+            - denom: what denomination are we sending? It will usually be LUNC
+
+        @return: self
         """
 
         # Create the terra instance
@@ -123,10 +146,15 @@ class LiquidityTransaction(TransactionCore):
 
         return self
     
-    def exitPool(self):
+    def exitPool(self) -> bool:
         """
         Join a pool with the information we have so far.
         If fee is None then it will be a simulation.
+
+        @params:
+            - None
+
+        @return: true/false depending on if the transaction succeeded
         """
 
         try:
@@ -192,6 +220,11 @@ class LiquidityTransaction(TransactionCore):
 
         Outputs:
         - self.fee - requested_fee object
+
+        @params:
+            - None
+
+        @return: true/false depending on if the transaction succeeded
         """
 
         # Reset these values in case this is a re-used object:
@@ -229,14 +262,19 @@ class LiquidityTransaction(TransactionCore):
         else:
             return False
         
-    def getAssetValues(self, assets) -> dict:
+    def getAssetValues(self, assets:dict) -> dict:
         """
-        Go through the asset list and retrieve a price for each one
+        Go through the asset list and retrieve a price for each one.
+
+        @params:
+            - assets: a dictionary of the assets we want prices for
+
+        @return: a dictionary of assets and their prices
         """
 
         prices:dict = {}
         for asset_denom in assets:
-            prices[asset_denom] = assets[asset_denom] * self.wallet.getCoinPrice([asset_denom])[asset_denom]
+            prices[asset_denom] = (assets[asset_denom] / (10 ** get_precision(asset_denom))) * self.wallet.getCoinPrice([asset_denom])[asset_denom]
 
         return prices
     
@@ -244,6 +282,11 @@ class LiquidityTransaction(TransactionCore):
         """
         Get the pool from Osmosis.
         Cache the results so we don't have to do this again.
+
+        @params:
+            - assets: a dictionary of the assets we want prices for
+
+        @return: a dictionary of assets and their prices
         """
 
         if pool_id in self.cached_pools:
@@ -261,6 +304,11 @@ class LiquidityTransaction(TransactionCore):
         """
         Get the assets for the pool, but converted into an actual amount.
         If this pool does not exist in the wallet pool list, then it will return an empty set.
+
+        @params:
+            - None
+
+        @return: a dictionary of assets and amounts for the current pool
         """
 
         asset_list:dict = {}
@@ -276,17 +324,21 @@ class LiquidityTransaction(TransactionCore):
             asset:PoolAsset
             for asset in pool.pool_assets:
                 denom:str     = self.denomTrace(asset.token.denom)
-                precision:int = getPrecision(denom)
-            
+                
                 # Add this to the list
-                asset_list[denom] = int(asset.token.amount) / share_fraction / (10 ** precision)
+                asset_list[denom] = int(asset.token.amount) / share_fraction
 
         return asset_list
     
-    def getPoolSelection(self, question:str, wallet:dict, denom:str):
-        #def getCoinSelection(self, question:str, coins:dict, only_active_coins:bool = True, estimation_against:dict = None):
+    def getPoolSelection(self, question:str, wallet:UserWallet) -> list[int, str]:
         """
         Return a selected pool based on the provided list.
+
+        @params:
+            - question: what question are we prompting the user with?
+            - wallet: the wallet we will be using for this transaction
+
+        @return: the selected pool and the answer
         """
 
         label_widths:list = []
@@ -348,8 +400,8 @@ class LiquidityTransaction(TransactionCore):
             # Store this so we don't have to do this again
             pool_balances[pool_id] = user_balance
 
-            if len(user_balance) > label_widths[3]:
-                label_widths[3] = user_balance
+            if len(user_balance) > int(label_widths[3]):
+                label_widths[3] = int(user_balance)
             
         padding_str:str   = ' ' * 100
         header_string:str = ''
@@ -442,6 +494,11 @@ class LiquidityTransaction(TransactionCore):
         """
         Join a pool with the information we have so far.
         If fee is None then it will be a simulation.
+
+        @params:
+            - None
+
+        @return: true/false depending on if the transaction succeeded
         """
 
         try:
@@ -497,8 +554,13 @@ class LiquidityTransaction(TransactionCore):
 
         Outputs:
         self.fee - requested_fee object
-        """
 
+        @params:
+            - None
+
+        @return: true/false depending on if the transaction succeeded
+        """
+        
         # Reset these values in case this is a re-used object:
         self.account_number:int = self.current_wallet.account_number()
         self.fee:Fee            = None
@@ -509,16 +571,16 @@ class LiquidityTransaction(TransactionCore):
         liquidity_denom:str = self.IBCfromDenom(self.source_channel, ULUNA)
         
         # This is the amount we are adding to the pool
-        token_in_coin:Coin = Coin(liquidity_denom, int(self.amount_in))
+        token_in_coin:Coin = Coin(liquidity_denom, int(float(self.amount_in)))
 
-        # Divide by 2 needs to be replaced with the actual percentage amount
-        self.share_out_amount:int = self.calcShareOutAmount(token_in_coin) / 2
+        # This is the final amount we expect to get
+        self.share_out_amount:int = self.calcShareOutAmount(token_in_coin)
 
         # Reduce it by the spread amount
         self.share_out_amount = round(self.share_out_amount * (1 - self.max_spread))
 
         # This is the amount we are contributing. It will be resized by the pool depending on the share split of each asset
-        token_in_coin      = {'amount': int(self.amount_in), 'denom': liquidity_denom}
+        token_in_coin      = {'amount': int(float(self.amount_in)), 'denom': liquidity_denom}
         self.token_in_coin = token_in_coin
 
         # Perform the liquidity action as a simulation, with no fee details
@@ -546,9 +608,14 @@ class LiquidityTransaction(TransactionCore):
         else:
             return False
         
-    def poolList(self, liquidity_asset_denom:str):
+    def poolList(self, liquidity_asset_denom:str) -> dict:
         """
         Get the entire list of pools that match the supplied token as a liquidity asset
+
+        @params:
+            - liquidity_asset_denom: the denom we want pools for
+
+        @return: a dict with the pools and the relevant details
         """
 
         all_pools:str = "SELECT pool_id, token_readable_denom FROM asset WHERE pool_id IN (SELECT pool_id FROM asset WHERE token_readable_denom = ?);"
@@ -564,15 +631,16 @@ class LiquidityTransaction(TransactionCore):
         for row in rows:
             if row[0] not in pools:
                 # If this pool is not in the list, then add it
-                pool:list        = self.getOsmosisPool(row[0])
+                pool:list = self.getOsmosisPool(row[0])
 
                 # Based on the assets, get the value of this pool:
                 pool_balance:float = 0
-                pool_asset:PoolAsset
-                valid_pool:bool = True
+                valid_pool:bool    = True
 
                 # To make things faster, we'll query all the denoms in one go:
                 cg_denom_list:list = []
+
+                pool_asset:PoolAsset
                 for pool_asset in pool.pool_assets:
                     readable_denom:str = self.denomTrace(pool_asset.token.denom)
                     
@@ -594,13 +662,13 @@ class LiquidityTransaction(TransactionCore):
                         valid_pool = False
                         break
 
-                    asset_amount:float = int(pool_asset.token.amount) / (10 ** getPrecision(readable_denom))
+                    asset_amount:float = int(pool_asset.token.amount) / (10 ** get_precision(readable_denom))
 
                     price:float   = prices[readable_denom]
                     pool_balance += (price * asset_amount)
 
                 if valid_pool == True:
-                    pools[int(row[0])]    = {'assets': [], 'liquidity': pool_balance}
+                    pools[int(row[0])] = {'assets': [], 'liquidity': pool_balance}
                 
             # Otherwise, add this new asset to the existing pool
             if int(row[0]) in pools:
@@ -614,6 +682,11 @@ class LiquidityTransaction(TransactionCore):
         The self.amount_out needs to be a percentage.
 
         This is used for exiting a pool.
+
+        @params:
+            - None
+
+        @return: a list with the coins that this transaction will return
         """
 
         token_out_list:list = []
@@ -634,10 +707,190 @@ class LiquidityTransaction(TransactionCore):
             asset_amount:float = int(asset.token.amount) / share_fraction
 
             # This is the actual amount we're removing, minus the pool tax
-            user_amount:int    = int(int(asset_amount * self.amount_out) * (1 - OSMOSIS_POOL_TAX))
+            user_amount:int = int(int(asset_amount * self.amount_out) * (1 - OSMOSIS_POOL_TAX))
             
             token_out_list.append(Coin.from_data({'amount': user_amount, 'denom': asset.token.denom}))
 
         return token_out_list
     
+def join_liquidity_pool(wallet:UserWallet, pool_id:int, amount_in:int, prompt_user:bool = True) -> TransactionResult:
+    """
+    A wrapper function for workflows and wallet management.
+
+    This lets the user join a liquidity pool on Osmosis.
     
+    The wrapper function adds any error messages depending on the results that got returned.
+    
+    @params:
+      - wallet: a fully complete wallet object
+      - pool_id: the pool ID that we want to join
+      - amount_in: the amount (LUNC) that we are joining with
+      - prompt_user: do we want to pause for user confirmation?
+
+    @return: a TransactionResult object
+    """
+
+    transaction_result:TransactionResult = TransactionResult()
+
+    liquidity_tx = LiquidityTransaction().create(wallet.seed, wallet.denom)
+    liquidity_tx.amount_in      = amount_in
+    liquidity_tx.balances       = wallet.balances
+    liquidity_tx.pool_id        = pool_id
+    liquidity_tx.pools          = wallet.pools
+    liquidity_tx.sender_address = wallet.address
+    liquidity_tx.source_channel = CHAIN_DATA[wallet.denom]['ibc_channels'][ULUNA]
+    liquidity_tx.wallet         = wallet
+    liquidity_tx.wallet_denom   = wallet.denom
+
+    # Simulate it
+    liquidity_result:bool = liquidity_tx.joinSimulate()
+    
+    if liquidity_result == True:
+
+        if prompt_user == True:
+            print (liquidity_tx.readableFee())
+
+            user_choice = get_user_choice(' ❓ Do you want to continue? (y/n) ', [])
+
+            if user_choice == False:
+                print (' 🛑 Exiting...\n')
+                exit()
+        else:
+            print (liquidity_tx.readableFee())
+
+        # Now we know what the fee is, we can do it again and finalise it
+        liquidity_result:bool = liquidity_tx.joinPool()
+            
+        if liquidity_result == True:
+            transaction_result:TransactionResult = liquidity_tx.broadcast()
+
+            # if liquidity_tx.broadcast_result is not None and liquidity_tx.broadcast_result.code == 32:
+            #     while True:
+            #         print (' 🛎️  Boosting sequence number and trying again...')
+
+            #         liquidity_tx.sequence = liquidity_tx.sequence + 1
+                    
+            #         liquidity_tx.joinSimulate()
+            #         liquidity_tx.joinPool()
+                    
+            #         liquidity_tx.broadcast()
+
+            #         if liquidity_tx is None:
+            #             break
+
+            #         # Code 32 = account sequence mismatch
+            #         if liquidity_tx.broadcast_result.code != 32:
+            #             break
+
+            if transaction_result.broadcast_result is None or transaction_result.broadcast_result.is_tx_error():
+                transaction_result.is_error = True
+                if transaction_result.broadcast_result is None:
+                    transaction_result.message = f' 🛎️  The liquidity transaction failed, no broadcast object was returned.'
+                else:
+                    transaction_result.message = f' 🛎️  The liquidity transaction failed, an error occurred.'
+                    if transaction_result.broadcast_result.raw_log is not None:
+                        transaction_result.message = f' 🛎️  The liquidity transaction on {wallet.name} failed, an error occurred.'
+                        transaction_result.code    = f' 🛎️  Error code {transaction_result.broadcast_result.code}'
+                        transaction_result.log     = f' 🛎️  {transaction_result.broadcast_result.raw_log}'
+                    else:
+                        transaction_result.message = f' 🛎️  No broadcast log on {wallet.name} was available.'  
+
+        else:
+            transaction_result.message  = ' 🛎️  The liquidity transaction could not be completed'
+            transaction_result.is_error = True
+
+    # Store the delegated amount for display purposes
+    transaction_result.transacted_amount = wallet.formatUluna(amount_in, ULUNA, True)
+    transaction_result.label             = 'Liquidity addition'
+    transaction_result.wallet_denom      = wallet.denom
+
+    return transaction_result
+
+def exit_liquidity_pool(wallet:UserWallet, pool_id:int, amount_out:float, prompt_user:bool = True) -> TransactionResult:
+    """
+    A wrapper function for workflows and wallet management.
+
+    This lets the user exit a liquidity pool on Osmosis.
+    
+    The wrapper function adds any error messages depending on the results that got returned.
+    
+    @params:
+      - wallet: a fully complete wallet object
+      - pool_id: the pool ID that we want to join
+      - amount_out: the amount (percentage) that we are withdrawing
+      - prompt_user: do we want to pause for user confirmation?
+
+    @return: a TransactionResult object
+    """
+
+    transaction_result:TransactionResult = TransactionResult()
+
+    liquidity_tx = LiquidityTransaction().create(wallet.seed, wallet.denom)
+
+    # Populate it with required details:
+    liquidity_tx.amount_out     = amount_out
+    liquidity_tx.balances       = wallet.balances
+    liquidity_tx.pool_id        = pool_id
+    liquidity_tx.pools          = wallet.pools
+    liquidity_tx.sender_address = wallet.address
+    liquidity_tx.source_channel = CHAIN_DATA[wallet.denom]['ibc_channels'][ULUNA]
+    liquidity_tx.wallet         = wallet
+    liquidity_tx.wallet_denom   = wallet.denom
+
+    # Simulate it
+    liquidity_result:bool = liquidity_tx.exitSimulate()
+    
+    if liquidity_result == True:
+        if prompt_user == True:
+            print (liquidity_tx.readableFee())
+
+            user_choice = get_user_choice(' ❓ Do you want to continue? (y/n) ', [])
+
+            if user_choice == False:
+                print (' 🛑 Exiting...\n')
+                exit()
+        else:
+            print (liquidity_tx.readableFee())
+
+        # Now we know what the fee is, we can do it again and finalise it
+        liquidity_result:bool = liquidity_tx.exitPool()
+            
+        if liquidity_result == True:
+            
+            transaction_result:TransactionResult = liquidity_tx.broadcast()
+
+            # if liquidity_tx.broadcast_result is not None and liquidity_tx.broadcast_result.code == 32:
+            #     while True:
+            #         print (' 🛎️  Boosting sequence number and trying again...')
+
+            #         liquidity_tx.sequence = liquidity_tx.sequence + 1
+                    
+            #         liquidity_tx.exitSimulate()
+            #         liquidity_tx.exitPool()
+
+            #         transaction_result:TransactionResult = liquidity_tx.broadcast()
+
+            #         # Code 32 = account sequence mismatch
+            #         if liquidity_tx.broadcast_result.code != 32:
+            #             break
+
+            if transaction_result.broadcast_result is None or transaction_result.broadcast_result.is_tx_error():
+                transaction_result.is_error = True
+                if transaction_result.broadcast_result is None:
+                    transaction_result.message = f' 🛎️  The liquidity transaction failed, no broadcast object was returned.'
+                else:
+                    transaction_result.message = f' 🛎️  The liquidity transaction failed, an error occurred.'
+                    if transaction_result.broadcast_result.raw_log is not None:
+                        transaction_result.message = f' 🛎️  The liquidity transaction on {wallet.name} failed, an error occurred.'
+                        transaction_result.code    = f' 🛎️  Error code {transaction_result.broadcast_result.code}'
+                        transaction_result.log     = f' 🛎️  {transaction_result.broadcast_result.raw_log}'
+                    else:
+                        transaction_result.message = f' 🛎️  No broadcast log on {wallet.name} was available.'
+            
+        else:
+            transaction_result.message  = f' 🛎️  The liquidity transaction could not be completed'
+            transaction_result.is_error = True
+
+    transaction_result.wallet_denom = wallet.denom
+
+    return transaction_result

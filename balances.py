@@ -10,6 +10,7 @@ from constants.constants import (
 )
 
 from classes.common import (
+    check_database,
     check_version,
     divide_raw_balance,
     get_user_choice
@@ -22,15 +23,16 @@ def main():
     
     # Check if there is a new version we should be using
     check_version()
+    check_database()
 
     # Get the user wallets. We'll be getting the balances futher on down.
-    user_wallets = UserWallets().loadUserWallets(get_balances = False)
+    user_wallets:dict = UserWallets().loadUserWallets(get_balances = False)
     
     if len(user_wallets) == 0:
         print (" 🛑 This password couldn't decrypt any wallets. Make sure it is correct, or rebuild the wallet list by running the configure_user_wallet.py script again.\n")
         exit()
 
-    just_main_coins:bool = get_user_choice('Show just LUNC and USTC? (y/n) ', [])
+    just_main_coins:bool = get_user_choice(' ❓ Show just LUNC and USTC? (y/n) ', [])
 
     if just_main_coins == True:
         coin_lookup = BASIC_COIN_LOOKUP

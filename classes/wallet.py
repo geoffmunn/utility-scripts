@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 
+from __future__ import annotations
+
 import cryptocode
 import json
 import requests
@@ -11,28 +13,33 @@ import traceback
 
 from datetime import datetime
 from dateutil.tz import tz
+from enum import Enum
 from pycoingecko import CoinGeckoAPI
 from sqlite3 import Cursor, Connection
 
 from classes.common import (
     coin_list,
     divide_raw_balance,
-    getPrecision,
+    get_precision,
     get_user_choice,
-    isDigit,
-    isPercentage,
+    is_percentage,
     multiply_raw_balance
 )
     
 from constants.constants import (
     BASE_SMART_CONTRACT_ADDRESS,
+    CANDY_SMART_CONTRACT_ADDRESS,
     CHAIN_DATA,
+    CREMAT_SMART_CONTRACT_ADDRESS,
     DB_FILE_NAME,
     FULL_COIN_LOOKUP,
     GRDX,
-    SEARCH_RETRY_COUNT,
+    LENNY_SMART_CONTRACT_ADDRESS,
     TERRASWAP_GRDX_TO_LUNC_ADDRESS,
     UBASE,
+    UCANDY,
+    UCREMAT,
+    ULENNY,
     ULUNA,
     USER_ACTION_CONTINUE,
     USER_ACTION_QUIT,
@@ -54,6 +61,19 @@ from terra_classic_sdk.core.staking.data.delegation import Delegation
 from terra_classic_sdk.core.staking.data.validator import Validator
 from terra_classic_sdk.exceptions import LCDResponseError
 from terra_classic_sdk.key.mnemonic import MnemonicKey
+class UserParameters:
+    """
+    A helper class to store user parameters when using the getUserNumber function.
+    @TODO: maybe move this into the UserWallet class so it's not separate
+    """
+    def __init__(self):
+        self.convert_percentages:bool = True
+        self.keep_minimum:bool        = False
+        self.percentages_allowed:bool = False
+        self.max_number:float         = None
+        self.target_amount:float      = None
+        self.target_denom:str         = ULUNA
+
 class UserWallet:
     def __init__(self):
         self.address:str        = ''
@@ -70,9 +90,14 @@ class UserWallet:
         self.terra:LCDClient    = None
         self.validated: bool    = False
         
-    def __iter_delegator_result__(self, delegator:Delegation) -> dict:
+    def __iter_delegator_result__(self, delegator:Delegation):
         """
-        An internal function which returns a dict object with validator details.
+        An internal function to get delegation results.
+        
+        @params:
+            - delegator: a delegation object that we'll be querying information on
+            
+        @return: None - the internal self.delegation var is updated.
         """
 
         # Get the basic details about the delegator and validator etc
@@ -107,7 +132,12 @@ class UserWallet:
 
     def __iter_undelegation_result__(self, undelegation:UnbondingDelegation) -> dict:
         """
-        An internal function which returns a dict object with validator details.
+        An internal function to get undelegation results.
+        
+        @params:
+            - delegator: a delegation object that we'll be querying information on
+            
+        @return: None - the internal self.undelegation var is updated.
         """
 
         # Get the basic details about the delegator and validator etc
@@ -116,7 +146,9 @@ class UserWallet:
         entries:list          = []
 
         for entry in undelegation.entries:
-            entries.append({'balance': entry.balance, 'completion_time': entry.completion_time.strftime('%m/%d/%Y')})
+            completion_datetime = entry.completion_time.astimezone()
+            offset = completion_datetime.utcoffset()
+            entries.append({'balance': entry.balance, 'completion_time': completion_datetime + offset})
        
         # Get the total balance from all the entries
         balance_total:int = 0
@@ -131,27 +163,45 @@ class UserWallet:
             'entries':           entries
         }
     
-    def convertPercentage(self, percentage:float, keep_minimum:bool, target_amount:float, target_denom:str):
+    def convertPercentage(self, percentage:float, user_params:UserParameters) -> int:
         """
         A generic helper function to convert a potential percentage into an actual number.
+        
+        @params:
+            - percentage: the percentage value between 0.0 and 1
+            - userparams:
+                - userparams.keep_minimum: do we retain a base amount inside this wallet
+                - userparams.target_amount: the entire amount we can use, usually from the wallet balance in readable form (NOT uluna)
+                - userparams.target_denom: convert this amount into the uluna amount (or whatever denom)
+            
+        @return: an integer of the amount based on the percentage.
         """
 
         percentage:float = float(percentage) / 100
-        if keep_minimum == True:
-            lunc_amount:float = float((target_amount - WITHDRAWAL_REMAINDER) * percentage)
+        if user_params.keep_minimum == True:
+            lunc_amount:float = float((user_params.target_amount - WITHDRAWAL_REMAINDER) * percentage)
             if lunc_amount < 0:
                 lunc_amount = 0
         else:
-            lunc_amount:float = float(target_amount) * percentage
+            lunc_amount:float = float(user_params.target_amount) * percentage
             
         lunc_amount:float = float(str(lunc_amount))
-        uluna_amount:int  = int(multiply_raw_balance(lunc_amount, target_denom))
+        uluna_amount:int  = int(multiply_raw_balance(lunc_amount, user_params.target_denom))
         
         return uluna_amount
     
-    def create(self, name:str = '', address:str = '', seed:str = '', password:str = '', denom:str = '') -> Wallet:
+    def create(self, name:str = '', address:str = '', seed:str = '', password:str = '', denom:str = '') -> UserWallet:
         """
         Create a wallet object based on the provided details.
+        
+        @params:
+            - name: the name of the wallet
+            - address: the address - something like terra123abc
+            - seed: the seed so we can create it for withdrawals etc
+            - password: the decryption password so we can retrieve the seed from the YML file
+            - denom: what denomination is this wallet (usually uluna or uosmo)
+            
+        @return: self
         """
 
         self.name:str    = name
@@ -169,27 +219,36 @@ class UserWallet:
                     if CHAIN_DATA[chain_key]['bech32_prefix'] == prefix and 'lcd_urls' in CHAIN_DATA[chain_key]:
                         denom = chain_key
 
-        self.denom = denom
-        
+        self.denom = denom        
         self.terra = TerraInstance().create(denom)
 
         return self
     
-    def createCoin(self, denom:str, amount: float) -> Coin:
+    def createCoin(self, amount:int, denom:str) -> Coin:
         """
         A basic helper function to create a valid Coin object with the provided details.
+        
+        @params:
+            - denom: the denomination of this coin
+            - amount: the amount of this coin
+            
+        @return: Coin
         """
 
-        return Coin.from_data({'amount': amount, 'denom': denom})
+        return Coin.from_data({'amount': int(float(amount)), 'denom': denom})
 
-    
-    def denomTrace(self, ibc_address:str):
+    def denomTrace(self, ibc_address:str) -> str:
         """
         Based on the wallet prefix, get the IBC denom trace details for this IBC address.
         This is a slow process, so we do two things:
         First, check the cached results in memory.
         Second, check the database.
         Third, go and get the actual result.
+        
+        @params:
+            - ibc_address: the full address - should start with ibc/
+            
+        @return: the string-based denomination that this resolves to
         """
 
         # First, if this is not even an IBC address, then return the original value:
@@ -260,13 +319,20 @@ class UserWallet:
 
         return result
         
-    def formatUluna(self, uluna:float, denom:str, add_suffix:bool = False):
+    def formatUluna(self, uluna:float, denom:str, add_suffix:bool = False) -> str:
         """
         A generic helper function to convert uluna amounts to LUNC.
+        
+        @params:
+            - uluna: the basic amount we want to format
+            - denom: the denomination that this amount belongs to
+            - add_suffix: do we add the human-readable denom to this amount (for readability purposes)
+            
+        @return: the string-based denomination that this resolves to
         """
 
         denom         = self.denomTrace(denom)
-        precision:int = getPrecision(denom)
+        precision:int = get_precision(denom)
         lunc:float    = round(float(divide_raw_balance(uluna, denom)), precision)
 
         target:str = '%.' + str(precision) + 'f'
@@ -277,93 +343,95 @@ class UserWallet:
         
         return lunc
     
-    def getBalances(self, target_coin:Coin = None, core_coins_only:bool = False) -> dict:
+    def getBalances(self, core_coins_only:bool = False) -> dict:
         """
         Get the balances associated with this wallet.
+        
         If you pass a target_coin Coin object, this will loop until it sees a change on this denomination.
+        For this to work, the target_coin amount needs to be the current balance + the new balance
 
         If you just want the previously fetched balances, use wallet.balances
+
+        @params:
+            - core_coins_only: if true, then this will return ULUNA and USTC only
+            
+        @return: a dict of coins and their amounts for this wallet
         """
 
         if self.terra is not None:
-            retry_count:int = 0
+            #retry_count:int = 0
 
             balances:dict = {}
             pools:dict    = {}
-            while True:
                 
-                # Default pagination options
-                pagOpt:PaginationOptions = PaginationOptions(limit=50, count_total=True)
+            # Default pagination options
+            pagOpt:PaginationOptions = PaginationOptions(limit=50, count_total=True)
 
-                # Get the current balance in this wallet
-                result:Coins
-                try:
+            # Get the current balance in this wallet
+            result:Coins
+            try:
+                result, pagination = self.terra.bank.balance(address = self.address, params = pagOpt)
+
+                # Convert the result into a friendly list
+                for coin in result:
+                    
+                    if core_coins_only == True:
+                        if coin.denom in [ULUNA, UUSD]:
+                            balances[coin.denom] = coin.amount
+                        
+                    else:
+                        denom_trace           = self.denomTrace(coin.denom)
+                        balances[denom_trace] = coin.amount
+                        # We only get pools if the entire coin list is requested
+                        if denom_trace[0:len('gamm/pool/')] == 'gamm/pool/':
+                            pool_id = denom_trace[len('gamm/pool/'):]
+                            pools[int(pool_id)] = coin.amount
+                    
+                # Go through the pagination (if any)
+                while pagination['next_key'] is not None:
+                    pagOpt.key         = pagination["next_key"]
                     result, pagination = self.terra.bank.balance(address = self.address, params = pagOpt)
-
+                    
                     # Convert the result into a friendly list
                     for coin in result:
-                        
                         if core_coins_only == True:
                             if coin.denom in [ULUNA, UUSD]:
                                 balances[coin.denom] = coin.amount
-                            
                         else:
                             denom_trace           = self.denomTrace(coin.denom)
                             balances[denom_trace] = coin.amount
+
                             # We only get pools if the entire coin list is requested
                             if denom_trace[0:len('gamm/pool/')] == 'gamm/pool/':
                                 pool_id = denom_trace[len('gamm/pool/'):]
                                 pools[int(pool_id)] = coin.amount
-                        
-                    # Go through the pagination (if any)
-                    while pagination['next_key'] is not None:
-                        pagOpt.key         = pagination["next_key"]
-                        result, pagination = self.terra.bank.balance(address = self.address, params = pagOpt)
-                        
-                        # Convert the result into a friendly list
-                        for coin in result:
-                            if core_coins_only == True:
-                                if coin.denom in [ULUNA, UUSD]:
-                                    balances[coin.denom] = coin.amount
-                            else:
-                                denom_trace           = self.denomTrace(coin.denom)
-                                balances[denom_trace] = coin.amount
+                
+            except Exception as err:
+                print (f'Pagination error for {self.name}:', err)
 
-                                # We only get pools if the entire coin list is requested
-                                if denom_trace[0:len('gamm/pool/')] == 'gamm/pool/':
-                                    pool_id = denom_trace[len('gamm/pool/'):]
-                                    pools[int(pool_id)] = coin.amount
-                    
-                except Exception as err:
-                    print (f'Pagination error for {self.name}:', err)
+            if core_coins_only == False:
+                # Add the extra coins (Base, GarudaX, etc)
+                if self.terra is not None and self.terra.chain_id == CHAIN_DATA[ULUNA]['chain_id']:
+                    coin_balance = self.terra.wasm.contract_query(BASE_SMART_CONTRACT_ADDRESS, {'balance':{'address':self.address}})
+                    if int(coin_balance['balance']) > 0:
+                        balances[UBASE] = coin_balance['balance']
 
-                if core_coins_only == False:
-                    # Add the extra coins (Base, GarudaX, etc)
-                    if self.terra is not None and self.terra.chain_id == CHAIN_DATA[ULUNA]['chain_id']:
-                        coin_balance = self.terra.wasm.contract_query(BASE_SMART_CONTRACT_ADDRESS, {'balance':{'address':self.address}})
-                        if int(coin_balance['balance']) > 0:
-                            balances[UBASE] = coin_balance['balance']
+                    coin_balance = self.terra.wasm.contract_query(TERRASWAP_GRDX_TO_LUNC_ADDRESS, {'balance':{'address':self.address}})
+                    if int(coin_balance['balance']) > 0:
+                        balances[GRDX] = coin_balance['balance']
 
-                        coin_balance = self.terra.wasm.contract_query(TERRASWAP_GRDX_TO_LUNC_ADDRESS, {'balance':{'address':self.address}})
-                        if int(coin_balance['balance']) > 0:
-                            balances[GRDX] = coin_balance['balance']
+                    coin_balance = self.terra.wasm.contract_query(LENNY_SMART_CONTRACT_ADDRESS, {'balance':{'address':self.address}})
+                    if int(coin_balance['balance']) > 0:
+                        balances[ULENNY] = coin_balance['balance']
 
+                    coin_balance = self.terra.wasm.contract_query(CREMAT_SMART_CONTRACT_ADDRESS, {'balance':{'address':self.address}})
+                    if int(coin_balance['balance']) > 0:
+                        balances[UCREMAT] = coin_balance['balance']
 
-                if target_coin is not None:
-                    # If the current balance has a higher amount in it than that target coin, then we can exit
-                    if target_coin.denom in balances and balances[target_coin.denom] > target_coin.amount:
-                        break
-                else:
-                    # We're not checking a specific coin, we can exit now
-                    break
+                    coin_balance = self.terra.wasm.contract_query(CANDY_SMART_CONTRACT_ADDRESS, {'balance':{'address':self.address}})
+                    if int(coin_balance['balance']) > 0:
+                        balances[UCANDY] = coin_balance['balance']
 
-                # Wait for one second and try again
-                retry_count += 1
-                if retry_count <= SEARCH_RETRY_COUNT:
-                    print (f'Target denom not found... attempt {retry_count}/{SEARCH_RETRY_COUNT}')
-                    time.sleep(1)
-                else:
-                    break
         else:
             balances:dict = {}
 
@@ -375,6 +443,11 @@ class UserWallet:
     async def getBalancesAsync(self) -> dict:
         """
         An asynchronous wrapper aruond the standard delegation function.
+
+        @params:
+            - None
+            
+        @return: a dict of coins and their amounts for this wallet
         """
 
         balances:dict = self.getBalances(core_coins_only = True)
@@ -386,6 +459,11 @@ class UserWallet:
         Based on the provided list of denominations, get the coingecko details.
 
         It returns the price in US dollars.
+
+        @params:
+            - denom_list: a list of coins we want prices for
+            
+        @return: a dict of coins and their current prices
         """
 
         cg_denoms:list = []
@@ -441,11 +519,20 @@ class UserWallet:
         for denom in denom_list:
             if denom in denom_map and denom_map[denom] in self.cached_prices:
                 result[denom] = self.cached_prices[denom_map[denom]]
+
         return result
 
-    def getCoinSelection(self, question:str, coins:dict, only_active_coins:bool = True, estimation_against:dict = None):
+    def getCoinSelection(self, question:str, coins:dict, only_active_coins:bool = True, estimation_against:dict = None) -> list[str, str, float]:
         """
         Return a selected coin based on the provided list.
+
+        @params:
+            - question: what is the user prompt?
+            - coins: a list of coins we can select from. Usually from the wallet balance.
+            - only_active_coins: if false, then we'll use any coin from the FULL_COIN_LOOKUP list
+            - esimation_against: if true, then we'll figure out the swap value against a provided coin
+
+        @return: the selected coin denomination, the answer the user gave, and the estimated swap value (if any)
         """
 
         label_widths:list = []
@@ -620,6 +707,11 @@ class UserWallet:
         """
         Create a dictionary of information about the delegations on this wallet.
         It may contain more than one validator.
+
+        @params:
+            - None
+
+        @return: a dictionary of delegations on this wallet.
         """
 
         if self.terra is not None:
@@ -646,6 +738,11 @@ class UserWallet:
     async def getDelegationsAsync(self) -> dict:
         """
         An asynchronous wrapper aruond the standard delegation function.
+
+        @params:
+            - None
+
+        @return: a dictionary of delegations on this wallet.
         """
 
         delegations:dict = self.getDelegations()
@@ -655,6 +752,11 @@ class UserWallet:
     def getDenomByPrefix(self, prefix:str) -> str:
         """
         Go through the supported chains to find the denom for the provided prefix
+
+        @params:
+            - prefix: the prefix of the wallet address we are interested in
+
+        @return: the actual denomination
         """
 
         result = None
@@ -668,11 +770,16 @@ class UserWallet:
     def getPrefix(self, address:str) -> str:
         """
         Get the first x (usually 4) letters of the address so we can figure out what network it is
+
+        @params:
+            - address: the wallet address that we are interested in
+
+        @return: a string, something like 'terra' or 'osmo'
         """
 
         prefix:str = ''
         for char in address:
-            if isDigit(char) == False:
+            if char.isdigit() == False:
                 prefix += char
             else:
                 break
@@ -681,7 +788,12 @@ class UserWallet:
     
     def getProposalVote(self, proposal_id) -> str:
         """
-        Get the vote that this wallet made on the supplied proposal id
+        Get the vote that this wallet made on the supplied proposal ID
+
+        @params:
+            - proposal_id: the ID of the proposal we are interested in
+
+        @return: a human-readable value of the vote
         """
 
         vote_result:dict = self.terra.gov.vote(proposal_id, self.address)
@@ -708,6 +820,11 @@ class UserWallet:
     def getSupportedPrefixes(self) -> list:
         """
         Return a list of all the supported prefixes, based on what we can find in the CHAIN_DATA dictionary
+
+        @params:
+            - None
+
+        @return: a list of prefixes we support
         """
 
         result:list = []
@@ -721,6 +838,11 @@ class UserWallet:
         Get the undelegations that are in progress for BASE.
 
         This returns a list of the active undelegations.
+
+        @params:
+            - wallet_address: the wallet we want BASE undelegations for
+
+        @return: a list of undelegation details
         """
 
         result:json  = requests.get('https://raw.githubusercontent.com/lbunproject/BASEswap-api-price/main/public/unstaked_plus_hashes.json').json()
@@ -738,8 +860,13 @@ class UserWallet:
     
     def getUndelegations(self) -> dict:
         """
-        Create a dictionary of information about the delegations on this wallet.
+        Create a dictionary of information about the undelegations on this wallet.
         It may contain more than one validator.
+
+        @params:
+            - None
+
+        @return: a dict of active undelegations on this wallet
         """
 
         prefix = self.getPrefix(self.address)
@@ -754,7 +881,7 @@ class UserWallet:
                     unbonding:UnbondingDelegation
                     for unbonding in result:
 
-                        self.__iter_result__(unbonding)
+                        self.__iter_undelegation_result__(unbonding)
 
                     while pagination['next_key'] is not None:
 
@@ -796,98 +923,102 @@ class UserWallet:
 
             entries.append({'balance': multiply_raw_balance(base_item['luncNetReleased'], UBASE), 'completion_time': utc_string})
         
-        self.undelegations['base'] = {'balance_amount': multiply_raw_balance(undelegated_amount, UBASE), 'entries': entries}
+        if len(entries) > 0:
+            self.undelegations[UBASE] = {'balance_amount': multiply_raw_balance(undelegated_amount, UBASE), 'entries': entries}
 
         return self.undelegations
     
     async def getUnDelegationsAsync(self) -> dict:
         """
         An asynchronous wrapper aruond the standard undelegation function.
+
+        @params:
+            - None
+
+        @return: a dict of active undelegations on this wallet
         """
         
         undelegations:dict = self.getUndelegations()
 
         return undelegations
     
-    def getUserNumber(self, question:str, params:dict):
+    def getUserNumber(self, question:str, user_params:UserParameters) -> str:
         """
-        Get ther user input - must be a number.
-        """ 
+        Get the user input - could be a number or a percentage, and is constrained by details in the params parameter
+
+        @params:
+            - question: what is the question we're asking the user?
+            - params: a userParameters class resembling this:
+                self.convert_percentages:bool = True
+                self.keep_minimum:bool        = False
+                self.percentages_allowed:bool = False
+                self.max_number:float         = None
+                self.target_amount:float      = None
+                self.target_denom:str         = ULUNA
+
+        @return: an amount reflecting the amount the user wants to use
+        """
         
-        empty_allowed:bool = False
-        if 'empty_allowed' in params:
-            empty_allowed = params['empty_allowed']
-
-        convert_to_uluna = True
-        if 'convert_to_uluna' in params:
-            convert_to_uluna = params['convert_to_uluna']
-
         while True:    
             answer = input(question).strip(' ')
 
             if answer == USER_ACTION_QUIT:
                 break
 
-            if answer == '' and empty_allowed == False:
+            if answer == '':
                 print (f' 🛎️  The value cannot be blank or empty')
             else:
 
-                if answer == '' and empty_allowed == True:
-                    break
+                percentage = is_percentage(answer)
 
-                is_percentage = isPercentage(answer)
-
-                if 'percentages_allowed' in params and is_percentage == True:
+                if user_params.percentages_allowed == True and percentage == True:
                     answer = answer[0:-1]
 
-                if isDigit(answer):
-
-                    if 'percentages_allowed' in params and is_percentage == True:
-                        if int(answer) > params['min_number'] and int(answer) <= 100:
+                if answer.replace('.', '').lstrip('0').isdigit():
+                    if user_params.percentages_allowed == True and percentage == True:
+                        if int(answer) <= 100:
                             break
-                    elif 'max_number' in params:
-                        if 'min_equal_to' in params and (float(answer) >= params['min_number'] and float(answer) <= params['max_number']):
-                            break
-                        elif (float(answer) > params['min_number'] and float(answer) <= params['max_number']):
-                            break
-                    elif 'max_number' in params and float(answer) > params['max_number']:
-                        print (f" 🛎️  The amount must be less than {params['max_number']}")
-                    elif 'min_number' in params:
-                        
-                        if 'min_equal_to' in params:
-                            if float(answer) < params['min_number']:
-                                print (f" 🛎️  The amount must be greater than (or equal to) {params['min_number']}")
-                            else:
-                                break
                         else:
-                            if float(answer) <= params['min_number']:
-                                print (f" 🛎️  The amount must be greater than {params['min_number']}")
-                            else:
-                                break
+                            print (f" 🛎️  The percentage must be greater than 0% and less than (or equal to) 100%")
+                    
+                    elif user_params.max_number is not None and float(answer) > user_params.max_number:
+                        print (f" 🛎️  The amount must be less than {user_params.max_number}")
+                    elif user_params.max_number is not None and float(answer) <= user_params.max_number:
+                        break
                     else:
                         # This is just a regular number that we'll accept
-                        if is_percentage == False:
+                        # NOTE: this is never triggered by any workflow so far
+                        if percentage == False:
                             break
-
+                else:
+                    print (f" 🛎️  Please enter a valid amount.")
         if answer != '' and answer != USER_ACTION_QUIT:
-            if 'percentages_allowed' in params and is_percentage == True:
-                if 'convert_percentages' in params and params['convert_percentages'] == True:
+            if user_params.percentages_allowed and percentage == True:
+                if user_params.convert_percentages == True:
                     wallet:UserWallet = UserWallet()
-                    answer = float(wallet.convertPercentage(answer, params['keep_minimum'], params['max_number'], params['target_denom']))
+                    answer = float(wallet.convertPercentage(answer, user_params))
                 else:
                     answer = answer + '%'
             else:
-                if convert_to_uluna == True:
-                    answer = float(multiply_raw_balance(answer, params['target_denom']))
+                # Convert the number into a uluna amount
+                answer = multiply_raw_balance(answer, user_params.target_denom)
 
-        return answer
+        return str(answer)
     
-    def getUserRecipient(self, question:str, user_config:dict):
+    def getUserRecipient(self, question:str, user_config:dict) -> str:
         """
         Get the recipient address that we are sending to.
 
         If you don't need to check this against existing wallets, then provide an empty dict object for user_config.
+
+        @params:
+            - question: what question are we prompting the user with?
+            - user_config: the config result holding all the wallets
+
+        @return: the user-provided address
         """
+
+        recipient_address:str = ''
 
         while True:
             answer:str = input(question)
@@ -896,9 +1027,9 @@ class UserWallet:
                 break
 
             # We'll assume it was a terra address to start with (by default)
-            recipient_address = answer
+            recipient_address:str = answer
 
-            if isDigit(answer):
+            if answer.isdigit():
                 # Check if this is a wallet number
                 if user_config['wallets'][int(answer)] is not None:
                     recipient_address = user_config['wallets'][int(answer)]['address']
@@ -915,7 +1046,7 @@ class UserWallet:
             is_valid, is_empty = self.validateAddress(recipient_address)
 
             if is_valid == False and is_empty == True:
-                continue_action = get_user_choice('This wallet seems to be empty - do you want to continue? (y/n) ', [])
+                continue_action = get_user_choice(' ❓ This wallet seems to be empty - do you want to continue? (y/n) ', [])
                 if continue_action == True:
                     break
 
@@ -929,6 +1060,13 @@ class UserWallet:
     def getUserText(self, question:str, max_length:int, allow_blanks:bool) -> str:
         """
         Get a text string from the user - must be less than a definied length.
+
+        @params:
+            - question: what question are we prompting the user with?
+            - max_length: the longest answer size we are willing to accept
+            - allow_blanks: do we accept empty answers?
+
+        @return: the user-provided answer
         """
 
         while True:    
@@ -946,6 +1084,11 @@ class UserWallet:
     def newWallet(self, prefix:str):
         """
         Creates a new wallet and returns the seed and address
+
+        @params:
+            - prefix: usually terra or osmo
+            
+        @return: the mnemonic and address of the new wallet
         """
 
         mk            = MnemonicKey(prefix = prefix)
@@ -953,10 +1096,15 @@ class UserWallet:
         
         return mk.mnemonic, wallet.key.acc_address
     
-    def validateAddress(self, address:str) -> bool:
+    def validateAddress(self, address:str) -> list[bool,bool]:
         """
         Check that the provided address actually resolves to a terra wallet.
         This only applies to addresses which look like terra addresses.
+
+        @params:
+            - address: the wallet address we want to validate
+            
+        @return: is this valid, and is this empty?
         """
 
         prefix:str = self.getPrefix(address)
@@ -985,11 +1133,14 @@ class UserWallet:
         
     def validateWallet(self) -> bool:
         """
-        Check that the password does actually resolve against any wallets
+        Check that the generated wallet matches the address we have saved against it.
         
-        Go through each wallet and create it based on the password that was provided
-        and then check it against the saved address
         If it's not the same, then the password is wrong or the file has been edited.
+
+        @params:
+            - None
+            
+        @return: true/false, does this generated wallet address match the saved address?
         """
 
         try:

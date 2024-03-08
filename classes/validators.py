@@ -22,6 +22,11 @@ class Validators():
     def __iter_result__(self, validator:Validator) -> dict:
         """
         An internal function which returns a dict object with validator details.
+
+        @params:
+            - validator: the validator we are interested in
+
+        @return: a dict of details about this validator
         """
 
         # Get the basic details about validator
@@ -42,6 +47,11 @@ class Validators():
     def create(self) -> dict:
         """
         Create a dictionary of information about the validators that are available.
+
+        @params:
+            - None
+
+        @return: a dict of validators and their details
         """
 
         # Defaults to uluna/terra
@@ -96,11 +106,37 @@ class Validators():
         self.sorted_validators = sorted_validators
 
         return self.validators
+    
+    def findValidatorByName(self, validator_name:str) -> str:
+        """
+        Get the validator details of the validator that matches the provided name
 
+        @params:
+            - validator_name: the name of the validator we are looking for
+
+        @return: the operator address of the validator (if we have found it)
+        """
+        
+        result:str = ''
+        for validator in self.sorted_validators:
+            if validator.lower() == validator_name.lower():
+                result = self.sorted_validators[validator]['operator_address']
+                break
+
+        return result
+    
     def getValidatorSingleChoice(self, question:str, validators:dict, filter_list:list, delegations:dict):
         """
         Get a single user selection from a list.
         This is a custom function because the options are specific to this list.
+
+        @params:
+            - question: what question are we prompting the user with?
+            - validators: a list of validators the user can choose from
+            - filter_list: a list of validators we want to restrict the list to
+            - delegations: any delegations against each validator
+
+        @return: the selected validator
         """
 
         # We need a wallet object so we can format LUNC values

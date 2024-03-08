@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 
+from __future__ import annotations
+
 import json
 
 from constants.constants import (
@@ -8,11 +10,11 @@ from constants.constants import (
     ULUNA,
     USER_ACTION_QUIT,
     PROPOSAL_STATUS_VOTING_PERIOD
-    
 )
 
 from classes.terra_instance import TerraInstance
-from classes.transaction_core import TransactionCore
+from classes.transaction_core import TransactionCore, TransactionResult
+from classes.wallet import UserWallet
 
 from terra_classic_sdk.core.coin import Coin
 from terra_classic_sdk.core.coins import Coins
@@ -22,10 +24,7 @@ from terra_classic_sdk.client.lcd import LCDClient
 from terra_classic_sdk.client.lcd.params import PaginationOptions
 from terra_classic_sdk.core.gov import MsgVote, Proposal
 from terra_classic_sdk.key.mnemonic import MnemonicKey
-from terra_classic_sdk.client.lcd.api.tx import (
-    CreateTxOptions,
-    Tx
-)
+from terra_classic_sdk.client.lcd.api.tx import CreateTxOptions, Tx
 class Governance(TransactionCore):
 
     def __init__(self, *args, **kwargs):
@@ -37,14 +36,21 @@ class Governance(TransactionCore):
         self.fee:Fee            = None
         self.gas_list:json      = None
         self.gas_limit:str      = 'auto'
+        self.memo:str           = ''
         self.proposal_id:int    = None
         self.terra:LCDClient    = None
         self.user_vote:int      = None
         self.sequence:int       = None
 
-    def create(self):
+    def create(self) -> Governance:
         """
-        Create a basic terra LCDClient object
+        Create a basic terra LCDClient object.
+        For governance stuff, the network will be Terra.
+
+        @params:
+            - None
+
+        @return: self
         """
 
         # Defaults to uluna/terra
@@ -52,10 +58,15 @@ class Governance(TransactionCore):
 
         return self
     
-    def getUserSingleChoice(self, question:str):
+    def getUserSingleChoice(self, question:str) -> list[int, int]:
         """
         Get a single user selection from a list.
         This is a custom function because the options are specific to this list.
+
+        @params:
+            - question: The text prompting the user
+
+        @return: the proposal ID, and the user answer
         """
 
         # Get the active proposals:
@@ -82,10 +93,6 @@ class Governance(TransactionCore):
             # Go and get the tally results so we don't have to slow the display refresh down
             self.proposal_id = int(proposal['id'])
             tallies[proposal['id']] = self.tally()
-
-        # for proposal in proposals:
-        #     if len(str(proposal['title'])) > label_widths[2]:
-        #         label_widths[2] = len(str(proposal['title']))
 
         padding_str:str   = ' ' * 100
         header_string:str = ' Number'
@@ -151,6 +158,11 @@ class Governance(TransactionCore):
     def tally(self) -> dict:
         """
         Get the vote percentages of the current proposal ID
+        
+        @params:
+            - None
+
+        @return: a dictionary of the different vote types and percentage vote for each
         """
 
         votes = {'yes': 0, 'no': 0, 'no with veto': 0, 'abstain': 0}
@@ -173,8 +185,13 @@ class Governance(TransactionCore):
     def proposals(self) -> list:
         """
         Create a dictionary of all the active proposals
-        """
         
+        @params:
+            - None
+
+        @return: a list of the active proposals
+        """
+
         proposal_list:list = []
         
         # The parameters we pass. You can do pagination & filters at the same time apparently.
@@ -201,6 +218,12 @@ class Governance(TransactionCore):
     def simulate(self):
         """
         Simulate a vote so we can get the fee details.
+        The fee will be added to the governance object.
+        
+        @params:
+            - None
+
+        @return: bool (True if sucessful, False if errors were found)
         """
 
         # Reset these values in case this is a re-used object:
@@ -239,10 +262,15 @@ class Governance(TransactionCore):
         else:
             return False
         
-    def update(self, seed:str):
+    def update(self, seed:str) -> Governance:
         """
         Update this object with the wallet details that we want to cast votes on.
         This allows us to reuse the existing Terra connection.
+        
+        @params:
+            - None
+
+        @return: self
         """
 
         # Create the wallet based on the calculated key
@@ -258,7 +286,16 @@ class Governance(TransactionCore):
 
         return self
     
-    def vote(self):
+    def vote(self) -> bool:
+        """
+        Cast the vote with the details provided by the user.
+        The simulate function needs to have been called first.
+        
+        @params:
+            - None
+
+        @return: bool (only returns True)
+        """
 
         msg = MsgVote(
             proposal_id = self.proposal_id,
@@ -271,12 +308,14 @@ class Governance(TransactionCore):
             gas            = self.gas_limit,
             gas_prices     = self.gas_list,
             fee            = self.fee,
+            memo           = self.memo,
             msgs           = [msg],
             sequence       = str(self.sequence)
         )
 
         # This process often generates sequence errors. If we get a response error, then
         # bump up the sequence number by one and try again.
+        tx:Tx = None
         while True:
             try:
                 tx:Tx = self.current_wallet.create_and_sign_tx(options)
@@ -287,11 +326,11 @@ class Governance(TransactionCore):
                     options.sequence = self.sequence
                     print (' 🛎️  Boosting sequence number')
                 else:
-                    print (' 🛑 An unexpected error occurred in the off-chain send function:')
+                    print (' 🛑 An unexpected error occurred in the governance vote function:')
                     print (err)
                     break
             except Exception as err:
-                print (' 🛑 An unexpected error occurred in the off-chain send function:')
+                print (' 🛑 An unexpected error occurred in the governance vote function:')
                 print (err)
                 break
 
@@ -299,3 +338,82 @@ class Governance(TransactionCore):
         self.transaction = tx
 
         return True
+    
+def cast_governance_vote(user_wallets:dict, proposal_id:int, user_vote:int, memo:str = '' ) -> dict:
+    """
+    A wrapper function for casting governance votes.
+    The wrapper function adds any error messages depending on the results that got returned.
+    
+    @params:
+      - user_wallets: a dictionary of all the wallets we're voting with
+      - proposal_id: the id of the proposal ID we're voting on
+      - user_vote: one of the values in the PROPOSAL constant list
+      - memo: an optional message to include. Defaults to an empty string.
+
+    @returns a dictionary of transaction_result objects (wallet name is the dictionary key)
+    """
+
+    transaction_results:dict = {}
+
+    transaction_result:TransactionResult = TransactionResult()
+
+    # Create the basic governance object
+    governance:Governance = Governance().create()
+
+    # Populate it with the relevant details
+    governance.proposal_id = proposal_id
+    governance.user_vote   = user_vote
+    governance.memo        = memo
+
+    for wallet_name in user_wallets:
+
+        wallet:UserWallet = user_wallets[wallet_name]
+        wallet.getBalances()
+
+        governance.balances = wallet.balances
+        governance.update(wallet.seed)
+
+        governance.simulate()
+        governance_result = governance.vote()
+
+        if governance_result == True:
+            transaction_result = governance.broadcast()
+
+            if transaction_result.broadcast_result is not None and transaction_result.broadcast_result.code == 32:
+                while True:
+                    print (' 🛎️  Boosting sequence number and trying again...')
+
+                    governance.sequence = governance.sequence + 1
+                    
+                    governance.simulate()
+                    governance.send()
+
+                    transaction_result = governance.broadcast()
+
+                    if transaction_result is None:
+                        break
+
+                    # Code 32 = account sequence mismatch
+                    if transaction_result.broadcast_result.code != 32:
+                        break
+
+            if transaction_result.broadcast_result is None or transaction_result.broadcast_result.is_tx_error():
+                if transaction_result.broadcast_result is None:
+                    transaction_result.message = ' 🛎️  The vote transaction on {wallet.name} failed, no broadcast object was returned.'
+                else:
+                    if transaction_result.broadcast_result.raw_log is not None:
+                        transaction_result.message = f' 🛎️ The governance vote on {wallet.name} failed, an error occurred:'
+                        transaction_result.code    = f' 🛎️ Error code {transaction_result.broadcast_result.code}'
+                        transaction_result.log     = f' 🛎️ {transaction_result.broadcast_result.raw_log}'
+                    else:
+                        transaction_result.message = f' 🛎️ No broadcast log on {wallet.name} was available.'
+        else:
+            transaction_result.message = f' 🛎️ The vote transaction on {wallet.name} could not be completed'
+
+        # Give this a label:
+        transaction_result.label = f'Vote successful on the {wallet.name} wallet!'
+
+        # Add this result to the returned dictionary
+        transaction_results[wallet_name] = transaction_result
+
+    return transaction_results

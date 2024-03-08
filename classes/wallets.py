@@ -2,6 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 import asyncio
+import netrc
 import yaml
 
 from getpass import getpass
@@ -9,6 +10,7 @@ from os.path import exists
 
 from constants.constants import (
     CONFIG_FILE_NAME,
+    NETRC_MACHINE_NAME,
     ULUNA,
     USER_ACTION_ALL,
     USER_ACTION_CLEAR,
@@ -24,9 +26,14 @@ class UserWallets:
         self.wallets:dict   = {}
         self.addresses:dict = {}
 
-    async def __AsyncLoadBalances(self, user_wallets):
+    async def __AsyncLoadBalances(self, user_wallets:dict):
         """
         A special function to load wallet balances in an asynchronous mode.
+        
+        @params:
+            - user_wallets: a list of wallets we want to load the details for
+            
+        @return: None
         """
 
         async def async_loop(user_wallets, wallet_name):
@@ -39,6 +46,11 @@ class UserWallets:
     async def __AsyncLoadDelegations(self, user_wallets):
         """
         A special function to load wallet delegations and undelegations in an asynchronous mode.
+        
+        @params:
+            - user_wallets: a list of wallets we want to load the details for
+            
+        @return: None
         """
 
         async def async_loop(user_wallets, wallet_name):
@@ -53,6 +65,14 @@ class UserWallets:
     def create(self, yml_file:dict, user_password:str, filter:list = None) -> dict:
         """
         Create a dictionary of wallets. Each wallet is a Wallet object.
+        The wallet information comes from a provided YML file.
+        
+        @params:
+            - yml_file: a dictionary made from the contents of the user_config.yml file
+            - user_password: the decryption password to get the seed
+            - filter: return just terra or osmo wallets if required
+            
+        @return: a dict of wallets
         """
 
         if yml_file is None:
@@ -90,18 +110,23 @@ class UserWallets:
                     self.addresses[wallet['wallet']] = wallet_item
 
         return self.wallets
-    
+
     def getAddresses(self) -> dict:
         """
         Return the dictionary of addresses.
         No validation or anything fancy is done here.
 
         This is used by the send.py file to show an address book of possible addresses
+        
+        @params:
+            - None
+            
+        @return: a dict of addresses
         """
 
         return self.addresses
     
-    def getUserMultiChoice(self, question:str, options:dict) -> dict|str:
+    def getUserMultiChoice(self, question:str, options:dict) -> list[dict,str]:
         """
         Get multiple user selections from a list.
         This is a custom function because the options are specific to this list.
@@ -111,6 +136,12 @@ class UserWallets:
           'display': 'balances', 'votes'
           'proposal_id': proposal_id (for use when display = votes)   
         }
+        
+        @params:
+            - question: what is the user prompt?
+            - options: a list of display parameters
+            
+        @return: a dict of addresses and the user answer
         """
 
         label_widths:list = []
@@ -303,10 +334,16 @@ class UserWallets:
 
         return wallets_to_use, answer
     
-    def getUserSinglechoice(self, question:str, show_delegations:bool = False):
+    def getUserSinglechoice(self, question:str, show_delegations:bool = False) -> list[UserWallet,str]:
         """
         Get a single user selection from a list.
         This is a custom function because the options are specific to this list.
+        
+        @params:
+            - question: what is the user prompt?
+            - show_delegations: do we show any available delegations? LUNC only at the moment.
+            
+        @return: the selected wallet and the user answer
         """
 
         label_widths:dict = []
@@ -486,7 +523,14 @@ class UserWallets:
         
     def loadUserWallets(self, get_balances:bool = True, get_delegations:bool = False, filter:list = None) -> dict:
         """
-        Request the decryption password off the user and load the user_config.yml file based on this
+        Request the decryption password off the user and load the user_config.yml file based on this.
+        
+        @params:
+            - get_balances: do we want the wallet balances?
+            - get_delegations: do we want any available delegations on this wallet? LUNC only at this point.
+            - filter: provide just terra or osmo wallets
+            
+        @return: a dict of wallets
         """
 
         file_exists = exists(CONFIG_FILE_NAME)
@@ -494,11 +538,25 @@ class UserWallets:
         result:dict = None
 
         if file_exists:
-            decrypt_password:str = getpass() # the secret password that encrypts the seed phrase
+
+            # First, check if we have a .netrc password set up:
+            try:
+                netrc_obj = netrc.netrc()
+                # Get the password for the current in-use machine
+                decrypt_password:str = netrc_obj.authenticators(NETRC_MACHINE_NAME)[2]
+            except Exception as err:
+                #print (err)
+                # No .netrc or something went wrong
+                decrypt_password:str = ''
 
             if decrypt_password == '':
-                print (' 🛑 Exiting...\n')  
-                exit()
+
+                print ('')
+                decrypt_password:str = getpass(' 🔑 Wallet password: ') # the secret password that encrypts the seed phrase
+
+                if decrypt_password == '':
+                    print (' 🛑 Exiting...\n')  
+                    exit()
 
             # Now open this file and get the contents
             try:
@@ -525,5 +583,3 @@ class UserWallets:
             loop.run_until_complete(self.__AsyncLoadDelegations(self.wallets))
 
         return result
-    
-    
