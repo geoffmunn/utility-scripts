@@ -35,7 +35,10 @@ Current functionality includes:
 Onchain swapping support includes the following:
  * LUNC to USTC on the columbus-5 chain
  * LUNC to BASE
+ * LUNC TO CREMAT coin
  * LUNC to GRDX
+ * LUNC TO Lunc Candy
+ * LUNC to Lenny
  * LUNC to KRTC via contract address
 
 The utility scripts have built-in support for a [long list of coins](docs/swap_options.md) that can be swapped on Osmosis.
