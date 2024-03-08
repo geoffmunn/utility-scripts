@@ -174,7 +174,6 @@ def main():
     else:
         uluna_amount = float(uluna_amount)
 
-    uluna_amount = float(uluna_amount) * (10 ** get_precision(denom))
     # Print a list of the addresses in the user_config.yml file:
     recipient_address, answer = get_send_to_address(user_addresses)
 

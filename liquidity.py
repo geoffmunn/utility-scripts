@@ -97,10 +97,8 @@ def main():
             print (' 🛑 Exiting...\n')
             exit()
 
-        uluna_amount:float = float(amount_in) * ((10 ** get_precision(denom)))
-
-        print (f'You are about to add {wallet.formatUluna(uluna_amount, denom)} {FULL_COIN_LOOKUP[denom]} to Pool #{user_pool}.')
-        transaction_result:TransactionResult = join_liquidity_pool(wallet, user_pool, uluna_amount, True)
+        print (f'You are about to add {wallet.formatUluna(amount_in, denom)} {FULL_COIN_LOOKUP[denom]} to Pool #{user_pool}.')
+        transaction_result:TransactionResult = join_liquidity_pool(wallet, user_pool, amount_in, True)
     else:
         # This is the exit pool logic
         # Get the assets for the summary list
@@ -135,12 +133,12 @@ def main():
             exit()
 
         if is_percentage(user_withdrawal):
-            amount_out:float  = float(user_withdrawal[:-1]) / 100
+            amount_out:float   = float(user_withdrawal[:-1]) / 100
             uluna_amount:float = round(pool_assets[ULUNA] * amount_out, 2)
         else:
             # If this is a precise amount, we need to convert this into a percentage of the total amount of LUNC   
-            uluna_amount = float(user_withdrawal) * (10 ** get_precision(ULUNA))
-            amount_out:float  = round(int(uluna_amount) / int(pool_assets[ULUNA]), 2)
+            amount_out:float   = round(int(float(user_withdrawal)) / int(pool_assets[ULUNA]), 2)
+            uluna_amount:float = float(user_withdrawal)
 
         print (f'You are about to withdraw {wallet.formatUluna(uluna_amount, denom)} LUNC ({round(int(uluna_amount) / int(pool_assets[ULUNA]) * 100, 2)}%) from Pool #{user_pool}.')
         transaction_result:TransactionResult = exit_liquidity_pool(wallet, user_pool, amount_out, True)
