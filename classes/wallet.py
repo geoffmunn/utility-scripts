@@ -971,7 +971,6 @@ class UserWallet:
 
                 percentage = is_percentage(answer)
 
-                #if 'percentages_allowed' in params and percentage == True:
                 if user_params.percentages_allowed == True and percentage == True:
                     answer = answer[0:-1]
 
@@ -1000,6 +999,9 @@ class UserWallet:
                     answer = float(wallet.convertPercentage(answer, user_params))
                 else:
                     answer = answer + '%'
+            else:
+                # Convert the number into a uluna amount
+                answer = multiply_raw_balance(answer, user_params.target_denom)
 
         return str(answer)
     
