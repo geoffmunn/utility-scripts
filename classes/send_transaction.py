@@ -329,7 +329,6 @@ class SendTransaction(TransactionCore):
         # If the send amount denom is NOT the native denom of the chain, then convert it to the IBC value
         # Eg, send LUNC on Osmosis -> Osmosis
         if self.terra.chain_id == CHAIN_DATA[UOSMO]['chain_id'] and self.denom != UOSMO:
-            print ('source channel:', self.source_channel)
             self.denom = self.IBCfromDenom(self.source_channel, self.denom)
 
         # Perform the swap as a simulation, with no fee details
