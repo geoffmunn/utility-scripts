@@ -364,7 +364,6 @@ class SendTransaction(TransactionCore):
             # Build a fee object
             if fee_denom == ULUNA and self.denom == ULUNA:
                 new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount + self.tax))})
-            #elif self.denom == UBASE or self.denom == GRDX:
             elif self.denom in non_uluna_coins:
                 new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount))})
             else:
@@ -456,8 +455,8 @@ class SendTransaction(TransactionCore):
             self.tax = 0
             
             # For osmosis-1 transfers, we need to adjust the fee:
-            fee_amount       = fee_amount * 1.2
-            fee_denom:str    = fee_bit.denom
+            fee_amount    = fee_amount * 1.2
+            fee_denom:str = fee_bit.denom
 
             # Create the coin object
             new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount))})
