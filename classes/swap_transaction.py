@@ -1265,6 +1265,7 @@ def swap_coins(wallet, swap_coin:Coin, swap_to_denom:str, estimated_amount:int =
     # Store the delegated amount for display purposes
     transaction_result.transacted_amount = wallet.formatUluna(swap_coin.amount, swap_coin.denom, True)
     transaction_result.label             = 'Swapped amount'
+    transaction_result.wallet_denom      = wallet.denom
 
     # If this was successful, then log the trade
     swap_tx.logTrade(wallet, transaction_result)
