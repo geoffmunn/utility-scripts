@@ -34,11 +34,6 @@ def main():
 
     wallet:UserWallet = UserWallet().create(denom = 'uosmo')
 
-    # pool = wallet.terra.pool.osmosis_pool(560)
-    # print (pool)
-    # params = wallet.terra.pool.osmosis_pool_params(560)
-    # print (params)
-    # exit()
     cursor = conn.execute(delete_pool_table)
     cursor = conn.execute(delete_asset_table)
     cursor = conn.execute(delete_ibc_table)

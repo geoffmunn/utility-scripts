@@ -7,13 +7,7 @@ from classes.common import (
 )
 
 from constants.constants import (
-    CHAIN_DATA,
-    FULL_COIN_LOOKUP,
-    ULUNA,
-    UOSMO,
-    USER_ACTION_CONTINUE,
     USER_ACTION_QUIT,
-    PROPOSAL_VOTE_EMPTY,
     PROPOSAL_VOTE_YES,
     PROPOSAL_VOTE_ABSTAIN,
     PROPOSAL_VOTE_NO,

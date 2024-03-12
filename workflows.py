@@ -16,7 +16,6 @@ from classes.common import (
 )
 
 from constants.constants import (
-    COIN_ALIASES,
     FULL_COIN_LOOKUP,
     OUTPUT_ERROR,
     OUTPUT_USER,
