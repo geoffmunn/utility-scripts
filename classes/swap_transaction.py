@@ -1096,13 +1096,8 @@ class SwapTransaction(TransactionCore):
                     swap_price       = self.beliefPrice()
                     estimated_amount = float(self.swap_amount * swap_price)
             elif self.swap_request_denom in [UCANDY, UCREMAT, ULENNY] and self.swap_denom == ULUNA:
-                print (self.swap_request_denom)
-                print (self.swap_denom)
                 swap_price = self.beliefPrice()
-                print (swap_price)
-                print (self.swap_amount)
                 estimated_amount = float(self.swap_amount * swap_price)
-                print (estimated_amount)
             else:
                 # This will cover nearly all swap pairs:
                 swap_price = self.beliefPrice()
