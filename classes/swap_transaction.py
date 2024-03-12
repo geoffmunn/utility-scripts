@@ -369,6 +369,56 @@ class SwapTransaction(TransactionCore):
             is_offchain_swap = False
 
         return is_offchain_swap
+    
+    def logTrade(self, wallet, transaction_result:TransactionResult) -> bool:
+        """
+        Put the details of this swap into the database.
+
+        """
+
+        if transaction_result.is_error == False:
+            insert_trade_query:str = "INSERT INTO trades (wallet_name, coin_from, amount_from, price_from, coin_to, amount_to, price_to, fees, exit_profit, exit_loss, status) VALUES (?,?,?,?,?,?,?,?,?,?,'OPEN');"
+
+            wallet_name:str  = wallet.name
+            coin_from:str    = self.swap_denom
+            amount_from:int  = self.swap_amount
+            price_from:float = float(wallet.getCoinPrice([coin_from])[coin_from])
+            
+            coin_to:str      = self.swap_request_denom
+            price_to:float   = float(wallet.getCoinPrice([coin_to])[coin_to])
+
+            # Get the received coin from the results
+            received_coin:Coin
+            for received_coin in transaction_result.result_received:
+                if received_coin.denom == coin_to:
+                    amount_to:int = received_coin.amount
+
+            fees:dict = {}
+
+            fee_coins:Coins = self.fee.amount
+            for fee_coin in fee_coins.to_list():
+
+                amount:float   = divide_raw_balance(fee_coin.amount, fee_coin.denom)
+                amount_str:str = ("%.6f" % (amount)).rstrip('0').rstrip('.')
+
+                # Get the readable denom if this is an IBC token
+                denom:str = self.denomTrace(fee_coin.denom)
+
+                if denom in FULL_COIN_LOOKUP:
+                    denom = FULL_COIN_LOOKUP[denom]
+                    
+                fees[denom] = amount_str
+            
+            exit_profit:float = 0.01
+            exit_loss:float   = -0.05
+
+            conn = sqlite3.connect(DB_FILE_NAME)
+            conn.execute(insert_trade_query, [wallet_name, coin_from, amount_from, price_from, coin_to, amount_to, price_to, json.dumps(fees), exit_profit, exit_loss])
+            conn.commit()
+
+            return True
+        else:
+            return False
 
     def offChainSimulate(self) -> bool:
         """
