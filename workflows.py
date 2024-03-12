@@ -635,7 +635,6 @@ def main():
                                             logs.message(f'  ➜ You are swapping {wallet.formatUluna(swap_coin.amount, swap_coin.denom, True)} for {FULL_COIN_LOOKUP[swap_to_denom]}.')
 
                                             transaction_result:TransactionResult = swap_coins(step_wallet, swap_coin, swap_to_denom, '', False)
-                                            transaction_result.wallet_denom      = step_wallet.denom
                                             transaction_result.showResults()
 
                                             if transaction_result.is_error == True:
