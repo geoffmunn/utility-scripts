@@ -3,8 +3,7 @@
 
 from classes.common import (
     check_database,
-    check_version,
-    get_precision
+    check_version
 )
 
 from constants.constants import (
@@ -54,7 +53,7 @@ def main():
         if coin in FULL_COIN_LOOKUP:
             coin_count += 1
 
-    coin_from, answer, null_value = wallet.getCoinSelection("Select a coin number 1 - " + str(coin_count) + ", 'X' to continue, or 'Q' to quit: ", wallet.balances)
+    coin_from, answer, _ = wallet.getCoinSelection("Select a coin number 1 - " + str(coin_count) + ", 'X' to continue, or 'Q' to quit: ", wallet.balances)
 
     if answer == USER_ACTION_QUIT:
         print (' 🛑 Exiting...\n')
@@ -89,7 +88,7 @@ def main():
     swap_coin:Coin = wallet.createCoin(swap_uluna, coin_from)
 
     transaction_result:TransactionResult = swap_coins(wallet, swap_coin, coin_to, estimated_amount, True)
-    transaction_result.wallet_denom      = wallet.denom
+    #transaction_result.wallet_denom      = wallet.denom
     
     transaction_result.showResults()
 
