@@ -17,7 +17,6 @@ from classes.wallet import UserParameters
 from classes.wallets import UserWallet, UserWallets
 
 from terra_classic_sdk.core.coin import Coin
-#from hashlib import sha256
 
 def main():
 
