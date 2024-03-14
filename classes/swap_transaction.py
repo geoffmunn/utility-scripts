@@ -99,61 +99,59 @@ class SwapTransaction(TransactionCore):
 
         if self.contract is not None:
             try:
-                #if self.swap_denom != UBASE and self.swap_request_denom != UBASE:
-                contract_swaps:list = [GRDX, ULUNA, UKRW, UUSD]
                 # Contract swaps must be on the columbus-5 chain
-                #if self.terra.chain_id == CHAIN_DATA[ULUNA]['chain_id']:
-                if self.swap_denom in contract_swaps and self.swap_request_denom in contract_swaps:
-                    parts:dict = {}
+                if self.terra.chain_id == CHAIN_DATA[ULUNA]['chain_id']:
+                    contract_swaps:list = [GRDX, ULUNA, UKRW, UUSD]
+                    if self.swap_denom in contract_swaps and self.swap_request_denom in contract_swaps:
+                        parts:dict = {}
 
-                    # Get the pool details
-                    result = self.terra.wasm.contract_query(self.contract, {"pool": {}})
-                    if 'native_token' in result['assets'][0]['info']:
-                        parts[result['assets'][0]['info']['native_token']['denom']] = int(result['assets'][0]['amount'])
-                    else:
-                        # GRDX:
-                        if result['assets'][0]['info']['token']['contract_addr'] == TERRASWAP_GRDX_TO_LUNC_ADDRESS:
-                            parts[GRDX] = int(result['assets'][0]['amount'])
-                        
-                    parts[result['assets'][1]['info']['native_token']['denom']] = int(result['assets'][1]['amount'])
-
-                    if self.swap_denom == GRDX and self.swap_request_denom == ULUNA:
-                        belief_price:float = parts[self.swap_request_denom] / parts[self.swap_denom]
-                    else:
-                        # Everything except GRDX -> ULUNA goes here:
-                        belief_price:float = parts[self.swap_denom] / parts[self.swap_request_denom]
-
-                else:
-                    # UBASE does something different
-                    if self.swap_denom == UBASE or self.swap_request_denom == UBASE:
-                        result           = self.terra.wasm.contract_query(self.contract, {"curve_info": {}})
-                        spot_price:float = float(result['spot_price'])
-
-                        if self.swap_request_denom == UBASE:
-                            belief_price:float = divide_raw_balance((spot_price * 1.053), UBASE)
+                        # Get the pool details
+                        result = self.terra.wasm.contract_query(self.contract, {"pool": {}})
+                        if 'native_token' in result['assets'][0]['info']:
+                            parts[result['assets'][0]['info']['native_token']['denom']] = int(result['assets'][0]['amount'])
                         else:
-                            belief_price:float = divide_raw_balance((spot_price - (spot_price * 0.048)), UBASE)
-                    if self.swap_denom in [UCANDY, UCREMAT, ULENNY] or self.swap_request_denom in [UCANDY, UCREMAT, ULENNY]:
-                        if self.swap_denom in [UCANDY, UCREMAT, ULENNY]:
-                            if self.swap_denom == UCREMAT:
-                                contract_address = CREMAT_SMART_CONTRACT_ADDRESS
-                            elif self.swap_denom == UCANDY:
-                                contract_address = CANDY_SMART_CONTRACT_ADDRESS
+                            # GRDX:
+                            if result['assets'][0]['info']['token']['contract_addr'] == TERRASWAP_GRDX_TO_LUNC_ADDRESS:
+                                parts[GRDX] = int(result['assets'][0]['amount'])
+                            
+                        parts[result['assets'][1]['info']['native_token']['denom']] = int(result['assets'][1]['amount'])
+
+                        if self.swap_denom == GRDX and self.swap_request_denom == ULUNA:
+                            belief_price:float = parts[self.swap_request_denom] / parts[self.swap_denom]
+                        else:
+                            # Everything except GRDX -> ULUNA goes here:
+                            belief_price:float = parts[self.swap_denom] / parts[self.swap_request_denom]
+
+                    else:
+                        # UBASE does something different
+                        if self.swap_denom == UBASE or self.swap_request_denom == UBASE:
+                            result           = self.terra.wasm.contract_query(self.contract, {"curve_info": {}})
+                            spot_price:float = float(result['spot_price'])
+
+                            if self.swap_request_denom == UBASE:
+                                belief_price:float = divide_raw_balance((spot_price * 1.053), UBASE)
                             else:
-                                contract_address = LENNY_SMART_CONTRACT_ADDRESS
+                                belief_price:float = divide_raw_balance((spot_price - (spot_price * 0.048)), UBASE)
+                        if self.swap_denom in [UCANDY, UCREMAT, ULENNY] or self.swap_request_denom in [UCANDY, UCREMAT, ULENNY]:
+                            if self.swap_denom in [UCANDY, UCREMAT, ULENNY]:
+                                if self.swap_denom == UCREMAT:
+                                    contract_address = CREMAT_SMART_CONTRACT_ADDRESS
+                                elif self.swap_denom == UCANDY:
+                                    contract_address = CANDY_SMART_CONTRACT_ADDRESS
+                                else:
+                                    contract_address = LENNY_SMART_CONTRACT_ADDRESS
 
-                        elif self.swap_request_denom in [UCANDY, UCREMAT, ULENNY]:
-                            if self.swap_request_denom == UCREMAT:
-                                contract_address = CREMAT_SMART_CONTRACT_ADDRESS
-                            elif self.swap_request_denom == UCANDY:
-                                contract_address = CANDY_SMART_CONTRACT_ADDRESS
-                            else:
-                                contract_address = LENNY_SMART_CONTRACT_ADDRESS
+                            elif self.swap_request_denom in [UCANDY, UCREMAT, ULENNY]:
+                                if self.swap_request_denom == UCREMAT:
+                                    contract_address = CREMAT_SMART_CONTRACT_ADDRESS
+                                elif self.swap_request_denom == UCANDY:
+                                    contract_address = CANDY_SMART_CONTRACT_ADDRESS
+                                else:
+                                    contract_address = LENNY_SMART_CONTRACT_ADDRESS
 
-                        #print ('contract address:', contract_address)
-                        result = self.terra.wasm.contract_query(TERRAPORT_SWAP_ADDRESS, {"simulate_swap_operations":{"offer_amount":"1000000","operations":[{"terra_port":{"offer_asset_info":{"native_token":{"denom":"uluna"}},"ask_asset_info":{"token":{"contract_addr":contract_address}}}}]}})
-                        belief_price:float = float(result['amount']) / (10 ** get_precision(ULUNA))
-
+                            result = self.terra.wasm.contract_query(TERRAPORT_SWAP_ADDRESS, {"simulate_swap_operations":{"offer_amount":"1000000","operations":[{"terra_port":{"offer_asset_info":{"native_token":{"denom":"uluna"}},"ask_asset_info":{"token":{"contract_addr":contract_address}}}}]}})
+                            belief_price:float = float(result['amount']) / (10 ** get_precision(ULUNA))
+                    
             except Exception as err:
                 print (' 🛑 A connection error has occurred:')
                 print (err)
@@ -161,9 +159,6 @@ class SwapTransaction(TransactionCore):
            
         self.belief_price = round(belief_price, 18)
 
-        #print ('swap_denom:', self.swap_denom)
-        #print ('swap request denom:', self.swap_request_denom)
-        #print ('belief price:', self.belief_price)
         return self.belief_price
     
     def create(self, seed:str, denom:str = 'uluna') -> SwapTransaction:
