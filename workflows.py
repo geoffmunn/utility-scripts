@@ -484,7 +484,7 @@ def main():
                                     
                                 if is_triggered == True:
                                     # We will redelegate an amount based on the 'amount' value, calculated from the returned rewards
-                                    amount_ok, delegation_coin = check_amount(step['amount'], validator_withdrawals[validator]['balances'], False)
+                                    amount_ok, delegation_coin = check_amount(step['amount'], validator_withdrawals[validator]['balances'], True)
 
                                     if amount_ok == True:
                                         
