@@ -365,7 +365,7 @@ class SwapTransaction(TransactionCore):
 
         return is_offchain_swap
     
-    def logTrade(self, wallet, transaction_result:TransactionResult) -> bool:
+    def logTrade(self, wallet, transaction_result:TransactionResult) -> int:
         """
         Put the details of this swap into the database.
 
@@ -407,13 +407,15 @@ class SwapTransaction(TransactionCore):
             exit_profit:float = 0.01
             exit_loss:float   = -0.05
 
-            conn = sqlite3.connect(DB_FILE_NAME)
-            conn.execute(insert_trade_query, [wallet_name, coin_from, amount_from, price_from, coin_to, amount_to, price_to, json.dumps(fees), exit_profit, exit_loss])
+            conn   = sqlite3.connect(DB_FILE_NAME)
+            cursor = conn.cursor()
+            cursor.execute(insert_trade_query, [wallet_name, coin_from, amount_from, price_from, coin_to, amount_to, price_to, json.dumps(fees), exit_profit, exit_loss])
+            new_id = cursor.lastrowid
             conn.commit()
 
-            return True
+            return new_id
         else:
-            return False
+            return 0
 
     def offChainSimulate(self) -> bool:
         """
@@ -1119,7 +1121,7 @@ class SwapTransaction(TransactionCore):
                 
         return estimated_amount
 
-def swap_coins(wallet, swap_coin:Coin, swap_to_denom:str, estimated_amount:int = 0, prompt_user:bool = True):
+def swap_coins(wallet, swap_coin:Coin, swap_to_denom:str, estimated_amount:int = 0, prompt_user:bool = True, log_trade:bool = False):
     """
     A wrapper function for workflows and wallet management.
 
@@ -1262,7 +1264,8 @@ def swap_coins(wallet, swap_coin:Coin, swap_to_denom:str, estimated_amount:int =
     transaction_result.label             = 'Swapped amount'
     transaction_result.wallet_denom      = wallet.denom
 
-    # If this was successful, then log the trade
-    swap_tx.logTrade(wallet, transaction_result)
+    if log_trade == True:
+        # If this was successful, then log the trade
+        transaction_result.trade_id = swap_tx.logTrade(wallet, transaction_result)
 
     return transaction_result
