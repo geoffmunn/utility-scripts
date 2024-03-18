@@ -670,6 +670,7 @@ class TransactionResult(TransactionCore):
         self.message:str                             = ''
         self.result_received:Coins                   = None     # Even if we only get one coin, we'll treat it as a list of coins
         self.result_sent:Coin                        = None
+        self.trade_id:int                            = 0        # If we have logged this swap, then this is the trade id
         self.transacted_amount:str                   = None     # This holds the sent/delegated/whatever amount. It has already been through the formatUluna function.
         self.transaction_confirmed:bool              = None
 
