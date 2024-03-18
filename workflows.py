@@ -633,7 +633,7 @@ def main():
                                             swap_to_denom:str = list(FULL_COIN_LOOKUP.keys())[list(FULL_COIN_LOOKUP.values()).index(step['swap to'])]
                                             logs.message(f'  ➜ You are swapping {wallet.formatUluna(swap_coin.amount, swap_coin.denom, True)} for {FULL_COIN_LOOKUP[swap_to_denom]}.')
 
-                                            transaction_result:TransactionResult = swap_coins(step_wallet, swap_coin, swap_to_denom, '', False)
+                                            transaction_result:TransactionResult = swap_coins(step_wallet, swap_coin, swap_to_denom, '', False, True)
                                             transaction_result.showResults()
 
                                             if transaction_result.is_error == True:
