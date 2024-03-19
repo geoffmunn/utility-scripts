@@ -614,10 +614,8 @@ class SwapTransaction(TransactionCore):
 
         if self.fee_deductables is not None:
             if int(self.swap_amount + self.fee_deductables) > int(self.balances[self.swap_denom]):
-                #print ('fee deductibles:', self.fee_deductables)
                 self.swap_amount = int(self.swap_amount - self.fee_deductables)
             
-        #print ('new swap amount: ', self.swap_amount)
         try:
             channel_id = CHAIN_DATA[self.wallet_denom]['ibc_channels'][self.swap_denom]
             
@@ -814,7 +812,6 @@ class SwapTransaction(TransactionCore):
             # Build a fee object
             if fee_denom == ULUNA and self.swap_denom == ULUNA:
                 new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount + self.tax))})
-            #if self.swap_denom == UBASE or self.swap_denom == GRDX:
             if  self.swap_denom in non_uluna_coins:
                 new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount))})
             else:
@@ -1093,7 +1090,7 @@ class SwapTransaction(TransactionCore):
                     swap_price       = self.beliefPrice()
                     estimated_amount = float(self.swap_amount * swap_price)
             elif self.swap_request_denom in [UCANDY, UCREMAT, ULENNY] and self.swap_denom == ULUNA:
-                swap_price = self.beliefPrice()
+                swap_price       = self.beliefPrice()
                 estimated_amount = float(self.swap_amount * swap_price)
             else:
                 # This will cover nearly all swap pairs:
@@ -1113,7 +1110,7 @@ class SwapTransaction(TransactionCore):
                 # NOTE: DOES NOT WORK AT THE MOMENT DUE TO A CHAIN CHANGE
                 try:
                     swap_details:Coin = self.terra.market.swap_rate(Coin(self.swap_denom, self.swap_amount), self.swap_request_denom)
-                    estimated_amount = swap_details.amount
+                    estimated_amount  = swap_details.amount
                 except Exception as err:
                     #print (f'An error occured getting prices for swapping {self.swap_denom} to {self.swap_request_denom}')
                     #print (err)
@@ -1252,7 +1249,7 @@ def swap_coins(wallet, swap_coin:Coin, swap_to_denom:str, estimated_amount:int =
                     transaction_result.log      = f' 🛎️  {transaction_result.broadcast_result.raw_log}'
                     transaction_result.is_error = True
                 else:
-                    transaction_result.message = f' 🛎️  No broadcast log on {wallet.name} was available.'
+                    transaction_result.message  = f' 🛎️  No broadcast log on {wallet.name} was available.'
                     transaction_result.is_error = True
         
     else:
