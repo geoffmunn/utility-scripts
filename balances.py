@@ -79,7 +79,6 @@ def main():
         if len(wallet_name) > label_widths[1]:
             label_widths[1] = len(wallet_name)
 
-
         for denom in wallet.balances:
             raw_amount:float   = divide_raw_balance(wallet.balances[denom], denom)
             denom:str          = wallet.denomTrace(denom)
