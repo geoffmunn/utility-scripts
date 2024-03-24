@@ -49,7 +49,7 @@ LENNY_SMART_CONTRACT_ADDRESS    =  'terra1gcr97yaq923qaxa3gzn70kpx29c28m2c3prxn6
 TERRAPORT_SWAP_ADDRESS          = 'terra1vrqd7fkchyc7wjumn8fxly88z7kath4djjls3yc5th5g76f3543salu48s'
 CREMAT_SMART_CONTRACT_ADDRESS   = 'terra1zkhwtm4a559emekwj7z4vklzqupgjyad8ncpwvav38y5ef6g5tjse7ceus'
 CANDY_SMART_CONTRACT_ADDRESS    = 'terra1nuwdr5zaul2gnq88xapq8ythmaw4092kt8lxsl6jd36h47u8vpcqnrmdcm'
-
+ELON_SMART_CONTRACT_ADDRESS     = 'terra13d6xlk4d6cfa6c5c7n2ffua5d5fk5ggfq8vsxr34xnxr07nmke0qajzu8y'
 # Do not change these:
 
 # Standard actions:
@@ -134,6 +134,7 @@ UCTK      = 'uctk'
 UDEC      = 'udec'
 UDSM      = 'udsm'
 UDVPN     = 'udvpn'
+UELON     = 'uelon'
 UGRAVITON = 'ugraviton'
 UHUAHUA   = 'uhuahua'
 UIOV      = 'uiov'
@@ -208,6 +209,7 @@ FULL_COIN_LOOKUP = {
     'udkk':    'DKTC',
     UNGM:      'e-Money',
     EEUR:      'EEUR',
+    UELON:     'ELON',
     'ueur':    'EUTC',
     AEVMOS:    'Evmos',
     AFET:      'Fetch.ai',
@@ -286,6 +288,7 @@ BASIC_COIN_LOOKUP = {
 COIN_ALIASES = {
     CANDY_SMART_CONTRACT_ADDRESS:   'LNC',
     CREMAT_SMART_CONTRACT_ADDRESS:  'CREMAT',
+    ELON_SMART_CONTRACT_ADDRESS:    'ELON',
     LENNY_SMART_CONTRACT_ADDRESS:   'Lenny',
     TERRASWAP_GRDX_TO_LUNC_ADDRESS: 'GRDX'    
 }
