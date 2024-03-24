@@ -369,6 +369,11 @@ class SwapTransaction(TransactionCore):
         """
         Put the details of this swap into the database.
 
+        @params:
+            - wallet: the current wallet that this trade is applied to
+            - transaction_result: the result we're getting trade details from
+
+        @return: the ID of the database row we've added
         """
 
         if transaction_result.is_error == False:
@@ -378,14 +383,22 @@ class SwapTransaction(TransactionCore):
             coin_from:str    = self.swap_denom
             amount_from:int  = self.swap_amount
             price_from:float = float(wallet.getCoinPrice([coin_from])[coin_from])
-            
             coin_to:str      = self.swap_request_denom
-            price_to:float   = float(wallet.getCoinPrice([coin_to])[coin_to])
+
+            # Some coins won't return a price because they're not on coingecko:
+            non_uluna_coins:list = [GRDX, UBASE, UCANDY, UCREMAT, ULENNY]
+
+            if coin_to not in non_uluna_coins:
+                price_to:float   = float(wallet.getCoinPrice([coin_to])[coin_to])
+            else:
+                price_to:float = 0
 
             # Get the received coin from the results
             received_coin:Coin
+            amount_to:int = 0
             for received_coin in transaction_result.result_received:
-                if received_coin.denom == coin_to:
+                readable_denom = wallet.denomTrace(received_coin.denom)
+                if readable_denom == coin_to:
                     amount_to:int = received_coin.amount
 
             fees:dict = {}
