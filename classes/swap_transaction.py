@@ -822,7 +822,7 @@ class SwapTransaction(TransactionCore):
             # Build a fee object
             if fee_denom == ULUNA and self.swap_denom == ULUNA:
                 new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount + self.tax))})
-            if  self.swap_denom in non_uluna_coins:
+            if  self.swap_denom in NON_ULUNA_COINS.values():
                 new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount))})
             else:
                 new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount)), Coin(self.swap_denom, int(self.tax))})
