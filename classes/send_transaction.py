@@ -118,10 +118,15 @@ class SendTransaction(TransactionCore):
         try:
             tx:Tx = None
 
-            if self.denom == UBASE:
+            if self.denom in NON_ULUNA_COINS.values():
+                if self.denom == GRDX:
+                    contract_address = TERRASWAP_GRDX_TO_LUNC_ADDRESS
+                else:
+                    contract_address = (list(NON_ULUNA_COINS.keys())[list(NON_ULUNA_COINS.values()).index(self.denom)])
+
                 msg = MsgExecuteContract(
                     sender      = self.current_wallet.key.acc_address,
-                    contract    = BASE_SMART_CONTRACT_ADDRESS,
+                    contract    = contract_address,
                     msg = {
                         "transfer": {
                             "amount": str(send_amount),
@@ -129,50 +134,7 @@ class SendTransaction(TransactionCore):
                         }
                     }
                 )
-            elif self.denom == GRDX:
-                msg = MsgExecuteContract(
-                    sender      = self.current_wallet.key.acc_address,
-                    contract    = TERRASWAP_GRDX_TO_LUNC_ADDRESS,
-                    msg = {
-                        "transfer": {
-                            "amount": str(send_amount),
-                            "recipient": self.recipient_address
-                        }
-                    }
-                )
-            elif self.denom == ULENNY:
-                msg = MsgExecuteContract(
-                    sender      = self.current_wallet.key.acc_address,
-                    contract    = LENNY_SMART_CONTRACT_ADDRESS,
-                    msg = {
-                        "transfer": {
-                            "amount": str(send_amount),
-                            "recipient": self.recipient_address
-                        }
-                    }
-                )
-            elif self.denom == UCREMAT:
-                msg = MsgExecuteContract(
-                    sender      = self.current_wallet.key.acc_address,
-                    contract    = CREMAT_SMART_CONTRACT_ADDRESS,
-                    msg = {
-                        "transfer": {
-                            "amount": str(send_amount),
-                            "recipient": self.recipient_address
-                        }
-                    }
-                )
-            elif self.denom == UCANDY:
-                msg = MsgExecuteContract(
-                    sender      = self.current_wallet.key.acc_address,
-                    contract    = CANDY_SMART_CONTRACT_ADDRESS,
-                    msg = {
-                        "transfer": {
-                            "amount": str(send_amount),
-                            "recipient": self.recipient_address
-                        }
-                    }
-                )
+
             else:
                 msg = MsgSend(
                     from_address = self.current_wallet.key.acc_address,
