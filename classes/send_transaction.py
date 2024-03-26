@@ -18,6 +18,7 @@ from constants.constants import (
     FULL_COIN_LOOKUP,
     GRDX,
     LENNY_SMART_CONTRACT_ADDRESS,
+    NON_ULUNA_COINS,
     SEARCH_RETRY_COUNT,
     TERRASWAP_GRDX_TO_LUNC_ADDRESS,
     UBASE,
@@ -352,10 +353,8 @@ class SendTransaction(TransactionCore):
             fee_amount   = fee_bit.amount
             fee_denom    = fee_bit.denom
         
-            non_uluna_coins:list = [GRDX, UBASE, UCANDY, UCREMAT, ULENNY]
             # Calculate the tax portion
-            #if self.denom == UBASE or self.denom == GRDX:
-            if self.denom in non_uluna_coins:
+            if self.denom in NON_ULUNA_COINS.values():
                 # No taxes for BASE and GRDX transfers
                 self.tax = 0
             else:
@@ -364,7 +363,7 @@ class SendTransaction(TransactionCore):
             # Build a fee object
             if fee_denom == ULUNA and self.denom == ULUNA:
                 new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount + self.tax))})
-            elif self.denom in non_uluna_coins:
+            elif self.denom in NON_ULUNA_COINS.values():
                 new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount))})
             else:
                 new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount)), Coin(self.denom, int(self.tax))})
@@ -552,7 +551,7 @@ def send_transaction(wallet:UserWallet, recipient_address:str, send_coin:Coin, m
             user_choice = get_user_choice(' ❓ Do you want to continue? (y/n) ', [])
 
             if user_choice == False:
-                print (' 🛑 Exiting...\n')
+                print ('\n 🛑 Exiting...\n')
                 exit()
         else:
             print (send_tx.readableFee())

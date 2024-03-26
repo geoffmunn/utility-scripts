@@ -24,6 +24,7 @@ from constants.constants import (
     LENNY_SMART_CONTRACT_ADDRESS,
     MAX_SPREAD,
     MIN_OSMO_GAS,
+    NON_ULUNA_COINS,
     OFFCHAIN_COINS,
     OSMOSIS_FEE_MULTIPLIER,
     TERRAPORT_SWAP_ADDRESS,
@@ -386,9 +387,7 @@ class SwapTransaction(TransactionCore):
             coin_to:str      = self.swap_request_denom
 
             # Some coins won't return a price because they're not on coingecko:
-            non_uluna_coins:list = [GRDX, UBASE, UCANDY, UCREMAT, ULENNY]
-
-            if coin_to not in non_uluna_coins:
+            if coin_to not in NON_ULUNA_COINS.values():
                 price_to:float   = float(wallet.getCoinPrice([coin_to])[coin_to])
             else:
                 price_to:float = 0
@@ -464,7 +463,7 @@ class SwapTransaction(TransactionCore):
 
                 if current_option2['pool_id'] is None: 
                     print (' 🛑 No pool could be found that supported this swap pair.')
-                    print ('Exiting...\n')    
+                    print ('\n 🛑 Exiting...\n')
                     exit()
 
             routes = [
@@ -802,8 +801,6 @@ class SwapTransaction(TransactionCore):
 
         if tx is not None:
 
-            non_uluna_coins:list = [GRDX, UBASE, UCANDY, UCREMAT, ULENNY]
-
             # Get the stub of the requested fee so we can adjust it
             requested_fee:Fee = tx.auth_info.fee
 
@@ -817,7 +814,7 @@ class SwapTransaction(TransactionCore):
             fee_denom    = fee_bit.denom
 
             # Calculate the tax portion 
-            if self.swap_denom in non_uluna_coins:
+            if self.swap_denom in NON_ULUNA_COINS.values():
                 self.tax = None
             else:
                 self.tax = int(math.ceil(self.swap_amount * float(self.tax_rate)))
@@ -843,7 +840,7 @@ class SwapTransaction(TransactionCore):
                 self.fee_deductables = int(fee_amount + self.tax)
             elif fee_denom == ULUNA and self.swap_denom == UUSD:
                 self.fee_deductables = int(self.tax)
-            elif fee_denom == ULUNA and self.swap_denom in [GRDX, UBASE, UCANDY, UCREMAT, ULENNY]:
+            elif fee_denom == ULUNA and self.swap_denom in NON_ULUNA_COINS.values():
                 self.fee_deductables = 0
             #elif fee_denom == UKUJI and self.swap_denom == UUSD:
             #    self.fee_deductables = int(self.tax)
@@ -1184,7 +1181,7 @@ def swap_coins(wallet, swap_coin:Coin, swap_to_denom:str, estimated_amount:int =
                 user_choice = get_user_choice(' ❓ Do you want to continue? (y/n) ', [])
 
                 if user_choice == False:
-                    print (' 🛑 Exiting...\n')
+                    print ('\n 🛑 Exiting...\n')
                     exit()
             else:
                 print (swap_tx.readableFee())
@@ -1202,7 +1199,7 @@ def swap_coins(wallet, swap_coin:Coin, swap_to_denom:str, estimated_amount:int =
                     user_choice = get_user_choice(' ❓ Do you want to continue? (y/n) ', [])
 
                     if user_choice == False:
-                        print (' 🛑 Exiting...\n')
+                        print ('\n 🛑 Exiting...\n')
                         exit()
                 else:
                     print (swap_tx.readableFee())
@@ -1219,7 +1216,7 @@ def swap_coins(wallet, swap_coin:Coin, swap_to_denom:str, estimated_amount:int =
                     user_choice = get_user_choice(' ❓ Do you want to continue? (y/n) ', [])
 
                     if user_choice == False:
-                        print (' 🛑 Exiting...\n')
+                        print ('\n 🛑 Exiting...\n')
                         exit()
                 else:
                     print (swap_tx.readableFee())
@@ -1227,8 +1224,6 @@ def swap_coins(wallet, swap_coin:Coin, swap_to_denom:str, estimated_amount:int =
                 swap_result:bool = swap_tx.swap()
     
     if swap_result == True:
-        #print ('about to broadcast, exiting')
-        #exit()
         transaction_result = swap_tx.broadcast()
 
         if transaction_result.broadcast_result is not None and transaction_result.broadcast_result.code == 32:
