@@ -35,6 +35,7 @@ from constants.constants import (
     FULL_COIN_LOOKUP,
     GRDX,
     LENNY_SMART_CONTRACT_ADDRESS,
+    NON_ULUNA_COINS,
     TERRASWAP_GRDX_TO_LUNC_ADDRESS,
     UBASE,
     UCANDY,
@@ -412,25 +413,16 @@ class UserWallet:
             if core_coins_only == False:
                 # Add the extra coins (Base, GarudaX, etc)
                 if self.terra is not None and self.terra.chain_id == CHAIN_DATA[ULUNA]['chain_id']:
-                    coin_balance = self.terra.wasm.contract_query(BASE_SMART_CONTRACT_ADDRESS, {'balance':{'address':self.address}})
-                    if int(coin_balance['balance']) > 0:
-                        balances[UBASE] = coin_balance['balance']
 
-                    coin_balance = self.terra.wasm.contract_query(TERRASWAP_GRDX_TO_LUNC_ADDRESS, {'balance':{'address':self.address}})
-                    if int(coin_balance['balance']) > 0:
-                        balances[GRDX] = coin_balance['balance']
+                    for coin_item in NON_ULUNA_COINS:
+                        if NON_ULUNA_COINS[coin_item] == GRDX:
+                            coin_address = TERRASWAP_GRDX_TO_LUNC_ADDRESS
+                        else:
+                            coin_address = coin_item
 
-                    coin_balance = self.terra.wasm.contract_query(LENNY_SMART_CONTRACT_ADDRESS, {'balance':{'address':self.address}})
-                    if int(coin_balance['balance']) > 0:
-                        balances[ULENNY] = coin_balance['balance']
-
-                    coin_balance = self.terra.wasm.contract_query(CREMAT_SMART_CONTRACT_ADDRESS, {'balance':{'address':self.address}})
-                    if int(coin_balance['balance']) > 0:
-                        balances[UCREMAT] = coin_balance['balance']
-
-                    coin_balance = self.terra.wasm.contract_query(CANDY_SMART_CONTRACT_ADDRESS, {'balance':{'address':self.address}})
-                    if int(coin_balance['balance']) > 0:
-                        balances[UCANDY] = coin_balance['balance']
+                        coin_balance = self.terra.wasm.contract_query(coin_address, {'balance':{'address':self.address}})  
+                        if int(coin_balance['balance']) > 0:
+                            balances[NON_ULUNA_COINS[coin_item]] = coin_balance['balance']
 
         else:
             balances:dict = {}
