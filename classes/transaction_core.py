@@ -27,6 +27,7 @@ from constants.constants import (
     GAS_PRICE_URI,
     GRDX_SMART_CONTRACT_ADDRESS,
     LENNY_SMART_CONTRACT_ADDRESS,
+    NON_ULUNA_COINS,
     SEARCH_RETRY_COUNT,
     UBASE,
     ULUNA,
@@ -436,7 +437,7 @@ class TransactionCore():
                                 transaction_result.log_found = True
 
                             # GRDX/UCREMAT/ULENNY -> ULUNA swaps (will override the standard swaps detection done earlier)
-                            if '_contract_address' in log.events_by_type['wasm'] and (GRDX_SMART_CONTRACT_ADDRESS in log.events_by_type['wasm']['_contract_address'] or CANDY_SMART_CONTRACT_ADDRESS in log.events_by_type['wasm']['_contract_address'] or CREMAT_SMART_CONTRACT_ADDRESS in log.events_by_type['wasm']['_contract_address'] or LENNY_SMART_CONTRACT_ADDRESS in log.events_by_type['wasm']['_contract_address']):
+                            if '_contract_address' in log.events_by_type['wasm'] and not set(list(NON_ULUNA_COINS.keys())).isdisjoint(log.events_by_type['wasm']['_contract_address']):
                                 if 'action' in log.events_by_type['wasm'] and log.events_by_type['wasm']['action'][0] == 'transfer':
                                     # Sending GRDX/ULENNY to another wallet
                                     transaction_result.result_sent     = Coin.from_data({'amount': log.events_by_type['wasm']['amount'][0], 'denom': self.denom})
