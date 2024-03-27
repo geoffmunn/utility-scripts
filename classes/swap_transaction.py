@@ -698,7 +698,7 @@ class SwapTransaction(TransactionCore):
         
         use_market_swap:bool = True
         self.contract        = None
-        contract_swaps:list  = [GRDX, UBASE, UCANDY, UCREMAT, ULENNY, ULUNA, UKRW, UUSD]
+        contract_swaps:list  = list(NON_ULUNA_COINS.values()) + [ULUNA, UKRW, UUSD]
 
         if self.swap_denom in contract_swaps and self.swap_request_denom in contract_swaps:
             use_market_swap = False
@@ -706,18 +706,10 @@ class SwapTransaction(TransactionCore):
             if self.swap_denom == ULUNA:
                 if self.swap_request_denom == UUSD:
                     self.contract = TERRASWAP_ULUNA_TO_UUSD_ADDRESS
-                if self.swap_request_denom == UKRW:
+                elif self.swap_request_denom == UKRW:
                     self.contract = TERRASWAP_UKRW_TO_ULUNA_ADDRESS
-                if self.swap_request_denom == UBASE:
-                    self.contract = BASE_SMART_CONTRACT_ADDRESS
-                if self.swap_request_denom == GRDX:
-                    self.contract = GRDX_SMART_CONTRACT_ADDRESS
-                if self.swap_request_denom == ULENNY:
-                    self.contract = LENNY_SMART_CONTRACT_ADDRESS
-                if self.swap_request_denom == UCREMAT:
-                    self.contract = CREMAT_SMART_CONTRACT_ADDRESS
-                if self.swap_request_denom == UCANDY:
-                    self.contract = CANDY_SMART_CONTRACT_ADDRESS
+                else:
+                    self.contract = (list(NON_ULUNA_COINS.keys())[list(NON_ULUNA_COINS.values()).index(self.swap_request_denom)])
 
             if self.swap_denom == UUSD:
                 if self.swap_request_denom == ULUNA:
@@ -733,25 +725,9 @@ class SwapTransaction(TransactionCore):
                     self.contract = None
                     use_market_swap = True
 
-            if self.swap_denom == UBASE:
+            if self.swap_denom in NON_ULUNA_COINS.values():
                 if self.swap_request_denom == ULUNA:
-                    self.contract = BASE_SMART_CONTRACT_ADDRESS
-
-            if self.swap_denom == GRDX:
-                if self.swap_request_denom == ULUNA:
-                    self.contract = GRDX_SMART_CONTRACT_ADDRESS
-
-            if self.swap_denom == ULENNY:
-                if self.swap_request_denom == ULUNA:
-                    self.contract = LENNY_SMART_CONTRACT_ADDRESS
-
-            if self.swap_denom == UCREMAT:
-                if self.swap_request_denom == ULUNA:
-                    self.contract = CREMAT_SMART_CONTRACT_ADDRESS
-            
-            if self.swap_denom == UCANDY:
-                if self.swap_request_denom == ULUNA:
-                    self.contract = CANDY_SMART_CONTRACT_ADDRESS
+                    self.contract = (list(NON_ULUNA_COINS.keys())[list(NON_ULUNA_COINS.values()).index(self.swap_denom)])
 
         self.use_market_swap = use_market_swap
 
