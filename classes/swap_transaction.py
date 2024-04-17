@@ -889,13 +889,7 @@ class SwapTransaction(TransactionCore):
                         sequence   = self.sequence,
                     )
                 elif self.swap_denom == ULUNA and self.swap_request_denom in non_uluna_coins:
-                    # We are swapping ULUNA to ULENNY or UCREMAT
-                    # if self.swap_request_denom == UCREMAT:
-                    #     contract_address = CREMAT_SMART_CONTRACT_ADDRESS
-                    # elif self.swap_request_denom == UCANDY:
-                    #     contract_address = CANDY_SMART_CONTRACT_ADDRESS
-                    # else:
-                    #     contract_address = LENNY_SMART_CONTRACT_ADDRESS
+                    # We are swapping ULUNA to a Terraport contract
                     contract_address = (list(NON_ULUNA_COINS.keys())[list(NON_ULUNA_COINS.values()).index(self.swap_request_denom)])
 
                     tx_msg = MsgExecuteContract(
@@ -1079,7 +1073,6 @@ class SwapTransaction(TransactionCore):
                 if self.swap_request_denom == ULUNA:
                     swap_price       = self.beliefPrice()
                     estimated_amount = float(self.swap_amount * swap_price)
-            #elif self.swap_request_denom in [UCANDY, UCREMAT, ULENNY] and self.swap_denom == ULUNA:
             elif self.swap_request_denom in NON_ULUNA_COINS and self.swap_denom == ULUNA:
                 swap_price       = self.beliefPrice()
                 estimated_amount = float(self.swap_amount * swap_price)
