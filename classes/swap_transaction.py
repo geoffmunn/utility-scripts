@@ -376,7 +376,12 @@ class SwapTransaction(TransactionCore):
             wallet_name:str  = wallet.name
             coin_from:str    = self.swap_denom
             amount_from:int  = self.swap_amount
-            price_from:float = float(wallet.getCoinPrice([coin_from])[coin_from])
+
+            if coin_from not in NON_ULUNA_COINS.values():
+                price_from:float = float(wallet.getCoinPrice([coin_from])[coin_from])
+            else:
+                price_from:float = 0
+                
             coin_to:str      = self.swap_request_denom
 
             # Some coins won't return a price because they're not on coingecko:
@@ -388,11 +393,16 @@ class SwapTransaction(TransactionCore):
             # Get the received coin from the results
             received_coin:Coin
             amount_to:int = 0
-            for received_coin in transaction_result.result_received:
-                readable_denom = wallet.denomTrace(received_coin.denom)
-                if readable_denom == coin_to:
-                    amount_to:int = received_coin.amount
 
+            if transaction_result.result_received is not None:
+                for received_coin in transaction_result.result_received:
+                    readable_denom = wallet.denomTrace(received_coin.denom)
+                    if readable_denom == coin_to:
+                        amount_to:int = received_coin.amount
+            else:
+                print ('no result received:')
+                print (transaction_result)
+                
             fees:dict = {}
 
             fee_coins:Coins = self.fee.amount
