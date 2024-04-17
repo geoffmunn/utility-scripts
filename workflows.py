@@ -78,12 +78,12 @@ def check_amount(amount:str, balances:dict, preserve_minimum:bool = False) -> li
 
         if available_balance > 0:
 
-            if amount_bits[0].isnumeric():
-                coin_amount:float = float(amount_bits[0]) * (10 ** get_precision(coin_denom))
-                
+            if amount_bits[0].replace('.', '').isnumeric():
+                coin_amount:int = int(float(amount_bits[0]) * (10 ** get_precision(coin_denom)))
+            
             elif is_percentage(amount_bits[0]):
                 amount:float      = float(amount_bits[0][0:-1]) / 100
-                coin_amount:float = float(available_balance * amount)
+                coin_amount:int   = int(float(available_balance * amount))
 
             if coin_amount > available_balance:
                 amount_ok = False
