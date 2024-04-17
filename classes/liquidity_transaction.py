@@ -228,10 +228,15 @@ class LiquidityTransaction(TransactionCore):
         """
 
         # Reset these values in case this is a re-used object:
-        self.account_number:int = self.current_wallet.account_number()
-        self.fee:Fee            = None
-        self.gas_limit:str      = '1000000'
-        self.sequence:int       = self.current_wallet.sequence()
+        try:
+            self.account_number:int = self.current_wallet.account_number()
+            self.fee:Fee            = None
+            self.gas_limit:str      = '1000000'
+            self.sequence:int       = self.current_wallet.sequence()
+        except Exception as err:
+            print (' 🛑 An unexpected error occurred in the exitSimulate liquidity function:')
+            print (err)
+            return False
 
         # Calculate the two basic components of this request:
         self.share_in_amount = self.calcShareInAmount()
@@ -562,11 +567,16 @@ class LiquidityTransaction(TransactionCore):
         """
         
         # Reset these values in case this is a re-used object:
-        self.account_number:int = self.current_wallet.account_number()
-        self.fee:Fee            = None
-        self.gas_limit:str      = 'auto'
-        self.sequence:int       = self.current_wallet.sequence()
-
+        try:
+            self.account_number:int = self.current_wallet.account_number()
+            self.fee:Fee            = None
+            self.gas_limit:str      = 'auto'
+            self.sequence:int       = self.current_wallet.sequence()
+        except Exception as err:
+            print (' 🛑 An unexpected error occurred in the joinSimulate liquidity function:')
+            print (err)
+            return False
+        
         # We are only allowing for LUNC deposits into liquidity pools, but this could technically be any denom
         liquidity_denom:str = self.IBCfromDenom(self.source_channel, ULUNA)
         
