@@ -339,7 +339,7 @@ def main():
     args = parser.parse_args()
 
     silent_mode:bool = False
-    if args.silent == True:
+    if args.silent.lower() == 'true':
         print ('These workflows will be run in silent mode - only errors will be shown.')
         silent_mode = True
 
@@ -367,6 +367,7 @@ def main():
 
     # Set up the log object
     logs:Log = Log()
+    logs.silentMode = silent_mode
     
     # Go through each workflow and attach the wallets that they match
     for workflow in user_workflows['workflows']:
