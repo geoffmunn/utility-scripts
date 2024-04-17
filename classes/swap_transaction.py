@@ -682,12 +682,16 @@ class SwapTransaction(TransactionCore):
 
         if pool_id not in self.osmosis_pools:
             # Get this pool:
-            pool:Pool = self.terra.pool.osmosis_pool(pool_id)
-            # Save it in the publicly available object:
-            self.osmosis_pools[pool.id] = pool
+            try:
+                pool:Pool = self.terra.pool.osmosis_pool(pool_id)
+                # Save it in the publicly available object:
+                self.osmosis_pools[pool.id] = pool
 
-            # Return this result
-            result = pool        
+                # Return this result
+                result = pool 
+            except Exception as err:
+                print (' 🛑 An unexpected error occurred in the osmosisPoolByID swap function:')
+                print (err)
         else:
             result = self.osmosis_pools[pool_id]
 
