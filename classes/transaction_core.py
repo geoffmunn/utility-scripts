@@ -435,9 +435,9 @@ class TransactionCore():
                                     transaction_result.result_received = Coins.from_proto([Coin.from_data({'amount': log.events_by_type['wasm']['Net Unstake:'][0], 'denom': ULUNA})])
                                 
                                 transaction_result.log_found = True
-
+                            
                             # GRDX/UCREMAT/ULENNY -> ULUNA swaps (will override the standard swaps detection done earlier)
-                            if '_contract_address' in log.events_by_type['wasm'] and not set(list(NON_ULUNA_COINS.keys())).isdisjoint(log.events_by_type['wasm']['_contract_address']):
+                            elif '_contract_address' in log.events_by_type['wasm'] and not set(list(NON_ULUNA_COINS.keys())).isdisjoint(log.events_by_type['wasm']['_contract_address']):
                                 if 'action' in log.events_by_type['wasm'] and log.events_by_type['wasm']['action'][0] == 'transfer':
                                     # Sending GRDX/ULENNY to another wallet
                                     transaction_result.result_sent     = Coin.from_data({'amount': log.events_by_type['wasm']['amount'][0], 'denom': self.denom})
