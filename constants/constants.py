@@ -3,7 +3,7 @@
 
 # User settings - can be changed if required
 CHECK_FOR_UPDATES    = True  # This might slow things down a bit when the script is first run. Change it to False if it becomes a problem.
-WITHDRAWAL_REMAINDER = 250   # This is the amount of Lunc we want to keep after withdrawal and before delegating. You should never delegate the entire balance.
+WITHDRAWAL_REMAINDER = 150   # This is the amount of Lunc we want to keep after withdrawal and before delegating. You should never delegate the entire balance.
 SEARCH_RETRY_COUNT   = 50    # This is the number of times we will check for a transaction to appear in the chain before deciding it didn't work.
 HIDE_DISABLED_COINS  = True  # Some coins are not currently available. Functionality is mostly there, but swaps etc won't work
 
