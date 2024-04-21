@@ -535,8 +535,12 @@ class SwapTransaction(TransactionCore):
 
             # deduct the swap fee:
             #print ('pool:', self.osmosisPoolByID(route['pool_id']))
-            swap_fee:float = float(self.osmosisPoolByID(route['pool_id']).pool_params.swap_fee)
-
+            try:
+                swap_fee:float = float(self.osmosisPoolByID(route['pool_id']).pool_params.swap_fee)
+            except Exception as err:
+                # Something went wrong, we'll abandon this attempt
+                return False
+            
             #print ('swap fee:', swap_fee)
             # Deduct the swap fee
             base_amount_minus_swap_fee:float = float(base_amount) * (1 - swap_fee)
@@ -1102,7 +1106,7 @@ class SwapTransaction(TransactionCore):
                 
         return estimated_amount
 
-def swap_coins(wallet, swap_coin:Coin, swap_to_denom:str, estimated_amount:int = 0, prompt_user:bool = True, log_trade:bool = False):
+def swap_coins(wallet, swap_coin:Coin, swap_to_denom:str, estimated_amount:int = 0, silent_mode:bool = False, log_trade:bool = False):
     """
     A wrapper function for workflows and wallet management.
 
