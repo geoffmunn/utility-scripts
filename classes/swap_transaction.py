@@ -1129,11 +1129,12 @@ def swap_coins(wallet, swap_coin:Coin, swap_to_denom:str, estimated_amount:int =
 
     # Assign the details:
     swap_tx.balances           = wallet.balances
+    swap_tx.sender_address     = wallet.address
+    swap_tx.sender_prefix      = wallet.getPrefix(wallet.address)
+    swap_tx.silent_mode        = silent_mode
     swap_tx.swap_amount        = int(swap_coin.amount)
     swap_tx.swap_denom         = swap_coin.denom
     swap_tx.swap_request_denom = swap_to_denom
-    swap_tx.sender_address     = wallet.address
-    swap_tx.sender_prefix      = wallet.getPrefix(wallet.address)
     swap_tx.wallet_denom       = wallet.denom
 
     # Bump up the gas adjustment - it needs to be higher for swaps it turns out
@@ -1148,7 +1149,7 @@ def swap_coins(wallet, swap_coin:Coin, swap_to_denom:str, estimated_amount:int =
         # This is an off-chain swap. Something like LUNC(terra)->OSMO or LUNC(Osmosis) -> wETH
         swap_result:bool = swap_tx.offChainSimulate()
         if swap_result == True:
-            if prompt_user == True:
+            if silent_mode == False:
                 print (f'You will be swapping {wallet.formatUluna(swap_coin.amount, swap_coin.denom, False)} {FULL_COIN_LOOKUP[swap_coin.denom]} for approximately {estimated_amount} {FULL_COIN_LOOKUP[swap_to_denom]}')
                 print (swap_tx.readableFee())
 
@@ -1157,9 +1158,7 @@ def swap_coins(wallet, swap_coin:Coin, swap_to_denom:str, estimated_amount:int =
                 if user_choice == False:
                     print ('\n 🛑 Exiting...\n')
                     exit()
-            else:
-                print (swap_tx.readableFee())
-
+            
             swap_result:bool = swap_tx.offChainSwap()
     else:
         if use_market_swap == True:
@@ -1167,7 +1166,7 @@ def swap_coins(wallet, swap_coin:Coin, swap_to_denom:str, estimated_amount:int =
             # This is for terra-native swaps ONLY
             swap_result:bool = swap_tx.marketSimulate()
             if swap_result == True:
-                if prompt_user == True:
+                if silent_mode == False:
                     print (f'You will be swapping {wallet.formatUluna(swap_coin.amount, swap_coin.denom, False)} {FULL_COIN_LOOKUP[swap_coin.denom]} for approximately {estimated_amount} {FULL_COIN_LOOKUP[swap_to_denom]}')
                     print (swap_tx.readableFee())
                     user_choice = get_user_choice(' ❓ Do you want to continue? (y/n) ', [])
@@ -1175,8 +1174,6 @@ def swap_coins(wallet, swap_coin:Coin, swap_to_denom:str, estimated_amount:int =
                     if user_choice == False:
                         print ('\n 🛑 Exiting...\n')
                         exit()
-                else:
-                    print (swap_tx.readableFee())
                     
                 swap_result:bool = swap_tx.marketSwap()
         else:
@@ -1184,7 +1181,7 @@ def swap_coins(wallet, swap_coin:Coin, swap_to_denom:str, estimated_amount:int =
 
             swap_result:bool = swap_tx.simulate()
             if swap_result == True:
-                if prompt_user == True:
+                if silent_mode == False:
                     print (f'You will be swapping {wallet.formatUluna(swap_coin.amount, swap_coin.denom, False)} {FULL_COIN_LOOKUP[swap_coin.denom]} for approximately {estimated_amount} {FULL_COIN_LOOKUP[swap_to_denom]}')
                     print (swap_tx.readableFee())
                     user_choice = get_user_choice(' ❓ Do you want to continue? (y/n) ', [])
@@ -1192,31 +1189,29 @@ def swap_coins(wallet, swap_coin:Coin, swap_to_denom:str, estimated_amount:int =
                     if user_choice == False:
                         print ('\n 🛑 Exiting...\n')
                         exit()
-                else:
-                    print (swap_tx.readableFee())
-
+                
                 swap_result:bool = swap_tx.swap()
     
     if swap_result == True:
         transaction_result = swap_tx.broadcast()
 
-        if transaction_result.broadcast_result is not None and transaction_result.broadcast_result.code == 32:
-            while True:
-                print (' 🛎️  Boosting sequence number and trying again...')
+        # if transaction_result.broadcast_result is not None and transaction_result.broadcast_result.code == 32:
+        #     while True:
+        #         print (' 🛎️  Boosting sequence number and trying again...')
 
-                swap_tx.sequence = swap_tx.sequence + 1
-                swap_tx.simulate()
-                print (swap_tx.readableFee())
+        #         swap_tx.sequence = swap_tx.sequence + 1
+        #         swap_tx.simulate()
+        #         print (swap_tx.readableFee())
 
-                swap_tx.swap()
-                transaction_result:TransactionResult = swap_tx.broadcast()
+        #         swap_tx.swap()
+        #         transaction_result:TransactionResult = swap_tx.broadcast()
 
-                if swap_tx is None:
-                    break
+        #         if swap_tx is None:
+        #             break
 
-                # Code 32 = account sequence mismatch
-                if transaction_result.broadcast_result.code != 32:
-                    break
+        #         # Code 32 = account sequence mismatch
+        #         if transaction_result.broadcast_result.code != 32:
+        #             break
 
         if transaction_result.broadcast_result is None or transaction_result.broadcast_result.is_tx_error():
             transaction_result.is_error = True

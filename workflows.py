@@ -368,7 +368,7 @@ def main():
     # Set up the log object
     logs:Log = Log()
     logs.silentMode = silent_mode
-    
+
     # Go through each workflow and attach the wallets that they match
     for workflow in user_workflows['workflows']:
         workflow['user_wallets'] = []   
@@ -448,8 +448,9 @@ def main():
                                     if is_triggered == True:
                                         logs.message(f"  ➜ Withdrawing {wallet.formatUluna(uluna_reward, ULUNA, False)} rewards from {delegations[validator]['validator_name']}.")
 
-                                        transaction_result:TransactionResult = claim_delegation_rewards(wallet, validator_address = delegations[validator]['validator'])
-                                        transaction_result.showResults()
+                                        transaction_result:TransactionResult = claim_delegation_rewards(wallet, delegations[validator]['validator'], silent_mode)
+                                        if silent_mode == False:
+                                            transaction_result.showResults()
                                         
                                         if transaction_result.is_error == True:
                                             can_continue = False
@@ -491,8 +492,9 @@ def main():
                                         
                                         logs.message(f"  ➜ Redelegating {wallet.formatUluna(delegation_coin.amount, delegation_coin.denom, True)} back to {validator_withdrawals[validator]['validator_name']}.")
 
-                                        transaction_result:TransactionResult = delegate_to_validator(wallet, validator, delegation_coin, True)
-                                        transaction_result.showResults()
+                                        transaction_result:TransactionResult = delegate_to_validator(wallet, validator, delegation_coin, True, silent_mode)
+                                        if silent_mode == False:
+                                            transaction_result.showResults()
                                         
                                         if transaction_result.is_error == True:
                                             can_continue = False
@@ -534,9 +536,11 @@ def main():
 
                                                 logs.message(f"  ➜ Delegating {wallet.formatUluna(delegation_coin.amount, delegation_coin.denom, True)} to {step['validator']}.")
                                                 
-                                                transaction_result:TransactionResult = delegate_to_validator(step_wallet, validator_address, delegation_coin)
+                                                transaction_result:TransactionResult = delegate_to_validator(step_wallet, validator_address, delegation_coin, False, silent_mode)
                                                 transaction_result.wallet_denom      = step_wallet.denom
-                                                transaction_result.showResults()
+
+                                                if silent_mode == False:
+                                                    transaction_result.showResults()
 
                                                 if transaction_result.is_error == True:
                                                     can_continue = False       
@@ -592,9 +596,11 @@ def main():
                                             if 'memo' in step:
                                                 memo = step['memo']
 
-                                            transaction_result:TransactionResult = send_transaction(step_wallet, recipient_address, send_coin, memo, False)
+                                            transaction_result:TransactionResult = send_transaction(step_wallet, recipient_address, send_coin, memo, silent_mode)
                                             transaction_result.wallet_denom      = step_wallet.denom
-                                            transaction_result.showResults()
+
+                                            if silent_mode == False:
+                                                transaction_result.showResults()
 
                                             if transaction_result.is_error == True:
                                                 can_continue = False
@@ -634,8 +640,10 @@ def main():
                                             swap_to_denom:str = list(FULL_COIN_LOOKUP.keys())[list(FULL_COIN_LOOKUP.values()).index(step['swap to'])]
                                             logs.message(f'  ➜ You are swapping {wallet.formatUluna(swap_coin.amount, swap_coin.denom, True)} for {FULL_COIN_LOOKUP[swap_to_denom]}.')
 
-                                            transaction_result:TransactionResult = swap_coins(step_wallet, swap_coin, swap_to_denom, '', False, True)
-                                            transaction_result.showResults()
+                                            transaction_result:TransactionResult = swap_coins(step_wallet, swap_coin, swap_to_denom, '', silent_mode, True)
+
+                                            if silent_mode == False:
+                                                transaction_result.showResults()
 
                                             if transaction_result.is_error == True:
                                                 can_continue = False
@@ -675,9 +683,11 @@ def main():
 
                                             logs.message(f'   ➜  You are joining pool {pool_id} by adding {wallet.formatUluna(swap_coin.amount, swap_coin.denom, True)}.')
                                             
-                                            transaction_result:TransactionResult = join_liquidity_pool(step_wallet, pool_id, swap_coin.amount, False)
+                                            transaction_result:TransactionResult = join_liquidity_pool(step_wallet, pool_id, swap_coin.amount, silent_mode)
                                             transaction_result.wallet_denom      = step_wallet.denom
-                                            transaction_result.showResults()
+                                            
+                                            if silent_mode == False:
+                                                transaction_result.showResults()
 
                                             if transaction_result.is_error == True:
                                                 can_continue = False
@@ -738,9 +748,11 @@ def main():
                                     if is_triggered == True:
                                         logs.message(f' ➜  You are exiting pool {pool_id} by withdrawing {amount_out * 100}%.')
                                         
-                                        transaction_result:TransactionResult = exit_liquidity_pool(step_wallet, pool_id, amount_out, False)
+                                        transaction_result:TransactionResult = exit_liquidity_pool(step_wallet, pool_id, amount_out, silent_mode)
                                         transaction_result.wallet_denom      = wallet.denom
-                                        transaction_result.showResults()
+
+                                        if silent_mode == False:
+                                            transaction_result.showResults()
 
                                         if transaction_result.is_error == True:
                                             can_continue = False
@@ -780,8 +792,10 @@ def main():
                                         if is_triggered == True:
                                             logs.message(f" ➜  Switching {wallet.formatUluna(amount_coin.amount, amount_coin.denom, True)} from {step['old validator']} to {step['new validator']}")
                                             
-                                            transaction_result:TransactionResult = switch_validator(wallet, new_validator_address, old_validator_address, amount_coin)
-                                            transaction_result.showResults()
+                                            transaction_result:TransactionResult = switch_validator(wallet, new_validator_address, old_validator_address, amount_coin, silent_mode)
+
+                                            if silent_mode == False:
+                                                transaction_result.showResults()
 
                                             if transaction_result.is_error == True:
                                                 can_continue = False
@@ -825,8 +839,10 @@ def main():
                                         logs.message(f" ➜   You are unstaking {wallet.formatUluna(amount_coin.amount, amount_coin.denom, True)} from {step['validator']}.")
                                         logs.message(' ➜   IMPORTANT NOTE: this will be unavailable for 21 days. Please check the status by using the validator.py script.')
                                         
-                                        transaction_result:TransactionResult = undelegate_from_validator(wallet, validator_address, amount_coin)
-                                        transaction_result.showResults()
+                                        transaction_result:TransactionResult = undelegate_from_validator(wallet, validator_address, amount_coin, silent_mode)
+
+                                        if silent_mode == False:
+                                            transaction_result.showResults()
 
                                         if transaction_result.is_error == True:
                                             can_continue = False

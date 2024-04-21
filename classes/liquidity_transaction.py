@@ -723,7 +723,7 @@ class LiquidityTransaction(TransactionCore):
 
         return token_out_list
     
-def join_liquidity_pool(wallet:UserWallet, pool_id:int, amount_in:int, prompt_user:bool = True) -> TransactionResult:
+def join_liquidity_pool(wallet:UserWallet, pool_id:int, amount_in:int, silent_mode:bool = False) -> TransactionResult:
     """
     A wrapper function for workflows and wallet management.
 
@@ -748,6 +748,7 @@ def join_liquidity_pool(wallet:UserWallet, pool_id:int, amount_in:int, prompt_us
     liquidity_tx.pool_id        = pool_id
     liquidity_tx.pools          = wallet.pools
     liquidity_tx.sender_address = wallet.address
+    liquidity_tx.silent_mode    = silent_mode
     liquidity_tx.source_channel = CHAIN_DATA[wallet.denom]['ibc_channels'][ULUNA]
     liquidity_tx.wallet         = wallet
     liquidity_tx.wallet_denom   = wallet.denom
@@ -757,7 +758,7 @@ def join_liquidity_pool(wallet:UserWallet, pool_id:int, amount_in:int, prompt_us
     
     if liquidity_result == True:
 
-        if prompt_user == True:
+        if silent_mode == False:
             print (liquidity_tx.readableFee())
 
             user_choice = get_user_choice(' ❓ Do you want to continue? (y/n) ', [])
@@ -765,9 +766,7 @@ def join_liquidity_pool(wallet:UserWallet, pool_id:int, amount_in:int, prompt_us
             if user_choice == False:
                 print (' 🛑 Exiting...\n')
                 exit()
-        else:
-            print (liquidity_tx.readableFee())
-
+        
         # Now we know what the fee is, we can do it again and finalise it
         liquidity_result:bool = liquidity_tx.joinPool()
             
@@ -816,7 +815,7 @@ def join_liquidity_pool(wallet:UserWallet, pool_id:int, amount_in:int, prompt_us
 
     return transaction_result
 
-def exit_liquidity_pool(wallet:UserWallet, pool_id:int, amount_out:float, prompt_user:bool = True) -> TransactionResult:
+def exit_liquidity_pool(wallet:UserWallet, pool_id:int, amount_out:float, silent_mode:bool = False) -> TransactionResult:
     """
     A wrapper function for workflows and wallet management.
 
@@ -843,6 +842,7 @@ def exit_liquidity_pool(wallet:UserWallet, pool_id:int, amount_out:float, prompt
     liquidity_tx.pool_id        = pool_id
     liquidity_tx.pools          = wallet.pools
     liquidity_tx.sender_address = wallet.address
+    liquidity_tx.silent_mode    = silent_mode
     liquidity_tx.source_channel = CHAIN_DATA[wallet.denom]['ibc_channels'][ULUNA]
     liquidity_tx.wallet         = wallet
     liquidity_tx.wallet_denom   = wallet.denom
@@ -851,7 +851,7 @@ def exit_liquidity_pool(wallet:UserWallet, pool_id:int, amount_out:float, prompt
     liquidity_result:bool = liquidity_tx.exitSimulate()
     
     if liquidity_result == True:
-        if prompt_user == True:
+        if silent_mode == False:
             print (liquidity_tx.readableFee())
 
             user_choice = get_user_choice(' ❓ Do you want to continue? (y/n) ', [])
@@ -859,9 +859,7 @@ def exit_liquidity_pool(wallet:UserWallet, pool_id:int, amount_out:float, prompt
             if user_choice == False:
                 print (' 🛑 Exiting...\n')
                 exit()
-        else:
-            print (liquidity_tx.readableFee())
-
+        
         # Now we know what the fee is, we can do it again and finalise it
         liquidity_result:bool = liquidity_tx.exitPool()
             

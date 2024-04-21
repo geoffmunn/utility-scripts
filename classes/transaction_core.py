@@ -60,6 +60,7 @@ class TransactionCore():
         self.ibc_routes:list                         = None # Only used by swaps
         self.prices:dict                             = None
         self.sequence:int                            = None
+        self.silent_mode:bool                        = False
         self.tax_rate:json                           = None
         self.terra:LCDClient                         = None
         self.transaction:Tx                          = None
@@ -325,7 +326,9 @@ class TransactionCore():
         # Put the broadcast result here - the displayed hash comes from this
         transaction_result.broadcast_result = self.broadcast_result
 
-        print (f'\n 🔎︎ Looking for the TX hash...')
+        if self.silent_mode == False:
+            print (f'\n 🔎︎ Looking for the TX hash...')
+
         while True:
             # We will be the current height - 1 just in case it rolled over just as we started the search
             block_height:int = int(self.terra.tendermint.block_info()['block']['header']['height']) - 1
@@ -454,7 +457,9 @@ class TransactionCore():
                             print (log)
 
                     if result['txs'][0].code == 0:
-                        print ('\n ⭐ Found the hash!')
+                        if self.silent_mode == False:
+                            print ('\n ⭐ Found the hash!')
+
                         time.sleep(1)
                         transaction_result.transaction_confirmed = True
                         break
@@ -471,12 +476,14 @@ class TransactionCore():
                         transaction_result.is_error = True
                         break
             else:
-                print ('    No result object returned, trying again...')
+                if self.silent_mode == False:
+                    print ('    No result object returned, trying again...')
                 
             retry_count += 1
 
             if retry_count <= SEARCH_RETRY_COUNT:
-                print (f'    Search attempt {retry_count}/{SEARCH_RETRY_COUNT}')
+                if self.silent_mode == False:
+                    print (f'    Search attempt {retry_count}/{SEARCH_RETRY_COUNT}')
                 time.sleep(1)
             else:
                 break

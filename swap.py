@@ -86,7 +86,7 @@ def main():
 
     swap_coin:Coin = wallet.createCoin(swap_uluna, coin_from)
 
-    transaction_result:TransactionResult = swap_coins(wallet, swap_coin, coin_to, estimated_amount, True, True)
+    transaction_result:TransactionResult = swap_coins(wallet, swap_coin, coin_to, estimated_amount, False, True)
     
     transaction_result.showResults()
 

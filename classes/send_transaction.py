@@ -427,7 +427,7 @@ class SendTransaction(TransactionCore):
         else:
             return False
         
-def send_transaction(wallet:UserWallet, recipient_address:str, send_coin:Coin, memo:str = '', prompt_user:bool = True) -> TransactionResult:
+def send_transaction(wallet:UserWallet, recipient_address:str, send_coin:Coin, memo:str = '', silent_mode:bool = False) -> TransactionResult:
     """
     A wrapper function for workflows and wallet management.
     This lets the user send a LUNC or USTC amount to supported address.
@@ -454,6 +454,7 @@ def send_transaction(wallet:UserWallet, recipient_address:str, send_coin:Coin, m
     send_tx.recipient_prefix  = wallet.getPrefix(recipient_address)
     send_tx.sender_address    = wallet.address
     send_tx.sender_prefix     = wallet.getPrefix(wallet.address)
+    send_tx.silent_mode       = silent_mode
     send_tx.wallet_denom      = wallet.denom
     
     # Based on the recipient prefix, get the receiving denomination
@@ -497,7 +498,7 @@ def send_transaction(wallet:UserWallet, recipient_address:str, send_coin:Coin, m
     # Now complete it
     if send_result == True:
 
-        if prompt_user == True:
+        if silent_mode == False:
             print ('')
             print(f'  ➜ You are about to send {wallet.formatUluna(send_coin.amount, send_coin.denom)} {FULL_COIN_LOOKUP[send_coin.denom]} to {recipient_address}')
             print (send_tx.readableFee())
@@ -507,9 +508,7 @@ def send_transaction(wallet:UserWallet, recipient_address:str, send_coin:Coin, m
             if user_choice == False:
                 print ('\n 🛑 Exiting...\n')
                 exit()
-        else:
-            print (send_tx.readableFee())
-
+        
         recipient_wallet:UserWallet = UserWallet().create('Recipient wallet', send_tx.recipient_address)
         recipient_wallet.getBalances()
 
@@ -528,26 +527,26 @@ def send_transaction(wallet:UserWallet, recipient_address:str, send_coin:Coin, m
             
             transaction_result:TransactionResult = send_tx.broadcast()
 
-            if send_tx.broadcast_result is not None and send_tx.broadcast_result.code == 32:
-                while True:
-                    print (' 🛎️  Boosting sequence number and trying again...')
+            # if send_tx.broadcast_result is not None and send_tx.broadcast_result.code == 32:
+            #     while True:
+            #         print (' 🛎️  Boosting sequence number and trying again...')
 
-                    send_tx.sequence = send_tx.sequence + 1
-                    if send_tx.is_on_chain == True:
-                        send_tx.simulate()
-                        send_tx.send()
-                    else:
-                        send_tx.simulateOffchain()
-                        send_tx.sendOffchain()
+            #         send_tx.sequence = send_tx.sequence + 1
+            #         if send_tx.is_on_chain == True:
+            #             send_tx.simulate()
+            #             send_tx.send()
+            #         else:
+            #             send_tx.simulateOffchain()
+            #             send_tx.sendOffchain()
 
-                    transaction_result:TransactionResult = send_tx.broadcast()
+            #         transaction_result:TransactionResult = send_tx.broadcast()
 
-                    if transaction_result is None:
-                        break
+            #         if transaction_result is None:
+            #             break
                     
-                    # Code 32 = account sequence mismatch
-                    if transaction_result.broadcast_result.code != 32:
-                        break
+            #         # Code 32 = account sequence mismatch
+            #         if transaction_result.broadcast_result.code != 32:
+            #             break
 
             if transaction_result.broadcast_result is None or transaction_result.broadcast_result.is_tx_error() or transaction_result.is_error == True:
                 transaction_result.is_error = True
@@ -564,7 +563,8 @@ def send_transaction(wallet:UserWallet, recipient_address:str, send_coin:Coin, m
                 # Check that the recipient wallet has been updated
                 # To keep things simple, we'll only check for increased balances
                 retry_count:int = 0
-                print (f'\n 🔎︎ Checking that the recipient has this transaction...')
+                if silent_mode == False:
+                    print (f'\n 🔎︎ Checking that the recipient has this transaction...')
                 while True:
                     recipient_wallet.getBalances()
                     new_balance:int = 0
@@ -577,7 +577,8 @@ def send_transaction(wallet:UserWallet, recipient_address:str, send_coin:Coin, m
                     retry_count += 1
 
                     if retry_count <= SEARCH_RETRY_COUNT:
-                        print (f'    Search attempt {retry_count}/{SEARCH_RETRY_COUNT}')
+                        if silent_mode == False:
+                            print (f'    Search attempt {retry_count}/{SEARCH_RETRY_COUNT}')
                         time.sleep(1)
                     else:
                         break
