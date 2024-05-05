@@ -50,6 +50,8 @@ TERRAPORT_SWAP_ADDRESS          = 'terra1vrqd7fkchyc7wjumn8fxly88z7kath4djjls3yc
 CREMAT_SMART_CONTRACT_ADDRESS   = 'terra1zkhwtm4a559emekwj7z4vklzqupgjyad8ncpwvav38y5ef6g5tjse7ceus'
 CANDY_SMART_CONTRACT_ADDRESS    = 'terra1nuwdr5zaul2gnq88xapq8ythmaw4092kt8lxsl6jd36h47u8vpcqnrmdcm'
 ELON_SMART_CONTRACT_ADDRESS     = 'terra13d6xlk4d6cfa6c5c7n2ffua5d5fk5ggfq8vsxr34xnxr07nmke0qajzu8y'
+RAKOFF_SMART_CONTRACT_ADDRESS   = 'terra1vhgq25vwuhdhn9xjll0rhl2s67jzw78a4g2t78y5kz89q9lsdskq2pxcj2'
+
 # Do not change these:
 
 # Standard actions:
@@ -153,6 +155,7 @@ UMED      = 'umed'
 UMNTL     = 'umntl'
 UNGM      = 'ungm'
 UOSMO     = 'uosmo'
+URAKOFF   = 'urakoff'
 UREGEN    = 'uregen'
 USCRT     = 'uscrt'
 USOMM     = 'usomm'
@@ -247,6 +250,7 @@ FULL_COIN_LOOKUP = {
     UXPRT:     'Persistance',
     'uphp':    'PHTC',
     APLANQ:    'Planq',
+    URAKOFF:   'Rakoff',
     AREBUS:    'Rebus',
     UREGEN:    'Regen',
     USCRT:     'Secret',
@@ -290,6 +294,7 @@ COIN_ALIASES = {
     CREMAT_SMART_CONTRACT_ADDRESS:  'CREMAT',
     ELON_SMART_CONTRACT_ADDRESS:    'ELON',
     LENNY_SMART_CONTRACT_ADDRESS:   'Lenny',
+    RAKOFF_SMART_CONTRACT_ADDRESS:  'Rakoff',
     TERRASWAP_GRDX_TO_LUNC_ADDRESS: 'GRDX'
 }
 
@@ -298,8 +303,9 @@ NON_ULUNA_COINS = {
     CANDY_SMART_CONTRACT_ADDRESS:   UCANDY,
     CREMAT_SMART_CONTRACT_ADDRESS:  UCREMAT,
     ELON_SMART_CONTRACT_ADDRESS:    UELON,
+    GRDX_SMART_CONTRACT_ADDRESS:    GRDX,
     LENNY_SMART_CONTRACT_ADDRESS:   ULENNY,
-    GRDX_SMART_CONTRACT_ADDRESS:    GRDX
+    RAKOFF_SMART_CONTRACT_ADDRESS:  URAKOFF
 }
 
 # These coins will be removed from the full coin lookup

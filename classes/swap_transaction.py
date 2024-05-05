@@ -40,6 +40,7 @@ from constants.constants import (
     ULENNY,
     ULUNA,
     UOSMO,
+    URAKOFF,
     UUSD
 )
 
@@ -718,7 +719,6 @@ class SwapTransaction(TransactionCore):
         self.contract        = None
         contract_swaps:list  = list(NON_ULUNA_COINS.values()) + [ULUNA, UKRW, UUSD]
 
-        print ('request denom:', self.swap_request_denom)
         if self.swap_denom in contract_swaps and self.swap_request_denom in contract_swaps:
             use_market_swap = False
 
@@ -853,7 +853,7 @@ class SwapTransaction(TransactionCore):
         @return: bool
         """
 
-        non_uluna_coins:list = [UCANDY, UCREMAT, UELON, ULENNY]
+        non_uluna_coins:list = [UCANDY, UCREMAT, UELON, ULENNY, URAKOFF]
 
         if self.fee_deductables is not None:
             if int(self.swap_amount + self.fee_deductables) > int(self.balances[self.swap_denom]):
