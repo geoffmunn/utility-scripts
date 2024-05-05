@@ -332,16 +332,17 @@ def main():
     check_database()
 
     parser = argparse.ArgumentParser()
-    #parser.add_argument("workflow", nargs='?',default=WORKFLOWS_FILE_NAME)
     parser.add_argument('--workflow', default=WORKFLOWS_FILE_NAME)
     parser.add_argument('--silent', default=False)
 
     args = parser.parse_args()
 
     silent_mode:bool = False
-    if args.silent.lower() == 'true':
-        print ('These workflows will be run in silent mode - only errors will be shown.')
-        silent_mode = True
+    
+    if args.silent != False:
+        if args.silent.lower() == 'true':
+            print ('These workflows will be run in silent mode - only errors will be shown.')
+            silent_mode = True
 
     file_exists = exists(args.workflow)
     if file_exists:
@@ -486,7 +487,13 @@ def main():
                                     
                                 if is_triggered == True:
                                     # We will redelegate an amount based on the 'amount' value, calculated from the returned rewards
-                                    amount_ok, delegation_coin = check_amount(step['amount'], validator_withdrawals[validator]['balances'], True)
+                                    wallet.getBalances()
+
+                                    preserve_minimum:bool = True
+                                    if wallet.balances[ULUNA] > WITHDRAWAL_REMAINDER:
+                                        preserve_minimum = False
+                                    
+                                    amount_ok, delegation_coin = check_amount(step['amount'], validator_withdrawals[validator]['balances'], preserve_minimum)
 
                                     if amount_ok == True:
                                         
@@ -521,8 +528,13 @@ def main():
                                         
                                 if is_triggered == True:
                                     # We will delegate a specific amount of LUNC from the wallet balance
-                                    # We only support LUNC for this action                            
-                                    amount_ok, delegation_coin = check_amount(step['amount'], step_wallet.balances, True)
+                                    # We only support LUNC for this action   
+                                      
+                                    preserve_minimum:bool = True
+                                    if wallet.balances[ULUNA] > WITHDRAWAL_REMAINDER:
+                                        preserve_minimum = False
+
+                                    amount_ok, delegation_coin = check_amount(step['amount'], step_wallet.balances, preserve_minimum)
 
                                     if amount_ok == True:
                                         # Find the validator
@@ -580,7 +592,12 @@ def main():
                                     is_triggered = True
                                         
                                 if is_triggered == True:
-                                    amount_ok, send_coin = check_amount(step['amount'], step_wallet.balances, True)
+
+                                    preserve_minimum:bool = True
+                                    if step_wallet.balances[ULUNA] > WITHDRAWAL_REMAINDER:
+                                        preserve_minimum = False
+
+                                    amount_ok, send_coin = check_amount(step['amount'], step_wallet.balances, preserve_minimum)
 
                                     if amount_ok == True:
                                         # Get the address based on the recipient value
@@ -632,7 +649,12 @@ def main():
                                 is_triggered = check_trigger(step['when'], step_wallet.balances)
                                         
                                 if is_triggered == True:
-                                    amount_ok, swap_coin = check_amount(step['amount'], step_wallet.balances, True)
+
+                                    preserve_minimum:bool = True
+                                    if step_wallet.balances[ULUNA] > WITHDRAWAL_REMAINDER:
+                                        preserve_minimum = False
+
+                                    amount_ok, swap_coin = check_amount(step['amount'], step_wallet.balances, preserve_minimum)
                                     
                                     if amount_ok == True:
 
@@ -674,7 +696,12 @@ def main():
                                 is_triggered = check_trigger(step['when'], step_wallet.balances)
 
                                 if is_triggered == True:
-                                    amount_ok, swap_coin = check_amount(step['amount'], step_wallet.balances, True)
+
+                                    preserve_minimum:bool = True
+                                    if step_wallet.balances[ULUNA] > WITHDRAWAL_REMAINDER:
+                                        preserve_minimum = False
+
+                                    amount_ok, swap_coin = check_amount(step['amount'], step_wallet.balances, preserve_minimum)
                                     
                                     if amount_ok == True:
 
