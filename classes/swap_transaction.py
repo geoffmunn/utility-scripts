@@ -718,10 +718,11 @@ class SwapTransaction(TransactionCore):
         self.contract        = None
         contract_swaps:list  = list(NON_ULUNA_COINS.values()) + [ULUNA, UKRW, UUSD]
 
+        print ('request denom:', self.swap_request_denom)
         if self.swap_denom in contract_swaps and self.swap_request_denom in contract_swaps:
             use_market_swap = False
 
-            if self.swap_denom == ULUNA:
+            if self.swap_denom == ULUNA and self.swap_request_denom != ULUNA:
                 if self.swap_request_denom == UUSD:
                     self.contract = TERRASWAP_ULUNA_TO_UUSD_ADDRESS
                 elif self.swap_request_denom == UKRW:
@@ -1077,7 +1078,7 @@ class SwapTransaction(TransactionCore):
                 if self.swap_request_denom == ULUNA:
                     swap_price       = self.beliefPrice()
                     estimated_amount = float(self.swap_amount * swap_price)
-            elif self.swap_request_denom in NON_ULUNA_COINS and self.swap_denom == ULUNA:
+            elif self.swap_request_denom in NON_ULUNA_COINS.values() and self.swap_denom == ULUNA:
                 swap_price       = self.beliefPrice()
                 estimated_amount = float(self.swap_amount * swap_price)
             else:
@@ -1104,6 +1105,7 @@ class SwapTransaction(TransactionCore):
                     #print (err)
                     pass
                 
+        #print (self.swap_denom, ' to ', self.swap_request_denom, ' = ', estimated_amount)
         return estimated_amount
 
 def swap_coins(wallet, swap_coin:Coin, swap_to_denom:str, estimated_amount:int = 0, silent_mode:bool = False, log_trade:bool = False):
