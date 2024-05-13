@@ -613,7 +613,7 @@ def main():
                                             if 'memo' in step:
                                                 memo = step['memo']
 
-                                            transaction_result:TransactionResult = send_transaction(step_wallet, recipient_address, send_coin, memo, silent_mode)
+                                            transaction_result:TransactionResult = send_transaction(step_wallet, recipient_address, send_coin, memo, True)
                                             transaction_result.wallet_denom      = step_wallet.denom
 
                                             if silent_mode == False:
@@ -662,7 +662,7 @@ def main():
                                             swap_to_denom:str = list(FULL_COIN_LOOKUP.keys())[list(FULL_COIN_LOOKUP.values()).index(step['swap to'])]
                                             logs.message(f'  ➜ You are swapping {wallet.formatUluna(swap_coin.amount, swap_coin.denom, True)} for {FULL_COIN_LOOKUP[swap_to_denom]}.')
 
-                                            transaction_result:TransactionResult = swap_coins(step_wallet, swap_coin, swap_to_denom, '', silent_mode, True)
+                                            transaction_result:TransactionResult = swap_coins(step_wallet, swap_coin, swap_to_denom, '', True, True)
 
                                             if silent_mode == False:
                                                 transaction_result.showResults()
@@ -710,7 +710,7 @@ def main():
 
                                             logs.message(f'   ➜  You are joining pool {pool_id} by adding {wallet.formatUluna(swap_coin.amount, swap_coin.denom, True)}.')
                                             
-                                            transaction_result:TransactionResult = join_liquidity_pool(step_wallet, pool_id, swap_coin.amount, silent_mode)
+                                            transaction_result:TransactionResult = join_liquidity_pool(step_wallet, pool_id, swap_coin.amount, True)
                                             transaction_result.wallet_denom      = step_wallet.denom
                                             
                                             if silent_mode == False:
@@ -775,7 +775,7 @@ def main():
                                     if is_triggered == True:
                                         logs.message(f' ➜  You are exiting pool {pool_id} by withdrawing {amount_out * 100}%.')
                                         
-                                        transaction_result:TransactionResult = exit_liquidity_pool(step_wallet, pool_id, amount_out, silent_mode)
+                                        transaction_result:TransactionResult = exit_liquidity_pool(step_wallet, pool_id, amount_out, True)
                                         transaction_result.wallet_denom      = wallet.denom
 
                                         if silent_mode == False:
