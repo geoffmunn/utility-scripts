@@ -171,16 +171,19 @@ class UserWallet:
         @return: an integer of the amount based on the percentage.
         """
 
-        percentage:float = float(percentage) / 100
-        if user_params.keep_minimum == True:
-            lunc_amount:float = float((user_params.target_amount - WITHDRAWAL_REMAINDER) * percentage)
-            if lunc_amount < 0:
-                lunc_amount = 0
-        else:
-            lunc_amount:float = float(user_params.target_amount) * percentage
-            
-        lunc_amount:float = float(str(lunc_amount))
-        uluna_amount:int  = int(multiply_raw_balance(lunc_amount, user_params.target_denom))
+        uluna_amount:int = 0
+        
+        if user_params.target_amount is not None:
+            percentage:float = float(percentage) / 100
+            if user_params.keep_minimum == True:
+                lunc_amount:float = float((user_params.target_amount - WITHDRAWAL_REMAINDER) * percentage)
+                if lunc_amount < 0:
+                    lunc_amount = 0
+            else:
+                lunc_amount:float = float(user_params.target_amount) * percentage
+                
+            lunc_amount:float = float(str(lunc_amount))
+            uluna_amount:int  = int(multiply_raw_balance(lunc_amount, user_params.target_denom))
         
         return uluna_amount
     
@@ -953,6 +956,8 @@ class UserWallet:
             if answer == '':
                 print (f' 🛎️  The value cannot be blank or empty')
             else:
+
+                answer = answer.replace(',', '')
 
                 percentage = is_percentage(answer)
 
