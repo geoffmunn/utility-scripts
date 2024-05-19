@@ -531,8 +531,8 @@ def main():
                                     # We only support LUNC for this action   
                                       
                                     preserve_minimum:bool = True
-                                    if wallet.balances[ULUNA] > WITHDRAWAL_REMAINDER:
-                                        preserve_minimum = False
+                                    #if wallet.balances[ULUNA] > WITHDRAWAL_REMAINDER:
+                                    #    preserve_minimum = False
 
                                     amount_ok, delegation_coin = check_amount(step['amount'], step_wallet.balances, preserve_minimum)
 
@@ -594,8 +594,8 @@ def main():
                                 if is_triggered == True:
 
                                     preserve_minimum:bool = True
-                                    if step_wallet.balances[ULUNA] > WITHDRAWAL_REMAINDER:
-                                        preserve_minimum = False
+                                    #if step_wallet.balances[ULUNA] > WITHDRAWAL_REMAINDER:
+                                    #    preserve_minimum = False
 
                                     amount_ok, send_coin = check_amount(step['amount'], step_wallet.balances, preserve_minimum)
 
@@ -651,8 +651,8 @@ def main():
                                 if is_triggered == True:
 
                                     preserve_minimum:bool = True
-                                    if step_wallet.balances[ULUNA] > WITHDRAWAL_REMAINDER:
-                                        preserve_minimum = False
+                                    #if step_wallet.balances[ULUNA] > WITHDRAWAL_REMAINDER:
+                                    #    preserve_minimum = False
 
                                     amount_ok, swap_coin = check_amount(step['amount'], step_wallet.balances, preserve_minimum)
                                     
@@ -698,8 +698,8 @@ def main():
                                 if is_triggered == True:
 
                                     preserve_minimum:bool = True
-                                    if step_wallet.balances[ULUNA] > WITHDRAWAL_REMAINDER:
-                                        preserve_minimum = False
+                                    #if step_wallet.balances[ULUNA] > WITHDRAWAL_REMAINDER:
+                                    #    preserve_minimum = False
 
                                     amount_ok, swap_coin = check_amount(step['amount'], step_wallet.balances, preserve_minimum)
                                     
