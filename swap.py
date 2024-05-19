@@ -8,6 +8,7 @@ from classes.common import (
 
 from constants.constants import (
     FULL_COIN_LOOKUP,
+    ULUNA,
     USER_ACTION_QUIT
 )
 
@@ -43,6 +44,13 @@ def main():
             exit()
     else:
         print ("\n 🛑 This password couldn't decrypt any wallets. Make sure it is correct, or rebuild the wallet list by running the configure_user_wallet.py script again.\n")
+        exit()
+
+    # Swaps use LUNC as the denom - if there is no LUNC in the wallet, then exit
+    if ULUNA not in wallet.balances:
+        print ('\nYou need LUNC in this wallet to pay for swap transactions.')
+        print ('Please transfer some LUNC to this address before swapping.')
+        print ('\n 🛑 Exiting...\n')
         exit()
 
     # List all the coins in this wallet, with the amounts available:
