@@ -11,17 +11,13 @@ import sqlite3
 from sqlite3 import Cursor, Connection
 
 from constants.constants import (
-    BASE_SMART_CONTRACT_ADDRESS,
     CHAIN_DATA,
     DB_FILE_NAME,
-    CANDY_SMART_CONTRACT_ADDRESS,
-    CREMAT_SMART_CONTRACT_ADDRESS,
     FULL_COIN_LOOKUP,
     GAS_ADJUSTMENT_OSMOSIS,
     GAS_ADJUSTMENT_SWAPS,
     GRDX,
     GRDX_SMART_CONTRACT_ADDRESS,
-    LENNY_SMART_CONTRACT_ADDRESS,
     MAX_SPREAD,
     MIN_OSMO_GAS,
     NON_ULUNA_COINS,
@@ -372,22 +368,25 @@ class SwapTransaction(TransactionCore):
         """
 
         if transaction_result.is_error == False:
-            insert_trade_query:str = "INSERT INTO trades (wallet_name, coin_from, amount_from, price_from, coin_to, amount_to, price_to, fees, exit_profit, exit_loss, status) VALUES (?,?,?,?,?,?,?,?,?,?,'OPEN');"
 
-            wallet_name:str  = wallet.name
-            coin_from:str    = self.swap_denom
-            amount_from:int  = self.swap_amount
+            print ('tx hash:', transaction_result.broadcast_result.txhash)
+            insert_trade_query:str = "INSERT INTO trades (wallet_name, coin_from, amount_from, price_from, coin_to, amount_to, price_to, fees, exit_profit, exit_loss, tx_hash, status) VALUES (?,?,?,?,?,?,?,?,?,?,?,'OPEN');"
+
+            wallet_name:str = wallet.name
+            coin_from:str   = self.swap_denom
+            amount_from:int = self.swap_amount
+            tx_hash:str     = transaction_result.broadcast_result.txhash
 
             if coin_from not in NON_ULUNA_COINS.values():
                 price_from:float = float(wallet.getCoinPrice([coin_from])[coin_from])
             else:
                 price_from:float = 0
                 
-            coin_to:str      = self.swap_request_denom
+            coin_to:str = self.swap_request_denom
 
             # Some coins won't return a price because they're not on coingecko:
             if coin_to not in NON_ULUNA_COINS.values():
-                price_to:float   = float(wallet.getCoinPrice([coin_to])[coin_to])
+                price_to:float = float(wallet.getCoinPrice([coin_to])[coin_to])
             else:
                 price_to:float = 0
 
@@ -398,6 +397,10 @@ class SwapTransaction(TransactionCore):
             if transaction_result.result_received is not None:
                 for received_coin in transaction_result.result_received:
                     readable_denom = wallet.denomTrace(received_coin.denom)
+
+                    if readable_denom in NON_ULUNA_COINS:
+                        readable_denom = NON_ULUNA_COINS[readable_denom]
+
                     if readable_denom == coin_to:
                         amount_to:int = received_coin.amount
             else:
@@ -425,11 +428,13 @@ class SwapTransaction(TransactionCore):
 
             conn   = sqlite3.connect(DB_FILE_NAME)
             cursor = conn.cursor()
-            cursor.execute(insert_trade_query, [wallet_name, coin_from, amount_from, price_from, coin_to, amount_to, price_to, json.dumps(fees), exit_profit, exit_loss])
+            cursor.execute(insert_trade_query, [wallet_name, coin_from, amount_from, price_from, coin_to, amount_to, price_to, json.dumps(fees), exit_profit, exit_loss, tx_hash])
+            
             new_id = cursor.lastrowid
             conn.commit()
 
             return new_id
+            
         else:
             return 0
 
