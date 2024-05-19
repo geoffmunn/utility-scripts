@@ -143,7 +143,7 @@ def check_database() -> bool:
 
             if trading_table_exists == False:
                 print ('\n 🗄  No trading table found, creating one...')
-                create_trade_table = "CREATE TABLE trades (ID INTEGER PRIMARY KEY AUTOINCREMENT, date_added DATETIME DEFAULT CURRENT_TIMESTAMP, wallet_name TEXT NOT NULL, coin_from TEXT NOT NULL, amount_from INTEGER NOT NULL, price_from REAL NOT NULL, coin_to TEXT NOT NULL, amount_to INTEGER NOT NULL, price_to REAL NOT NULL, fees TEXT NOT NULL, exit_profit REAL NOT NULL, exit_loss REAL NOT NULL, linked_trade_id INTEGER, status TEXT NOT NULL);"
+                create_trade_table = "CREATE TABLE trades (ID INTEGER PRIMARY KEY AUTOINCREMENT, date_added DATETIME DEFAULT CURRENT_TIMESTAMP, wallet_name TEXT NOT NULL, coin_from TEXT NOT NULL, amount_from INTEGER NOT NULL, price_from REAL NOT NULL, coin_to TEXT NOT NULL, amount_to INTEGER NOT NULL, price_to REAL NOT NULL, fees TEXT NOT NULL, exit_profit REAL NOT NULL, exit_loss REAL NOT NULL, linked_trade_id INTEGER, tx_hash TEXT NOT NULL, status TEXT NOT NULL);"
                 conn               = sqlite3.connect(DB_FILE_NAME)
                 cursor             = conn.execute(create_trade_table)
                 conn.commit()
