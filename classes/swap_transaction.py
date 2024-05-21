@@ -423,7 +423,7 @@ class SwapTransaction(TransactionCore):
                     
                 fees[denom] = amount_str
             
-            exit_profit:float = 0.01
+            exit_profit:float = 0.10
             exit_loss:float   = -0.05
 
             conn   = sqlite3.connect(DB_FILE_NAME)
