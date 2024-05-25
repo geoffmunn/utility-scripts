@@ -3,7 +3,8 @@
 
 from classes.common import (
     check_database,
-    check_version
+    check_version,
+    get_user_choice
 )
 
 from constants.constants import (
@@ -94,7 +95,29 @@ def main():
 
     swap_coin:Coin = wallet.createCoin(swap_uluna, coin_from)
 
-    transaction_result:TransactionResult = swap_coins(wallet, swap_coin, coin_to, estimated_amount, False, True)
+    # Get the trading bot options (if any):
+    log_trade:bool = get_user_choice(' ❓ Do you want to add this to the trading bot? (y/n) ', [])
+    log_trade_params:dict = {}
+    if log_trade == True:
+        user_params = UserParameters()
+
+        user_params.only_percentages = True
+        user_params.percentages_allowed = True
+
+        exit_profit:float = float(wallet.getUserNumber(' ❓ What is the profit threshold? (10% is recommended) ', user_params))
+        exit_profit = exit_profit / 100
+
+        exit_loss:float = float(wallet.getUserNumber(' ❓ What is the loss threshold? (5% is recommended) ', user_params))
+        exit_loss = exit_loss / 100
+
+        log_trade_params['exit_profit'] = exit_profit
+        log_trade_params['exit_loss']   = exit_loss
+
+        # print ('exit profit:', exit_profit)
+        # print ('exit profit:', exit_loss)
+        # exit()
+
+    transaction_result:TransactionResult = swap_coins(wallet, swap_coin, coin_to, estimated_amount, False, log_trade, log_trade_params)
     
     transaction_result.showResults()
 
