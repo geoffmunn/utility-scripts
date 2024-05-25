@@ -55,16 +55,19 @@ from terra_classic_sdk.core.staking.data.delegation import Delegation
 from terra_classic_sdk.core.staking.data.validator import Validator
 from terra_classic_sdk.exceptions import LCDResponseError
 from terra_classic_sdk.key.mnemonic import MnemonicKey
+
 class UserParameters:
     """
     A helper class to store user parameters when using the getUserNumber function.
     @TODO: maybe move this into the UserWallet class so it's not separate
     """
+    
     def __init__(self):
         self.convert_percentages:bool = True
         self.keep_minimum:bool        = False
         self.percentages_allowed:bool = False
         self.max_number:float         = None
+        self.only_percentages:bool    = False
         self.target_amount:float      = None
         self.target_denom:str         = ULUNA
 
@@ -941,6 +944,7 @@ class UserWallet:
                 self.keep_minimum:bool        = False
                 self.percentages_allowed:bool = False
                 self.max_number:float         = None
+                self.only_percentages:bool    = False
                 self.target_amount:float      = None
                 self.target_denom:str         = ULUNA
 
@@ -960,7 +964,7 @@ class UserWallet:
                 answer = answer.replace(',', '')
 
                 percentage = is_percentage(answer)
-
+                
                 if user_params.percentages_allowed == True and percentage == True:
                     answer = answer[0:-1]
 
@@ -982,16 +986,18 @@ class UserWallet:
                             break
                 else:
                     print (f" 🛎️  Please enter a valid amount.")
+
         if answer != '' and answer != USER_ACTION_QUIT:
-            if user_params.percentages_allowed and percentage == True:
-                if user_params.convert_percentages == True:
-                    wallet:UserWallet = UserWallet()
-                    answer = float(wallet.convertPercentage(answer, user_params))
+            if user_params.only_percentages == False:
+                if user_params.percentages_allowed and percentage == True:
+                    if user_params.convert_percentages == True:
+                        wallet:UserWallet = UserWallet()
+                        answer = float(wallet.convertPercentage(answer, user_params))
+                    else:
+                        answer = answer + '%'
                 else:
-                    answer = answer + '%'
-            else:
-                # Convert the number into a uluna amount
-                answer = multiply_raw_balance(answer, user_params.target_denom)
+                    # Convert the number into a uluna amount
+                    answer = multiply_raw_balance(answer, user_params.target_denom)
 
         return str(answer)
     

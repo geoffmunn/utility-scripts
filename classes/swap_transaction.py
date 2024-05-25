@@ -356,7 +356,7 @@ class SwapTransaction(TransactionCore):
 
         return is_offchain_swap
     
-    def logTrade(self, wallet, transaction_result:TransactionResult) -> int:
+    def logTrade(self, wallet, transaction_result:TransactionResult, log_trade_params:dict) -> int:
         """
         Put the details of this swap into the database.
 
@@ -369,7 +369,6 @@ class SwapTransaction(TransactionCore):
 
         if transaction_result.is_error == False:
 
-            print ('tx hash:', transaction_result.broadcast_result.txhash)
             insert_trade_query:str = "INSERT INTO trades (wallet_name, coin_from, amount_from, price_from, coin_to, amount_to, price_to, fees, exit_profit, exit_loss, tx_hash, status) VALUES (?,?,?,?,?,?,?,?,?,?,?,'OPEN');"
 
             wallet_name:str = wallet.name
@@ -423,8 +422,8 @@ class SwapTransaction(TransactionCore):
                     
                 fees[denom] = amount_str
             
-            exit_profit:float = 0.10
-            exit_loss:float   = -0.05
+            exit_profit:float = log_trade_params['exit_profit']
+            exit_loss:float   = -abs(float(log_trade_params['exit_loss']))
 
             conn   = sqlite3.connect(DB_FILE_NAME)
             cursor = conn.cursor()
@@ -1113,7 +1112,7 @@ class SwapTransaction(TransactionCore):
         #print (self.swap_denom, ' to ', self.swap_request_denom, ' = ', estimated_amount)
         return estimated_amount
 
-def swap_coins(wallet, swap_coin:Coin, swap_to_denom:str, estimated_amount:int = 0, silent_mode:bool = False, log_trade:bool = False):
+def swap_coins(wallet, swap_coin:Coin, swap_to_denom:str, estimated_amount:int = 0, silent_mode:bool = False, log_trade:bool = False, log_trade_params:dict = {}):
     """
     A wrapper function for workflows and wallet management.
 
@@ -1128,7 +1127,9 @@ def swap_coins(wallet, swap_coin:Coin, swap_to_denom:str, estimated_amount:int =
       - swap_coin: a fully complete Coin object. We get the amount and denom from this
       - swap_to_denom: what are we swapping this for?
       - esimated amount: required for display purposes only
-      - prompt_user: do we want to pause for user confirmation?
+      - silent_mode: do we want to pause for user confirmation?
+      - log_trade: do we add this to the trade database?
+      - log_trade_params: exit and loss thresholds
 
     @return: a TransactionResult object
     """
@@ -1251,6 +1252,6 @@ def swap_coins(wallet, swap_coin:Coin, swap_to_denom:str, estimated_amount:int =
 
     if log_trade == True:
         # If this was successful, then log the trade
-        transaction_result.trade_id = swap_tx.logTrade(wallet, transaction_result)
+        transaction_result.trade_id = swap_tx.logTrade(wallet, transaction_result, log_trade_params)
 
     return transaction_result
