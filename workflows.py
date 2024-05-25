@@ -12,7 +12,8 @@ from classes.common import (
     check_database,
     check_version,
     get_precision,
-    is_percentage
+    is_percentage,
+    strtobool
 )
 
 from constants.constants import (
@@ -643,6 +644,10 @@ def main():
                             else:
                                 step_wallet:UserWallet = wallet
 
+                            log_trade:bool = False
+                            if 'log trade' in step:
+                                log_trade = strtobool(step['log trade'])
+
                             if step_wallet is not None:
                                 step_wallet.getBalances()
 
@@ -662,7 +667,7 @@ def main():
                                             swap_to_denom:str = list(FULL_COIN_LOOKUP.keys())[list(FULL_COIN_LOOKUP.values()).index(step['swap to'])]
                                             logs.message(f'  ➜ You are swapping {wallet.formatUluna(swap_coin.amount, swap_coin.denom, True)} for {FULL_COIN_LOOKUP[swap_to_denom]}.')
 
-                                            transaction_result:TransactionResult = swap_coins(step_wallet, swap_coin, swap_to_denom, '', True, True)
+                                            transaction_result:TransactionResult = swap_coins(step_wallet, swap_coin, swap_to_denom, '', True, log_trade)
 
                                             if silent_mode == False:
                                                 transaction_result.showResults()
