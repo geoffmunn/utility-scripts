@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 
+import os
+
 # User settings - can be changed if required
 CHECK_FOR_UPDATES    = True  # This might slow things down a bit when the script is first run. Change it to False if it becomes a problem.
 WITHDRAWAL_REMAINDER = 150   # This is the amount of Lunc we want to keep after withdrawal and before delegating. You should never delegate the entire balance.
@@ -16,9 +18,9 @@ GAS_PRICE_URI            = 'https://terra-classic-fcd.publicnode.com/v1/txs/gas_
 TOKEN_LIST               = 'https://assets.terrarebels.net/cw20/tokens.json'
 
 # File names:
-CONFIG_FILE_NAME         = 'user_config.yml'
-WORKFLOWS_FILE_NAME      = 'user_workflows.yml'
-DB_FILE_NAME             = 'osmosis.db'
+CONFIG_FILE_NAME         = os.path.dirname(os.path.abspath(__file__)) + '/../user_config.yml'
+WORKFLOWS_FILE_NAME      = os.path.dirname(os.path.abspath(__file__)) + '/../user_workflows.yml'
+DB_FILE_NAME             = os.path.dirname(os.path.abspath(__file__)) + '/../osmosis.db'
 VERSION_URI              = 'https://raw.githubusercontent.com/geoffmunn/utility-scripts/main/version.json'
 
 # Gas adjustments and other values
