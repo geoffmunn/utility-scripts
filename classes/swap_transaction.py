@@ -139,9 +139,16 @@ class SwapTransaction(TransactionCore):
                             elif self.swap_request_denom in NON_ULUNA_COINS.values():
                                 contract_address = (list(NON_ULUNA_COINS.keys())[list(NON_ULUNA_COINS.values()).index(self.swap_request_denom)])
                                 
-                            #print ('contract address2:', contract_address)
-                            result = self.terra.wasm.contract_query(TERRAPORT_SWAP_ADDRESS, {"simulate_swap_operations":{"offer_amount":"1000000","operations":[{"terra_port":{"offer_asset_info":{"native_token":{"denom":"uluna"}},"ask_asset_info":{"token":{"contract_addr":contract_address}}}}]}})
+                            slip_rate: int = 1
+                            if self.swap_denom == ULUNA:
+                                result = self.terra.wasm.contract_query(TERRAPORT_SWAP_ADDRESS, {"simulate_swap_operations":{"offer_amount":"1000000","operations":[{"terra_port":{"offer_asset_info":{"native_token":{"denom":"uluna"}},"ask_asset_info":{"token":{"contract_addr":contract_address}}}}]}})   
+                            else:
+                                slip_rate = 0.95
+                                result = self.terra.wasm.contract_query(TERRAPORT_SWAP_ADDRESS, {"reverse_simulate_swap_operations":{"ask_amount":"1000000","operations":[{"terra_port":{"offer_asset_info":{"native_token":{"denom":"uluna"}},"ask_asset_info":{"token":{"contract_addr":contract_address}}}}]}})
+
                             belief_price:float = float(result['amount']) / (10 ** get_precision(ULUNA))
+
+                            belief_price = belief_price * slip_rate
                     
             except Exception as err:
                 print (' 🛑 A connection error has occurred:')
@@ -1086,10 +1093,12 @@ class SwapTransaction(TransactionCore):
                 swap_price       = self.beliefPrice()
                 estimated_amount = float(self.swap_amount * swap_price)
             else:
-                # This will cover nearly all swap pairs:
+                # This will cover nearly all other swap pairs:
+                # eg: rakoff -> LUNC
                 swap_price = self.beliefPrice()
                 if swap_price is not None and swap_price > 0:
-                    estimated_amount = float(self.swap_amount / swap_price)
+                    # Rakoff definitely needs to multiply
+                    estimated_amount = float(self.swap_amount * swap_price)
                     
         else:
             if self.swap_denom in OFFCHAIN_COINS + [ULUNA] and self.swap_request_denom in OFFCHAIN_COINS + [ULUNA]:
