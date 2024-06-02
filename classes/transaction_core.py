@@ -114,8 +114,8 @@ class TransactionCore():
                     else:
                         transaction_result.message = 'The transaction did not appear. Future transactions might fail due to a lack of expected funds.'
                 except Exception as err:
-                   transaction_result.message = 'An unexpected error occurred when broadcasting.'
-                   transaction_result.log     = err
+                  transaction_result.message = 'An unexpected error occurred when broadcasting.'
+                  transaction_result.log     = err
                  
         return transaction_result
     
