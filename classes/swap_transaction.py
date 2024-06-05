@@ -103,7 +103,6 @@ class SwapTransaction(TransactionCore):
                     contract_swaps:list = [GRDX, ULUNA, UKRW, UUSD]
                     if self.swap_denom in contract_swaps and self.swap_request_denom in contract_swaps:
                         parts:dict = {}
-
                         # Get the pool details
                         result = self.terra.wasm.contract_query(self.contract, {"pool": {}})
                         if 'native_token' in result['assets'][0]['info']:
@@ -115,11 +114,13 @@ class SwapTransaction(TransactionCore):
                             
                         parts[result['assets'][1]['info']['native_token']['denom']] = int(result['assets'][1]['amount'])
 
-                        if self.swap_denom == GRDX and self.swap_request_denom == ULUNA:
-                            belief_price:float = parts[self.swap_request_denom] / parts[self.swap_denom]
-                        else:
-                            # Everything except GRDX -> ULUNA goes here:
-                            belief_price:float = parts[self.swap_denom] / parts[self.swap_request_denom]
+                        # if self.swap_denom == GRDX and self.swap_request_denom == ULUNA:
+                        #     belief_price:float = parts[self.swap_request_denom] / parts[self.swap_denom]
+                        # else:
+                        #     # Everything except GRDX -> ULUNA goes here:
+                        #     belief_price:float = parts[self.swap_denom] / parts[self.swap_request_denom]
+
+                        belief_price:float = parts[self.swap_request_denom] / parts[self.swap_denom]
 
                     else:
                         # UBASE does something different
