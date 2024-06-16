@@ -9,6 +9,7 @@ from classes.common import (
 
 from constants.constants import (
     FULL_COIN_LOOKUP,
+    ENABLE_TRADING_BOT,
     ULUNA,
     USER_ACTION_QUIT
 )
@@ -96,7 +97,10 @@ def main():
     swap_coin:Coin = wallet.createCoin(swap_uluna, coin_from)
 
     # Get the trading bot options (if any):
-    log_trade:bool = get_user_choice(' ❓ Do you want to add this to the trading bot? (y/n) ', [])
+    log_trade:bool = False
+    if ENABLE_TRADING_BOT == True:
+        log_trade = get_user_choice(' ❓ Do you want to add this to the trading bot? (y/n) ', [])
+
     log_trade_params:dict = {}
     if log_trade == True:
         user_params = UserParameters()
@@ -107,15 +111,11 @@ def main():
         exit_profit:float = float(wallet.getUserNumber(' ❓ What is the profit threshold? (10% is recommended) ', user_params))
         exit_profit = exit_profit / 100
 
-        exit_loss:float = float(wallet.getUserNumber(' ❓ What is the loss threshold? (5% is recommended) ', user_params))
+        exit_loss:float = float(wallet.getUserNumber(' ❓ What is the loss threshold? (20% is recommended) ', user_params))
         exit_loss = exit_loss / 100
 
         log_trade_params['exit_profit'] = exit_profit
         log_trade_params['exit_loss']   = exit_loss
-
-        # print ('exit profit:', exit_profit)
-        # print ('exit profit:', exit_loss)
-        # exit()
 
     transaction_result:TransactionResult = swap_coins(wallet, swap_coin, coin_to, estimated_amount, False, log_trade, log_trade_params)
     
