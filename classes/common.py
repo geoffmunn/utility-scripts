@@ -258,6 +258,9 @@ def strtobool(val:str) -> bool:
     @return: true/false this value is a boolean
     """
 
+    # Just in case we have been passed a boolean, convert it to a string
+    val = str(val)
+    
     val = val.lower()
     if val in ('y', 'yes', 't', 'true', 'on', '1'):
         return True
