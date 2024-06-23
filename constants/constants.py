@@ -9,6 +9,7 @@ WITHDRAWAL_REMAINDER = 150   # This is the amount of Lunc we want to keep after 
 SEARCH_RETRY_COUNT   = 50    # This is the number of times we will check for a transaction to appear in the chain before deciding it didn't work.
 HIDE_DISABLED_COINS  = True  # Some coins are not currently available. Functionality is mostly there, but swaps etc won't work
 ENABLE_TRADING_BOT   = False # An extremely experimental trading bot. Disabled for the moment.
+BUSY_RETRY_COUNT     = 10    # If the LCD is busy, how many times to we retry?
 
 # Used for the .netrc file for passwordless authentication:
 NETRC_MACHINE_NAME   = 'LUNCworkflows' 
