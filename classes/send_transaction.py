@@ -279,7 +279,9 @@ class SendTransaction(TransactionCore):
         self.fee_deductables = None
         self.prices          = None
         self.tax             = None
-        self.sequence        = self.current_wallet.sequence()
+        #self.sequence        = self.current_wallet.sequence()
+        if self.getSequenceNumber() == False:
+            return False
 
         # If the send amount denom is NOT the native denom of the chain, then convert it to the IBC value
         # Eg, send LUNC on Osmosis -> Osmosis
@@ -374,8 +376,10 @@ class SendTransaction(TransactionCore):
         self.fee_deductables = None
         self.prices          = None
         self.tax             = None
-        self.sequence        = self.current_wallet.sequence()
+        #self.sequence        = self.current_wallet.sequence()
 
+        if self.getSequenceNumber() == False:
+            return False
 
         #self.gas_limit = '241946'
         # Set a specific gas limit because 'auto' is too high

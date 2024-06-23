@@ -230,7 +230,9 @@ class Governance(TransactionCore):
         self.account_number:int = self.current_wallet.account_number()
         self.fee:Fee            = None
         self.gas_limit:str      = 'auto'
-        self.sequence:int       = self.current_wallet.sequence()
+
+        if self.getSequenceNumber() == False:
+            return False
         
         # Perform the swap as a simulation, with no fee details
         self.vote()

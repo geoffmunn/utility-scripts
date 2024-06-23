@@ -18,6 +18,7 @@ from classes.common import (
 
 from constants.constants import (
     BASE_SMART_CONTRACT_ADDRESS,
+    BUSY_RETRY_COUNT,
     CANDY_SMART_CONTRACT_ADDRESS,
     CHAIN_DATA,
     COIN_ALIASES,
@@ -538,7 +539,6 @@ class TransactionCore():
             
         @return: a json object with the prices for both coins
         """
-
         from_price:float = None
         to_price:float   = None
 
@@ -553,6 +553,29 @@ class TransactionCore():
         to_price:float   = self.prices[to_id['coingecko_id']]['usd']
         
         return {'from':from_price, 'to': to_price}
+    
+    def getSequenceNumber(self) -> bool:
+        """
+        Get the current sequence number for this wallet.
+        If the LCD is busy, try a few times before exiting
+
+        @return: bool (true if sequence number was set, false if not)
+        """
+
+        retry_count: int = 0
+        result: bool  = False
+
+        while retry_count < BUSY_RETRY_COUNT:
+            try:
+                self.sequence = self.current_wallet.sequence()
+                result = True
+                break
+            except Exception as err:
+                retry_count += 1
+                print (err)
+                print (f'    The LCD is busy - trying again {retry_count}/{BUSY_RETRY_COUNT}')
+
+        return result
         
     def IBCfromDenom(self, channel_id:str, denom:str) -> str:
         """

@@ -206,7 +206,9 @@ class SwapTransaction(TransactionCore):
         self.ibc_routes     = []
         self.min_out        = None
         self.transaction    = None
-        self.sequence       = self.current_wallet.sequence()
+        #self.sequence       = self.current_wallet.sequence()
+        if self.getSequenceNumber() == False:
+            return False
 
         # Bump up the gas adjustment - it needs to be higher for swaps it turns out
         self.terra.gas_adjustment = float(GAS_ADJUSTMENT_SWAPS)
@@ -464,7 +466,9 @@ class SwapTransaction(TransactionCore):
         self.min_out        = None
         self.prices         = None
         self.transaction    = None
-        self.sequence       = self.current_wallet.sequence()
+        #self.sequence       = self.current_wallet.sequence()
+        if self.getSequenceNumber() == False:
+            return False
         
         current_option = self.getRoute(self.swap_denom, self.swap_request_denom, self.swap_amount)
 
@@ -789,8 +793,11 @@ class SwapTransaction(TransactionCore):
         self.min_out        = None
         self.prices         = None
         self.transaction    = None
-        self.sequence       = self.current_wallet.sequence()
+        #self.sequence       = self.current_wallet.sequence()
 
+        if self.getSequenceNumber() == False:
+            return False
+        
         self.belief_price   = self.beliefPrice()
         
         # Perform the swap as a simulation, with no fee details

@@ -193,9 +193,9 @@ class DelegationTransaction(TransactionCore):
 
         # Set the fee to be None so it is simulated
         self.fee = None
-        if self.sequence is None:
-            self.sequence = self.current_wallet.sequence()
-        
+        if self.getSequenceNumber() == False:
+            return False
+                    
         # This is a provided function. Depending on the original function, we might be delegating or undelegating
         action()
 

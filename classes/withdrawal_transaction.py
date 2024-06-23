@@ -70,7 +70,10 @@ class WithdrawalTransaction(TransactionCore):
 
         # Set the fee to be None so it is simulated
         self.fee      = None
-        self.sequence = self.current_wallet.sequence()
+        if self.getSequenceNumber() == False:
+            return False
+       
+                
         self.withdraw()
 
         # Store the transaction
