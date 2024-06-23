@@ -4,9 +4,9 @@
 from __future__ import annotations
 
 from hashlib import sha256
-from pycoingecko import CoinGeckoAPI
 import sqlite3
 from sqlite3 import Cursor, Connection
+from terra_classic_sdk.core.osmosis import Pool
 
 from classes.common import (
     get_precision,
@@ -14,6 +14,7 @@ from classes.common import (
 )
 
 from constants.constants import (
+    BUSY_RETRY_COUNT,
     CHAIN_DATA,
     DB_FILE_NAME,
     FULL_COIN_LOOKUP,
@@ -99,26 +100,28 @@ class LiquidityTransaction(TransactionCore):
         @return: the number of shares that this transaction will return
         """
 
+        share_out_amount: int = 0
         # Get the pool details from the network
-        pool:list = self.getOsmosisPool(self.pool_id)
+        pool:Pool = self.getOsmosisPool(self.pool_id)
         
-        total_weight:int = int(pool.total_weight)
+        if pool is not None:
+            total_weight:int = int(pool.total_weight)
 
-        # Get the actual amount of this asset in the pool
-        divisor:float = 0
-        asset:PoolAsset
-        for asset in pool.pool_assets:
-            if asset.token.denom == coin.denom:
-                pool_asset_amount:int = int(asset.token.amount)
-                divisor:float =  total_weight / int(asset.weight)
-                break
-                
-        shift_val:int         = 10 ** 18
-        token_in_amount:float = float(coin.amount)
-        total_share_exp:float = float(int(pool.total_shares.amount) / shift_val)
+            # Get the actual amount of this asset in the pool
+            divisor:float = 0
+            asset:PoolAsset
+            for asset in pool.pool_assets:
+                if asset.token.denom == coin.denom:
+                    pool_asset_amount:int = int(asset.token.amount)
+                    divisor:float =  total_weight / int(asset.weight)
+                    break
+                    
+            shift_val:int         = 10 ** 18
+            token_in_amount:float = float(coin.amount)
+            total_share_exp:float = float(int(pool.total_shares.amount) / shift_val)
 
-        # This is the basic amount we expect to receive
-        share_out_amount:int = (((token_in_amount * total_share_exp) / pool_asset_amount) * shift_val) / divisor
+            # This is the basic amount we expect to receive
+            share_out_amount = (((token_in_amount * total_share_exp) / pool_asset_amount) * shift_val) / divisor
 
         return share_out_amount
 
@@ -228,15 +231,19 @@ class LiquidityTransaction(TransactionCore):
         """
 
         # Reset these values in case this is a re-used object:
-        try:
-            self.account_number:int = self.current_wallet.account_number()
-            self.fee:Fee            = None
-            self.gas_limit:str      = '1000000'
-            self.sequence:int       = self.current_wallet.sequence()
-        except Exception as err:
-            print (' 🛑 An unexpected error occurred in the exitSimulate liquidity function:')
-            print (err)
+        # try:
+        self.account_number:int = self.current_wallet.account_number()
+        self.fee:Fee            = None
+        self.gas_limit:str      = '1000000'
+        #self.sequence:int       = self.current_wallet.sequence()
+        
+        if self.getSequenceNumber() == False:
             return False
+
+        # except Exception as err:
+        #     print (' 🛑 An unexpected error occurred in the exitSimulate liquidity function:')
+        #     print (err)
+        #     return False
 
         # Calculate the two basic components of this request:
         self.share_in_amount = self.calcShareInAmount()
@@ -283,7 +290,7 @@ class LiquidityTransaction(TransactionCore):
 
         return prices
     
-    def getOsmosisPool(self, pool_id) -> list:
+    def getOsmosisPool(self, pool_id) -> Pool:
         """
         Get the pool from Osmosis.
         Cache the results so we don't have to do this again.
@@ -294,14 +301,25 @@ class LiquidityTransaction(TransactionCore):
         @return: a dictionary of assets and their prices
         """
 
+        pool:Pool = None
+
         if pool_id in self.cached_pools:
-            pool:list = self.cached_pools[pool_id]
+            pool = self.cached_pools[pool_id]
         else:
             # Get the pool details from the network
-            pool:list = self.terra.pool.osmosis_pool(pool_id)
+            retry_count: int = 0
 
-            # Cache this so we don't have to check again
-            self.cached_pools[pool_id] = pool
+            while retry_count < BUSY_RETRY_COUNT:
+                try:
+                    pool:Pool = self.terra.pool.osmosis_pool(pool_id)
+                    # Cache this so we don't have to check again
+                    self.cached_pools[pool_id] = pool
+
+                    break
+                except Exception as err:
+                    retry_count += 1
+                    print (err)
+                    print (f'    The LCD is busy - trying again {retry_count}/{BUSY_RETRY_COUNT}')            
 
         return pool
 
@@ -319,19 +337,20 @@ class LiquidityTransaction(TransactionCore):
         asset_list:dict = {}
         if self.pool_id in self.pools:
             # Get the pool details from the network
-            pool:list = self.getOsmosisPool(self.pool_id)
+            pool:Pool = self.getOsmosisPool(self.pool_id)
 
-            # Calculate the two basic components of this request:
-            total_shares:int   = int(pool.total_shares.amount)
-            share_fraction:int = int(total_shares / self.pools[self.pool_id])
+            if pool is not None:
+                # Calculate the two basic components of this request:
+                total_shares:int   = int(pool.total_shares.amount)
+                share_fraction:int = int(total_shares / self.pools[self.pool_id])
 
-            # Go through each asset and calculate the actual amount the user has
-            asset:PoolAsset
-            for asset in pool.pool_assets:
-                denom:str     = self.denomTrace(asset.token.denom)
-                
-                # Add this to the list
-                asset_list[denom] = int(asset.token.amount) / share_fraction
+                # Go through each asset and calculate the actual amount the user has
+                asset:PoolAsset
+                for asset in pool.pool_assets:
+                    denom:str     = self.denomTrace(asset.token.denom)
+                    
+                    # Add this to the list
+                    asset_list[denom] = int(asset.token.amount) / share_fraction
 
         return asset_list
     
@@ -567,15 +586,19 @@ class LiquidityTransaction(TransactionCore):
         """
         
         # Reset these values in case this is a re-used object:
-        try:
-            self.account_number:int = self.current_wallet.account_number()
-            self.fee:Fee            = None
-            self.gas_limit:str      = 'auto'
-            self.sequence:int       = self.current_wallet.sequence()
-        except Exception as err:
-            print (' 🛑 An unexpected error occurred in the joinSimulate liquidity function:')
-            print (err)
+        #try:
+        self.account_number:int = self.current_wallet.account_number()
+        self.fee:Fee            = None
+        self.gas_limit:str      = 'auto'
+        #self.sequence:int       = self.current_wallet.sequence()
+        
+        if self.getSequenceNumber() == False:
             return False
+                
+        #except Exception as err:
+        #    print (' 🛑 An unexpected error occurred in the joinSimulate liquidity function:')
+        #    print (err)
+        #    return False
         
         # We are only allowing for LUNC deposits into liquidity pools, but this could technically be any denom
         liquidity_denom:str = self.IBCfromDenom(self.source_channel, ULUNA)
@@ -586,35 +609,38 @@ class LiquidityTransaction(TransactionCore):
         # This is the final amount we expect to get
         self.share_out_amount:int = self.calcShareOutAmount(token_in_coin)
 
-        # Reduce it by the spread amount
-        self.share_out_amount = round(self.share_out_amount * (1 - self.max_spread))
+        if self.share_out_amount > 0:
+            # Reduce it by the spread amount
+            self.share_out_amount = round(self.share_out_amount * (1 - self.max_spread))
 
-        # This is the amount we are contributing. It will be resized by the pool depending on the share split of each asset
-        token_in_coin      = {'amount': int(float(self.amount_in)), 'denom': liquidity_denom}
-        self.token_in_coin = token_in_coin
+            # This is the amount we are contributing. It will be resized by the pool depending on the share split of each asset
+            token_in_coin      = {'amount': int(float(self.amount_in)), 'denom': liquidity_denom}
+            self.token_in_coin = token_in_coin
 
-        # Perform the liquidity action as a simulation, with no fee details
-        self.joinPool()
+            # Perform the liquidity action as a simulation, with no fee details
+            self.joinPool()
 
-        # Store the transaction
-        tx:Tx = self.transaction
+            # Store the transaction
+            tx:Tx = self.transaction
 
-        if tx is not None:
+            if tx is not None:
 
-            # Get the stub of the requested fee so we can adjust it
-            requested_fee:Fee = tx.auth_info.fee
+                # Get the stub of the requested fee so we can adjust it
+                requested_fee:Fee = tx.auth_info.fee
 
-            # This will be used by the swap function next time we call it
-            # We'll use uluna as the preferred fee currency just to keep things simple
+                # This will be used by the swap function next time we call it
+                # We'll use uluna as the preferred fee currency just to keep things simple
 
-            self.fee = self.calculateFee(requested_fee, ULUNA, convert_to_ibc=True)
+                self.fee = self.calculateFee(requested_fee, ULUNA, convert_to_ibc=True)
 
-            # Adjust the fee to give it a higher amount
-            fee_coin_list:list = self.fee.amount.to_list()
-            new_fee_coin:Coin  = Coin.from_data({'amount': int(fee_coin_list[0].amount * OSMOSIS_FEE_MULTIPLIER), 'denom': fee_coin_list[0].denom})
-            self.fee.amount    = Coins.from_proto([new_fee_coin])
+                # Adjust the fee to give it a higher amount
+                fee_coin_list:list = self.fee.amount.to_list()
+                new_fee_coin:Coin  = Coin.from_data({'amount': int(fee_coin_list[0].amount * OSMOSIS_FEE_MULTIPLIER), 'denom': fee_coin_list[0].denom})
+                self.fee.amount    = Coins.from_proto([new_fee_coin])
 
-            return True
+                return True
+            else:
+                return False
         else:
             return False
         
@@ -641,44 +667,45 @@ class LiquidityTransaction(TransactionCore):
         for row in rows:
             if row[0] not in pools:
                 # If this pool is not in the list, then add it
-                pool:list = self.getOsmosisPool(row[0])
+                pool:Pool = self.getOsmosisPool(row[0])
 
-                # Based on the assets, get the value of this pool:
-                pool_balance:float = 0
-                valid_pool:bool    = True
+                if pool is not None:
+                    # Based on the assets, get the value of this pool:
+                    pool_balance:float = 0
+                    valid_pool:bool    = True
 
-                # To make things faster, we'll query all the denoms in one go:
-                cg_denom_list:list = []
+                    # To make things faster, we'll query all the denoms in one go:
+                    cg_denom_list:list = []
 
-                pool_asset:PoolAsset
-                for pool_asset in pool.pool_assets:
-                    readable_denom:str = self.denomTrace(pool_asset.token.denom)
-                    
-                    if pool_asset.token.denom == 'ibc/785AFEC6B3741100D15E7AF01374E3C4C36F24888E96479B1C33F5C71F364EF9':
-                        readable_denom = 'uluna2'
+                    pool_asset:PoolAsset
+                    for pool_asset in pool.pool_assets:
+                        readable_denom:str = self.denomTrace(pool_asset.token.denom)
+                        
+                        if pool_asset.token.denom == 'ibc/785AFEC6B3741100D15E7AF01374E3C4C36F24888E96479B1C33F5C71F364EF9':
+                            readable_denom = 'uluna2'
 
-                    cg_denom_list.append(readable_denom)
+                        cg_denom_list.append(readable_denom)
 
-                prices:dict = self.wallet.getCoinPrice(cg_denom_list)
+                    prices:dict = self.wallet.getCoinPrice(cg_denom_list)
 
-                # Now we can calculate the balance for each pool
-                for pool_asset in pool.pool_assets:
-                    readable_denom:str = self.denomTrace(pool_asset.token.denom)
-                    
-                    if pool_asset.token.denom == 'ibc/785AFEC6B3741100D15E7AF01374E3C4C36F24888E96479B1C33F5C71F364EF9':
-                        readable_denom = 'uluna2'
+                    # Now we can calculate the balance for each pool
+                    for pool_asset in pool.pool_assets:
+                        readable_denom:str = self.denomTrace(pool_asset.token.denom)
+                        
+                        if pool_asset.token.denom == 'ibc/785AFEC6B3741100D15E7AF01374E3C4C36F24888E96479B1C33F5C71F364EF9':
+                            readable_denom = 'uluna2'
 
-                    if readable_denom not in CHAIN_DATA:
-                        valid_pool = False
-                        break
+                        if readable_denom not in CHAIN_DATA:
+                            valid_pool = False
+                            break
 
-                    asset_amount:float = int(pool_asset.token.amount) / (10 ** get_precision(readable_denom))
+                        asset_amount:float = int(pool_asset.token.amount) / (10 ** get_precision(readable_denom))
 
-                    price:float   = prices[readable_denom]
-                    pool_balance += (price * asset_amount)
+                        price:float   = prices[readable_denom]
+                        pool_balance += (price * asset_amount)
 
-                if valid_pool == True:
-                    pools[int(row[0])] = {'assets': [], 'liquidity': pool_balance}
+                    if valid_pool == True:
+                        pools[int(row[0])] = {'assets': [], 'liquidity': pool_balance}
                 
             # Otherwise, add this new asset to the existing pool
             if int(row[0]) in pools:
@@ -702,24 +729,25 @@ class LiquidityTransaction(TransactionCore):
         token_out_list:list = []
 
         # Get the pool details from the network
-        pool:list = self.getOsmosisPool(self.pool_id)
+        pool:Pool = self.getOsmosisPool(self.pool_id)
         
-        # Step 1: calculate the fraction that the user has of the entire pool:
-        total_shares:int   = int(pool.total_shares.amount)
-        share_fraction:int = int(total_shares / self.pools[self.pool_id])
-        
-        # Step 2: now get the actual amount of each asset across this pool:
-        asset:PoolAsset
-        # Go through each asset and add it to the list
-        for asset in pool.pool_assets:
-
-            # Get the amount of this asset as percentage of the total amount
-            asset_amount:float = int(asset.token.amount) / share_fraction
-
-            # This is the actual amount we're removing, minus the pool tax
-            user_amount:int = int(int(asset_amount * self.amount_out) * (1 - OSMOSIS_POOL_TAX))
+        if pool is not None:
+            # Step 1: calculate the fraction that the user has of the entire pool:
+            total_shares:int   = int(pool.total_shares.amount)
+            share_fraction:int = int(total_shares / self.pools[self.pool_id])
             
-            token_out_list.append(Coin.from_data({'amount': user_amount, 'denom': asset.token.denom}))
+            # Step 2: now get the actual amount of each asset across this pool:
+            asset:PoolAsset
+            # Go through each asset and add it to the list
+            for asset in pool.pool_assets:
+
+                # Get the amount of this asset as percentage of the total amount
+                asset_amount:float = int(asset.token.amount) / share_fraction
+
+                # This is the actual amount we're removing, minus the pool tax
+                user_amount:int = int(int(asset_amount * self.amount_out) * (1 - OSMOSIS_POOL_TAX))
+                
+                token_out_list.append(Coin.from_data({'amount': user_amount, 'denom': asset.token.denom}))
 
         return token_out_list
     
