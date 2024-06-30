@@ -119,15 +119,15 @@ class SwapTransaction(TransactionCore):
                         # else:
                         #     # Everything except GRDX -> ULUNA goes here:
                         #     belief_price:float = parts[self.swap_denom] / parts[self.swap_request_denom]
-
-                        belief_price:float = parts[self.swap_request_denom] / parts[self.swap_denom]
-
+                        if self.swap_denom == ULUNA:
+                            belief_price:float = parts[self.swap_denom] / parts[self.swap_request_denom]
+                        else:
+                            belief_price:float = parts[self.swap_request_denom] / parts[self.swap_denom]
                     else:
                         # UBASE does something different
                         if self.swap_denom == UBASE or self.swap_request_denom == UBASE:
                             result           = self.terra.wasm.contract_query(self.contract, {"curve_info": {}})
                             spot_price:float = float(result['spot_price'])
-
                             if self.swap_request_denom == UBASE:
                                 belief_price:float = divide_raw_balance((spot_price * 1.053), UBASE)
                             else:
@@ -1099,14 +1099,21 @@ class SwapTransaction(TransactionCore):
                     estimated_amount = float(self.swap_amount * swap_price)
             elif self.swap_request_denom in NON_ULUNA_COINS.values() and self.swap_denom == ULUNA:
                 swap_price       = self.beliefPrice()
-                estimated_amount = float(self.swap_amount * swap_price)
+                if swap_price is not None:
+                    if self.swap_request_denom == UBASE or self.swap_request_denom == GRDX:
+                        estimated_amount = float(self.swap_amount / swap_price)
+                    else:
+                        estimated_amount = float(self.swap_amount * swap_price)
             else:
                 # This will cover nearly all other swap pairs:
                 # eg: rakoff -> LUNC
                 swap_price = self.beliefPrice()
                 if swap_price is not None and swap_price > 0:
                     # Rakoff definitely needs to multiply
-                    estimated_amount = float(self.swap_amount * swap_price)
+                    if self.swap_request_denom == UUSD:
+                        estimated_amount = float(self.swap_amount / swap_price)
+                    else:    
+                        estimated_amount = float(self.swap_amount * swap_price)
                     
         else:
             if self.swap_denom in OFFCHAIN_COINS + [ULUNA] and self.swap_request_denom in OFFCHAIN_COINS + [ULUNA]:
