@@ -145,7 +145,7 @@ class LiquidityTransaction(TransactionCore):
         self.current_wallet = self.terra.wallet(current_wallet_key)
 
         # Get the gas list
-        self.gas_list = self.gasList()
+        #self.gas_list = self.gasList()
 
         return self
     
@@ -174,7 +174,7 @@ class LiquidityTransaction(TransactionCore):
                 account_number = str(self.account_number),
                 fee            = self.fee,
                 gas            = self.gas_limit,
-                gas_prices     = {'uluna': self.gas_list['uluna']},
+                #gas_prices     = {'uluna': self.gas_list['uluna']},
                 msgs           = [tx_msg],
                 sequence       = str(self.sequence),
             )
@@ -539,7 +539,7 @@ class LiquidityTransaction(TransactionCore):
                 account_number = str(self.account_number),
                 fee            = self.fee,
                 gas            = self.gas_limit,
-                gas_prices     = self.gas_list,
+                #gas_prices     = self.gas_list,
                 msgs           = [tx_msg],
                 sequence       = self.sequence
             )

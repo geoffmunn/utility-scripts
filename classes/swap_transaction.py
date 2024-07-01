@@ -180,13 +180,13 @@ class SwapTransaction(TransactionCore):
         self.current_wallet = self.terra.wallet(current_wallet_key)
 
         # Get the gas prices and tax rate:
-        self.gas_list = self.gasList()
+        #self.gas_list = self.gasList()
         self.tax_rate = self.taxRate()
 
-        if self.gas_list is None:
-            return False
-        else:
-            return self
+        # if self.gas_list is None:
+        #     return False
+        # else:
+        return self
     
     def marketSimulate(self) -> bool:
         """
@@ -254,7 +254,7 @@ class SwapTransaction(TransactionCore):
                 account_number = str(self.account_number),
                 fee            = self.fee,
                 gas            = self.gas_limit,
-                gas_prices     = self.gas_list,
+                #gas_prices     = self.gas_list,
                 msgs           = [tx_msg],
                 sequence       = self.sequence,
             )
@@ -908,7 +908,7 @@ class SwapTransaction(TransactionCore):
                     options = CreateTxOptions(
                         fee        = self.fee,
                         gas        = 500000,
-                        gas_prices = {'uluna': self.gas_list['uluna']},
+                        #gas_prices = {'uluna': self.gas_list['uluna']},
                         msgs       = [tx_msg],
                         sequence   = self.sequence,
                     )
@@ -945,7 +945,7 @@ class SwapTransaction(TransactionCore):
                     options = CreateTxOptions(
                         fee        = self.fee,
                         gas        = 1000000,
-                        gas_prices = {'uluna': self.gas_list['uluna']},
+                        #gas_prices = {'uluna': self.gas_list['uluna']},
                         msgs       = [tx_msg],
                         sequence   = self.sequence,
                     )
@@ -972,7 +972,7 @@ class SwapTransaction(TransactionCore):
                     options = CreateTxOptions(
                         fee        = self.fee,
                         gas        = 1000000,
-                        gas_prices = {'uluna': self.gas_list['uluna']},
+                        #gas_prices = {'uluna': self.gas_list['uluna']},
                         msgs       = [tx_msg],
                         sequence   = self.sequence,
                     )
@@ -988,7 +988,7 @@ class SwapTransaction(TransactionCore):
                     options = CreateTxOptions(
                         fee        = self.fee,
                         gas        = 500000,
-                        gas_prices = {'uluna': self.gas_list['uluna']},
+                        #gas_prices = {'uluna': self.gas_list['uluna']},
                         msgs       = [tx_msg],
                         sequence   = self.sequence,
                     )
@@ -1005,7 +1005,7 @@ class SwapTransaction(TransactionCore):
                     options = CreateTxOptions(
                         fee            = self.fee,
                         gas            = 1000000,
-                        gas_prices     = {'uluna': self.gas_list['uluna']},
+                        #gas_prices     = {'uluna': self.gas_list['uluna']},
                         gas_adjustment = GAS_ADJUSTMENT_SWAPS,
                         msgs           = [tx_msg],
                         sequence       = self.sequence,
@@ -1035,7 +1035,7 @@ class SwapTransaction(TransactionCore):
                     options = CreateTxOptions(
                         fee            = self.fee,
                         gas            = 1000000,
-                        gas_prices     = self.gas_list,
+                        #gas_prices     = self.gas_list,
                         gas_adjustment = 3.6,
                         msgs           = [tx_msg],
                         sequence       = self.sequence,
@@ -1044,7 +1044,7 @@ class SwapTransaction(TransactionCore):
                 # If we are swapping from lunc to usdt then we need a different fee structure
                 if self.swap_denom == ULUNA and self.swap_request_denom == UUSD:
                     options.fee_denoms = [ULUNA]
-                    options.gas_prices = {ULUNA: self.gas_list[ULUNA]}
+                    #options.gas_prices = {ULUNA: self.gas_list[ULUNA]}
 
                 tx:Tx = None
                 while True:

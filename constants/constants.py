@@ -15,7 +15,7 @@ BUSY_RETRY_COUNT     = 10    # If the LCD is busy, how many times to we retry?
 NETRC_MACHINE_NAME   = 'LUNCworkflows' 
 
 # System settings - these can be changed, but shouldn't be necessary
-GAS_PRICE_URI            = 'https://terra-classic-fcd.publicnode.com/v1/txs/gas_prices'
+#GAS_PRICE_URI            = 'https://terra-classic-fcd.publicnode.com/v1/txs/gas_prices'
 #GAS_PRICE_URI            = 'https://rest.cosmos.directory/terra/v1/txs/gas_prices'
 TOKEN_LIST               = 'https://assets.terrarebels.net/cw20/tokens.json'
 
