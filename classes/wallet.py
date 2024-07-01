@@ -536,6 +536,11 @@ class UserWallet:
             label_widths.append(len('Estimation'))
             swap_tx = SwapTransaction().create(self.seed, self.denom)
 
+            if swap_tx == False:
+                print (' 🛑 The swap object could not be created.')
+                print ('    Exiting...')
+                exit()
+
         coin_list:list   = []
         coin_values:dict = {}
 
