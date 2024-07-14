@@ -456,17 +456,17 @@ def main():
                                         
                                         if transaction_result.is_error == True:
                                             can_continue = False
+                                        else:
+                                            received_coin:Coin
+                                            for received_coin in transaction_result.result_received:
+                                                if delegations[validator]['validator'] not in validator_withdrawals:
+                                                    validator_withdrawals[delegations[validator]['validator']] = {}
+                                                    validator_withdrawals[delegations[validator]['validator']]['balances']       = {}
+                                                    validator_withdrawals[delegations[validator]['validator']]['validator_name'] = delegations[validator]['validator_name']
 
-                                        received_coin:Coin
-                                        for received_coin in transaction_result.result_received:
-                                            if delegations[validator]['validator'] not in validator_withdrawals:
-                                                validator_withdrawals[delegations[validator]['validator']] = {}
-                                                validator_withdrawals[delegations[validator]['validator']]['balances']       = {}
-                                                validator_withdrawals[delegations[validator]['validator']]['validator_name'] = delegations[validator]['validator_name']
+                                                validator_withdrawals[delegations[validator]['validator']]['balances'][received_coin.denom] = received_coin.amount
 
-                                            validator_withdrawals[delegations[validator]['validator']]['balances'][received_coin.denom] = received_coin.amount
-
-                                        withdrawal_succeeded = True
+                                            withdrawal_succeeded = True
                                     else:
                                         logs.error(" ❗ 'when' trigger not fired!")
                                         logs.error(f"    - when: {step['when']}")
@@ -479,7 +479,7 @@ def main():
                             if withdrawal_succeeded == True:
                                 can_continue = True
 
-                        if action == 'redelegate':
+                        if action == 'redelegate' and can_continue == True:
                             # We don't support specific wallet selection on the 'redelegate' step
                             delegations:dict = wallet.delegations
 
