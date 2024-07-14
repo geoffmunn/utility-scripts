@@ -284,7 +284,7 @@ class Governance(TransactionCore):
         self.address = current_wallet_key.acc_address
 
         # Get the gas prices and tax rate:
-        #self.gas_list = self.gasList()
+        self.gas_list = self.gasList()
 
         return self
     
@@ -308,7 +308,7 @@ class Governance(TransactionCore):
         options = CreateTxOptions(
             account_number = str(self.account_number),
             gas            = self.gas_limit,
-            #gas_prices     = self.gas_list,
+            gas_prices     = self.gas_list,
             fee            = self.fee,
             memo           = self.memo,
             msgs           = [msg],

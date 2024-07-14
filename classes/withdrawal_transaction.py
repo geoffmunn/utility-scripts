@@ -48,7 +48,7 @@ class WithdrawalTransaction(TransactionCore):
         self.current_wallet = self.terra.wallet(current_wallet_key)
 
         # Get the gas prices and tax rate:
-        #self.gas_list = self.gasList()
+        self.gas_list = self.gasList()
         self.tax_rate = self.taxRate()
 
         # Store the delegator and validator addresses
@@ -113,7 +113,7 @@ class WithdrawalTransaction(TransactionCore):
             options = CreateTxOptions(
                 fee        = self.fee,
                 gas        = 'auto',
-                #gas_prices = self.gas_list,
+                gas_prices = self.gas_list,
                 msgs       = [msg]
             )
 

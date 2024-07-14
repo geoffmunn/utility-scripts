@@ -30,10 +30,10 @@ class TerraInstance:
             if 'chain_id' in CHAIN_DATA[denom]:
                 self.chain_id = CHAIN_DATA[denom]['chain_id']
 
-                # if self.chain_id == CHAIN_DATA[UOSMO]['chain_id']:
-                #     gas_prices = '1uosmo,1uluna'
-                # else:
-                #     gas_prices = None
+                if self.chain_id == CHAIN_DATA[UOSMO]['chain_id']:
+                    gas_prices = '1uosmo,1uluna'
+                else:
+                    gas_prices = None
                     
             if 'lcd_urls' in CHAIN_DATA[denom]:
                 self.url = CHAIN_DATA[denom]['lcd_urls'][0]
@@ -43,7 +43,7 @@ class TerraInstance:
                     chain_id       = self.chain_id,
                     gas_adjustment = float(self.gas_adjustment),
                     url            = self.url,
-                    #gas_prices     = gas_prices
+                    gas_prices     = gas_prices
                 )
 
                 self.terra = terra

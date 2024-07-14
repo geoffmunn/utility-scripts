@@ -493,38 +493,40 @@ class TransactionCore():
         # Return the completed transaction result
         return transaction_result
 
-    # def gasList(self) -> json:
-    #     """
-    #     Make a JSON request for the gas prices, and store it against this LCD client instance.
-    #     This returns a full list of gas tokens, in JSON format:
-    #     {'uluna': '28.325', 'usdr': '0.52469', 'uusd': '0.75', 'ukrw': '850.0', 'umnt': '2142.855', 'ueur': '0.625', 'ucny': '4.9', 'ujpy': '81.85', 'ugbp': '0.55', 'uinr': '54.4', 'ucad': '0.95', 'uchf': '0.7', 'uaud': '0.95', 'usgd': '1.0', 'uthb': '23.1', 'usek': '6.25', 'unok': '6.25', 'udkk': '4.5', 'uidr': '10900.0', 'uphp': '38.0', 'uhkd': '5.85', 'umyr': '3.0', 'utwd': '20.0'}
+    def gasList(self) -> json:
+        """
+        Make a JSON request for the gas prices, and store it against this LCD client instance.
+        This returns a full list of gas tokens, in JSON format:
+        {'uluna': '28.325', 'usdr': '0.52469', 'uusd': '0.75', 'ukrw': '850.0', 'umnt': '2142.855', 'ueur': '0.625', 'ucny': '4.9', 'ujpy': '81.85', 'ugbp': '0.55', 'uinr': '54.4', 'ucad': '0.95', 'uchf': '0.7', 'uaud': '0.95', 'usgd': '1.0', 'uthb': '23.1', 'usek': '6.25', 'unok': '6.25', 'udkk': '4.5', 'uidr': '10900.0', 'uphp': '38.0', 'uhkd': '5.85', 'umyr': '3.0', 'utwd': '20.0'}
 
-    #     If you only want gas in a particular coin, then pass the gas item like this: {'uluna': self.gas_list['uluna']}
+        If you only want gas in a particular coin, then pass the gas item like this: {'uluna': self.gas_list['uluna']}
 
-    #     @params:
-    #         - None
+        @params:
+            - None
             
-    #     @return: a json object with the relevant gas prices
-    #     """
+        @return: a json object with the relevant gas prices
+        """
 
-    #     if self.gas_list is None:
-    #         try:
-    #             if self.gas_price_url is not None:
-    #                 gas_list:json = requests.get(self.gas_price_url).json()
-    #                 if 'uluna' in gas_list:
-    #                     self.gas_list = gas_list
-    #                 else:
-    #                     self.gas_list = None
-    #                     print (f' 🛑 Gas prices not returned from {self.gas_price_url}')
+        # if self.gas_list is None:
+        #     try:
+        #         if self.gas_price_url is not None:
+        #             gas_list:json = requests.get(self.gas_price_url).json()
+        #             if 'uluna' in gas_list:
+        #                 self.gas_list = gas_list
+        #             else:
+        #                 self.gas_list = None
+        #                 print (f' 🛑 Gas prices not returned from {self.gas_price_url}')
                         
-    #             else:
-    #                 print (' 🛑 No gas price URL set at self.gas_price_url')
-    #                 self.gas_list = None
-    #         except:
-    #             print (' 🛑 Error getting gas prices')
-    #             print (requests.get(self.gas_price_url).content)
+        #         else:
+        #             print (' 🛑 No gas price URL set at self.gas_price_url')
+        #             self.gas_list = None
+        #     except:
+        #         print (' 🛑 Error getting gas prices')
+        #         print (requests.get(self.gas_price_url).content)
 
-    #     return self.gas_list
+        self.gas_list = {'uluna': '28.325', 'usdr': '0.52469', 'uusd': '0.75', 'ukrw': '850.0', 'umnt': '2142.855', 'ueur': '0.625', 'ucny': '4.9', 'ujpy': '81.85', 'ugbp': '0.55', 'uinr': '54.4', 'ucad': '0.95', 'uchf': '0.7', 'uaud': '0.95', 'usgd': '1.0', 'uthb': '23.1', 'usek': '6.25', 'unok': '6.25', 'udkk': '4.5', 'uidr': '10900.0', 'uphp': '38.0', 'uhkd': '5.85', 'umyr': '3.0', 'utwd': '20.0'}
+        
+        return self.gas_list
     
     def getPrices(self, from_denom:str, to_denom:str) -> json:
         """

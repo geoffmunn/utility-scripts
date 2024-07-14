@@ -84,7 +84,7 @@ class SendTransaction(TransactionCore):
         self.current_wallet = self.terra.wallet(current_wallet_key)
 
         # Get the gas prices and tax rate:
-        #self.gas_list = self.gasList()
+        self.gas_list = self.gasList()
         self.tax_rate = self.taxRate()
 
         return self
@@ -139,7 +139,7 @@ class SendTransaction(TransactionCore):
                 fee            = self.fee,
                 fee_denoms     = ['uluna'],
                 gas            = str(self.gas_limit),
-                #gas_prices     = self.gas_list,
+                gas_prices     = self.gas_list,
                 memo           = self.memo,
                 msgs           = [msg],
                 sequence       = self.sequence
@@ -226,7 +226,7 @@ class SendTransaction(TransactionCore):
                 msgs           = [msg],
                 fee            = self.fee,
                 gas            = self.gas_limit,
-                #gas_prices     = self.gas_list
+                gas_prices     = self.gas_list
             )
 
             # This process often generates sequence errors. If we get a response error, then
