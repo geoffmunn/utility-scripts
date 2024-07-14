@@ -107,17 +107,30 @@ class TransactionCore():
                 # Send this back for a retry with a higher gas adjustment value
                 return transaction_result
             else:
-                # Find the transaction on the network and return the result
-                try:
-                    transaction_result:TransactionResult = self.findTransaction()
+                # Put in a loop for busy LCDs here:
 
-                    if transaction_result.transaction_confirmed == True:
-                        transaction_result.message = 'This transaction should be visible in your wallet now.'
-                    else:
-                        transaction_result.message = 'The transaction did not appear. Future transactions might fail due to a lack of expected funds.'
-                except Exception as err:
-                  transaction_result.message = 'An unexpected error occurred when broadcasting.'
-                  transaction_result.log     = err
+                retry_count: int = 0
+                found: bool      = False
+                # Find the transaction on the network and return the result
+                while retry_count < BUSY_RETRY_COUNT:
+                    try:
+                        transaction_result:TransactionResult = self.findTransaction()
+
+                        if transaction_result.transaction_confirmed == True:
+                            transaction_result.message = 'This transaction should be visible in your wallet now.'
+                        else:
+                            transaction_result.message = 'The transaction did not appear. Future transactions might fail due to a lack of expected funds.'
+                            
+                        found = True
+                        break
+                    except Exception as err:
+                        retry_count += 1
+                        print (f'    {err}')
+                        print (f'    The LCD is busy - trying again {retry_count}/{BUSY_RETRY_COUNT}')
+                         
+                if found == False:
+                    transaction_result = TransactionResult()
+                    transaction_result.message = 'An unexpected error occurred when broadcasting.'
                  
         return transaction_result
     
@@ -575,7 +588,7 @@ class TransactionCore():
                 break
             except Exception as err:
                 retry_count += 1
-                print (err)
+                print (f'    {err}')
                 print (f'    The LCD is busy - trying again {retry_count}/{BUSY_RETRY_COUNT}')
 
         return result

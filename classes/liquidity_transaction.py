@@ -6,6 +6,7 @@ from __future__ import annotations
 from hashlib import sha256
 import sqlite3
 from sqlite3 import Cursor, Connection
+import time
 from terra_classic_sdk.core.osmosis import Pool
 
 from classes.common import (
@@ -145,7 +146,7 @@ class LiquidityTransaction(TransactionCore):
         self.current_wallet = self.terra.wallet(current_wallet_key)
 
         # Get the gas list
-        #self.gas_list = self.gasList()
+        self.gas_list = self.gasList()
 
         return self
     
@@ -174,7 +175,7 @@ class LiquidityTransaction(TransactionCore):
                 account_number = str(self.account_number),
                 fee            = self.fee,
                 gas            = self.gas_limit,
-                #gas_prices     = {'uluna': self.gas_list['uluna']},
+                gas_prices     = {'uluna': self.gas_list['uluna']},
                 msgs           = [tx_msg],
                 sequence       = str(self.sequence),
             )
@@ -314,7 +315,6 @@ class LiquidityTransaction(TransactionCore):
                     pool:Pool = self.terra.pool.osmosis_pool(pool_id)
                     # Cache this so we don't have to check again
                     self.cached_pools[pool_id] = pool
-
                     break
                 except Exception as err:
                     retry_count += 1
@@ -539,7 +539,7 @@ class LiquidityTransaction(TransactionCore):
                 account_number = str(self.account_number),
                 fee            = self.fee,
                 gas            = self.gas_limit,
-                #gas_prices     = self.gas_list,
+                gas_prices     = self.gas_list,
                 msgs           = [tx_msg],
                 sequence       = self.sequence
             )
@@ -895,7 +895,18 @@ def exit_liquidity_pool(wallet:UserWallet, pool_id:int, amount_out:float, silent
             
             transaction_result:TransactionResult = liquidity_tx.broadcast()
 
-            # if liquidity_tx.broadcast_result is not None and liquidity_tx.broadcast_result.code == 32:
+            if liquidity_tx.broadcast_result is not None and transaction_result.broadcast_result.raw_log == 'Status 429 - Too Many Requests':
+                retry_count = 0
+                while True:
+                    retry_count += 1
+                    
+                    if retry_count <= BUSY_RETRY_COUNT:
+                        if silent_mode == False:
+                            print (f'    {transaction_result.broadcast_result.raw_log}, attempt {retry_count}/{BUSY_RETRY_COUNT}')
+                        time.sleep(1)
+                    else:
+                        break
+                    
             #     while True:
             #         print (' 🛎️  Boosting sequence number and trying again...')
 
