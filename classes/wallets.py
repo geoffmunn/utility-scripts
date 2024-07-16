@@ -327,7 +327,8 @@ class UserWallets:
                     wallets_to_use[wallet_name] = self.wallets[wallet_name]
 
             if answer == USER_ACTION_CONTINUE:
-                break
+                if len(wallets_to_use) > 0:
+                    break
 
             if answer == USER_ACTION_QUIT:
                 break

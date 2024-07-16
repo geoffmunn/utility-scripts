@@ -2,15 +2,12 @@
 # -*- coding: UTF-8 -*-
 
 from classes.common import (
-    check_version,
-    get_precision
+    check_version
 )
 
 from constants.constants import (
-    CHAIN_DATA,
     FULL_COIN_LOOKUP,
     ULUNA,
-    UOSMO,
     USER_ACTION_CONTINUE,
     USER_ACTION_QUIT,
 )

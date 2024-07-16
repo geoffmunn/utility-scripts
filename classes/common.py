@@ -104,9 +104,10 @@ def check_database() -> bool:
                     previous_date:datetime  = datetime.now() - timedelta(weeks = 2)
                     
                     if last_scan_date < previous_date:
-                        print (' 🗄  This database is out of date - you should get the latest Osmosis data.')
+                        print ('\n 🗄  This database is out of date - you should get the latest Osmosis data.')
                         print (' 🗄  Run the get_osmosis_pools.py script to update the database.\n')
 
+                conn.close()
             except:
                 print (' 🛑 The Osmosis pool database could accessed...')
                 print (' 🛑 Run \'get_osmosis_pools.py\' first to generate the list.\n')
@@ -118,14 +119,35 @@ def check_database() -> bool:
                 recent_scan = "SELECT * FROM ibc_denoms LIMIT 1;"
                 conn        = sqlite3.connect(DB_FILE_NAME)
                 cursor      = conn.execute(recent_scan)
+                conn.close()
             except:
                 ibc_table_exists = False
 
             if ibc_table_exists == False:
-                print (' 🗄 No ibc_denom table found, creating one...')
+                print ('\n 🗄  No ibc_denom table found, creating one...')
                 create_ibc_table = "CREATE TABLE ibc_denoms (ID INTEGER PRIMARY KEY AUTOINCREMENT, date_added DATETIME DEFAULT CURRENT_TIMESTAMP, ibc_denom TEXT NOT NULL, readable_denom TEXT NOT NULL);"
+                conn   = sqlite3.connect(DB_FILE_NAME)
                 cursor = conn.execute(create_ibc_table)
                 conn.commit()
+                conn.close()
+
+            # Make sure that the ibc_denoms table is there:
+            trading_table_exists:bool = True
+            try:
+                recent_scan = "SELECT * FROM trades LIMIT 1;"
+                conn        = sqlite3.connect(DB_FILE_NAME)
+                cursor      = conn.execute(recent_scan)
+                conn.close()
+            except:
+                trading_table_exists = False
+
+            if trading_table_exists == False:
+                print ('\n 🗄  No trading table found, creating one...')
+                create_trade_table = "CREATE TABLE trades (ID INTEGER PRIMARY KEY AUTOINCREMENT, date_added DATETIME DEFAULT CURRENT_TIMESTAMP, wallet_name TEXT NOT NULL, coin_from TEXT NOT NULL, amount_from INTEGER NOT NULL, price_from REAL NOT NULL, coin_to TEXT NOT NULL, amount_to INTEGER NOT NULL, price_to REAL NOT NULL, fees TEXT NOT NULL, exit_profit REAL NOT NULL, exit_loss REAL NOT NULL, linked_trade_id INTEGER, tx_hash TEXT NOT NULL, status TEXT NOT NULL);"
+                conn               = sqlite3.connect(DB_FILE_NAME)
+                cursor             = conn.execute(create_trade_table)
+                conn.commit()
+                conn.close()
 
             return True
         else:
@@ -236,6 +258,9 @@ def strtobool(val:str) -> bool:
     @return: true/false this value is a boolean
     """
 
+    # Just in case we have been passed a boolean, convert it to a string
+    val = str(val)
+    
     val = val.lower()
     if val in ('y', 'yes', 't', 'true', 'on', '1'):
         return True

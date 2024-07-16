@@ -26,8 +26,6 @@ from classes.wallets import UserWallets
 from classes.liquidity_transaction import LiquidityTransaction, join_liquidity_pool, exit_liquidity_pool
 from classes.transaction_core import TransactionResult
 
-from terra_classic_sdk.core.coin import Coin
-
 def main():
 
     # Check if there is a new version we should be using

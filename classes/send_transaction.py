@@ -11,19 +11,12 @@ from classes.common import (
 )
 
 from constants.constants import (
-    BASE_SMART_CONTRACT_ADDRESS,
-    CANDY_SMART_CONTRACT_ADDRESS,
     CHAIN_DATA,
-    CREMAT_SMART_CONTRACT_ADDRESS,
     FULL_COIN_LOOKUP,
     GRDX,
-    LENNY_SMART_CONTRACT_ADDRESS,
+    NON_ULUNA_COINS,
     SEARCH_RETRY_COUNT,
     TERRASWAP_GRDX_TO_LUNC_ADDRESS,
-    UBASE,
-    UCANDY,
-    UCREMAT,
-    ULENNY,
     ULUNA,
     UOSMO,
     UUSD
@@ -117,10 +110,15 @@ class SendTransaction(TransactionCore):
         try:
             tx:Tx = None
 
-            if self.denom == UBASE:
+            if self.denom in NON_ULUNA_COINS.values():
+                if self.denom == GRDX:
+                    contract_address = TERRASWAP_GRDX_TO_LUNC_ADDRESS
+                else:
+                    contract_address = (list(NON_ULUNA_COINS.keys())[list(NON_ULUNA_COINS.values()).index(self.denom)])
+
                 msg = MsgExecuteContract(
                     sender      = self.current_wallet.key.acc_address,
-                    contract    = BASE_SMART_CONTRACT_ADDRESS,
+                    contract    = contract_address,
                     msg = {
                         "transfer": {
                             "amount": str(send_amount),
@@ -128,50 +126,7 @@ class SendTransaction(TransactionCore):
                         }
                     }
                 )
-            elif self.denom == GRDX:
-                msg = MsgExecuteContract(
-                    sender      = self.current_wallet.key.acc_address,
-                    contract    = TERRASWAP_GRDX_TO_LUNC_ADDRESS,
-                    msg = {
-                        "transfer": {
-                            "amount": str(send_amount),
-                            "recipient": self.recipient_address
-                        }
-                    }
-                )
-            elif self.denom == ULENNY:
-                msg = MsgExecuteContract(
-                    sender      = self.current_wallet.key.acc_address,
-                    contract    = LENNY_SMART_CONTRACT_ADDRESS,
-                    msg = {
-                        "transfer": {
-                            "amount": str(send_amount),
-                            "recipient": self.recipient_address
-                        }
-                    }
-                )
-            elif self.denom == UCREMAT:
-                msg = MsgExecuteContract(
-                    sender      = self.current_wallet.key.acc_address,
-                    contract    = CREMAT_SMART_CONTRACT_ADDRESS,
-                    msg = {
-                        "transfer": {
-                            "amount": str(send_amount),
-                            "recipient": self.recipient_address
-                        }
-                    }
-                )
-            elif self.denom == UCANDY:
-                msg = MsgExecuteContract(
-                    sender      = self.current_wallet.key.acc_address,
-                    contract    = CANDY_SMART_CONTRACT_ADDRESS,
-                    msg = {
-                        "transfer": {
-                            "amount": str(send_amount),
-                            "recipient": self.recipient_address
-                        }
-                    }
-                )
+
             else:
                 msg = MsgSend(
                     from_address = self.current_wallet.key.acc_address,
@@ -324,7 +279,9 @@ class SendTransaction(TransactionCore):
         self.fee_deductables = None
         self.prices          = None
         self.tax             = None
-        self.sequence        = self.current_wallet.sequence()
+        #self.sequence        = self.current_wallet.sequence()
+        if self.getSequenceNumber() == False:
+            return False
 
         # If the send amount denom is NOT the native denom of the chain, then convert it to the IBC value
         # Eg, send LUNC on Osmosis -> Osmosis
@@ -352,10 +309,8 @@ class SendTransaction(TransactionCore):
             fee_amount   = fee_bit.amount
             fee_denom    = fee_bit.denom
         
-            non_uluna_coins:list = [GRDX, UBASE, UCANDY, UCREMAT, ULENNY]
             # Calculate the tax portion
-            #if self.denom == UBASE or self.denom == GRDX:
-            if self.denom in non_uluna_coins:
+            if self.denom in NON_ULUNA_COINS.values():
                 # No taxes for BASE and GRDX transfers
                 self.tax = 0
             else:
@@ -364,7 +319,7 @@ class SendTransaction(TransactionCore):
             # Build a fee object
             if fee_denom == ULUNA and self.denom == ULUNA:
                 new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount + self.tax))})
-            elif self.denom in non_uluna_coins:
+            elif self.denom in NON_ULUNA_COINS.values():
                 new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount))})
             else:
                 new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount)), Coin(self.denom, int(self.tax))})
@@ -421,8 +376,10 @@ class SendTransaction(TransactionCore):
         self.fee_deductables = None
         self.prices          = None
         self.tax             = None
-        self.sequence        = self.current_wallet.sequence()
+        #self.sequence        = self.current_wallet.sequence()
 
+        if self.getSequenceNumber() == False:
+            return False
 
         #self.gas_limit = '241946'
         # Set a specific gas limit because 'auto' is too high
@@ -474,7 +431,7 @@ class SendTransaction(TransactionCore):
         else:
             return False
         
-def send_transaction(wallet:UserWallet, recipient_address:str, send_coin:Coin, memo:str = '', prompt_user:bool = True) -> TransactionResult:
+def send_transaction(wallet:UserWallet, recipient_address:str, send_coin:Coin, memo:str = '', silent_mode:bool = False) -> TransactionResult:
     """
     A wrapper function for workflows and wallet management.
     This lets the user send a LUNC or USTC amount to supported address.
@@ -501,6 +458,7 @@ def send_transaction(wallet:UserWallet, recipient_address:str, send_coin:Coin, m
     send_tx.recipient_prefix  = wallet.getPrefix(recipient_address)
     send_tx.sender_address    = wallet.address
     send_tx.sender_prefix     = wallet.getPrefix(wallet.address)
+    send_tx.silent_mode       = silent_mode
     send_tx.wallet_denom      = wallet.denom
     
     # Based on the recipient prefix, get the receiving denomination
@@ -544,7 +502,7 @@ def send_transaction(wallet:UserWallet, recipient_address:str, send_coin:Coin, m
     # Now complete it
     if send_result == True:
 
-        if prompt_user == True:
+        if silent_mode == False:
             print ('')
             print(f'  ➜ You are about to send {wallet.formatUluna(send_coin.amount, send_coin.denom)} {FULL_COIN_LOOKUP[send_coin.denom]} to {recipient_address}')
             print (send_tx.readableFee())
@@ -552,11 +510,9 @@ def send_transaction(wallet:UserWallet, recipient_address:str, send_coin:Coin, m
             user_choice = get_user_choice(' ❓ Do you want to continue? (y/n) ', [])
 
             if user_choice == False:
-                print (' 🛑 Exiting...\n')
+                print ('\n 🛑 Exiting...\n')
                 exit()
-        else:
-            print (send_tx.readableFee())
-
+        
         recipient_wallet:UserWallet = UserWallet().create('Recipient wallet', send_tx.recipient_address)
         recipient_wallet.getBalances()
 
@@ -575,26 +531,26 @@ def send_transaction(wallet:UserWallet, recipient_address:str, send_coin:Coin, m
             
             transaction_result:TransactionResult = send_tx.broadcast()
 
-            if send_tx.broadcast_result is not None and send_tx.broadcast_result.code == 32:
-                while True:
-                    print (' 🛎️  Boosting sequence number and trying again...')
+            # if send_tx.broadcast_result is not None and send_tx.broadcast_result.code == 32:
+            #     while True:
+            #         print (' 🛎️  Boosting sequence number and trying again...')
 
-                    send_tx.sequence = send_tx.sequence + 1
-                    if send_tx.is_on_chain == True:
-                        send_tx.simulate()
-                        send_tx.send()
-                    else:
-                        send_tx.simulateOffchain()
-                        send_tx.sendOffchain()
+            #         send_tx.sequence = send_tx.sequence + 1
+            #         if send_tx.is_on_chain == True:
+            #             send_tx.simulate()
+            #             send_tx.send()
+            #         else:
+            #             send_tx.simulateOffchain()
+            #             send_tx.sendOffchain()
 
-                    transaction_result:TransactionResult = send_tx.broadcast()
+            #         transaction_result:TransactionResult = send_tx.broadcast()
 
-                    if transaction_result is None:
-                        break
+            #         if transaction_result is None:
+            #             break
                     
-                    # Code 32 = account sequence mismatch
-                    if transaction_result.broadcast_result.code != 32:
-                        break
+            #         # Code 32 = account sequence mismatch
+            #         if transaction_result.broadcast_result.code != 32:
+            #             break
 
             if transaction_result.broadcast_result is None or transaction_result.broadcast_result.is_tx_error() or transaction_result.is_error == True:
                 transaction_result.is_error = True
@@ -611,7 +567,8 @@ def send_transaction(wallet:UserWallet, recipient_address:str, send_coin:Coin, m
                 # Check that the recipient wallet has been updated
                 # To keep things simple, we'll only check for increased balances
                 retry_count:int = 0
-                print (f'\n 🔎︎ Checking that the recipient has this transaction...')
+                if silent_mode == False:
+                    print (f'\n 🔎︎ Checking that the recipient has this transaction...')
                 while True:
                     recipient_wallet.getBalances()
                     new_balance:int = 0
@@ -624,7 +581,8 @@ def send_transaction(wallet:UserWallet, recipient_address:str, send_coin:Coin, m
                     retry_count += 1
 
                     if retry_count <= SEARCH_RETRY_COUNT:
-                        print (f'    Search attempt {retry_count}/{SEARCH_RETRY_COUNT}')
+                        if silent_mode == False:
+                            print (f'    Search attempt {retry_count}/{SEARCH_RETRY_COUNT}')
                         time.sleep(1)
                     else:
                         break

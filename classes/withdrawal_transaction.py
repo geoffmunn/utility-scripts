@@ -70,7 +70,10 @@ class WithdrawalTransaction(TransactionCore):
 
         # Set the fee to be None so it is simulated
         self.fee      = None
-        self.sequence = self.current_wallet.sequence()
+        if self.getSequenceNumber() == False:
+            return False
+       
+                
         self.withdraw()
 
         # Store the transaction
@@ -141,7 +144,7 @@ class WithdrawalTransaction(TransactionCore):
         except:
             return False
         
-def claim_delegation_rewards(wallet:UserWallet, validator_address:str) -> TransactionResult:
+def claim_delegation_rewards(wallet:UserWallet, validator_address:str, silent_mode:bool = False) -> TransactionResult:
     """
     A wrapper function for workflows and wallet management.
     This lets the user claim any delegation rewards for the provided validator.
@@ -166,14 +169,16 @@ def claim_delegation_rewards(wallet:UserWallet, validator_address:str) -> Transa
 
     # We need to populate some details
     withdrawal_tx.balances     = wallet.balances
+    withdrawal_tx.silent_mode  = silent_mode
     withdrawal_tx.wallet_denom = wallet.denom
-
+    
     # Simulate it
     withdrawal_result = withdrawal_tx.simulate()
 
     if withdrawal_result == True:
 
-        print (withdrawal_tx.readableFee())
+        if silent_mode == False:
+            print (withdrawal_tx.readableFee())
 
         # Now we know what the fee is, we can do it again and finalise it
         withdrawal_result = withdrawal_tx.withdraw()
@@ -181,23 +186,24 @@ def claim_delegation_rewards(wallet:UserWallet, validator_address:str) -> Transa
         if withdrawal_result == True:
             transaction_result:TransactionResult = withdrawal_tx.broadcast()
         
-            if transaction_result.broadcast_result is not None and transaction_result.broadcast_result.code == 32:
-                while True:
-                    print (' 🛎️  Boosting sequence number and trying again...')
-
-                    withdrawal_tx.sequence = withdrawal_tx.sequence + 1
+            # if transaction_result.broadcast_result is not None and transaction_result.broadcast_result.code == 32:
+            #     while True:
                     
-                    withdrawal_tx.simulate()
-                    withdrawal_tx.withdraw()
+            #         print (' 🛎️  Boosting sequence number and trying again...')
 
-                    transaction_result:TransactionResult = withdrawal_tx.broadcast()
+            #         withdrawal_tx.sequence = withdrawal_tx.sequence + 1
+                    
+            #         withdrawal_tx.simulate()
+            #         withdrawal_tx.withdraw()
 
-                    if transaction_result is None:
-                        break
+            #         transaction_result:TransactionResult = withdrawal_tx.broadcast()
 
-                    # Code 32 = account sequence mismatch
-                    if transaction_result.broadcast_result.code != 32:
-                        break
+            #         if transaction_result is None:
+            #             break
+
+            #         # Code 32 = account sequence mismatch
+            #         if transaction_result.broadcast_result.code != 32:
+            #             break
                     
             if transaction_result.broadcast_result is None or transaction_result.broadcast_result.is_tx_error():
                 transaction_result.is_error = True

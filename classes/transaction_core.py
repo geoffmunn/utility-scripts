@@ -18,15 +18,17 @@ from classes.common import (
 
 from constants.constants import (
     BASE_SMART_CONTRACT_ADDRESS,
+    BUSY_RETRY_COUNT,
     CANDY_SMART_CONTRACT_ADDRESS,
     CHAIN_DATA,
     COIN_ALIASES,
     CREMAT_SMART_CONTRACT_ADDRESS,
     DB_FILE_NAME,
     FULL_COIN_LOOKUP,
-    GAS_PRICE_URI,
+    #GAS_PRICE_URI,
     GRDX_SMART_CONTRACT_ADDRESS,
     LENNY_SMART_CONTRACT_ADDRESS,
+    NON_ULUNA_COINS,
     SEARCH_RETRY_COUNT,
     UBASE,
     ULUNA,
@@ -55,17 +57,19 @@ class TransactionCore():
         self.current_wallet:Wallet                   = None # The generated wallet based on the provided details
         self.fee:Fee                                 = None
         self.gas_list:json                           = None
-        self.gas_price_url:str                       = None
+        #self.gas_price_url:str                       = None
         self.ibc_routes:list                         = None # Only used by swaps
         self.prices:dict                             = None
         self.sequence:int                            = None
+        self.silent_mode:bool                        = False
         self.tax_rate:json                           = None
         self.terra:LCDClient                         = None
         self.transaction:Tx                          = None
         self.wallet_denom:str                        = None # Used so we can identify the chain that this transaction is using
 
         # Initialise the basic variables:
-        self.gas_price_url = GAS_PRICE_URI
+        #self.gas_price_url = GAS_PRICE_URI
+
         # The gas list and tax rate values will be updated when the class is properly created
         
     def broadcast(self) -> TransactionResult:
@@ -103,17 +107,30 @@ class TransactionCore():
                 # Send this back for a retry with a higher gas adjustment value
                 return transaction_result
             else:
-                # Find the transaction on the network and return the result
-                try:
-                    transaction_result:TransactionResult = self.findTransaction()
+                # Put in a loop for busy LCDs here:
 
-                    if transaction_result.transaction_confirmed == True:
-                        transaction_result.message = 'This transaction should be visible in your wallet now.'
-                    else:
-                        transaction_result.message = 'The transaction did not appear. Future transactions might fail due to a lack of expected funds.'
-                except Exception as err:
-                   transaction_result.message = 'An unexpected error occurred when broadcasting.'
-                   transaction_result.log     = err
+                retry_count: int = 0
+                found: bool      = False
+                # Find the transaction on the network and return the result
+                while retry_count < BUSY_RETRY_COUNT:
+                    try:
+                        transaction_result:TransactionResult = self.findTransaction()
+
+                        if transaction_result.transaction_confirmed == True:
+                            transaction_result.message = 'This transaction should be visible in your wallet now.'
+                        else:
+                            transaction_result.message = 'The transaction did not appear. Future transactions might fail due to a lack of expected funds.'
+                            
+                        found = True
+                        break
+                    except Exception as err:
+                        retry_count += 1
+                        print (f'    {err}')
+                        print (f'    The LCD is busy - trying again {retry_count}/{BUSY_RETRY_COUNT}')
+                         
+                if found == False:
+                    transaction_result = TransactionResult()
+                    transaction_result.message = 'An unexpected error occurred when broadcasting.'
                  
         return transaction_result
     
@@ -324,7 +341,9 @@ class TransactionCore():
         # Put the broadcast result here - the displayed hash comes from this
         transaction_result.broadcast_result = self.broadcast_result
 
-        print (f'\n 🔎︎ Looking for the TX hash...')
+        if self.silent_mode == False:
+            print (f'\n 🔎︎ Looking for the TX hash...')
+
         while True:
             # We will be the current height - 1 just in case it rolled over just as we started the search
             block_height:int = int(self.terra.tendermint.block_info()['block']['header']['height']) - 1
@@ -434,9 +453,9 @@ class TransactionCore():
                                     transaction_result.result_received = Coins.from_proto([Coin.from_data({'amount': log.events_by_type['wasm']['Net Unstake:'][0], 'denom': ULUNA})])
                                 
                                 transaction_result.log_found = True
-
+                            
                             # GRDX/UCREMAT/ULENNY -> ULUNA swaps (will override the standard swaps detection done earlier)
-                            if '_contract_address' in log.events_by_type['wasm'] and (GRDX_SMART_CONTRACT_ADDRESS in log.events_by_type['wasm']['_contract_address'] or CANDY_SMART_CONTRACT_ADDRESS in log.events_by_type['wasm']['_contract_address'] or CREMAT_SMART_CONTRACT_ADDRESS in log.events_by_type['wasm']['_contract_address'] or LENNY_SMART_CONTRACT_ADDRESS in log.events_by_type['wasm']['_contract_address']):
+                            elif '_contract_address' in log.events_by_type['wasm'] and not set(list(NON_ULUNA_COINS.keys())).isdisjoint(log.events_by_type['wasm']['_contract_address']):
                                 if 'action' in log.events_by_type['wasm'] and log.events_by_type['wasm']['action'][0] == 'transfer':
                                     # Sending GRDX/ULENNY to another wallet
                                     transaction_result.result_sent     = Coin.from_data({'amount': log.events_by_type['wasm']['amount'][0], 'denom': self.denom})
@@ -453,7 +472,9 @@ class TransactionCore():
                             print (log)
 
                     if result['txs'][0].code == 0:
-                        print ('\n ⭐ Found the hash!')
+                        if self.silent_mode == False:
+                            print ('\n ⭐ Found the hash!')
+
                         time.sleep(1)
                         transaction_result.transaction_confirmed = True
                         break
@@ -470,12 +491,14 @@ class TransactionCore():
                         transaction_result.is_error = True
                         break
             else:
-                print ('    No result object returned, trying again...')
+                if self.silent_mode == False:
+                    print ('    No result object returned, trying again...')
                 
             retry_count += 1
 
             if retry_count <= SEARCH_RETRY_COUNT:
-                print (f'    Search attempt {retry_count}/{SEARCH_RETRY_COUNT}')
+                if self.silent_mode == False:
+                    print (f'    Search attempt {retry_count}/{SEARCH_RETRY_COUNT}')
                 time.sleep(1)
             else:
                 break
@@ -497,23 +520,25 @@ class TransactionCore():
         @return: a json object with the relevant gas prices
         """
 
-        if self.gas_list is None:
-            try:
-                if self.gas_price_url is not None:
-                    gas_list:json = requests.get(self.gas_price_url).json()
-                    if 'uluna' in gas_list:
-                        self.gas_list = gas_list
-                    else:
-                        self.gas_list = None
-                        print (f' 🛑 Gas prices not returned from {self.gas_price_url}')
+        # if self.gas_list is None:
+        #     try:
+        #         if self.gas_price_url is not None:
+        #             gas_list:json = requests.get(self.gas_price_url).json()
+        #             if 'uluna' in gas_list:
+        #                 self.gas_list = gas_list
+        #             else:
+        #                 self.gas_list = None
+        #                 print (f' 🛑 Gas prices not returned from {self.gas_price_url}')
                         
-                else:
-                    print (' 🛑 No gas price URL set at self.gas_price_url')
-                    self.gas_list = None
-            except:
-                print (' 🛑 Error getting gas prices')
-                print (requests.get(self.gas_price_url).content)
+        #         else:
+        #             print (' 🛑 No gas price URL set at self.gas_price_url')
+        #             self.gas_list = None
+        #     except:
+        #         print (' 🛑 Error getting gas prices')
+        #         print (requests.get(self.gas_price_url).content)
 
+        self.gas_list = {'uluna': '28.325', 'usdr': '0.52469', 'uusd': '0.75', 'ukrw': '850.0', 'umnt': '2142.855', 'ueur': '0.625', 'ucny': '4.9', 'ujpy': '81.85', 'ugbp': '0.55', 'uinr': '54.4', 'ucad': '0.95', 'uchf': '0.7', 'uaud': '0.95', 'usgd': '1.0', 'uthb': '23.1', 'usek': '6.25', 'unok': '6.25', 'udkk': '4.5', 'uidr': '10900.0', 'uphp': '38.0', 'uhkd': '5.85', 'umyr': '3.0', 'utwd': '20.0'}
+        
         return self.gas_list
     
     def getPrices(self, from_denom:str, to_denom:str) -> json:
@@ -530,7 +555,6 @@ class TransactionCore():
             
         @return: a json object with the prices for both coins
         """
-
         from_price:float = None
         to_price:float   = None
 
@@ -545,6 +569,29 @@ class TransactionCore():
         to_price:float   = self.prices[to_id['coingecko_id']]['usd']
         
         return {'from':from_price, 'to': to_price}
+    
+    def getSequenceNumber(self) -> bool:
+        """
+        Get the current sequence number for this wallet.
+        If the LCD is busy, try a few times before exiting
+
+        @return: bool (true if sequence number was set, false if not)
+        """
+
+        retry_count: int = 0
+        result: bool  = False
+
+        while retry_count < BUSY_RETRY_COUNT:
+            try:
+                self.sequence = self.current_wallet.sequence()
+                result = True
+                break
+            except Exception as err:
+                retry_count += 1
+                print (f'    {err}')
+                print (f'    The LCD is busy - trying again {retry_count}/{BUSY_RETRY_COUNT}')
+
+        return result
         
     def IBCfromDenom(self, channel_id:str, denom:str) -> str:
         """
@@ -670,6 +717,7 @@ class TransactionResult(TransactionCore):
         self.message:str                             = ''
         self.result_received:Coins                   = None     # Even if we only get one coin, we'll treat it as a list of coins
         self.result_sent:Coin                        = None
+        self.trade_id:int                            = 0        # If we have logged this swap, then this is the trade id
         self.transacted_amount:str                   = None     # This holds the sent/delegated/whatever amount. It has already been through the formatUluna function.
         self.transaction_confirmed:bool              = None
 

@@ -11,19 +11,16 @@ import sqlite3
 from sqlite3 import Cursor, Connection
 
 from constants.constants import (
-    BASE_SMART_CONTRACT_ADDRESS,
     CHAIN_DATA,
     DB_FILE_NAME,
-    CANDY_SMART_CONTRACT_ADDRESS,
-    CREMAT_SMART_CONTRACT_ADDRESS,
     FULL_COIN_LOOKUP,
     GAS_ADJUSTMENT_OSMOSIS,
     GAS_ADJUSTMENT_SWAPS,
     GRDX,
     GRDX_SMART_CONTRACT_ADDRESS,
-    LENNY_SMART_CONTRACT_ADDRESS,
     MAX_SPREAD,
     MIN_OSMO_GAS,
+    NON_ULUNA_COINS,
     OFFCHAIN_COINS,
     OSMOSIS_FEE_MULTIPLIER,
     TERRAPORT_SWAP_ADDRESS,
@@ -34,10 +31,12 @@ from constants.constants import (
     UBASE,
     UCANDY,
     UCREMAT,
+    UELON,
     UKRW,
     ULENNY,
     ULUNA,
     UOSMO,
+    URAKOFF,
     UUSD
 )
 
@@ -99,61 +98,59 @@ class SwapTransaction(TransactionCore):
 
         if self.contract is not None:
             try:
-                #if self.swap_denom != UBASE and self.swap_request_denom != UBASE:
-                contract_swaps:list = [GRDX, ULUNA, UKRW, UUSD]
                 # Contract swaps must be on the columbus-5 chain
-                #if self.terra.chain_id == CHAIN_DATA[ULUNA]['chain_id']:
-                if self.swap_denom in contract_swaps and self.swap_request_denom in contract_swaps:
-                    parts:dict = {}
-
-                    # Get the pool details
-                    result = self.terra.wasm.contract_query(self.contract, {"pool": {}})
-                    if 'native_token' in result['assets'][0]['info']:
-                        parts[result['assets'][0]['info']['native_token']['denom']] = int(result['assets'][0]['amount'])
-                    else:
-                        # GRDX:
-                        if result['assets'][0]['info']['token']['contract_addr'] == TERRASWAP_GRDX_TO_LUNC_ADDRESS:
-                            parts[GRDX] = int(result['assets'][0]['amount'])
-                        
-                    parts[result['assets'][1]['info']['native_token']['denom']] = int(result['assets'][1]['amount'])
-
-                    if self.swap_denom == GRDX and self.swap_request_denom == ULUNA:
-                        belief_price:float = parts[self.swap_request_denom] / parts[self.swap_denom]
-                    else:
-                        # Everything except GRDX -> ULUNA goes here:
-                        belief_price:float = parts[self.swap_denom] / parts[self.swap_request_denom]
-
-                else:
-                    # UBASE does something different
-                    if self.swap_denom == UBASE or self.swap_request_denom == UBASE:
-                        result           = self.terra.wasm.contract_query(self.contract, {"curve_info": {}})
-                        spot_price:float = float(result['spot_price'])
-
-                        if self.swap_request_denom == UBASE:
-                            belief_price:float = divide_raw_balance((spot_price * 1.053), UBASE)
+                if self.terra.chain_id == CHAIN_DATA[ULUNA]['chain_id']:
+                    contract_swaps:list = [GRDX, ULUNA, UKRW, UUSD]
+                    if self.swap_denom in contract_swaps and self.swap_request_denom in contract_swaps:
+                        parts:dict = {}
+                        # Get the pool details
+                        result = self.terra.wasm.contract_query(self.contract, {"pool": {}})
+                        if 'native_token' in result['assets'][0]['info']:
+                            parts[result['assets'][0]['info']['native_token']['denom']] = int(result['assets'][0]['amount'])
                         else:
-                            belief_price:float = divide_raw_balance((spot_price - (spot_price * 0.048)), UBASE)
-                    if self.swap_denom in [UCANDY, UCREMAT, ULENNY] or self.swap_request_denom in [UCANDY, UCREMAT, ULENNY]:
-                        if self.swap_denom in [UCANDY, UCREMAT, ULENNY]:
-                            if self.swap_denom == UCREMAT:
-                                contract_address = CREMAT_SMART_CONTRACT_ADDRESS
-                            elif self.swap_denom == UCANDY:
-                                contract_address = CANDY_SMART_CONTRACT_ADDRESS
+                            # GRDX:
+                            if result['assets'][0]['info']['token']['contract_addr'] == TERRASWAP_GRDX_TO_LUNC_ADDRESS:
+                                parts[GRDX] = int(result['assets'][0]['amount'])
+                            
+                        parts[result['assets'][1]['info']['native_token']['denom']] = int(result['assets'][1]['amount'])
+
+                        # if self.swap_denom == GRDX and self.swap_request_denom == ULUNA:
+                        #     belief_price:float = parts[self.swap_request_denom] / parts[self.swap_denom]
+                        # else:
+                        #     # Everything except GRDX -> ULUNA goes here:
+                        #     belief_price:float = parts[self.swap_denom] / parts[self.swap_request_denom]
+                        if self.swap_denom == ULUNA:
+                            belief_price:float = parts[self.swap_denom] / parts[self.swap_request_denom]
+                        else:
+                            belief_price:float = parts[self.swap_request_denom] / parts[self.swap_denom]
+                    else:
+                        # UBASE does something different
+                        if self.swap_denom == UBASE or self.swap_request_denom == UBASE:
+                            result           = self.terra.wasm.contract_query(self.contract, {"curve_info": {}})
+                            spot_price:float = float(result['spot_price'])
+                            if self.swap_request_denom == UBASE:
+                                belief_price:float = divide_raw_balance((spot_price * 1.053), UBASE)
                             else:
-                                contract_address = LENNY_SMART_CONTRACT_ADDRESS
-
-                        elif self.swap_request_denom in [UCANDY, UCREMAT, ULENNY]:
-                            if self.swap_request_denom == UCREMAT:
-                                contract_address = CREMAT_SMART_CONTRACT_ADDRESS
-                            elif self.swap_request_denom == UCANDY:
-                                contract_address = CANDY_SMART_CONTRACT_ADDRESS
+                                belief_price:float = divide_raw_balance((spot_price - (spot_price * 0.048)), UBASE)
+                        elif self.swap_denom in NON_ULUNA_COINS.values() or self.swap_request_denom in NON_ULUNA_COINS.values():
+                            # These are all Terraport swaps. Anything else must have been done prior to this point
+                            if self.swap_denom in NON_ULUNA_COINS.values():
+                                contract_address = (list(NON_ULUNA_COINS.keys())[list(NON_ULUNA_COINS.values()).index(self.swap_denom)])
+                                
+                            elif self.swap_request_denom in NON_ULUNA_COINS.values():
+                                contract_address = (list(NON_ULUNA_COINS.keys())[list(NON_ULUNA_COINS.values()).index(self.swap_request_denom)])
+                                
+                            slip_rate: int = 1
+                            if self.swap_denom == ULUNA:
+                                result = self.terra.wasm.contract_query(TERRAPORT_SWAP_ADDRESS, {"simulate_swap_operations":{"offer_amount":"1000000","operations":[{"terra_port":{"offer_asset_info":{"native_token":{"denom":"uluna"}},"ask_asset_info":{"token":{"contract_addr":contract_address}}}}]}})   
                             else:
-                                contract_address = LENNY_SMART_CONTRACT_ADDRESS
+                                slip_rate = 0.95
+                                result = self.terra.wasm.contract_query(TERRAPORT_SWAP_ADDRESS, {"reverse_simulate_swap_operations":{"ask_amount":"1000000","operations":[{"terra_port":{"offer_asset_info":{"native_token":{"denom":"uluna"}},"ask_asset_info":{"token":{"contract_addr":contract_address}}}}]}})
 
-                        #print ('contract address:', contract_address)
-                        result = self.terra.wasm.contract_query(TERRAPORT_SWAP_ADDRESS, {"simulate_swap_operations":{"offer_amount":"1000000","operations":[{"terra_port":{"offer_asset_info":{"native_token":{"denom":"uluna"}},"ask_asset_info":{"token":{"contract_addr":contract_address}}}}]}})
-                        belief_price:float = float(result['amount']) / (10 ** get_precision(ULUNA))
+                            belief_price:float = float(result['amount']) / (10 ** get_precision(ULUNA))
 
+                            belief_price = belief_price * slip_rate
+                    
             except Exception as err:
                 print (' 🛑 A connection error has occurred:')
                 print (err)
@@ -161,9 +158,6 @@ class SwapTransaction(TransactionCore):
            
         self.belief_price = round(belief_price, 18)
 
-        #print ('swap_denom:', self.swap_denom)
-        #print ('swap request denom:', self.swap_request_denom)
-        #print ('belief price:', self.belief_price)
         return self.belief_price
     
     def create(self, seed:str, denom:str = 'uluna') -> SwapTransaction:
@@ -189,10 +183,10 @@ class SwapTransaction(TransactionCore):
         self.gas_list = self.gasList()
         self.tax_rate = self.taxRate()
 
-        if self.gas_list is None:
-            return False
-        else:
-            return self
+        # if self.gas_list is None:
+        #     return False
+        # else:
+        return self
     
     def marketSimulate(self) -> bool:
         """
@@ -212,7 +206,10 @@ class SwapTransaction(TransactionCore):
         self.ibc_routes     = []
         self.min_out        = None
         self.transaction    = None
-        self.sequence       = self.current_wallet.sequence()
+        #self.sequence       = self.current_wallet.sequence()
+
+        if self.getSequenceNumber() == False:
+            return False
 
         # Bump up the gas adjustment - it needs to be higher for swaps it turns out
         self.terra.gas_adjustment = float(GAS_ADJUSTMENT_SWAPS)
@@ -369,6 +366,87 @@ class SwapTransaction(TransactionCore):
             is_offchain_swap = False
 
         return is_offchain_swap
+    
+    def logTrade(self, wallet, transaction_result:TransactionResult, log_trade_params:dict) -> int:
+        """
+        Put the details of this swap into the database.
+
+        @params:
+            - wallet: the current wallet that this trade is applied to
+            - transaction_result: the result we're getting trade details from
+
+        @return: the ID of the database row we've added
+        """
+
+        if transaction_result.is_error == False:
+
+            insert_trade_query:str = "INSERT INTO trades (wallet_name, coin_from, amount_from, price_from, coin_to, amount_to, price_to, fees, exit_profit, exit_loss, tx_hash, status) VALUES (?,?,?,?,?,?,?,?,?,?,?,'OPEN');"
+
+            wallet_name:str = wallet.name
+            coin_from:str   = self.swap_denom
+            amount_from:int = self.swap_amount
+            tx_hash:str     = transaction_result.broadcast_result.txhash
+
+            if coin_from not in NON_ULUNA_COINS.values():
+                price_from:float = float(wallet.getCoinPrice([coin_from])[coin_from])
+            else:
+                price_from:float = 0
+                
+            coin_to:str = self.swap_request_denom
+
+            # Some coins won't return a price because they're not on coingecko:
+            if coin_to not in NON_ULUNA_COINS.values():
+                price_to:float = float(wallet.getCoinPrice([coin_to])[coin_to])
+            else:
+                price_to:float = 0
+
+            # Get the received coin from the results
+            received_coin:Coin
+            amount_to:int = 0
+
+            if transaction_result.result_received is not None:
+                for received_coin in transaction_result.result_received:
+                    readable_denom = wallet.denomTrace(received_coin.denom)
+
+                    if readable_denom in NON_ULUNA_COINS:
+                        readable_denom = NON_ULUNA_COINS[readable_denom]
+
+                    if readable_denom == coin_to:
+                        amount_to:int = received_coin.amount
+            else:
+                print ('no result received:')
+                print (transaction_result)
+                
+            fees:dict = {}
+
+            fee_coins:Coins = self.fee.amount
+            for fee_coin in fee_coins.to_list():
+
+                amount:float   = divide_raw_balance(fee_coin.amount, fee_coin.denom)
+                amount_str:str = ("%.6f" % (amount)).rstrip('0').rstrip('.')
+
+                # Get the readable denom if this is an IBC token
+                denom:str = self.denomTrace(fee_coin.denom)
+
+                if denom in FULL_COIN_LOOKUP:
+                    denom = FULL_COIN_LOOKUP[denom]
+                    
+                fees[denom] = amount_str
+            
+            exit_profit:float = log_trade_params['exit_profit']
+            exit_loss:float   = -abs(float(log_trade_params['exit_loss']))
+
+            conn   = sqlite3.connect(DB_FILE_NAME)
+            cursor = conn.cursor()
+            cursor.execute(insert_trade_query, [wallet_name, coin_from, amount_from, price_from, coin_to, amount_to, price_to, json.dumps(fees), exit_profit, exit_loss, tx_hash])
+            
+            new_id = cursor.lastrowid
+            conn.commit()
+
+            return new_id
+            
+        else:
+            return 0
 
     def offChainSimulate(self) -> bool:
         """
@@ -389,7 +467,9 @@ class SwapTransaction(TransactionCore):
         self.min_out        = None
         self.prices         = None
         self.transaction    = None
-        self.sequence       = self.current_wallet.sequence()
+        #self.sequence       = self.current_wallet.sequence()
+        if self.getSequenceNumber() == False:
+            return False
         
         current_option = self.getRoute(self.swap_denom, self.swap_request_denom, self.swap_amount)
 
@@ -404,7 +484,7 @@ class SwapTransaction(TransactionCore):
 
                 if current_option2['pool_id'] is None: 
                     print (' 🛑 No pool could be found that supported this swap pair.')
-                    print ('Exiting...\n')    
+                    print ('\n 🛑 Exiting...\n')
                     exit()
 
             routes = [
@@ -473,8 +553,12 @@ class SwapTransaction(TransactionCore):
 
             # deduct the swap fee:
             #print ('pool:', self.osmosisPoolByID(route['pool_id']))
-            swap_fee:float = float(self.osmosisPoolByID(route['pool_id']).pool_params.swap_fee)
-
+            try:
+                swap_fee:float = float(self.osmosisPoolByID(route['pool_id']).pool_params.swap_fee)
+            except Exception as err:
+                # Something went wrong, we'll abandon this attempt
+                return False
+            
             #print ('swap fee:', swap_fee)
             # Deduct the swap fee
             base_amount_minus_swap_fee:float = float(base_amount) * (1 - swap_fee)
@@ -567,10 +651,8 @@ class SwapTransaction(TransactionCore):
 
         if self.fee_deductables is not None:
             if int(self.swap_amount + self.fee_deductables) > int(self.balances[self.swap_denom]):
-                #print ('fee deductibles:', self.fee_deductables)
                 self.swap_amount = int(self.swap_amount - self.fee_deductables)
             
-        #print ('new swap amount: ', self.swap_amount)
         try:
             channel_id = CHAIN_DATA[self.wallet_denom]['ibc_channels'][self.swap_denom]
             
@@ -622,12 +704,16 @@ class SwapTransaction(TransactionCore):
 
         if pool_id not in self.osmosis_pools:
             # Get this pool:
-            pool:Pool = self.terra.pool.osmosis_pool(pool_id)
-            # Save it in the publicly available object:
-            self.osmosis_pools[pool.id] = pool
+            try:
+                pool:Pool = self.terra.pool.osmosis_pool(pool_id)
+                # Save it in the publicly available object:
+                self.osmosis_pools[pool.id] = pool
 
-            # Return this result
-            result = pool        
+                # Return this result
+                result = pool 
+            except Exception as err:
+                print (' 🛑 An unexpected error occurred in the osmosisPoolByID swap function:')
+                print (err)
         else:
             result = self.osmosis_pools[pool_id]
 
@@ -648,26 +734,18 @@ class SwapTransaction(TransactionCore):
         
         use_market_swap:bool = True
         self.contract        = None
-        contract_swaps:list  = [GRDX, UBASE, UCANDY, UCREMAT, ULENNY, ULUNA, UKRW, UUSD]
+        contract_swaps:list  = list(NON_ULUNA_COINS.values()) + [ULUNA, UKRW, UUSD]
 
         if self.swap_denom in contract_swaps and self.swap_request_denom in contract_swaps:
             use_market_swap = False
 
-            if self.swap_denom == ULUNA:
+            if self.swap_denom == ULUNA and self.swap_request_denom != ULUNA:
                 if self.swap_request_denom == UUSD:
                     self.contract = TERRASWAP_ULUNA_TO_UUSD_ADDRESS
-                if self.swap_request_denom == UKRW:
+                elif self.swap_request_denom == UKRW:
                     self.contract = TERRASWAP_UKRW_TO_ULUNA_ADDRESS
-                if self.swap_request_denom == UBASE:
-                    self.contract = BASE_SMART_CONTRACT_ADDRESS
-                if self.swap_request_denom == GRDX:
-                    self.contract = GRDX_SMART_CONTRACT_ADDRESS
-                if self.swap_request_denom == ULENNY:
-                    self.contract = LENNY_SMART_CONTRACT_ADDRESS
-                if self.swap_request_denom == UCREMAT:
-                    self.contract = CREMAT_SMART_CONTRACT_ADDRESS
-                if self.swap_request_denom == UCANDY:
-                    self.contract = CANDY_SMART_CONTRACT_ADDRESS
+                else:
+                    self.contract = (list(NON_ULUNA_COINS.keys())[list(NON_ULUNA_COINS.values()).index(self.swap_request_denom)])
 
             if self.swap_denom == UUSD:
                 if self.swap_request_denom == ULUNA:
@@ -683,25 +761,9 @@ class SwapTransaction(TransactionCore):
                     self.contract = None
                     use_market_swap = True
 
-            if self.swap_denom == UBASE:
+            if self.swap_denom in NON_ULUNA_COINS.values():
                 if self.swap_request_denom == ULUNA:
-                    self.contract = BASE_SMART_CONTRACT_ADDRESS
-
-            if self.swap_denom == GRDX:
-                if self.swap_request_denom == ULUNA:
-                    self.contract = GRDX_SMART_CONTRACT_ADDRESS
-
-            if self.swap_denom == ULENNY:
-                if self.swap_request_denom == ULUNA:
-                    self.contract = LENNY_SMART_CONTRACT_ADDRESS
-
-            if self.swap_denom == UCREMAT:
-                if self.swap_request_denom == ULUNA:
-                    self.contract = CREMAT_SMART_CONTRACT_ADDRESS
-            
-            if self.swap_denom == UCANDY:
-                if self.swap_request_denom == ULUNA:
-                    self.contract = CANDY_SMART_CONTRACT_ADDRESS
+                    self.contract = (list(NON_ULUNA_COINS.keys())[list(NON_ULUNA_COINS.values()).index(self.swap_denom)])
 
         self.use_market_swap = use_market_swap
 
@@ -732,8 +794,11 @@ class SwapTransaction(TransactionCore):
         self.min_out        = None
         self.prices         = None
         self.transaction    = None
-        self.sequence       = self.current_wallet.sequence()
+        #self.sequence       = self.current_wallet.sequence()
 
+        if self.getSequenceNumber() == False:
+            return False
+        
         self.belief_price   = self.beliefPrice()
         
         # Perform the swap as a simulation, with no fee details
@@ -743,8 +808,6 @@ class SwapTransaction(TransactionCore):
         tx:Tx = self.transaction
 
         if tx is not None:
-
-            non_uluna_coins:list = [GRDX, UBASE, UCANDY, UCREMAT, ULENNY]
 
             # Get the stub of the requested fee so we can adjust it
             requested_fee:Fee = tx.auth_info.fee
@@ -759,7 +822,7 @@ class SwapTransaction(TransactionCore):
             fee_denom    = fee_bit.denom
 
             # Calculate the tax portion 
-            if self.swap_denom in non_uluna_coins:
+            if self.swap_denom in NON_ULUNA_COINS.values():
                 self.tax = None
             else:
                 self.tax = int(math.ceil(self.swap_amount * float(self.tax_rate)))
@@ -767,8 +830,7 @@ class SwapTransaction(TransactionCore):
             # Build a fee object
             if fee_denom == ULUNA and self.swap_denom == ULUNA:
                 new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount + self.tax))})
-            #if self.swap_denom == UBASE or self.swap_denom == GRDX:
-            if  self.swap_denom in non_uluna_coins:
+            if  self.swap_denom in NON_ULUNA_COINS.values():
                 new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount))})
             else:
                 new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount)), Coin(self.swap_denom, int(self.tax))})
@@ -786,7 +848,7 @@ class SwapTransaction(TransactionCore):
                 self.fee_deductables = int(fee_amount + self.tax)
             elif fee_denom == ULUNA and self.swap_denom == UUSD:
                 self.fee_deductables = int(self.tax)
-            elif fee_denom == ULUNA and self.swap_denom in [GRDX, UBASE, UCANDY, UCREMAT, ULENNY]:
+            elif fee_denom == ULUNA and self.swap_denom in NON_ULUNA_COINS.values():
                 self.fee_deductables = 0
             #elif fee_denom == UKUJI and self.swap_denom == UUSD:
             #    self.fee_deductables = int(self.tax)
@@ -810,6 +872,8 @@ class SwapTransaction(TransactionCore):
 
         @return: bool
         """
+
+        non_uluna_coins:list = [UCANDY, UCREMAT, UELON, ULENNY, URAKOFF]
 
         if self.fee_deductables is not None:
             if int(self.swap_amount + self.fee_deductables) > int(self.balances[self.swap_denom]):
@@ -849,14 +913,9 @@ class SwapTransaction(TransactionCore):
                         msgs       = [tx_msg],
                         sequence   = self.sequence,
                     )
-                elif self.swap_denom == ULUNA and self.swap_request_denom in [UCANDY, UCREMAT, ULENNY]:
-                    # We are swapping ULUNA to ULENNY or UCREMAT
-                    if self.swap_request_denom == UCREMAT:
-                        contract_address = CREMAT_SMART_CONTRACT_ADDRESS
-                    elif self.swap_request_denom == UCANDY:
-                        contract_address = CANDY_SMART_CONTRACT_ADDRESS
-                    else:
-                        contract_address = LENNY_SMART_CONTRACT_ADDRESS
+                elif self.swap_denom == ULUNA and self.swap_request_denom in non_uluna_coins:
+                    # We are swapping ULUNA to a Terraport contract
+                    contract_address = (list(NON_ULUNA_COINS.keys())[list(NON_ULUNA_COINS.values()).index(self.swap_request_denom)])
 
                     tx_msg = MsgExecuteContract(
                         sender   = self.current_wallet.key.acc_address,
@@ -891,16 +950,10 @@ class SwapTransaction(TransactionCore):
                         msgs       = [tx_msg],
                         sequence   = self.sequence,
                     )
-                elif self.swap_denom in [UCANDY, UCREMAT, ULENNY] and self.swap_request_denom == ULUNA:
-                    # We are swapping ULENNY to ULUNA
-
-                    if self.swap_denom == UCREMAT:
-                        contract_address = CREMAT_SMART_CONTRACT_ADDRESS
-                    elif self.swap_denom == UCANDY:
-                        contract_address = CANDY_SMART_CONTRACT_ADDRESS
-                    else:
-                        contract_address = LENNY_SMART_CONTRACT_ADDRESS
-
+                elif self.swap_denom in non_uluna_coins and self.swap_request_denom == ULUNA:
+                    # These are all swaps on the Terraport address
+                    contract_address = (list(NON_ULUNA_COINS.keys())[list(NON_ULUNA_COINS.values()).index(self.swap_denom)])
+                    
                     encoded_msg = base64.b64encode(bytes(str('{"execute_swap_operations":{"operations":[{"terra_port":{"offer_asset_info":{"token":{"contract_addr":"' + contract_address + '"}},"ask_asset_info":{"native_token":{"denom":"uluna"}}}}]}}'), 'utf-8'))
                     encoded_msg = encoded_msg.decode("utf-8")
 
@@ -1045,19 +1098,23 @@ class SwapTransaction(TransactionCore):
                 if self.swap_request_denom == ULUNA:
                     swap_price       = self.beliefPrice()
                     estimated_amount = float(self.swap_amount * swap_price)
-            elif self.swap_request_denom in [UCANDY, UCREMAT, ULENNY] and self.swap_denom == ULUNA:
-                print (self.swap_request_denom)
-                print (self.swap_denom)
-                swap_price = self.beliefPrice()
-                print (swap_price)
-                print (self.swap_amount)
-                estimated_amount = float(self.swap_amount * swap_price)
-                print (estimated_amount)
+            elif self.swap_request_denom in NON_ULUNA_COINS.values() and self.swap_denom == ULUNA:
+                swap_price       = self.beliefPrice()
+                if swap_price is not None:
+                    if self.swap_request_denom == UBASE or self.swap_request_denom == GRDX:
+                        estimated_amount = float(self.swap_amount / swap_price)
+                    else:
+                        estimated_amount = float(self.swap_amount * swap_price)
             else:
-                # This will cover nearly all swap pairs:
+                # This will cover nearly all other swap pairs:
+                # eg: rakoff -> LUNC
                 swap_price = self.beliefPrice()
                 if swap_price is not None and swap_price > 0:
-                    estimated_amount = float(self.swap_amount / swap_price)
+                    # Rakoff definitely needs to multiply
+                    if self.swap_request_denom == UUSD:
+                        estimated_amount = float(self.swap_amount / swap_price)
+                    else:    
+                        estimated_amount = float(self.swap_amount * swap_price)
                     
         else:
             if self.swap_denom in OFFCHAIN_COINS + [ULUNA] and self.swap_request_denom in OFFCHAIN_COINS + [ULUNA]:
@@ -1071,15 +1128,16 @@ class SwapTransaction(TransactionCore):
                 # NOTE: DOES NOT WORK AT THE MOMENT DUE TO A CHAIN CHANGE
                 try:
                     swap_details:Coin = self.terra.market.swap_rate(Coin(self.swap_denom, self.swap_amount), self.swap_request_denom)
-                    estimated_amount = swap_details.amount
+                    estimated_amount  = swap_details.amount
                 except Exception as err:
                     #print (f'An error occured getting prices for swapping {self.swap_denom} to {self.swap_request_denom}')
                     #print (err)
                     pass
                 
+        #print (self.swap_denom, ' to ', self.swap_request_denom, ' = ', estimated_amount)
         return estimated_amount
 
-def swap_coins(wallet, swap_coin:Coin, swap_to_denom:str, estimated_amount:int = 0, prompt_user:bool = True):
+def swap_coins(wallet, swap_coin:Coin, swap_to_denom:str, estimated_amount:int = 0, silent_mode:bool = False, log_trade:bool = False, log_trade_params:dict = {}):
     """
     A wrapper function for workflows and wallet management.
 
@@ -1094,7 +1152,9 @@ def swap_coins(wallet, swap_coin:Coin, swap_to_denom:str, estimated_amount:int =
       - swap_coin: a fully complete Coin object. We get the amount and denom from this
       - swap_to_denom: what are we swapping this for?
       - esimated amount: required for display purposes only
-      - prompt_user: do we want to pause for user confirmation?
+      - silent_mode: do we want to pause for user confirmation?
+      - log_trade: do we add this to the trade database?
+      - log_trade_params: exit and loss thresholds
 
     @return: a TransactionResult object
     """
@@ -1106,11 +1166,12 @@ def swap_coins(wallet, swap_coin:Coin, swap_to_denom:str, estimated_amount:int =
 
     # Assign the details:
     swap_tx.balances           = wallet.balances
+    swap_tx.sender_address     = wallet.address
+    swap_tx.sender_prefix      = wallet.getPrefix(wallet.address)
+    swap_tx.silent_mode        = silent_mode
     swap_tx.swap_amount        = int(swap_coin.amount)
     swap_tx.swap_denom         = swap_coin.denom
     swap_tx.swap_request_denom = swap_to_denom
-    swap_tx.sender_address     = wallet.address
-    swap_tx.sender_prefix      = wallet.getPrefix(wallet.address)
     swap_tx.wallet_denom       = wallet.denom
 
     # Bump up the gas adjustment - it needs to be higher for swaps it turns out
@@ -1125,18 +1186,16 @@ def swap_coins(wallet, swap_coin:Coin, swap_to_denom:str, estimated_amount:int =
         # This is an off-chain swap. Something like LUNC(terra)->OSMO or LUNC(Osmosis) -> wETH
         swap_result:bool = swap_tx.offChainSimulate()
         if swap_result == True:
-            if prompt_user == True:
+            if silent_mode == False:
                 print (f'You will be swapping {wallet.formatUluna(swap_coin.amount, swap_coin.denom, False)} {FULL_COIN_LOOKUP[swap_coin.denom]} for approximately {estimated_amount} {FULL_COIN_LOOKUP[swap_to_denom]}')
                 print (swap_tx.readableFee())
 
                 user_choice = get_user_choice(' ❓ Do you want to continue? (y/n) ', [])
 
                 if user_choice == False:
-                    print (' 🛑 Exiting...\n')
+                    print ('\n 🛑 Exiting...\n')
                     exit()
-            else:
-                print (swap_tx.readableFee())
-
+            
             swap_result:bool = swap_tx.offChainSwap()
     else:
         if use_market_swap == True:
@@ -1144,16 +1203,14 @@ def swap_coins(wallet, swap_coin:Coin, swap_to_denom:str, estimated_amount:int =
             # This is for terra-native swaps ONLY
             swap_result:bool = swap_tx.marketSimulate()
             if swap_result == True:
-                if prompt_user == True:
+                if silent_mode == False:
                     print (f'You will be swapping {wallet.formatUluna(swap_coin.amount, swap_coin.denom, False)} {FULL_COIN_LOOKUP[swap_coin.denom]} for approximately {estimated_amount} {FULL_COIN_LOOKUP[swap_to_denom]}')
                     print (swap_tx.readableFee())
                     user_choice = get_user_choice(' ❓ Do you want to continue? (y/n) ', [])
 
                     if user_choice == False:
-                        print (' 🛑 Exiting...\n')
+                        print ('\n 🛑 Exiting...\n')
                         exit()
-                else:
-                    print (swap_tx.readableFee())
                     
                 swap_result:bool = swap_tx.marketSwap()
         else:
@@ -1161,41 +1218,37 @@ def swap_coins(wallet, swap_coin:Coin, swap_to_denom:str, estimated_amount:int =
 
             swap_result:bool = swap_tx.simulate()
             if swap_result == True:
-                if prompt_user == True:
+                if silent_mode == False:
                     print (f'You will be swapping {wallet.formatUluna(swap_coin.amount, swap_coin.denom, False)} {FULL_COIN_LOOKUP[swap_coin.denom]} for approximately {estimated_amount} {FULL_COIN_LOOKUP[swap_to_denom]}')
                     print (swap_tx.readableFee())
                     user_choice = get_user_choice(' ❓ Do you want to continue? (y/n) ', [])
 
                     if user_choice == False:
-                        print (' 🛑 Exiting...\n')
+                        print ('\n 🛑 Exiting...\n')
                         exit()
-                else:
-                    print (swap_tx.readableFee())
-
+                
                 swap_result:bool = swap_tx.swap()
     
     if swap_result == True:
-        #print ('about to broadcast, exiting')
-        #exit()
         transaction_result = swap_tx.broadcast()
 
-        if transaction_result.broadcast_result is not None and transaction_result.broadcast_result.code == 32:
-            while True:
-                print (' 🛎️  Boosting sequence number and trying again...')
+        # if transaction_result.broadcast_result is not None and transaction_result.broadcast_result.code == 32:
+        #     while True:
+        #         print (' 🛎️  Boosting sequence number and trying again...')
 
-                swap_tx.sequence = swap_tx.sequence + 1
-                swap_tx.simulate()
-                print (swap_tx.readableFee())
+        #         swap_tx.sequence = swap_tx.sequence + 1
+        #         swap_tx.simulate()
+        #         print (swap_tx.readableFee())
 
-                swap_tx.swap()
-                transaction_result:TransactionResult = swap_tx.broadcast()
+        #         swap_tx.swap()
+        #         transaction_result:TransactionResult = swap_tx.broadcast()
 
-                if swap_tx is None:
-                    break
+        #         if swap_tx is None:
+        #             break
 
-                # Code 32 = account sequence mismatch
-                if transaction_result.broadcast_result.code != 32:
-                    break
+        #         # Code 32 = account sequence mismatch
+        #         if transaction_result.broadcast_result.code != 32:
+        #             break
 
         if transaction_result.broadcast_result is None or transaction_result.broadcast_result.is_tx_error():
             transaction_result.is_error = True
@@ -1210,7 +1263,7 @@ def swap_coins(wallet, swap_coin:Coin, swap_to_denom:str, estimated_amount:int =
                     transaction_result.log      = f' 🛎️  {transaction_result.broadcast_result.raw_log}'
                     transaction_result.is_error = True
                 else:
-                    transaction_result.message = f' 🛎️  No broadcast log on {wallet.name} was available.'
+                    transaction_result.message  = f' 🛎️  No broadcast log on {wallet.name} was available.'
                     transaction_result.is_error = True
         
     else:
@@ -1220,5 +1273,10 @@ def swap_coins(wallet, swap_coin:Coin, swap_to_denom:str, estimated_amount:int =
     # Store the delegated amount for display purposes
     transaction_result.transacted_amount = wallet.formatUluna(swap_coin.amount, swap_coin.denom, True)
     transaction_result.label             = 'Swapped amount'
+    transaction_result.wallet_denom      = wallet.denom
+
+    if log_trade == True:
+        # If this was successful, then log the trade
+        transaction_result.trade_id = swap_tx.logTrade(wallet, transaction_result, log_trade_params)
 
     return transaction_result

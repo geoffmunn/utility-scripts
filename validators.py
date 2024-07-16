@@ -85,15 +85,18 @@ def main():
     delegations:dict = wallet.delegations
 
     # Set up the basic user params object
+    
     user_params:UserParameters      = UserParameters()
     user_params.percentages_allowed = True
-    user_params.target_amount       = wallet.formatUluna(wallet.balances[ULUNA], ULUNA)
+    if ULUNA in wallet.balances:
+        user_params.target_amount       = wallet.formatUluna(wallet.balances[ULUNA], ULUNA)    
     user_params.target_denom        = ULUNA
     
     if user_action == USER_ACTION_VALIDATOR_DELEGATE:
 
         if ULUNA not in wallet.balances or wallet.balances[ULUNA] == 0:
             print (' 🛑 This wallet has no LUNC available to delegate.\n')
+            print (' 🛑 Exiting...\n')
             exit()
 
         print (f'Select a validator to delegate to:')
@@ -114,10 +117,11 @@ def main():
         # Update the user params object before we use it
         user_params.max_number = float(wallet.formatUluna(wallet.balances[ULUNA], ULUNA))
     
-        delegated_uluna:int = int(wallet.getUserNumber('How much are you delegating? ', user_params))
+        delegated_uluna:int = int(float(wallet.getUserNumber('How much are you delegating? ', user_params)))
                 
         if delegated_uluna == 0:
             print (' 🛑 Delegated amount is zero, exiting...\n')
+            print (' 🛑 Exiting...\n')
             exit()
 
         print (f"You are about to delegate {wallet.formatUluna(delegated_uluna, ULUNA, True)} to {user_validator['moniker']}.")
@@ -144,6 +148,12 @@ def main():
 
         if len(filter_list) == 0:
             print (' 🛑 This wallet has no active validators with delegations.\n')
+            print (' 🛑 Exiting...\n')
+            exit()
+
+        if ULUNA not in wallet.balances or wallet.balances[ULUNA] == 0:
+            print (' 🛑 This wallet has no LUNC available to cover the undelegation fees.\n')
+            print (' 🛑 Exiting...\n')
             exit()
 
         user_validator, answer = validators.getValidatorSingleChoice("Select a validator number 1 - " + str(len(filter_list)) + ", 'X' to continue, or 'Q' to quit: ", sorted_validators, filter_list, delegations)
@@ -158,8 +168,9 @@ def main():
         print (f"NOTE: You can send the entire value of this delegation by typing '100%' - no minimum amount will be retained.")
 
         # Update the user params object before we use it
-        user_params.max_number = float(wallet.formatUluna(available_undelegation_uluna, ULUNA, False))
-        
+        user_params.max_number    = float(wallet.formatUluna(available_undelegation_uluna, ULUNA, False))
+        user_params.target_amount = user_params.max_number
+
         undelegated_uluna:str = wallet.getUserNumber('How much are you undelegating? ', user_params)
         
         print (f"You are about to undelegate {wallet.formatUluna(undelegated_uluna, ULUNA, True)} from {user_validator['moniker']}.")
@@ -186,6 +197,12 @@ def main():
 
         if len(filter_list) == 0:
             print (' 🛑 This wallet has no active validators with delegations.\n')
+            print (' 🛑 Exiting...\n')
+            exit()
+
+        if ULUNA not in wallet.balances or wallet.balances[ULUNA] == 0:
+            print (' 🛑 This wallet has no LUNC available to cover the delegation switch fees.\n')
+            print (' 🛑 Exiting...\n')
             exit()
 
         print (f'Select a validator to delegate switch FROM:')
@@ -211,8 +228,9 @@ def main():
         print (f"NOTE: You can switch the entire value of this delegation by typing '100%' - no minimum amount will be retained.")
 
         # Update the user params object before we use it
-        user_params.max_number = float(wallet.formatUluna(total_delegated_uluna, ULUNA, False))
-        
+        user_params.max_number    = float(wallet.formatUluna(total_delegated_uluna, ULUNA, False))
+        user_params.target_amount = user_params.max_number
+
         switched_uluna:float = wallet.getUserNumber('How much are you switching? ', user_params)
         
         print (f"You are about to switch {wallet.formatUluna(switched_uluna, ULUNA, True)} from {from_validator['moniker']} and move it to {to_validator['moniker']}.")

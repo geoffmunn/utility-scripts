@@ -193,9 +193,9 @@ class DelegationTransaction(TransactionCore):
 
         # Set the fee to be None so it is simulated
         self.fee = None
-        if self.sequence is None:
-            self.sequence = self.current_wallet.sequence()
-        
+        if self.getSequenceNumber() == False:
+            return False
+                    
         # This is a provided function. Depending on the original function, we might be delegating or undelegating
         action()
 
@@ -269,7 +269,7 @@ class DelegationTransaction(TransactionCore):
         except:
            return False
         
-def delegate_to_validator(wallet:UserWallet, validator_address:str, delegation_coin:Coin, deduct_fee:bool = False) -> TransactionResult:
+def delegate_to_validator(wallet:UserWallet, validator_address:str, delegation_coin:Coin, deduct_fee:bool = False, silent_mode:bool = False) -> TransactionResult:
     """
     A wrapper function for workflows and wallet management.
     This lets the user delegate uluna to a supplied validator.
@@ -293,10 +293,11 @@ def delegate_to_validator(wallet:UserWallet, validator_address:str, delegation_c
     # Assign the details
     delegation_tx.balances          = wallet.balances
     delegation_tx.delegator_address = wallet.address
-    delegation_tx.validator_address = validator_address #user_validator['operator_address']
     delegation_tx.delegated_uluna   = delegation_coin.amount
     delegation_tx.sender_address    = wallet.address
     delegation_tx.sender_prefix     = wallet.getPrefix(wallet.address)
+    delegation_tx.silent_mode       = silent_mode
+    delegation_tx.validator_address = validator_address #user_validator['operator_address']
     delegation_tx.wallet_denom      = wallet.denom
 
     # Simulate it
@@ -314,7 +315,8 @@ def delegate_to_validator(wallet:UserWallet, validator_address:str, delegation_c
                     delegation_tx.delegated_uluna -= fee_coin.amount
                     break
         
-        print (delegation_tx.readableFee())
+        if silent_mode == False:
+            print (delegation_tx.readableFee())
 
         # Now we know what the fee is, we can do it again and finalise it
         delegation_result = delegation_tx.delegate()
@@ -341,7 +343,7 @@ def delegate_to_validator(wallet:UserWallet, validator_address:str, delegation_c
 
     return transaction_result
 
-def switch_validator(wallet:UserWallet, new_validator_address:str, old_validator_address, delegated_coin:Coin) -> TransactionResult:
+def switch_validator(wallet:UserWallet, new_validator_address:str, old_validator_address, delegated_coin:Coin, silent_mode:bool = False) -> TransactionResult:
     """
     A wrapper function for workflows and wallet management.
     This lets the user switch delegated amounts between validators
@@ -365,9 +367,10 @@ def switch_validator(wallet:UserWallet, new_validator_address:str, old_validator
     # Assign the details
     delegation_tx.balances              = wallet.balances
     delegation_tx.delegator_address     = wallet.address
+    delegation_tx.delegated_uluna       = delegated_coin.amount
+    delegation_tx.silent_mode           = silent_mode
     delegation_tx.validator_address     = new_validator_address
     delegation_tx.validator_address_old = old_validator_address
-    delegation_tx.delegated_uluna       = delegated_coin.amount
     delegation_tx.wallet_denom          = wallet.denom
     
     # Simulate it
@@ -375,7 +378,8 @@ def switch_validator(wallet:UserWallet, new_validator_address:str, old_validator
 
     if switch_result == True:
             
-        print (delegation_tx.readableFee())
+        if silent_mode == False:
+            print (delegation_tx.readableFee())
 
         # Now we know what the fee is, we can do it again and finalise it
         switch_result = delegation_tx.redelegate()
@@ -402,7 +406,7 @@ def switch_validator(wallet:UserWallet, new_validator_address:str, old_validator
 
     return transaction_result
 
-def undelegate_from_validator(wallet:UserWallet, validator_address:str, undelegation_coin:Coin) -> TransactionResult:
+def undelegate_from_validator(wallet:UserWallet, validator_address:str, undelegation_coin:Coin, silent_mode:bool = False) -> TransactionResult:
     """
     A wrapper function for workflows and wallet management.
     This lets the user undelegate uluna from a supplied validator.
@@ -425,16 +429,18 @@ def undelegate_from_validator(wallet:UserWallet, validator_address:str, undelega
     # Assign the details
     undelegation_tx.balances          = wallet.balances
     undelegation_tx.delegator_address = wallet.address
-    undelegation_tx.validator_address = validator_address
     undelegation_tx.delegated_uluna   = undelegation_coin.amount
+    undelegation_tx.silent_mode       = silent_mode
+    undelegation_tx.validator_address = validator_address
     undelegation_tx.wallet_denom      = wallet.denom
-    
+
     # Simulate it
     undelegation_result:bool = undelegation_tx.simulate(undelegation_tx.undelegate)
 
     if undelegation_result == True:
             
-        print (undelegation_tx.readableFee())
+        if silent_mode == False:
+            print (undelegation_tx.readableFee())
 
         # Now we know what the fee is, we can do it again and finalise it
         undelegation_result = undelegation_tx.undelegate()

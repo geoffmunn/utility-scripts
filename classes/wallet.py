@@ -27,19 +27,13 @@ from classes.common import (
 )
     
 from constants.constants import (
-    BASE_SMART_CONTRACT_ADDRESS,
-    CANDY_SMART_CONTRACT_ADDRESS,
     CHAIN_DATA,
-    CREMAT_SMART_CONTRACT_ADDRESS,
     DB_FILE_NAME,
     FULL_COIN_LOOKUP,
     GRDX,
-    LENNY_SMART_CONTRACT_ADDRESS,
+    NON_ULUNA_COINS,
     TERRASWAP_GRDX_TO_LUNC_ADDRESS,
     UBASE,
-    UCANDY,
-    UCREMAT,
-    ULENNY,
     ULUNA,
     USER_ACTION_CONTINUE,
     USER_ACTION_QUIT,
@@ -61,16 +55,19 @@ from terra_classic_sdk.core.staking.data.delegation import Delegation
 from terra_classic_sdk.core.staking.data.validator import Validator
 from terra_classic_sdk.exceptions import LCDResponseError
 from terra_classic_sdk.key.mnemonic import MnemonicKey
+
 class UserParameters:
     """
     A helper class to store user parameters when using the getUserNumber function.
     @TODO: maybe move this into the UserWallet class so it's not separate
     """
+    
     def __init__(self):
         self.convert_percentages:bool = True
         self.keep_minimum:bool        = False
         self.percentages_allowed:bool = False
         self.max_number:float         = None
+        self.only_percentages:bool    = False
         self.target_amount:float      = None
         self.target_denom:str         = ULUNA
 
@@ -177,16 +174,19 @@ class UserWallet:
         @return: an integer of the amount based on the percentage.
         """
 
-        percentage:float = float(percentage) / 100
-        if user_params.keep_minimum == True:
-            lunc_amount:float = float((user_params.target_amount - WITHDRAWAL_REMAINDER) * percentage)
-            if lunc_amount < 0:
-                lunc_amount = 0
-        else:
-            lunc_amount:float = float(user_params.target_amount) * percentage
-            
-        lunc_amount:float = float(str(lunc_amount))
-        uluna_amount:int  = int(multiply_raw_balance(lunc_amount, user_params.target_denom))
+        uluna_amount:int = 0
+        
+        if user_params.target_amount is not None:
+            percentage:float = float(percentage) / 100
+            if user_params.keep_minimum == True:
+                lunc_amount:float = float((user_params.target_amount - WITHDRAWAL_REMAINDER) * percentage)
+                if lunc_amount < 0:
+                    lunc_amount = 0
+            else:
+                lunc_amount:float = float(user_params.target_amount) * percentage
+                
+            lunc_amount:float = float(str(lunc_amount))
+            uluna_amount:int  = int(multiply_raw_balance(lunc_amount, user_params.target_denom))
         
         return uluna_amount
     
@@ -412,25 +412,16 @@ class UserWallet:
             if core_coins_only == False:
                 # Add the extra coins (Base, GarudaX, etc)
                 if self.terra is not None and self.terra.chain_id == CHAIN_DATA[ULUNA]['chain_id']:
-                    coin_balance = self.terra.wasm.contract_query(BASE_SMART_CONTRACT_ADDRESS, {'balance':{'address':self.address}})
-                    if int(coin_balance['balance']) > 0:
-                        balances[UBASE] = coin_balance['balance']
 
-                    coin_balance = self.terra.wasm.contract_query(TERRASWAP_GRDX_TO_LUNC_ADDRESS, {'balance':{'address':self.address}})
-                    if int(coin_balance['balance']) > 0:
-                        balances[GRDX] = coin_balance['balance']
+                    for coin_item in NON_ULUNA_COINS:
+                        if NON_ULUNA_COINS[coin_item] == GRDX:
+                            coin_address = TERRASWAP_GRDX_TO_LUNC_ADDRESS
+                        else:
+                            coin_address = coin_item
 
-                    coin_balance = self.terra.wasm.contract_query(LENNY_SMART_CONTRACT_ADDRESS, {'balance':{'address':self.address}})
-                    if int(coin_balance['balance']) > 0:
-                        balances[ULENNY] = coin_balance['balance']
-
-                    coin_balance = self.terra.wasm.contract_query(CREMAT_SMART_CONTRACT_ADDRESS, {'balance':{'address':self.address}})
-                    if int(coin_balance['balance']) > 0:
-                        balances[UCREMAT] = coin_balance['balance']
-
-                    coin_balance = self.terra.wasm.contract_query(CANDY_SMART_CONTRACT_ADDRESS, {'balance':{'address':self.address}})
-                    if int(coin_balance['balance']) > 0:
-                        balances[UCANDY] = coin_balance['balance']
+                        coin_balance = self.terra.wasm.contract_query(coin_address, {'balance':{'address':self.address}})  
+                        if int(coin_balance['balance']) > 0:
+                            balances[NON_ULUNA_COINS[coin_item]] = coin_balance['balance']
 
         else:
             balances:dict = {}
@@ -544,6 +535,11 @@ class UserWallet:
         if estimation_against is not None:
             label_widths.append(len('Estimation'))
             swap_tx = SwapTransaction().create(self.seed, self.denom)
+
+            if swap_tx == False:
+                print (' 🛑 The swap object could not be created.')
+                print ('    Exiting...')
+                exit()
 
         coin_list:list   = []
         coin_values:dict = {}
@@ -953,6 +949,7 @@ class UserWallet:
                 self.keep_minimum:bool        = False
                 self.percentages_allowed:bool = False
                 self.max_number:float         = None
+                self.only_percentages:bool    = False
                 self.target_amount:float      = None
                 self.target_denom:str         = ULUNA
 
@@ -969,8 +966,10 @@ class UserWallet:
                 print (f' 🛎️  The value cannot be blank or empty')
             else:
 
-                percentage = is_percentage(answer)
+                answer = answer.replace(',', '')
 
+                percentage = is_percentage(answer)
+                
                 if user_params.percentages_allowed == True and percentage == True:
                     answer = answer[0:-1]
 
@@ -992,16 +991,18 @@ class UserWallet:
                             break
                 else:
                     print (f" 🛎️  Please enter a valid amount.")
+
         if answer != '' and answer != USER_ACTION_QUIT:
-            if user_params.percentages_allowed and percentage == True:
-                if user_params.convert_percentages == True:
-                    wallet:UserWallet = UserWallet()
-                    answer = float(wallet.convertPercentage(answer, user_params))
+            if user_params.only_percentages == False:
+                if user_params.percentages_allowed and percentage == True:
+                    if user_params.convert_percentages == True:
+                        wallet:UserWallet = UserWallet()
+                        answer = float(wallet.convertPercentage(answer, user_params))
+                    else:
+                        answer = answer + '%'
                 else:
-                    answer = answer + '%'
-            else:
-                # Convert the number into a uluna amount
-                answer = multiply_raw_balance(answer, user_params.target_denom)
+                    # Convert the number into a uluna amount
+                    answer = multiply_raw_balance(answer, user_params.target_denom)
 
         return str(answer)
     
