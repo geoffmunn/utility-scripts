@@ -369,7 +369,7 @@ CHAIN_DATA = {
         'ibc_channels':  {
             'uosmo': 'channel-1',
         },
-        'lcd_urls':      ['https://terra-classic-fcd.publicnode.com', 'https://rest.cosmos.directory/terra', 'https://terra-classic-fcd.publicnode.com'],
+        'lcd_urls':      ['https://terra-classic-lcd.publicnode.com', 'https://rest.cosmos.directory/terra', 'https://terra-classic-fcd.publicnode.com', 'https://rest.cosmos.directory/terra', 'https://terra-classic-fcd.publicnode.com'],
         'precision':     6,
         'bech32_prefix': 'terra'
     },
