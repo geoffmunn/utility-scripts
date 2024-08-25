@@ -114,14 +114,11 @@ def check_trigger(triggers:list, balances:dict) -> bool:
     is_triggered:bool = True
 
     for trigger in triggers:
-        #if trigger == 'always':
-        #    is_triggered = True
-        #else:
         trigger_bits:list = trigger.split(' ')
         if len(trigger_bits) == 3:
             # Should be something like LUNC >= 1000 or DAY = SUNDAY or TIME = 13:30
-            condition:str      = str(trigger_bits[0])
-            comparison:str      = str(trigger_bits[1])
+            condition:str   = str(trigger_bits[0])
+            comparison:str  = str(trigger_bits[1])
             requirement:str = str(trigger_bits[2])
 
             # Get this coin's technical name (ie, uluna)
@@ -226,15 +223,27 @@ def get_wallet(user_wallets:UserWallets, user_wallet:str) -> UserWallet:
     return result
 
 class MessageType(Enum):
+    HEADER = 0
     MESSAGE = 1
     ERROR = 2
+
 class Log():
 
     def __init__(self, *args, **kwargs):
-        self.silentMode:bool = False
-        self.items:list = []
+        self.current_key: int = 0
+        self.silent_mode:bool = False
+        self.items:dict = {}
 
-    def header(self, title:str, description:str) -> bool:
+    def get_log_key(self) -> int:
+        """
+        Get the index value of the next log item.
+        Basically len(self.items)
+        """
+
+        self.current_key = len(self.items)
+        return self.current_key
+
+    def header(self, title:str, description:str) -> int:
         """
         A special method to show a multi-line header for the workflow that has just started.
 
@@ -245,25 +254,38 @@ class Log():
         @return: True
         """
 
+        header_key = self.get_log_key()
+
+        header:str = ''
+
+        self.items[header_key]= []
+
+        self.items[header_key].append({'message': "", 'type': MessageType.HEADER})
         if len(title) > len(description):
-            header:str = '#' * (len(title) + 4)
+            header = '#' * (len(title) + 4)
+            self.items[header_key].append({'message': header, 'type': MessageType.HEADER})
         else:
-            header:str = '#' * (len(description) + 4)
+            header = '#' * (len(description) + 4)
 
-        self.items.append(header)
-        print ('\n' + header)
+            self.items[header_key].append({'message': header, 'type': MessageType.HEADER})
 
-        self.items.append(f"# {title}")
-        print (f"# {title}")
-        
+        self.items[header_key].append({'message': '# ' + title, 'type': MessageType.HEADER})
         if description != '':
-            self.items.append(f'# {description}')
-            print (f'# {description}')
+            self.items[header_key].append({'message': '# ' + description, 'type': MessageType.HEADER})
 
-        self.items.append(header)
-        print (header)
+        if len(title) > len(description):
+            header = '#' * (len(title) + 4)
+            self.items[header_key].append({'message': header, 'type': MessageType.HEADER})
+        else:
+            header = '#' * (len(description) + 4)
+            self.items[header_key].append({'message': header, 'type': MessageType.HEADER})
+            
+        self.items[header_key].append({'message': "", 'type': MessageType.HEADER})
 
-        return True
+        for msg in self.items[header_key]:
+            print (msg['message'])
+
+        return header_key
 
     def message(self, msg:str) -> bool:
         """
@@ -276,9 +298,9 @@ class Log():
         """
 
         if msg.strip(' ') != '':
-            self.items.append({'messsage': msg, 'type': MessageType.MESSAGE})
+            self.items[self.current_key].append({'message': msg, 'type': MessageType.MESSAGE})
 
-            if self.silentMode == False:
+            if self.silent_mode == False:
                 print (msg)
 
         return True
@@ -293,21 +315,29 @@ class Log():
         @return: True
         """
 
-        self.items.append({'messsage': msg, 'type': MessageType.ERROR})
+        self.items[self.current_key].append({'message': msg, 'type': MessageType.ERROR})
 
-        if self.silentMode == False:
+        if self.silent_mode == False:
             print (msg)
 
         return True
     
     def print(self) -> bool:
+        """
+        Print the log messages.
+        If it's in silent mode, then only errors will be shown.
+        """
         
         for item in self.items:
-            if self.silentMode == True:
-                if item.type == MessageType.ERROR:
-                    print (item['message'])
+            if self.silent_mode == True:
+                if self.silent_mode == True:
+                    for msg in self.items[item]:
+                        if msg['type'] != MessageType.MESSAGE:
+                            print (msg['message'])
+                    
             else:
-                print (item['message'])
+                for msg in self.items[item]:
+                        print (msg['message'])
 
         return True
 
@@ -369,8 +399,8 @@ def main():
 
     # Set up the log object
     logs:Log = Log()
-    logs.silentMode = silent_mode
-
+    logs.silent_mode = silent_mode
+    
     # Go through each workflow and attach the wallets that they match
     for workflow in user_workflows['workflows']:
         workflow['user_wallets'] = []   
@@ -491,8 +521,6 @@ def main():
                                     wallet.getBalances()
 
                                     preserve_minimum:bool = True
-                                    if wallet.balances[ULUNA] > WITHDRAWAL_REMAINDER:
-                                        preserve_minimum = False
                                     
                                     amount_ok, delegation_coin = check_amount(step['amount'], validator_withdrawals[validator]['balances'], preserve_minimum)
 
@@ -889,6 +917,9 @@ def main():
                             else:
                                 logs.error(' ❗ The old validator name is invalid, please check the workflow.')
                                 can_continue = False
+    
+    # All done, now print the logs
+    logs.print()
 
 if __name__ == "__main__":
     """ This is executed when run from the command line """
