@@ -895,7 +895,7 @@ def exit_liquidity_pool(wallet:UserWallet, pool_id:int, amount_out:float, silent
             
             transaction_result:TransactionResult = liquidity_tx.broadcast()
 
-            if liquidity_tx.broadcast_result is not None and transaction_result.broadcast_result.raw_log == 'Status 429 - Too Many Requests':
+            if liquidity_tx.broadcast_result is not None and transaction_result.broadcast_result is not None and transaction_result.broadcast_result.raw_log == 'Status 429 - Too Many Requests':
                 retry_count = 0
                 while True:
                     retry_count += 1
