@@ -282,8 +282,9 @@ class Log():
             
         self.items[header_key].append({'message': "", 'type': MessageType.HEADER})
 
-        for msg in self.items[header_key]:
-            print (msg['message'])
+        if self.silent_mode == False:
+            for msg in self.items[header_key]:
+                print (msg['message'])
 
         return header_key
 
@@ -327,14 +328,19 @@ class Log():
         Print the log messages.
         If it's in silent mode, then only errors will be shown.
         """
-        
+    
         for item in self.items:
             if self.silent_mode == True:
-                if self.silent_mode == True:
+                # Check to see if there were any errors in this message set:
+                can_show: bool = False
+                for msg in self.items[item]:
+                    if (msg['type'] == MessageType.ERROR):
+                        can_show = True
+
+                if can_show:
                     for msg in self.items[item]:
-                        if msg['type'] != MessageType.MESSAGE:
-                            print (msg['message'])
-                    
+                        print (msg['message'])
+                        
             else:
                 for msg in self.items[item]:
                         print (msg['message'])
@@ -346,7 +352,7 @@ def output(msg:str, silent:bool, type:int = OUTPUT_USER) -> bool:
     Print a message depending on what type it is and what mode we're in
     """
 
-    if type==OUTPUT_ERROR:
+    if type == OUTPUT_ERROR:
         print (msg)
         return True
     else:
