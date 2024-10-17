@@ -433,17 +433,21 @@ class SwapTransaction(TransactionCore):
                     
                 fees[denom] = amount_str
             
-            exit_profit:float = log_trade_params['exit_profit']
-            exit_loss:float   = -abs(float(log_trade_params['exit_loss']))
+            if 'exit_profit' in log_trade_params and 'exit_loss' in log_trade_params:
+                exit_profit:float = log_trade_params['exit_profit']
+                exit_loss:float   = -abs(float(log_trade_params['exit_loss']))
 
-            conn   = sqlite3.connect(DB_FILE_NAME)
-            cursor = conn.cursor()
-            cursor.execute(insert_trade_query, [wallet_name, coin_from, amount_from, price_from, coin_to, amount_to, price_to, json.dumps(fees), exit_profit, exit_loss, tx_hash])
-            
-            new_id = cursor.lastrowid
-            conn.commit()
+                conn   = sqlite3.connect(DB_FILE_NAME)
+                cursor = conn.cursor()
+                cursor.execute(insert_trade_query, [wallet_name, coin_from, amount_from, price_from, coin_to, amount_to, price_to, json.dumps(fees), exit_profit, exit_loss, tx_hash])
+                
+                new_id = cursor.lastrowid
 
-            return new_id
+                conn.commit()
+
+                return new_id
+            else:
+                return 0
             
         else:
             return 0
