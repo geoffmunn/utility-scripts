@@ -366,7 +366,7 @@ class TransactionCore():
                         
                         if 'message' in log.events_by_type:
                             # Governance votes
-                            if 'module' in log.events_by_type['message'] and log.events_by_type['message']['module'][0] == 'governance':
+                            if 'module' in log.events_by_type['message'] and log.events_by_type['message']['module'][0] == 'gov':
                                 transaction_result.result_sent     = None
                                 transaction_result.result_received = None
                                 transaction_result.log_found       = True
