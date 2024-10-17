@@ -19,6 +19,16 @@ from classes.common import (
 from classes.wallets import UserWallets
 from classes.wallet import UserWallet
 
+def widestWalletName(user_wallets:UserWallets) -> int:
+
+    longest_name: int = 0
+
+    for wallet_name in user_wallets:
+        if len(wallet_name) > longest_name:
+            longest_name = len(wallet_name)
+
+    return longest_name
+
 def main():
     
     # Check if there is a new version we should be using
@@ -55,7 +65,15 @@ def main():
     # First, create a template of all the validators
     validator_template:dict = {'Available': '', 'Delegated': ''}
 
+    wallet_count: int = 0
+    max_padding: int = widestWalletName(user_wallets)
+
     for wallet_name in user_wallets:
+        wallet_count += 1
+
+        update_text: str = f'{wallet_name} {wallet_count}/{len(user_wallets)}' + (' ' * max_padding)
+        print (f'\r    {update_text}', end='\r')
+
         wallet:UserWallet = user_wallets[wallet_name]
         delegations:dict  = wallet.getDelegations()
 
