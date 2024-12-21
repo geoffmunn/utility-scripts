@@ -309,20 +309,25 @@ class SendTransaction(TransactionCore):
             fee_amount   = fee_bit.amount
             fee_denom    = fee_bit.denom
         
-            # Calculate the tax portion
-            if self.denom in NON_ULUNA_COINS.values():
-                # No taxes for BASE and GRDX transfers
-                self.tax = 0
-            else:
-                self.tax = int(math.ceil(self.amount * float(self.tax_rate)))
+            # Calculate the tax portion.
+            # The tax is now calculated by the chain, no need for any alterations now.
+            self.tax = 0
+            
+            # if self.denom in NON_ULUNA_COINS.values():
+            #     # No taxes for BASE and GRDX transfers
+            #     self.tax = 0
+            # else:
+            #     self.tax = int(math.ceil(self.amount * float(self.tax_rate)))
 
             # Build a fee object
-            if fee_denom == ULUNA and self.denom == ULUNA:
-                new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount + self.tax))})
-            elif self.denom in NON_ULUNA_COINS.values():
-                new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount))})
-            else:
-                new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount)), Coin(self.denom, int(self.tax))})
+            new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount))})
+
+            # if fee_denom == ULUNA and self.denom == ULUNA:
+            #     new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount + self.tax))})
+            # elif self.denom in NON_ULUNA_COINS.values():
+            #     new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount))})
+            # else:
+            #     new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount)), Coin(self.denom, int(self.tax))})
 
             # If the chain is Osmosis then adjust the fee amount    
             if self.terra.chain_id != CHAIN_DATA[ULUNA]['chain_id']:
@@ -340,16 +345,16 @@ class SendTransaction(TransactionCore):
         
             # Fee deductibles are the total cost of this transaction.
             # This assumes that the tax is always the same denom as the transferred amount.
-            if self.tax > 0:
-                if fee_denom == self.denom:
-                    # If the fee denom is the same as what we're paying the tax in, then combine the two
-                    self.fee_deductables = int(fee_amount + self.tax)
-                elif fee_denom == ULUNA and self.denom == UUSD:
-                    # If this is UUSD transfer then the deductible is just the tax
-                    self.fee_deductables = int(self.tax)
-                else:
-                    # Everything else incurs a 2x tax (@TODO give exmaples)
-                    self.fee_deductables = int(self.tax * 2)
+            # if self.tax > 0:
+            #     if fee_denom == self.denom:
+            #         # If the fee denom is the same as what we're paying the tax in, then combine the two
+            #         self.fee_deductables = int(fee_amount + self.tax)
+            #     elif fee_denom == ULUNA and self.denom == UUSD:
+            #         # If this is UUSD transfer then the deductible is just the tax
+            #         self.fee_deductables = int(self.tax)
+            #     else:
+            #         # Everything else incurs a 2x tax (@TODO give exmaples)
+            #         self.fee_deductables = int(self.tax * 2)
 
             return True
         else:
@@ -531,27 +536,6 @@ def send_transaction(wallet:UserWallet, recipient_address:str, send_coin:Coin, m
             
             transaction_result:TransactionResult = send_tx.broadcast()
 
-            # if send_tx.broadcast_result is not None and send_tx.broadcast_result.code == 32:
-            #     while True:
-            #         print (' 🛎️  Boosting sequence number and trying again...')
-
-            #         send_tx.sequence = send_tx.sequence + 1
-            #         if send_tx.is_on_chain == True:
-            #             send_tx.simulate()
-            #             send_tx.send()
-            #         else:
-            #             send_tx.simulateOffchain()
-            #             send_tx.sendOffchain()
-
-            #         transaction_result:TransactionResult = send_tx.broadcast()
-
-            #         if transaction_result is None:
-            #             break
-                    
-            #         # Code 32 = account sequence mismatch
-            #         if transaction_result.broadcast_result.code != 32:
-            #             break
-
             if transaction_result.broadcast_result is None or transaction_result.broadcast_result.is_tx_error() or transaction_result.is_error == True:
                 transaction_result.is_error = True
                 if transaction_result.broadcast_result is None:
@@ -589,10 +573,10 @@ def send_transaction(wallet:UserWallet, recipient_address:str, send_coin:Coin, m
 
 
         else:
-            transaction_result.message  = f' 🛎️  The send transaction on {wallet.name} could not be completed'
+            transaction_result.message  = f' 🛎️  The send transaction on {wallet.name} could not be completed.'
             transaction_result.is_error = True
     else:
-        transaction_result.message  = f' 🛎️  The send transaction on {wallet.name} could not be completed'
+        transaction_result.message  = f' 🛎️  The send transaction on {wallet.name} could not be completed.'
         transaction_result.is_error = True
 
 
