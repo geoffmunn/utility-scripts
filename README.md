@@ -58,15 +58,19 @@ The utility scripts have built-in support for a [long list of coins](docs/swap_o
   * cryptocode
   * pycoingecko
   * yaml
+  * requests
+  * dateutil
 
   These can be installed via pip:
 
   ```bash
-  python -m pip pip install terra-classic-sdk
-  python -m pip pip install terra-classic-proto
+  python -m pip install terra-classic-sdk
+  python -m pip install terra-classic-proto
   python -m pip install cryptocode
   python -m pip install pycoingecko
   python -m pip install pyyaml
+  python -m pip install requests --break-system-packages
+  python -m pip install python-dateutil --break-system-packages
   ```
 
 > [!TIP]
@@ -154,7 +158,7 @@ You can turn your LUNC into a productive asset by using liqudity pools on Osmosi
 First, run ```liquidity.py``` and enter your password. A list of Osmosis wallets will be shown.
 
 > [!NOTE]
-> You must have an **osmo** address for this to work - you can create one in the ```manage_wallets.py``` script.
+> You must have an **osmo** address for this to work - you can create one in the ```configure_user_wallets.py``` script.
 
 This wallet must have a LUNC balance present on the osmo address - you cannot transfer LUNC directly from a terra address into a liquidity pool (yet).
 
@@ -289,7 +293,7 @@ password [YOUR WALLET PASSWORD]
 Lastly, type: ```chmod 600 .netrc``` so no one else can read it.
 
 > [!NOTE]
-> machine: Do not change the machine value, unless you also change the NETRC_MACHINE_NAME value in the ```contants.py``` file.
+> machine: Do not change the machine value, unless you also change the NETRC_MACHINE_NAME value in the ```constants.py``` file.
 > 
 > login: can be anything you want
 > 
