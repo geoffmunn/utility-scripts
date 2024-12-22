@@ -393,7 +393,7 @@ def main():
                print (f'\n 🛑 The {args.workflow} file could not be opened - please check the workflow documentation and review it for syntax errors.\n')
                exit()
     else:
-        print (f'\n 🛑 The {args.workflow} file does not exist - you can use the default user_workflow.yml file if necessary.\n')
+        print (f'\n 🛑 The {args.workflow} file does not exist - please create one using the documentation at https://github.com/geoffmunn/utility-scripts/blob/main/docs/workflows.md.\n')
         exit()
     
     # Get the user wallets. We'll be getting the balances futher on down.
