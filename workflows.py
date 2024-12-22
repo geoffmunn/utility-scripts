@@ -408,15 +408,19 @@ def main():
     logs.silent_mode = silent_mode
     
     # Go through each workflow and attach the wallets that they match
-    for workflow in user_workflows['workflows']:
-        workflow['user_wallets'] = []   
-        # Take each wallet in the user config list... 
-        for wallet in user_wallets:
-            # If this wallet name or address matches what the workflow has asked for, then add it
-            for workflow_wallet in workflow['wallets']:
-                if workflow_wallet.lower() == user_wallets[wallet].name.lower() or workflow_wallet.lower() == user_wallets[wallet].address.lower():
-                    workflow['user_wallets'].append(user_wallets[wallet])
-            
+    if user_workflows is not None:
+        for workflow in user_workflows['workflows']:
+            workflow['user_wallets'] = []   
+            # Take each wallet in the user config list... 
+            for wallet in user_wallets:
+                # If this wallet name or address matches what the workflow has asked for, then add it
+                for workflow_wallet in workflow['wallets']:
+                    if workflow_wallet.lower() == user_wallets[wallet].name.lower() or workflow_wallet.lower() == user_wallets[wallet].address.lower():
+                        workflow['user_wallets'].append(user_wallets[wallet])
+    else:
+        print ("\n 🛑 The workflow file is empty.\n")
+        exit()
+
     # Now go through each workflow and run the steps
     for workflow in user_workflows['workflows']:
 
