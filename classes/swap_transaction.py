@@ -826,18 +826,21 @@ class SwapTransaction(TransactionCore):
             fee_denom    = fee_bit.denom
 
             # Calculate the tax portion 
-            if self.swap_denom in NON_ULUNA_COINS.values():
-                self.tax = None
-            else:
-                self.tax = int(math.ceil(self.swap_amount * float(self.tax_rate)))
+            # if self.swap_denom in NON_ULUNA_COINS.values():
+            #     self.tax = None
+            # else:
+            #     self.tax = int(math.ceil(self.swap_amount * float(self.tax_rate)))
+            self.tax = 0
 
             # Build a fee object
-            if fee_denom == ULUNA and self.swap_denom == ULUNA:
-                new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount + self.tax))})
-            if  self.swap_denom in NON_ULUNA_COINS.values():
-                new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount))})
-            else:
-                new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount)), Coin(self.swap_denom, int(self.tax))})
+            new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount))})
+
+            # if fee_denom == ULUNA and self.swap_denom == ULUNA:
+            #     new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount + self.tax))})
+            # if  self.swap_denom in NON_ULUNA_COINS.values():
+            #     new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount))})
+            # else:
+            #     new_coin:Coins = Coins({Coin(fee_denom, int(fee_amount)), Coin(self.swap_denom, int(self.tax))})
 
             requested_fee.amount = new_coin
             
@@ -849,18 +852,18 @@ class SwapTransaction(TransactionCore):
             # Otherwise the deductible is just the tax value
             # This assumes that the tax is always the same denom as the transferred amount.
             if fee_denom == self.swap_denom:
-                self.fee_deductables = int(fee_amount + self.tax)
-            elif fee_denom == ULUNA and self.swap_denom == UUSD:
-                self.fee_deductables = int(self.tax)
-            elif fee_denom == ULUNA and self.swap_denom in NON_ULUNA_COINS.values():
-                self.fee_deductables = 0
-            #elif fee_denom == UKUJI and self.swap_denom == UUSD:
-            #    self.fee_deductables = int(self.tax)
-            else:
-                if self.tax is not None:
-                    self.fee_deductables = int(self.tax * 2)
-                else:
-                    self.fee_deductables = None
+                # self.fee_deductables = int(fee_amount + self.tax)
+                self.fee_deductables = int(fee_amount)
+
+            # elif fee_denom == ULUNA and self.swap_denom == UUSD:
+            #     self.fee_deductables = int(self.tax)
+            # elif fee_denom == ULUNA and self.swap_denom in NON_ULUNA_COINS.values():
+            #     self.fee_deductables = 0
+            # else:
+            #     if self.tax is not None:
+            #         self.fee_deductables = int(self.tax * 2)
+            #     else:
+            #         self.fee_deductables = None
 
             return True
         else:
@@ -895,10 +898,10 @@ class SwapTransaction(TransactionCore):
             if fee_denom in self.balances:
                 swap_amount = self.swap_amount
 
-                if self.tax is not None:
-                   if self.fee_deductables is not None:
-                       if int(swap_amount + self.fee_deductables) > int(self.balances[self.swap_denom]):
-                           swap_amount = int(swap_amount - self.fee_deductables)
+                #if self.tax is not None:
+                if self.fee_deductables is not None:
+                    if int(swap_amount + self.fee_deductables) > int(self.balances[self.swap_denom]):
+                        swap_amount = int(swap_amount - self.fee_deductables)
 
                 if self.swap_denom == ULUNA and self.swap_request_denom == UBASE:
                     # We are swapping LUNC for BASE
