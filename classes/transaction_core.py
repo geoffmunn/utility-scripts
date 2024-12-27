@@ -349,128 +349,162 @@ class TransactionCore():
             block_height:int = int(self.terra.tendermint.block_info()['block']['header']['height']) - 1
 
             # Build the transaction search object:
-            result:dict = self.terra.tx.search([
-                ("message.sender", self.current_wallet.key.acc_address),
-                ("message.recipient", self.current_wallet.key.acc_address),
-                ('tx.hash', transaction_result.broadcast_result.txhash),
-                ('tx.height', block_height)
-            ])
+            if self.terra.chain_id == 'columbus-5':
+                result:dict = self.terra.tx.search([
+                    ("message.sender", self.current_wallet.key.acc_address),
+                    ("message.recipient", self.current_wallet.key.acc_address),
+                    ('tx.hash', transaction_result.broadcast_result.txhash),
+                    ('tx.height', block_height)
+                ])
+            else:
+                result:dict = self.terra.tx.search([
+                    ('tx.hash', transaction_result.broadcast_result.txhash),
+                    ('tx.height', block_height)
+                ])
 
             if result is not None:
-                if len(result['txs']) > 0:
+                # It's very confusing, but some results return *very* slightly different message digests.
+                # In particular, the Osmosis results look different.
+                if self.terra.chain_id == 'osmosis-1':
+                    # Check the result from the Osmosis chain
+                    if len(result['txs']) > 0:
+                        # Osmosis TXs don't appear to return logs
+                        info:TxInfo = result['txs'][0]
+                        txBody:Tx   = info.tx
 
-                    info:TxInfo = result['txs'][0]
+                        message = txBody.body.messages[0]
 
-                    if info.logs is not None and len(info.logs) > 0:
-                        log:TxLog   = info.logs[0]
+                        msg_token_in:Coin = message.token_in
+
+                        token_in_denom = FULL_COIN_LOOKUP[self.denomTrace(msg_token_in.denom)]
+                        token_in       = Coin.from_data({'amount': msg_token_in.amount, 'denom': msg_token_in.denom})
+
+                        token_out_amount = message.token_out_min_amount
                         
-                        if 'message' in log.events_by_type:
-                            # Governance votes
-                            if 'module' in log.events_by_type['message'] and log.events_by_type['message']['module'][0] == 'gov':
-                                transaction_result.result_sent     = None
-                                transaction_result.result_received = None
-                                transaction_result.log_found       = True
+                        routes = message.routes
 
-                            # Staking/Unstaking
-                            if 'module' in log.events_by_type['message'] and log.events_by_type['message']['module'][0] == 'staking':
-                                transaction_result.result_sent = None
+                        token_out_denom = FULL_COIN_LOOKUP[self.denomTrace(routes[-1].token_out_denom)]
 
-                                # Unstaking will return a bunch of random coins, but we only want the uluna coin
-                                coin_list:Coins = Coins.from_str(log.events_by_type['coin_spent']['amount'][0])
-                                coin:Coin
-                                for coin in coin_list:
-                                    if coin.denom == ULUNA:
-                                        transaction_result.result_received = Coins.from_proto([coin])
-                                        break
+                        transaction_result.result_sent     = token_in
+                        transaction_result.result_received = Coins.from_str(str(token_out_amount) + self.denomTrace(routes[-1].token_out_denom))
+                        transaction_result.log_found       = True
 
-                                transaction_result.log_found = True
+                else:
+                    if len(result['txs']) > 0:
 
-                            # Validator rewards
-                            if 'module' in log.events_by_type['message'] and log.events_by_type['message']['module'][0] == 'distribution':
-                                transaction_result.result_sent = None
+                        info:TxInfo = result['txs'][0]
 
-                                # Unstaking will return a bunch of random coins, but we only want uluna and uust
-                                coin_list:Coins  = Coins.from_str(log.events_by_type['coin_spent']['amount'][0])
-                                
-                                coin:Coin
-                                filtered_list:list = []
-                                for coin in coin_list:
-                                    if coin.denom in [ULUNA, UUSD]:
-                                        filtered_list.append(coin)
-                                
-                                transaction_result.result_received = Coins.from_proto(filtered_list)
-                                transaction_result.log_found = True
-
-                            # Osmosis swaps
-                            if 'module' in log.events_by_type['message'] and log.events_by_type['message']['module'][0] == 'gamm':
-                                if 'pool_exited' in log.events_by_type:
-                                    # This is an exit pool request
+                        if info.logs is not None and len(info.logs) > 0:
+                            log:TxLog   = info.logs[0]
+                            
+                            if 'message' in log.events_by_type:
+                                # Governance votes
+                                if 'module' in log.events_by_type['message'] and log.events_by_type['message']['module'][0] == 'gov':
                                     transaction_result.result_sent     = None
-                                    transaction_result.result_received = Coins.from_str(log.events_by_type['pool_exited']['tokens_out'][0])
+                                    transaction_result.result_received = None
                                     transaction_result.log_found       = True
-                                else:
-                                    # For some reason, wBTC -> LUNC swaps have an empty string so we'll fix that
-                                    amount = log.events_by_type['coin_spent']['amount'][0]
-                                    if amount == '':
-                                        amount = '0uluna'
 
-                                    transaction_result.result_sent     = Coin.from_str(amount)
+                                # Staking/Unstaking
+                                if 'module' in log.events_by_type['message'] and log.events_by_type['message']['module'][0] == 'staking':
+                                    transaction_result.result_sent = None
+
+                                    # Unstaking will return a bunch of random coins, but we only want the uluna coin
+                                    coin_list:Coins = Coins.from_str(log.events_by_type['coin_spent']['amount'][0])
+                                    coin:Coin
+                                    for coin in coin_list:
+                                        if coin.denom == ULUNA:
+                                            transaction_result.result_received = Coins.from_proto([coin])
+                                            break
+
+                                    transaction_result.log_found = True
+
+                                # Validator rewards
+                                if 'module' in log.events_by_type['message'] and log.events_by_type['message']['module'][0] == 'distribution':
+                                    transaction_result.result_sent = None
+
+                                    # Unstaking will return a bunch of random coins, but we only want uluna and uust
+                                    coin_list:Coins  = Coins.from_str(log.events_by_type['coin_spent']['amount'][0])
+                                    
+                                    coin:Coin
+                                    filtered_list:list = []
+                                    for coin in coin_list:
+                                        if coin.denom in [ULUNA, UUSD]:
+                                            filtered_list.append(coin)
+                                    
+                                    transaction_result.result_received = Coins.from_proto(filtered_list)
+                                    transaction_result.log_found = True
+
+                                # Osmosis swaps
+                                if 'module' in log.events_by_type['message'] and log.events_by_type['message']['module'][0] == 'gamm':
+                                    if 'pool_exited' in log.events_by_type:
+                                        # This is an exit pool request
+                                        transaction_result.result_sent     = None
+                                        transaction_result.result_received = Coins.from_str(log.events_by_type['pool_exited']['tokens_out'][0])
+                                        transaction_result.log_found       = True
+                                    else:
+                                        # For some reason, wBTC -> LUNC swaps have an empty string so we'll fix that
+                                        amount = log.events_by_type['coin_spent']['amount'][0]
+                                        if amount == '':
+                                            amount = '0uluna'
+
+                                        transaction_result.result_sent     = Coin.from_str(amount)
+                                        transaction_result.result_received = Coins.from_proto([Coin.from_str(log.events_by_type['coin_received']['amount'][-1])])
+                                        transaction_result.log_found       = True
+
+                                # Send to Osmosis
+                                if 'module' in log.events_by_type['message'] and 'transfer' in log.events_by_type['message']['module']:
+                                    transaction_result.result_sent     = Coin.from_str(log.events_by_type['coin_spent']['amount'][0])
                                     transaction_result.result_received = Coins.from_proto([Coin.from_str(log.events_by_type['coin_received']['amount'][-1])])
                                     transaction_result.log_found       = True
 
-                            # Send to Osmosis
-                            if 'module' in log.events_by_type['message'] and 'transfer' in log.events_by_type['message']['module']:
-                                transaction_result.result_sent     = Coin.from_str(log.events_by_type['coin_spent']['amount'][0])
-                                transaction_result.result_received = Coins.from_proto([Coin.from_str(log.events_by_type['coin_received']['amount'][-1])])
-                                transaction_result.log_found       = True
-
-                            # Send to on-chain address
-                            if 'module' in log.events_by_type['message'] and 'bank' in log.events_by_type['message']['module']:
-                                transaction_result.result_sent     = Coin.from_str(log.events_by_type['coin_spent']['amount'][0])
-                                transaction_result.result_received = Coins.from_proto([Coin.from_str(log.events_by_type['coin_received']['amount'][-1])])
-                                transaction_result.log_found       = True
-                        
-                        if 'wasm' in log.events_by_type:
-                            # Standard swaps ('LUNC -> USTC'):
-                            if 'action' in log.events_by_type['wasm'] and log.events_by_type['wasm']['action'][0] == 'swap':
-                                transaction_result.result_sent     = Coin.from_str(log.events_by_type['coin_spent']['amount'][0])
-                                transaction_result.result_received = Coins.from_proto([Coin.from_str(log.events_by_type['coin_received']['amount'][-1])])
-                                transaction_result.log_found       = True
-
-                            # Send transactions
-                            if 'action' in log.events_by_type['wasm'] and log.events_by_type['wasm']['action'][0] == 'transfer':
-                                transaction_result.result_sent     = Coin.from_str(f"{log.events_by_type['wasm']['amount'][0]}{self.denom}")
-                                transaction_result.result_received = Coins.from_proto([Coin.from_str(f"{log.events_by_type['wasm']['amount'][0]}{self.denom}")])
-                                transaction_result.log_found       = True
-
-                            # Base swaps/undelegations
-                            if '_contract_address' in log.events_by_type['wasm'] and log.events_by_type['wasm']['_contract_address'][0] == BASE_SMART_CONTRACT_ADDRESS:
-                                transaction_result.result_sent = None
-                                if 'action' in log.events_by_type['wasm'] and log.events_by_type['wasm']['action'][0] == 'buy':
-                                    transaction_result.result_received = Coins.from_proto([Coin.from_data({'amount': log.events_by_type['wasm']['BASE Minted:'][0], 'denom': UBASE})])
-                                else:
-                                    # Assumes swaps back from BASE -> LUNC
-                                    transaction_result.result_received = Coins.from_proto([Coin.from_data({'amount': log.events_by_type['wasm']['Net Unstake:'][0], 'denom': ULUNA})])
-                                
-                                transaction_result.log_found = True
+                                # Send to on-chain address
+                                if 'module' in log.events_by_type['message'] and 'bank' in log.events_by_type['message']['module']:
+                                    transaction_result.result_sent     = Coin.from_str(log.events_by_type['coin_spent']['amount'][0])
+                                    transaction_result.result_received = Coins.from_proto([Coin.from_str(log.events_by_type['coin_received']['amount'][-1])])
+                                    transaction_result.log_found       = True
                             
-                            # GRDX/UCREMAT/ULENNY -> ULUNA swaps (will override the standard swaps detection done earlier)
-                            elif '_contract_address' in log.events_by_type['wasm'] and not set(list(NON_ULUNA_COINS.keys())).isdisjoint(log.events_by_type['wasm']['_contract_address']):
+                            if 'wasm' in log.events_by_type:
+                                # Standard swaps ('LUNC -> USTC'):
+                                if 'action' in log.events_by_type['wasm'] and log.events_by_type['wasm']['action'][0] == 'swap':
+                                    transaction_result.result_sent     = Coin.from_str(log.events_by_type['coin_spent']['amount'][0])
+                                    transaction_result.result_received = Coins.from_proto([Coin.from_str(log.events_by_type['coin_received']['amount'][-1])])
+                                    transaction_result.log_found       = True
+
+                                # Send transactions
                                 if 'action' in log.events_by_type['wasm'] and log.events_by_type['wasm']['action'][0] == 'transfer':
-                                    # Sending GRDX/ULENNY to another wallet
-                                    transaction_result.result_sent     = Coin.from_data({'amount': log.events_by_type['wasm']['amount'][0], 'denom': self.denom})
-                                    transaction_result.result_received = Coins.from_proto([Coin.from_data({'amount': log.events_by_type['wasm']['amount'][0], 'denom': self.denom})])
-                                else:
-                                    # Assumes swaps between GRDX/UCANDY/UCREMAT/ULENNY -> ULUNA
-                                    transaction_result.result_sent     = Coin.from_data({'amount': log.events_by_type['wasm']['offer_amount'][0], 'denom': log.events_by_type['wasm']['offer_asset'][0]})
-                                    transaction_result.result_received = Coins.from_proto([Coin.from_data({'amount': log.events_by_type['wasm']['return_amount'][0], 'denom': log.events_by_type['wasm']['ask_asset'][0]})])
+                                    transaction_result.result_sent     = Coin.from_str(f"{log.events_by_type['wasm']['amount'][0]}{self.denom}")
+                                    transaction_result.result_received = Coins.from_proto([Coin.from_str(f"{log.events_by_type['wasm']['amount'][0]}{self.denom}")])
+                                    transaction_result.log_found       = True
+
+                                # Base swaps/undelegations
+                                if '_contract_address' in log.events_by_type['wasm'] and log.events_by_type['wasm']['_contract_address'][0] == BASE_SMART_CONTRACT_ADDRESS:
+                                    transaction_result.result_sent = None
+                                    if 'action' in log.events_by_type['wasm'] and log.events_by_type['wasm']['action'][0] == 'buy':
+                                        transaction_result.result_received = Coins.from_proto([Coin.from_data({'amount': log.events_by_type['wasm']['BASE Minted:'][0], 'denom': UBASE})])
+                                    else:
+                                        # Assumes swaps back from BASE -> LUNC
+                                        transaction_result.result_received = Coins.from_proto([Coin.from_data({'amount': log.events_by_type['wasm']['Net Unstake:'][0], 'denom': ULUNA})])
                                     
-                                transaction_result.log_found = True
+                                    transaction_result.log_found = True
+                                
+                                # GRDX/UCREMAT/ULENNY -> ULUNA swaps (will override the standard swaps detection done earlier)
+                                elif '_contract_address' in log.events_by_type['wasm'] and not set(list(NON_ULUNA_COINS.keys())).isdisjoint(log.events_by_type['wasm']['_contract_address']):
+                                    if 'action' in log.events_by_type['wasm'] and log.events_by_type['wasm']['action'][0] == 'transfer':
+                                        # Sending GRDX/ULENNY to another wallet
+                                        transaction_result.result_sent     = Coin.from_data({'amount': log.events_by_type['wasm']['amount'][0], 'denom': self.denom})
+                                        transaction_result.result_received = Coins.from_proto([Coin.from_data({'amount': log.events_by_type['wasm']['amount'][0], 'denom': self.denom})])
+                                    else:
+                                        # Assumes swaps between GRDX/UCANDY/UCREMAT/ULENNY -> ULUNA
+                                        transaction_result.result_sent     = Coin.from_data({'amount': log.events_by_type['wasm']['offer_amount'][0], 'denom': log.events_by_type['wasm']['offer_asset'][0]})
+                                        transaction_result.result_received = Coins.from_proto([Coin.from_data({'amount': log.events_by_type['wasm']['return_amount'][0], 'denom': log.events_by_type['wasm']['ask_asset'][0]})])
+                                        
+                                    transaction_result.log_found = True
 
-                        if transaction_result.log_found == False:
-                            print ('\n@TODO: events by type not returned, please check the results:')
-                            print (log)
+                            if transaction_result.log_found == False:
+                                print ('\n@TODO: events by type not returned, please check the results:')
+                                print (log)
 
+                if len(result['txs']) > 0:
                     if result['txs'][0].code == 0:
                         if self.silent_mode == False:
                             print ('\n ⭐ Found the hash!')
@@ -698,6 +732,7 @@ class TransactionCore():
             self.tax_rate = 0
 
         return self.tax_rate
+
 class TransactionResult(TransactionCore):
     """
     Holds the details of the transaction result.

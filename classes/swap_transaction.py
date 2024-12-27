@@ -98,7 +98,7 @@ class SwapTransaction(TransactionCore):
 
         if self.contract is not None:
             try:
-                # We'll allow checks for swap prices on any chain, but some combos might return errors that we'll return None on.
+                # Contract swaps must be on the columbus-5 chain
                 #if self.terra.chain_id == CHAIN_DATA[ULUNA]['chain_id']:
                 contract_swaps:list = [GRDX, ULUNA, UKRW, UUSD]
                 if self.swap_denom in contract_swaps and self.swap_request_denom in contract_swaps:
