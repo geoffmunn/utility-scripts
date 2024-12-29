@@ -345,6 +345,10 @@ class SendTransaction(TransactionCore):
         
             # Fee deductibles are the total cost of this transaction.
             # This assumes that the tax is always the same denom as the transferred amount.
+            if fee_denom == self.denom:
+                # If the fee denom is the same as what we're paying the tax in, then combine the two
+                self.fee_deductables = int(fee_amount)
+
             # if self.tax > 0:
             #     if fee_denom == self.denom:
             #         # If the fee denom is the same as what we're paying the tax in, then combine the two
@@ -471,7 +475,7 @@ def send_transaction(wallet:UserWallet, recipient_address:str, send_coin:Coin, m
 
     # If the chain ID of the wallet and the recipient prefix native chain are then same, then it's an on-chain tx
     #if wallet.terra.chain_id == CHAIN_DATA[ULUNA]['chain_id'] and send_tx.recipient_prefix == CHAIN_DATA[ULUNA]['bech32_prefix']:
-    if wallet.terra.chain_id == CHAIN_DATA[wallet.getDenomByPrefix(send_tx.recipient_prefix)]['chain_id']:
+    if wallet.terra.chain_id == 'columbus-5' and wallet.terra.chain_id == CHAIN_DATA[wallet.getDenomByPrefix(send_tx.recipient_prefix)]['chain_id']:
         send_tx.is_on_chain     = True
         send_tx.revision_number = 1
         # This is required if the chain id is NOT a terra chain (columbus-5).
